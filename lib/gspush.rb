@@ -1,26 +1,14 @@
-require 'csv'
-require 'googleauth'
-require 'google/apis/sheets_v4'
+require_relative 'csv_template'
+require_relative 'spreadsheet'
 
 module GSPush 
-  SPREADSHEET_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
+  def self.apply_template_to_sheet!(template_input, sheet_id, sheet_name, headers: false, offset: 0, cell_offset: 0, key_values: nil)
+    template = CSVTemplate.new(template_input, key_values, headers)
+    spreadsheet = Spreadsheet.new(sheet_id, sheet_name, headers)
 
-#  class GoogleSheet
-#    def initialize(
-  
-  class CSVTemplate
-    def initialize(input, key_values)
-      @csv = CSV.new(input)
-      @key_values = key_values
-    end
-  end
-
-  def self.apply_template_to_sheet!(template_input, sheet_id, sheet_name, header: false, offset: 0, cell_offset: 0, key_values: nil)
-    template = CSVTemplate.new(template_input, key_values)
-    spreadsheet = Google::Apis::SheetsV4::SheetsService.new
-    spreadsheet.authorization = Google::Auth.get_application_default(SPREADSHEET_SCOPES)
-    rows = spreadsheet.get_spreadsheet_values(sheet_id, "#{sheet_name}!A1:Z1000")
-
-    pp rows
+    spreadsheet.update_all_values(template.get_all_values)
+  rescue Google::Apis::ClientError => e
+    $stderr.puts "#{e.status_code} Error making Google API request [#{e.message}]: #{e.body}"
+    exit 1
   end
 end
