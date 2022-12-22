@@ -1,0 +1,2 @@
+- [ ] API-level error handling is pretty bad
+- [ ] Can we default to choosing the first sheet rather than having to supply --sheet-name
