@@ -1,4 +1,5 @@
 require 'csv'
+require_relative 'modifier'
 
 # TODO
 # * parse row-level operations
@@ -6,72 +7,49 @@ require 'csv'
 # * handle supplied variables
 module GSPush
   class Cell
-    CELL_MODIFIER_REGEX = /^\<\[(?:\/?(?<align>align)=(?<align_value>left|center|right))*
-                                (?:\/?(?<formats>format)=(?:\s*(?<formats_value>bold|italic|underline))*)*
-                              \]\>(?<cell_value>.*)/x
-
-    attr_accessor :value
-    attr_accessor :formats
-    attr_accessor :align
+    attr_reader :modifier
+    attr_reader :value
 
     def self.parse_cell(v)
-      if match = v.match(CELL_MODIFIER_REGEX)
-        captures = match.named_captures
-        align = captures["align"].nil? ? nil : captures["align_value"]
-        formats = captures["formats"].nil? ? [] : [captures["formats_value"]]
-        Cell.new(captures["cell_value"], align: align, formats: formats)
+      if modifier = Modifier.get_modifier_from_value(v)
+        Cell.new(modifier.value_without_modifier, modifier)
       else 
         Cell.new(v)
       end
     end
 
-    # XXX inject in a Formattable that handles the aligns and format
-    def initialize(value, formats: [], align: nil)
+    def initialize(value, modifier = nil)
       @value = value
-      @formats = formats
-      @align = align
+      @modifier = modifier
     end
 
     def to_s
-      "#{value}#{formats.length > 0 ? " formats=#{formats}" : ""}#{align.length > 0 ? " align=#{align}" : ""}"
+      "#{@value} #{@modifier}"
     end
   end
 
   class Row 
-    # XXX need to handle them joined together with a slash
-    ROW_MODIFIER_REGEX = /^\<\!\[ (align=(left|center|right))
-                                | (format=(bold|italic|underline)(\s bold|italic|underscore)*)
-                                | (range=(\d+(:\d+)?))
-                               \]\>.*/x
-
     attr_accessor :cells
-    attr_accessor :formats
-    attr_accessor :align
-    attr_accessor :range
+    attr_accessor :modifier
 
     def self.parse_row(row)
       cells = row.map {|cell| Cell.parse_cell(cell)}
-      formats = []
-      aligns = []
-      range = []
 
-      if cells.length > 1 && match = cells[0].value.match(ROW_MODIFIER_REGEX)
-        # XXX need to remove the matched modifier
-        puts "modified the row", match
-      end
+      #if cells.length > 1 && match = cells[0].value.match(ROW_MODIFIER_REGEX)
+        # XXX see if the first cell has a row-level modifier
+        #puts "modified the row", match
+      #end
 
-      Row.new(cells, formats: formats, aligns: aligns, range: range)
+      Row.new(cells)
     end
 
-    def initialize(cells, formats: [], aligns: [], range: nil)
+    def initialize(cells, modifier = nil)
       @cells = cells
-      @formats = formats
-      @aligns = aligns
-      @range = range
+      @modifier = modifier
     end
 
     def to_s
-      "#{@cells}"
+      @cells
     end
   end
 
