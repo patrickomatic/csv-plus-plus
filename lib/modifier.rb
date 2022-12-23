@@ -5,52 +5,61 @@ module GSPush
     end
   end
 
-  class ModifierError < StandardError
-    attr_reader :cell_input
-
-    def initialize(cell_input)
-      @cell_input = cell_input
-    end
-  end
-
   class Modifier
+    class SyntaxError < StandardError
+      attr_reader :cell_input
+
+      def initialize(cell_input)
+        @cell_input = cell_input
+      end
+    end
+
     attr_reader :formats 
     attr_reader :align
     attr_reader :value_without_modifier
     attr_accessor :foreground_color
     attr_accessor :range
 
-    MODIFIER_REGEX = /^\<(?<is_row_level>\!)\[(?<modifiers>\w+)\]\>(?<cell_value>)$/
-#    CELL_MODIFIER_REGEX = /^\<\[(?:\/?(?<align>align)=(?<align_value>left|center|right))*
-#                                (?:\/?(?<formats>format)=(?:\s*(?<formats_value>bold|italic|underline))*)*
-#                              \]\>(?<cell_value>.*)/x
-
-
     def self.get_modifier_from_value(value)
       match = value.match(MODIFIER_REGEX)
       return nil unless match
+      re_groups = match.named_captures
 
-      puts match 
-    end
-
-    def initialize(formats, align)
-      parse_cell_value!(cell_value)
-    end
-
-    def parse_cell_value!(str)
-    end
-
-    def formats=(format_value)
-      # XXX allow it to be an array or single, add it and de-dupe
-      # XXX make sure it's a valid value
-      formats.push(formats_value)
-    end
-
-    def align=(align)
-      unless ['left', 'center', 'right'].include?(align)
-        throw ModifierError.new("Invalid value: #{align}")
+      formats, align, range = [], nil, range
+      modifiers = re_groups["modifiers"].split("/").map {|kv| kv.split("=")}.map do |k, v|
+        case k
+        when "format"
+          fs = v.split(/\s+/)
+          fs.each do |f|
+            unless ['bold', 'underline', 'italic', 'strikethrough'].include?(f)
+              raise SyntaxError.new "Invalid format modifier: #{f}"
+            end
+          end
+          formats += fs
+        when "align"
+          unless ['left', 'center', 'right'].include?(v)
+            raise SyntaxError.new "Invalid align modifier: #{align}"
+          end
+          align = v
+        when "range"
+          # XXX handle a range
+          range = nil
+        else
+          raise SyntaxError.new "Unknown modifier: #{v}"
+        end
       end
+      
+      Modifier.new(re_groups["cell_value"], 
+                   formats: formats, 
+                   align: align,
+                   range: range)
+    end
+
+    def initialize(value_without_modifier, formats: [], align: nil, range: nil)
+      @value_without_modifier = value_without_modifier
+      @formats = formats
       @align = align
+      @range = range
     end
 
     def bold?
@@ -68,5 +77,9 @@ module GSPush
     def underline?
       @formats.include? 'underline'
     end
+
+    private
+
+    MODIFIER_REGEX = /^\<\[(?<modifiers>.+)\]\>(?<cell_value>.*)$/
   end
 end

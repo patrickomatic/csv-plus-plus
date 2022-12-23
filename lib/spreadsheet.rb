@@ -5,6 +5,7 @@ module GSPush
   class Spreadsheet 
     SPREADSHEET_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
     FULL_RANGE = "A1:Z1000"
+
     SheetsApi = Google::Apis::SheetsV4
 
     def initialize(sheet_id, sheet_name, headers)

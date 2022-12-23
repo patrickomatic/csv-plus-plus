@@ -11,11 +11,11 @@ describe GSPush::Template do
       expect(template.rows.length).to eq(1)
     end
 
+=begin
     context "with cell modifiers" do
       let(:input) { "foo,<[align=right/format=bold]>bar,baz" }
 
       it "creates cells with the modifiers" do
-        pp template.rows[0].cells
         expect(template.rows[0].cells[1].align).to eq('right')
         expect(template.rows[0].cells[1].formats).to eq(['bold'])
       end
@@ -25,11 +25,9 @@ describe GSPush::Template do
       let(:input) { "foo,<[align=right/format=bold italic]>bar,baz" }
 
       it "creates cells with the modifiers" do
-        pp template.rows[0].cells
         expect(template.rows[0].cells[1].formats).to eq(['bold', 'italic'])
       end
     end
-
 
     context "with row modifiers" do
       let(:input) { "<![align=center/format=bold]>foo,bar,baz" }
@@ -39,5 +37,6 @@ describe GSPush::Template do
         expect(template.rows[0].format).to eq(['bold'])
       end
     end
+=end
   end
 end

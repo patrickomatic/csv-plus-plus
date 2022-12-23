@@ -35,11 +35,7 @@ module GSPush
     def self.parse_row(row)
       cells = row.map {|cell| Cell.parse_cell(cell)}
 
-      #if cells.length > 1 && match = cells[0].value.match(ROW_MODIFIER_REGEX)
-        # XXX see if the first cell has a row-level modifier
-        #puts "modified the row", match
-      #end
-
+      # XXX handle the row-level modifier
       Row.new(cells)
     end
 
