@@ -6,7 +6,7 @@ module GSPush
     SPREADSHEET_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
     FULL_RANGE = "A1:Z1000"
 
-    def initialize(sheet_id, sheet_name, header)
+    def initialize(sheet_id, sheet_name, headers)
       @sheet_name = sheet_name
       @sheet_id = sheet_id
       @headers = headers

@@ -20,6 +20,18 @@ $ cat my_template.csv | ./bin/gspush -k [..]
 
 ## Template Language
 
-The input follows all basic CSV rules, however the following variables will be provided:
+This program provides an ehanced language on top of CSV:
 
-* $$ROWNUM - 
+You can apply formatting to individual cells:
+```
+Date,<[align=left]>Amount,Quantity,<[align=center/format=bold italic]>Price
+```
+
+or to the entire row:
+```
+<![align=center/format=underline]>Date,Amount,Quantity,Price
+```
+
+## Predefined variables
+
+* `$$ROWNUM` - The current row number.  The first row of the spreadsheet starts at 1
