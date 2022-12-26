@@ -3,18 +3,17 @@ require_relative 'cell'
 
 module GSPush
   class Row 
-    attr_reader :cells
-    attr_reader :modifier
+    attr_reader :cells, :modifier
 
-    def self.parse_row(csv_row)
+    def self.parse_row(csv_row, row_number)
       row_modifier = nil
-      cells = csv_row.map do |value|
-        modifier = Modifier.get_modifier_from_value(value)
+      cells = csv_row.map.with_index do |value, cell_number|
+        modifier = Modifier.get_modifier_from_value(value, row_number, cell_number)
         if modifier && modifier.row_level?
           row_modifier = modifier
-          Cell.new(value)
+          Cell.new(modifier.value_without_modifier)
         elsif modifier
-          Cell.new(value, modifier)
+          Cell.new(modifier.value_without_modifier, modifier)
         else
           Cell.new(value)
         end
@@ -32,4 +31,4 @@ module GSPush
       @cells
     end
   end
-end
+end 

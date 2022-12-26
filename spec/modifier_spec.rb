@@ -2,8 +2,10 @@ require 'modifier'
 
 describe GSPush::Modifier do
   describe ".get_modifier_from_value" do
-    subject(:modifier) { GSPush::Modifier.get_modifier_from_value(cell_value) }
+    subject(:modifier) { GSPush::Modifier.get_modifier_from_value(cell_value, row_number, cell_number) }
     let(:cell_value) { "[[format=bold]]bar" }
+    let(:cell_number) { 1 }
+    let(:row_number) { 1 }
 
     describe "format=" do
       it { should be_bold }
@@ -37,18 +39,16 @@ describe GSPush::Modifier do
     end
 
     describe "expand=" do
-      let(:cell_value) { "![[expand=2:3]]foo" }
+      let(:cell_value) { "![[expand=2]]foo" }
       it "sets an ExpandRange" do
-        expect(subject.expand.start_row).to eq(2)
-        expect(subject.expand.end_row).to eq(3)
+        expect(subject.expand.repetitions).to eq(2)
+        expect(subject.expand.infinite?).to be(false)
       end
 
-      context "without an end" do
-        let(:cell_value) { "![[expand=2:]]foo" }
-
-        it "sets an ExpandRange" do
-          expect(subject.expand.start_row).to eq(2)
-          expect(subject.expand.end_row).to be_nil
+      context "without repetitions" do
+        let(:cell_value) { "![[expand]]foo" }
+        it "should be infinite" do
+          expect(subject.expand.infinite?).to be(true)
         end
       end
     end
@@ -59,10 +59,17 @@ describe GSPush::Modifier do
       it { should be_row_level }
     end
 
-    context "with unsupported modifier" do
-      let(:cell_value) { "[[foo=bar]]bar" }
-      it "raises a syntax error" do
-        expect { subject }.to raise_error(GSPush::Modifier::SyntaxError)
+    describe "incorrect modifiers" do
+      context "with unsupported modifier" do
+        let(:cell_value) { "[[foo=bar]]bar" }
+        it "raises a syntax error" do
+          expect { subject }.to raise_error(GSPush::Modifier::SyntaxError)
+        end
+      end
+
+      context "with nil values" do
+        let(:cell_value) { "bar,," }
+        it { should be_nil }
       end
     end
   end 

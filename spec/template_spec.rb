@@ -1,11 +1,9 @@
 require 'template'
 
 describe GSPush::Template do
-  let(:input) { "foo,bar,baz" }
-  let(:template) { GSPush::Template.new(input) }
-
   describe "process!" do
-    before(:each) { template.process! }
+    let(:template) { GSPush::Template.process!(input) }
+    let(:input) { "foo,bar,baz" }
 
     it "creates rows" do
       expect(template.rows.length).to eq(1)
@@ -31,6 +29,14 @@ describe GSPush::Template do
       it "creates rows with the modifiers" do
         expect(template.rows[0].modifier.align).to eq('center')
         expect(template.rows[0].modifier.formats).to eq(['bold'])
+      end
+
+      describe "expand=" do
+        let(:input) { "![[expand=2/format=bold]]foo,bar,baz\n![[expand]]" }
+
+        it "expands the rows" do
+          expect(template.rows.length).to be(1002)
+        end
       end
     end
   end

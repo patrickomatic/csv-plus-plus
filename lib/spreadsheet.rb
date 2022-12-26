@@ -9,10 +9,12 @@ module GSPush
 
     SheetsApi = Google::Apis::SheetsV4
 
-    def initialize(sheet_id, sheet_name, headers)
+    attr_reader :sheet_id, :sheet_name
+
+    def initialize(sheet_id, sheet_name, verbose)
       @sheet_name = sheet_name
       @sheet_id = sheet_id
-      @headers = headers
+      @verbose = verbose
 
       auth_with_gs!
     end
@@ -34,16 +36,16 @@ module GSPush
       get_values(FULL_RANGE)
     end
 
-    def push!(rows)
-      update_cell_formatting!(rows)
-      update_cell_values!(rows)
+    def push!(template)
+      update_cell_formatting!(template)
+      update_cell_values!(template)
     end
 
     private
 
-    def update_cell_formatting!(rows)
+    def update_cell_formatting!(template)
       batch_request = SheetsApi::BatchUpdateSpreadsheetRequest.new.tap do |bu|
-        bu.requests = [
+        bu.requests = template.rows.each_slice(1000).to_a.map do |rows|
           SheetsApi::Request.new.tap do |r|
             r.update_cells = SheetsApi::UpdateCellsRequest.new.tap do |uc|
               uc.fields = '*'
@@ -54,8 +56,8 @@ module GSPush
                     SheetsApi::CellData.new.tap do |cd|
                       cd.user_entered_format = SheetsApi::CellFormat.new.tap do |cf| 
                         cf.text_format = SheetsApi::TextFormat.new.tap do |tf|
-                          tf.bold = true if cell.bold?
-                          tf.italic = true if cell.italic?
+                          tf.bold = true if cell.modifier&.bold?
+                          tf.italic = true if cell.modifier&.italic?
                         end
                       end
                       # TODO cd.note
@@ -66,22 +68,30 @@ module GSPush
               end
             end
           end
-        ]
+        end
+      end
+
+      if @verbose
+        puts "Calling batch_update_spreadsheet on #@sheet_id/#@sheet_name with", batch_request
       end
 
       @gs.batch_update_spreadsheet(@sheet_id, batch_request)
     end
 
-    def update_cell_values!(rows)
+    def update_cell_values!(template)
       request = SheetsApi::BatchUpdateValuesRequest.new.tap do |r|
         r.data = [
           SheetsApi::ValueRange.new.tap do |d|
-            d.values = rows.map {|row| row.cells.map {|c| c.value}}
+            d.values = template.rows.map {|row| row.cells.map {|c| c.value}}
             d.major_dimension = "ROWS"
             d.range = "A1"
           end
         ]
         r.value_input_option = 'USER_ENTERED'
+      end
+
+      if @verbose
+        puts "Calling batch_update_values on #@sheet_id/#@sheet_name with", request
       end
 
       @gs.batch_update_values(@sheet_id, request)

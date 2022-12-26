@@ -1,26 +1,77 @@
 require 'csv'
+require 'tempfile'
 require_relative 'modifier'
 require_relative 'row'
+require_relative 'spreadsheet'
+require_relative 'code_section'
 
 module GSPush
   class Template
-    attr_accessor :rows
+    attr_reader :rows
 
-    def initialize(input, key_values: {}, verbose: false)
-      @input = input
+    def initialize(key_values: {}, verbose: false)
       @key_values = key_values
       @verbose = verbose
       @rows = []
     end
 
-    def process!
-      @rows = CSV.new(@input).map do |row|
-        Row.parse_row(row)
+    def self.process!(input, key_values: {}, verbose: false)
+      tmp = Tempfile.new
+
+      begin
+        tmp.write input
+        tmp.rewind
+        
+        Template.new(key_values: key_values, verbose: verbose).tap do |t|
+          t.parse_code_section!(tmp)
+          t.parse_rows!(tmp)
+          t.expand_rows!
+          t.interpolate_variables!
+        end
+      ensure
+        tmp.close
+        tmp.unlink
       end
     end
 
-    def get_all_values
-      @rows
+    def parse_code_section!(file)
+      code_section, csv_section = CodeSection.parse!(file)
+      @code_section = code_section
+
+      file.write csv_section
+      file.rewind
+    end
+
+    def parse_rows!(file)
+      @rows = CSV.new(file).map.with_index(1) do |row, row_number|
+        Row.parse_row(row, row_number)
+      end
+    end
+
+    def expand_rows!
+      expanded_rows = []
+      @rows.each do |row|
+        if !row.modifier.nil? && !row.modifier.expand.nil?
+          (row.modifier.expand.repetitions || Spreadsheet::SPREADSHEET_INFINITY).times do
+            expanded_rows = expanded_rows << row.dup
+          end
+        else
+          expanded_rows = expanded_rows << row.dup
+        end
+      end
+
+      @rows = expanded_rows
+    end
+
+    def interpolate_variables!
+      @rows.each.with_index(1) do |row, row_number|
+        row.cells.each do |cell|
+          cell.interpolate_variables!({
+            rownum: row_number,
+            **(@key_values || {}),
+          })
+        end
+      end
     end
   end
 end

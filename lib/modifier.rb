@@ -1,7 +1,11 @@
 module GSPush
-  ExpandRange = Struct.new(:start_row, :end_row) do
+  Expand = Struct.new(:repetitions) do
+    def infinite?
+      repetitions.nil?
+    end
+
     def to_s
-      "Expand range (#{start} - #{end_row})"
+      "Expand #{repetitions || 'infinity'}"
     end
   end
 
@@ -9,24 +13,28 @@ module GSPush
     MODIFIER_REGEX = /^(?<row_level>\!)?\[\[(?<modifiers>.+)\]\](?<cell_value>.*)$/
 
     class SyntaxError < StandardError
-      attr_reader :cell_input
+      def initialize(message, input, row_number, cell_number)
+        @message = message
+        @input = input
+        @row_number = row_number
+        @cell_number = cell_number
+      end
 
-      def initialize(cell_input)
-        @cell_input = cell_input
+      # XXX include the filename in here too
+      def to_s
+        "gspush: #@message #@row_number:#@cell_number: #@input"
       end
     end
 
-    attr_reader :formats 
-    attr_reader :align
-    attr_reader :value_without_modifier
-    attr_reader :foreground_color
-    attr_reader :expand
+    attr_reader :formats, :align, :value_without_modifier, :foreground_color, :expand
 
-    def self.get_modifier_from_value(value)
+    def self.get_modifier_from_value(value, row_number, cell_number)
+      return nil unless value
+
       match = value.match(MODIFIER_REGEX)
       return nil unless match
-      re_groups = match.named_captures
 
+      re_groups = match.named_captures
       row_level = !re_groups["row_level"].nil?
       formats, align, expand = [], nil, expand
       modifiers = re_groups["modifiers"].split("/").map {|kv| kv.split("=")}.map do |k, v|
@@ -35,24 +43,22 @@ module GSPush
           fs = v.split(/\s+/)
           fs.each do |f|
             unless ['bold', 'underline', 'italic', 'strikethrough'].include?(f)
-              raise SyntaxError.new "Invalid format modifier: #{f}"
+              raise SyntaxError.new( "Invalid `format` modifier", f, row_number, cell_number)
             end
           end
           formats += fs
         when "align"
           unless ['left', 'center', 'right'].include?(v)
-            raise SyntaxError.new "Invalid align modifier: #{v}"
+            raise SyntaxError.new("Invalid `align` modifier", v, row_number, cell_number)
           end
           align = v
         when "expand"
-          unless match = v.match(/^(\d+):(\d+)?/)
-            raise SyntaxError.new "Invalid expand modifier: #{v}"
+          if !v.nil? and !(m = v.match(/^(\d+)?/))
+            raise SyntaxError.new("Invalid `expand` modifier", v, row_number, cell_number)
           end
-          start, end_row = match[1], match[2]
-          expand = ExpandRange.new(start.to_i, 
-                                   end_row.nil? ? nil : end_row.to_i)
+          expand = Expand.new(m.nil? ? nil : m[1].to_i)
         else
-          raise SyntaxError.new "Unknown modifier: #{v}"
+          raise SyntaxError.new('Unknown modifier', value, row_number, cell_number)
         end
       end
       
