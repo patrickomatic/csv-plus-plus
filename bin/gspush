@@ -4,23 +4,15 @@ require_relative '../lib/gspush'
 
 options = {}
 OptionParser.new do |parser|
-  parser.on("-h", "--headers HEADER",
-            "Whether or not the template has a header to respect")
-
-  parser.on("-o", "--offset OFFSET",
-            "Apply the template offset by OFFSET rows")
-
-  parser.on("-c", "--offset-cell OFFSET",
-            "Apply the template offset by OFFSET cells")
-
+  parser.on("-h", "--headers HEADER", "Whether or not the template has a header to respect")
+  parser.on("-o", "--offset OFFSET", "Apply the template offset by OFFSET rows")
+  parser.on("-c", "--offset-cell OFFSET", "Apply the template offset by OFFSET cells")
   parser.on("-i", "--sheet-id SHEET_ID",
             "The id of the sheet - you can extract this from the URL: https://docs.google.com/spreadsheets/d/< ... SHEET_ID ... >/edit#gid=0")
-
-  parser.on("-n", "--sheet-name SHEET_NAME",
-            "The name of the sheet to apply the template to")
-
+  parser.on("-n", "--sheet-name SHEET_NAME", "The name of the sheet to apply the template to")
   parser.on("-k", "--key-values KEY_VALUES", 
             "A comma-separated list of key=values which will be made available to the template")
+  parser.on("-v", "--verbose", "Enable verbose output")
 end.parse!(into: options)
 
 sheet_id, sheet_name = options[:"sheet-id"], options[:"sheet-name"]
@@ -31,11 +23,11 @@ unless sheet_id && sheet_name
   exit 1
 end
 
-
 GSPush.apply_template_to_sheet!(ARGF.read, 
                                 sheet_id,
                                 sheet_name,
                                 offset: options[:offset],
                                 cell_offset: options[:"cell-offset"],
                                 key_values: options[:"key-values"] && Hash[[options[:"key-values"].split("=")]], 
-                                headers: options[:headers])
+                                headers: options[:headers],
+                                verbose: options[:verbose])

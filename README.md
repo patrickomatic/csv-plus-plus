@@ -20,13 +20,13 @@ $ cat my_template.csv | ./bin/gspush -k [..]
 This program provides an enhanced language on top of CSV.  All of the normal rules of CSV apply, with the addition that each cell can have a:
 
 ```
-foo,<[...]>bar,baz
+foo,[[...]]bar,baz
 ```
 
 specifying formatting or various other modifiers to the cell.  Additionally a row can start with:
 
 ```
-<![...]>foo,bar,baz
+![[...]]foo,bar,baz
 ```
 
 which will apply that modifier to all cells in the row.
@@ -36,20 +36,20 @@ which will apply that modifier to all cells in the row.
 * Align the second cell left, align the last cell to the center and make it bold and italicized:
 
 ```
-Date,<[align=left]>Amount,Quantity,<[align=center/format=bold italic]>Price
+Date,[[align=left]]Amount,Quantity,[[align=center/format=bold italic]]Price
 ```
 
 * Underline and center-align an entire row:
 
 ```
-<![align=center/format=underline]>Date,Amount,Quantity,Price
+![[align=center/format=underline]]Date,Amount,Quantity,Price
 ```
 
 * A header for the first row, then some formulas that repeat for each row for the rest of the spreadsheet:
 
 ```
-<![align=center/format=bold]>Date,Price,Quantity,Profit
-<![range=1:]>,,,"=MULTIPLY(B$$ROW, C$$ROW)"
+![[align=center/format=bold]]Date,Price,Quantity,Profit
+![[expand=1:]],,,"=MULTIPLY(B$$ROW, C$$ROW)"
 ```
 
 ## Predefined variables

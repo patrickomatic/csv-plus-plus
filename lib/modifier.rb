@@ -1,11 +1,13 @@
 module GSPush
-  Range = Struct.new(:start_row, :end_row) do
+  ExpandRange = Struct.new(:start_row, :end_row) do
     def to_s
-      "Row range (#{start} - #{end_row})"
+      "Expand range (#{start} - #{end_row})"
     end
   end
 
   class Modifier
+    MODIFIER_REGEX = /^(?<row_level>\!)?\[\[(?<modifiers>.+)\]\](?<cell_value>.*)$/
+
     class SyntaxError < StandardError
       attr_reader :cell_input
 
@@ -17,15 +19,16 @@ module GSPush
     attr_reader :formats 
     attr_reader :align
     attr_reader :value_without_modifier
-    attr_accessor :foreground_color
-    attr_accessor :range
+    attr_reader :foreground_color
+    attr_reader :expand
 
     def self.get_modifier_from_value(value)
       match = value.match(MODIFIER_REGEX)
       return nil unless match
       re_groups = match.named_captures
 
-      formats, align, range = [], nil, range
+      row_level = !re_groups["row_level"].nil?
+      formats, align, expand = [], nil, expand
       modifiers = re_groups["modifiers"].split("/").map {|kv| kv.split("=")}.map do |k, v|
         case k
         when "format"
@@ -38,12 +41,16 @@ module GSPush
           formats += fs
         when "align"
           unless ['left', 'center', 'right'].include?(v)
-            raise SyntaxError.new "Invalid align modifier: #{align}"
+            raise SyntaxError.new "Invalid align modifier: #{v}"
           end
           align = v
-        when "range"
-          # XXX handle a range
-          range = nil
+        when "expand"
+          unless match = v.match(/^(\d+):(\d+)?/)
+            raise SyntaxError.new "Invalid expand modifier: #{v}"
+          end
+          start, end_row = match[1], match[2]
+          expand = ExpandRange.new(start.to_i, 
+                                   end_row.nil? ? nil : end_row.to_i)
         else
           raise SyntaxError.new "Unknown modifier: #{v}"
         end
@@ -52,14 +59,16 @@ module GSPush
       Modifier.new(re_groups["cell_value"], 
                    formats: formats, 
                    align: align,
-                   range: range)
+                   expand: expand,
+                   row_level: row_level)
     end
 
-    def initialize(value_without_modifier, formats: [], align: nil, range: nil)
+    def initialize(value_without_modifier, formats: [], align: nil, expand: nil, row_level: false)
       @value_without_modifier = value_without_modifier
       @formats = formats
       @align = align
-      @range = range
+      @expand = expand
+      @row_level = row_level
     end
 
     def bold?
@@ -78,8 +87,12 @@ module GSPush
       @formats.include? 'underline'
     end
 
-    private
+    def row_level?
+      @row_level
+    end
 
-    MODIFIER_REGEX = /^\<\[(?<modifiers>.+)\]\>(?<cell_value>.*)$/
+    def cell_level?
+      !@row_level
+    end
   end
 end

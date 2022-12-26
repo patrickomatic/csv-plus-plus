@@ -3,8 +3,9 @@ require 'google/apis/sheets_v4'
 
 module GSPush
   class Spreadsheet 
-    SPREADSHEET_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-    FULL_RANGE = "A1:Z1000"
+    SPREADSHEET_AUTH_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+    SPREADSHEET_INFINITY = 1000
+    FULL_RANGE = "A1:Z#{SPREADSHEET_INFINITY}"
 
     SheetsApi = Google::Apis::SheetsV4
 
@@ -18,7 +19,7 @@ module GSPush
 
     def auth_with_gs!
       @gs ||= SheetsApi::SheetsService.new
-      @gs.authorization = Google::Auth.get_application_default(SPREADSHEET_SCOPES)
+      @gs.authorization = Google::Auth.get_application_default(SPREADSHEET_AUTH_SCOPES)
     end
 
     def get_values(range)
@@ -53,8 +54,8 @@ module GSPush
                     SheetsApi::CellData.new.tap do |cd|
                       cd.user_entered_format = SheetsApi::CellFormat.new.tap do |cf| 
                         cf.text_format = SheetsApi::TextFormat.new.tap do |tf|
-                          tf.bold = true
-                          tf.italic = true
+                          tf.bold = true if cell.bold?
+                          tf.italic = true if cell.italic?
                         end
                       end
                       # TODO cd.note
