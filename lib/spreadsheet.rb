@@ -25,13 +25,26 @@ module GSPush
       @gs.authorization = Google::Auth.get_application_default(SPREADSHEET_AUTH_SCOPES)
     end
 
-    def get_current_values(range)
-      puts "#{@sheet_id} #{@sheet_name}!#{range}"
-      @gs.get_spreadsheet_values(@sheet_id, "#{@sheet_name}!#{range}", value_render_option: 'FORMULA')
-    end
+    def get_current_values!
+      formatted_values = @gs.get_spreadsheet_values(@sheet_id, full_range,
+                                                    value_render_option: 'FORMATTED_VALUE')
+      formula_values = @gs.get_spreadsheet_values(@sheet_id, full_range,
+                                                  value_render_option: 'FORMULA')
+      if formula_values.values.nil? || formatted_values.values.nil?
+        return
+      end
 
-    def get_all_current_values
-      get_current_values(FULL_RANGE)
+      @current_values = formatted_values.values.map.each_with_index do |row, x|
+        row.map.each_with_index do |cell, y|
+          formula_value = formula_values.values[x][y]
+          if formula_value.is_a?(String) && formula_value.start_with?('=')
+            formula_value
+          else
+            formatted_value = formatted_values.values[x][y]
+            formatted_value.strip.empty? ? nil : formatted_value
+          end
+        end
+      end
     end
 
     def full_range
@@ -39,9 +52,9 @@ module GSPush
     end
 
     def push!(template)
-      current_values = get_all_current_values
+      get_current_values!
       update_cell_formatting!(template)
-      update_cell_values!(template, current_values)
+      update_cell_values!(template)
     end
 
     private
@@ -59,8 +72,8 @@ module GSPush
                     SheetsApi::CellData.new.tap do |cd|
                       cd.user_entered_format = SheetsApi::CellFormat.new.tap do |cf| 
                         cf.text_format = SheetsApi::TextFormat.new.tap do |tf|
-                          tf.bold = true if cell.modifier&.bold?
-                          tf.italic = true if cell.modifier&.italic?
+                          tf.bold = true if cell.modifier&.bold? || row.modifier&.bold?
+                          tf.italic = true if cell.modifier&.italic? || row.modifier&.italic?
                         end
                       end
                       # TODO cd.note
@@ -81,13 +94,15 @@ module GSPush
       @gs.batch_update_spreadsheet(@sheet_id, batch_request)
     end
 
-    def update_cell_values!(template, current_values)
+    def update_cell_values!(template)
       request = SheetsApi::BatchUpdateValuesRequest.new.tap do |r|
         r.data = [
           SheetsApi::ValueRange.new.tap do |d|
-            d.values = template.rows.map.with_index do |row, row_index| 
-              row.cells.map.with_index do |c, c_index| 
-                (c.value || current_values.values[row_index][c_index]) rescue nil
+            d.values = template.rows.map.with_index do |row, row_index|
+              row.cells.map.with_index do |c, cell_index|
+                c.value.nil? ? 
+                  (@current_values[row_index][cell_index] rescue nil) : 
+                  c.value
               end
             end
 
