@@ -2,7 +2,7 @@ require_relative 'modifier'
 
 module GSPush
   class Cell
-    attr_reader :modifier, :value
+    attr_reader :modifier
 
     def initialize(value, modifier = nil)
       @value = value
@@ -24,6 +24,11 @@ module GSPush
         # XXX this is more complicated I think
         #@value["$$#{k}"] &&= v
       end
+    end
+
+    def value
+      return nil if @value.nil? || @value.strip.empty?
+      @value.strip
     end
 
     def to_s

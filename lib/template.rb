@@ -49,14 +49,15 @@ module GSPush
     end
 
     def expand_rows!
+      # TODO we should have a check that you can only have one infinite expand
       expanded_rows = []
       @rows.each do |row|
         if !row.modifier.nil? && !row.modifier.expand.nil?
-          (row.modifier.expand.repetitions || Spreadsheet::SPREADSHEET_INFINITY).times do
-            expanded_rows = expanded_rows << row.dup
+          (row.modifier.expand.repetitions || (Spreadsheet::SPREADSHEET_INFINITY - @rows.length)).times do
+            expanded_rows = expanded_rows << Marshal.load(Marshal.dump(row))
           end
         else
-          expanded_rows = expanded_rows << row.dup
+          expanded_rows = expanded_rows << Marshal.load(Marshal.dump(row))
         end
       end
 
@@ -66,10 +67,7 @@ module GSPush
     def interpolate_variables!
       @rows.each.with_index(1) do |row, row_number|
         row.cells.each do |cell|
-          cell.interpolate_variables!({
-            rownum: row_number,
-            **(@key_values || {}),
-          })
+          cell.interpolate_variables!({ rownum: row_number, **(@key_values || {}) })
         end
       end
     end

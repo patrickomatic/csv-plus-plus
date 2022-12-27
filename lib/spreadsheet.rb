@@ -4,8 +4,9 @@ require 'google/apis/sheets_v4'
 module GSPush
   class Spreadsheet 
     SPREADSHEET_AUTH_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+    # XXX it would be nice to raise this but we shouldn't expand out more than necessary for our data
     SPREADSHEET_INFINITY = 1000
-    FULL_RANGE = "A1:Z#{SPREADSHEET_INFINITY}"
+    FULL_RANGE = "1:#{SPREADSHEET_INFINITY}"
 
     SheetsApi = Google::Apis::SheetsV4
 
@@ -24,21 +25,23 @@ module GSPush
       @gs.authorization = Google::Auth.get_application_default(SPREADSHEET_AUTH_SCOPES)
     end
 
-    def get_values(range)
-      @gs.get_spreadsheet_values(@sheet_id, "#{@sheet_name}!#{range}")
+    def get_current_values(range)
+      puts "#{@sheet_id} #{@sheet_name}!#{range}"
+      @gs.get_spreadsheet_values(@sheet_id, "#{@sheet_name}!#{range}", value_render_option: 'FORMULA')
+    end
+
+    def get_all_current_values
+      get_current_values(FULL_RANGE)
     end
 
     def full_range
       "#{@sheet_name}!#{FULL_RANGE}"
     end
 
-    def get_all_values
-      get_values(FULL_RANGE)
-    end
-
     def push!(template)
+      current_values = get_all_current_values
       update_cell_formatting!(template)
-      update_cell_values!(template)
+      update_cell_values!(template, current_values)
     end
 
     private
@@ -78,13 +81,18 @@ module GSPush
       @gs.batch_update_spreadsheet(@sheet_id, batch_request)
     end
 
-    def update_cell_values!(template)
+    def update_cell_values!(template, current_values)
       request = SheetsApi::BatchUpdateValuesRequest.new.tap do |r|
         r.data = [
           SheetsApi::ValueRange.new.tap do |d|
-            d.values = template.rows.map {|row| row.cells.map {|c| c.value}}
+            d.values = template.rows.map.with_index do |row, row_index| 
+              row.cells.map.with_index do |c, c_index| 
+                (c.value || current_values.values[row_index][c_index]) rescue nil
+              end
+            end
+
             d.major_dimension = "ROWS"
-            d.range = "A1"
+            d.range = "A1:Z#{template.rows.length}"
           end
         ]
         r.value_input_option = 'USER_ENTERED'
