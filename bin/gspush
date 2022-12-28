@@ -26,10 +26,9 @@ begin
   GSPush.apply_template_to_sheet!(ARGF.read, 
                                   sheet_id,
                                   sheet_name,
-                                  offset: options[:offset],
-                                  cell_offset: options[:"offset-rows"],
-                                  # XXX use offset-columns
-                                  key_values: options[:"key-values"] && Hash[[options[:"key-values"].split("=")]], 
+                                  row_offset: options[:"offset-rows"],
+                                  cell_offset: options[:"offset-cells"],
+                                  key_values: (Hash[[options[:"key-values"].split("=")]] rescue {}), 
                                   verbose: options[:verbose])
 rescue GSPush::Modifier::SyntaxError => e
   $stderr.puts e

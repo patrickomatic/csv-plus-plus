@@ -1,2 +1,14 @@
+- [ ] Package in a proper gemspec
+- [ ] Better name?
+- [ ] option to create the spreadsheet if it doesn't exit
+- [ ] Better csv file extension?
+- [ ] CLI-specified offsets working
+- [ ] hyperlink modifiers
+- [ ] note modifiers
+- [ ] validation modifiers
+- [ ] border modifiers
+- [ ] color/styling modifiers
+- [ ] make verbose mode better/implement better to\_s throughout
+- [ ] incroprate the input filename into error traces
 - [ ] API-level error handling is pretty bad
 - [ ] Can we default to choosing the first sheet rather than having to supply --sheet-name

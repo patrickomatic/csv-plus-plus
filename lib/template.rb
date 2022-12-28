@@ -2,6 +2,7 @@ require 'csv'
 require 'tempfile'
 require_relative 'modifier'
 require_relative 'row'
+# TODO break this dependency (we only need it for SPREADSHEET_INFINITY)
 require_relative 'spreadsheet'
 require_relative 'code_section'
 
@@ -23,10 +24,10 @@ module GSPush
         tmp.rewind
         
         Template.new(key_values: key_values, verbose: verbose).tap do |t|
-          t.parse_code_section!(tmp)
+          code_section = CodeSection.parse!(tmp)
           t.parse_rows!(tmp)
           t.expand_rows!
-          t.interpolate_variables!
+          t.interpolate_variables!(code_section.variables)
         end
       ensure
         tmp.close
@@ -34,14 +35,7 @@ module GSPush
       end
     end
 
-    def parse_code_section!(file)
-      code_section, csv_section = CodeSection.parse!(file)
-      @code_section = code_section
-
-      file.write csv_section
-      file.rewind
-    end
-
+    # TODO move this into a CsvSection?
     def parse_rows!(file)
       @rows = CSV.new(file).map.with_index(1) do |row, row_number|
         Row.parse_row(row, row_number)
@@ -64,10 +58,14 @@ module GSPush
       @rows = expanded_rows
     end
 
-    def interpolate_variables!
+    def interpolate_variables!(variables)
       @rows.each.with_index(1) do |row, row_number|
         row.cells.each do |cell|
-          cell.interpolate_variables!({ rownum: row_number, **(@key_values || {}) })
+          cell.interpolate_variables!({ 
+            rownum: row_number, 
+            **variables,
+            **@key_values,
+          })
         end
       end
     end

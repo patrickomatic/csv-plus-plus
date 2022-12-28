@@ -1,7 +1,7 @@
 require 'template'
 
 describe GSPush::Template do
-  describe "process!" do
+  describe "#process!" do
     let(:template) { GSPush::Template.process!(input) }
     let(:input) { "foo,bar,baz" }
 
@@ -34,8 +34,8 @@ describe GSPush::Template do
       describe "expand=" do
         let(:input) { "![[expand=2/format=bold]]foo,bar,baz\n![[expand]]" }
 
-        it "expands the rows" do
-          expect(template.rows.length).to be(1002)
+        it "expands the rows to SPREADSHEET_INFINITY" do
+          expect(template.rows.length).to be(1000)
         end
       end
     end

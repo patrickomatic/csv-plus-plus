@@ -2,7 +2,9 @@ require 'modifier'
 
 describe GSPush::Modifier do
   describe ".get_modifier_from_value" do
-    subject(:modifier) { GSPush::Modifier.get_modifier_from_value(cell_value, row_number, cell_number) }
+    subject(:modifier) do
+      GSPush::Modifier.get_modifier_from_value(cell_value, row_number, cell_number) 
+    end
     let(:cell_value) { "[[format=bold]]bar" }
     let(:cell_number) { 1 }
     let(:row_number) { 1 }
@@ -19,7 +21,7 @@ describe GSPush::Modifier do
       context "with invalid formats" do
         let(:cell_value) { "[[format=foo]]bar" }
         it "raises a syntax error" do
-          expect { subject }.to raise_error(GSPush::Modifier::SyntaxError)
+          expect { subject }.to raise_error(GSPush::SyntaxError)
         end
       end
     end
@@ -33,7 +35,7 @@ describe GSPush::Modifier do
       context "with invalid align" do
         let(:cell_value) { "[[align=foo]]foo" }
         it "raises a syntax error" do
-          expect { subject }.to raise_error(GSPush::Modifier::SyntaxError)
+          expect { subject }.to raise_error(GSPush::SyntaxError)
         end
       end
     end
@@ -63,7 +65,7 @@ describe GSPush::Modifier do
       context "with unsupported modifier" do
         let(:cell_value) { "[[foo=bar]]bar" }
         it "raises a syntax error" do
-          expect { subject }.to raise_error(GSPush::Modifier::SyntaxError)
+          expect { subject }.to raise_error(GSPush::SyntaxError)
         end
       end
 

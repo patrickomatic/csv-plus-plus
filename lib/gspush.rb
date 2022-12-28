@@ -2,12 +2,11 @@ require_relative 'template'
 require_relative 'spreadsheet'
 
 module GSPush 
-  # TODO handle offsets and create flag
   def self.apply_template_to_sheet!(template_input, sheet_id, sheet_name, 
-                                    offset: 0, cell_offset: 0, key_values: {}, verbose: false)
-    template = Template.process!(template_input, key_values: key_values, verbose: verbose)
+                                    row_offset: 0, cell_offset: 0, key_values: {}, verbose: false)
+    template = Template.process!(template_input, key_values:, verbose:)
 
-    spreadsheet = Spreadsheet.new(sheet_id, sheet_name, verbose)
+    spreadsheet = Spreadsheet.new(sheet_id, sheet_name, verbose:, row_offset:, cell_offset:)
     spreadsheet.push!(template)
   rescue Google::Apis::ClientError => e
     if verbose

@@ -1,3 +1,5 @@
+require_relative 'syntax_error'
+
 module GSPush
   Expand = Struct.new(:repetitions) do
     def infinite?
@@ -11,21 +13,6 @@ module GSPush
 
   class Modifier
     MODIFIER_REGEX = /^(?<row_level>\!)?\[\[(?<modifiers>.+)\]\](?<cell_value>.*)$/
-
-    class SyntaxError < StandardError
-      def initialize(message, input, row_number, cell_number)
-        @message = message
-        @input = input
-        @row_number = row_number
-        @cell_number = cell_number
-      end
-
-      # XXX include the filename in here too
-      def to_s
-        "gspush: #@message #@row_number:#@cell_number: #@input"
-      end
-    end
-
     attr_reader :formats, :align, :value_without_modifier, :foreground_color, :expand
 
     def self.get_modifier_from_value(value, row_number, cell_number)
@@ -43,30 +30,26 @@ module GSPush
           fs = v.split(/\s+/)
           fs.each do |f|
             unless ['bold', 'underline', 'italic', 'strikethrough'].include?(f)
-              raise SyntaxError.new( "Invalid `format` modifier", f, row_number, cell_number)
+              raise SyntaxError.new( "Invalid `format` modifier", f, row_number:, cell_number:)
             end
           end
           formats += fs
         when "align"
           unless ['left', 'center', 'right'].include?(v)
-            raise SyntaxError.new("Invalid `align` modifier", v, row_number, cell_number)
+            raise SyntaxError.new("Invalid `align` modifier", v, row_number:, cell_number:)
           end
           align = v
         when "expand"
           if !v.nil? and !(m = v.match(/^(\d+)?/))
-            raise SyntaxError.new("Invalid `expand` modifier", v, row_number, cell_number)
+            raise SyntaxError.new("Invalid `expand` modifier", v, row_number:, cell_number:)
           end
           expand = Expand.new(m.nil? ? nil : m[1].to_i)
         else
-          raise SyntaxError.new('Unknown modifier', value, row_number, cell_number)
+          raise SyntaxError.new('Unknown modifier', value, row_number:, cell_number:)
         end
       end
       
-      Modifier.new(re_groups["cell_value"], 
-                   formats: formats, 
-                   align: align,
-                   expand: expand,
-                   row_level: row_level)
+      Modifier.new(re_groups["cell_value"], formats:, align:, expand:, row_level:)
     end
 
     def initialize(value_without_modifier, formats: [], align: nil, expand: nil, row_level: false)

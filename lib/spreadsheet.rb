@@ -12,10 +12,13 @@ module GSPush
 
     attr_reader :sheet_id, :sheet_name
 
-    def initialize(sheet_id, sheet_name, verbose)
+    def initialize(sheet_id, sheet_name, 
+                   verbose: false, cell_offset: 0, row_offset: 0)
       @sheet_name = sheet_name
       @sheet_id = sheet_id
       @verbose = verbose
+      @cell_offset = cell_offset
+      @row_offset = row_offset
 
       auth_with_gs!
     end
@@ -59,6 +62,7 @@ module GSPush
 
     private
 
+    # TODO use @cell_offset and @row_offset
     def update_cell_formatting!(template)
       batch_request = SheetsApi::BatchUpdateSpreadsheetRequest.new.tap do |bu|
         bu.requests = template.rows.each_slice(1000).to_a.map do |rows|
@@ -94,6 +98,7 @@ module GSPush
       @gs.batch_update_spreadsheet(@sheet_id, batch_request)
     end
 
+    # TODO use @cell_offset and @row_offset
     def update_cell_values!(template)
       request = SheetsApi::BatchUpdateValuesRequest.new.tap do |r|
         r.data = [
