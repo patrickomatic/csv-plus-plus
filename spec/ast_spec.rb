@@ -26,7 +26,13 @@ describe GSPush::AST do
       it "yields the function and arguments in order" do
         expect {|block| 
           GSPush::AST::dfs(ast, &block)
-        }.to yield_successive_args([:fn, "MULTIPLY"], [:literal, "5"], [:literal, "5"])
+        }.to yield_successive_args(
+          [:before_fn],
+          [:fn, "MULTIPLY"], 
+          [:literal, "5"], 
+          [:literal, "5"],
+          [:after_fn],
+        )
       end
     end
   end

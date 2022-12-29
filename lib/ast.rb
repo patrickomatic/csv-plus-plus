@@ -15,9 +15,12 @@ module GSPush
       if ast.first.is_a? Symbol
         yield ast
       else 
-        node, rest = ast[0], ast[1...]
+        node, rest = ast[0], ast[1]
+        type = node.first
+        yield [:before_fn]
         yield node
         rest.each {|r| self.dfs(r, &block)}
+        yield [:after_fn]
       end
     end
   end

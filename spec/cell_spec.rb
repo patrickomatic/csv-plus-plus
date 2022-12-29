@@ -49,4 +49,16 @@ describe GSPush::Cell do
       it { should eq(value) }
     end
   end
+
+  describe "#to_csv" do
+    subject { cell.to_csv }
+
+    context "with a variable" do
+      let(:value) { "=MULTIPLY(5, 5)" }
+
+      it "goes through parsing and recreates the same value" do 
+        expect(subject).to eq(value)
+      end
+    end
+  end
 end

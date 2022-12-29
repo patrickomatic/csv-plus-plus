@@ -4,17 +4,17 @@ require_relative 'ast'
 
 module GSPush
   class Cell
-    attr_reader :modifier
+    attr_reader :ast, :modifier
 
     def initialize(value, modifier = nil)
       @value = value
+      @ast = CellValueParser.new.parse(value) unless value.nil?
       @modifier = modifier
     end
 
     def interpolate_variables!(variables)
       return nil if @value.nil?
-      ast = CellValueParser.new.parse(@value)
-      @value = AST.interpolate_variables(ast, variables)
+      @ast = AST.interpolate_variables(ast, variables)
     end
 
     def value
@@ -22,8 +22,27 @@ module GSPush
       @value.strip
     end
 
-    def to_s
-      "#{@value} #{@modifier}"
+    def to_csv
+      argument_index = nil
+      str = "="
+      AST::dfs(@ast) do |node|
+        type, value = node
+        case type
+        when :fn
+          str << "#{value}("
+          argument_index = 0
+        when :literal
+          if argument_index == 0
+            str << value
+          else 
+            str << ", #{value}"
+          end
+          argument_index += 1
+        when :after_fn
+          str << ")"
+        end
+      end
+      str
     end
   end
 end
