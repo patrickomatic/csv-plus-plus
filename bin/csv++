@@ -4,6 +4,7 @@ require_relative '../lib/gspush'
 
 options = {}
 OptionParser.new do |parser|
+  parser.on("-h", "--help", "Show help information")
   parser.on("-y", "--offset-rows OFFSET", "Apply the template offset by OFFSET rows")
   parser.on("-x", "--offset-columns OFFSET", "Apply the template offset by OFFSET cells")
   parser.on("-i", "--sheet-id SHEET_ID",

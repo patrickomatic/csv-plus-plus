@@ -1,6 +1,6 @@
 # csv++
 
-A tool that allows you to work on enhanced CSV files locally in your favorite text editor, and write their results to existing Google Sheets.  This allows you to write a spreadsheet template, check it into git and push changes out to spreadsheets automatically.
+A tool that allows you to programtically author spreadsheets in your favorite text editor and write their results to existing Google Sheets (in the future it can probably support Excel).  This allows you to write a spreadsheet template, check it into git and push changes out to spreadsheets automatically.
 
 ## Setup
 
@@ -11,13 +11,16 @@ A tool that allows you to work on enhanced CSV files locally in your favorite te
 ## Usage
 
 ```
-$ ./bin/gspush -k [..] my_template.csv
-$ cat my_template.csv | ./bin/gspush -k [..]
+# apply my_taxes_template.csvpp to an existing Google Sheet with name "Taxes 2022"
+$ csv++ --sheet-name "Taxes 2022" --sheet-id "[...]" my_taxes_template.csvpp
+
+# take input from stdin, supply a variable ($$rate = 1) and apply to the "Stocks" spreadsheet
+$ cat stocks.csvpp | csv++ -k "rate=1" -n "Stocks" -i "[...]"
 ```
 
 ## Template Language
 
-This program provides an enhanced language on top of CSV.  All of the normal rules of CSV apply, with the addition that each cell can have a:
+This program provides an enhanced language on top of CSV.  All of the normal rules of CSV apply, with the addition that each cell can have modifiers (specified in `[[`/`]]` for cells and `![[`/`]]` for rows):
 
 ```
 foo,[[...]]bar,baz
@@ -30,6 +33,19 @@ specifying formatting or various other modifiers to the cell.  Additionally a ro
 ```
 
 which will apply that modifier to all cells in the row.
+
+You can also define a code section at the top of the CSV where you can put shared variables and calculations:
+
+```
+fees := 0.65 # my broker charges $0.65 a trade
+
+is_call := EQ(A$$rownum, "call")
+commission := IFS($$is_call, ADD(C$$rownum * $$fees, A$$rownum))
+
+---
+![[format=bold/align=center]]Date,Purchase,Price,Quantity,Total,Fees
+![[expand]],[[format=bold]],,,"=PROFIT(C$$rownum, D$$rownum)",$$commission
+```
 
 ### Examples
 
@@ -54,4 +70,14 @@ Date,[[align=left]]Amount,Quantity,[[align=center/format=bold italic]]Price
 
 ## Predefined variables
 
-* `$$ROW` - The current row number.  The first row of the spreadsheet starts at 1
+* `$$rownum` - The current row number.  The first row of the spreadsheet starts at 1
+
+## CLI Arguments
+
+* `-i, --sheet-id SHEET_ID` The id of the sheet - you can extract this from the URL: https://docs.google.com/spreadsheets/d/< ... SHEET_ID ... >/edit#gid=0
+* `-n, --sheet-name SHEET_NAME` The name of the sheet to apply the template to
+* `-k, --key-values KEY_VALUES` A comma-separated list of key=values which will be made available to the template
+* `-y, --offset-rows OFFSET` Apply the template offset by OFFSET rows
+* `-x, --offset-columns OFFSET` Apply the template offset by OFFSET cells
+* `-v, --verbose` Enable verbose output
+* `-h, --help` Show help information
