@@ -1,4 +1,6 @@
+require_relative 'cell_value_parser.tab'
 require_relative 'modifier'
+require_relative 'ast'
 
 module GSPush
   class Cell
@@ -11,9 +13,8 @@ module GSPush
 
     def interpolate_variables!(variables)
       return nil if @value.nil?
-      variables.each do |k, v|
-        @value.gsub!("$$#{k}", v.to_s)
-      end
+      ast = CellValueParser.new.parse(@value)
+      @value = AST.interpolate_variables(ast, variables)
     end
 
     def value

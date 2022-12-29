@@ -1,11 +1,10 @@
+require_relative 'ast'
 require_relative 'function'
 require_relative 'syntax_error'
 require_relative 'code_section_parser.tab'
 
 module GSPush
   class CodeSection
-    END_OF_CODE_SECTION = "---"
-
     attr_reader :variables
 
     def initialize(variables = {})
@@ -16,7 +15,7 @@ module GSPush
       all_lines = input.readlines.map(&:strip)
       input.rewind
 
-      eoc_index = all_lines.index(END_OF_CODE_SECTION)
+      eoc_index = all_lines.index(AST::END_OF_CODE_SECTION)
       return CodeSection.new if eoc_index.nil?
 
       variables = CodeSectionParser.new.parse(all_lines.join("\n"))

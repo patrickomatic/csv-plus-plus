@@ -4,7 +4,6 @@ require 'code_section'
 describe GSPush::CodeSection do
   describe "::parse!" do
     subject { GSPush::CodeSection.parse!(input) }
-
     let(:input) do
       Tempfile.new.tap do |f| 
         f.write(file_contents) 
@@ -20,7 +19,6 @@ describe GSPush::CodeSection do
       it "has empty variables" do
         expect(subject.variables).to be_empty
       end
-
       it "leaves the CSV in the tempfile" do
         expect(input.read).to eq("foo,bar,baz")
       end

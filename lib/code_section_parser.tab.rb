@@ -212,49 +212,49 @@ module_eval(<<'.,.,', 'code_section_parser.y', 16)
 
 module_eval(<<'.,.,', 'code_section_parser.y', 18)
   def _reduce_4(val, _values, result)
-     result = [val[0], val[2]]
+     result = [[:fn, val[0]], val[2]]
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section_parser.y', 19)
   def _reduce_5(val, _values, result)
-     result = [val[0]]
+     result = [[:fn, val[0]]]
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section_parser.y', 20)
   def _reduce_6(val, _values, result)
-     result = ["MULTIPLY", val[0], val[2]]
+     result = [[:fn, "MULTIPLY"], [val[0], val[2]]]
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section_parser.y', 21)
   def _reduce_7(val, _values, result)
-     result = ["DIVIDE", val[0], val[2]]
+     result = [[:fn, "DIVIDE"], [val[0], val[2]]]
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section_parser.y', 22)
   def _reduce_8(val, _values, result)
-     result = ["ADD", val[0], val[2]]
+     result = [[:fn, "ADD"], [val[0], val[2]]]
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section_parser.y', 23)
   def _reduce_9(val, _values, result)
-     result = ["MINUS", val[0], val[2]]
+     result = [[:fn, "MINUS"], [val[0], val[2]]]
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section_parser.y', 24)
   def _reduce_10(val, _values, result)
-     result = [:group, val[1]]
+     result = [:group, [val[1]]]
     result
   end
 .,.,

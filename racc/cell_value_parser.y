@@ -1,21 +1,13 @@
-class GSPush::CodeSectionParser
+class GSPush::CellValueParser
 prechigh
   left '(' ')'
   left '*' '/'
   left '+' '-'
 preclow
-token ID 
-      EOL
-      NUMBER 
-      STRING 
-      TRUE
-      FALSE
-      ASSIGN
+token ID EOL NUMBER STRING TRUE FALSE
 rule
-  code: code var | var
+  cell_value: '=' exp EOL { @ast = val[1] }
  
-  var: ID ASSIGN exp { @variables[val[0]]  = val[2] }
-  
   exp: ID '(' fn_call_args ')'  { result = [[:fn, val[0]], val[2]]                }
      | ID '(' ')'               { result = [[:fn, val[0]]]                        }
      | exp '*' exp              { result = [[:fn, "MULTIPLY"], [val[0], val[2]]]  }
@@ -28,34 +20,23 @@ rule
   fn_call_args: fn_call_args ',' exp  { result = [val[0], val[2]] }
               | exp                   { result = val[0] }
 
-  literal: STRING
-         | NUMBER
-         | TRUE
-         | FALSE
-         | ID
+  literal: STRING | NUMBER | TRUE | FALSE | ID
 end
 
 ---- header
 require 'strscan'
 
 ---- inner
-  attr_accessor :variables
+  attr_accessor :ast
 
   def parse(text)
+    return nil unless text.strip.start_with?('=')
     tokens = []
-    @variables = {}
 
     s = StringScanner.new text
     until s.empty?
       case
       when s.scan(/\s+/)
-      when s.scan(/\#[^\n]+\n/)
-      when s.scan(/---/) 
-        break
-      when s.scan(/\n/)  
-        tokens << [:EOL, s.matched]
-      when s.scan(/:=/)  
-        tokens << [:ASSIGN, s.matched]
       when s.scan(/TRUE/)
         tokens << [:TRUE, s.matched]
       when s.scan(/FALSE/) 
@@ -66,17 +47,17 @@ require 'strscan'
         tokens << [:NUMBER, s.matched]
       when s.scan(/[\$\w_]+/)
         tokens << [:ID, s.matched]
-      when s.scan(/[\(\)\{\}\/\*\+\-,=]/) 
+      when s.scan(/[\(\)\/\*\+\-,=]/) 
         tokens << [s.matched, s.matched]
       else
         raise "Unable to parse starting at: <#{s.peek 100}>"
       end 
     end
-    return @variables if tokens.empty?
+    tokens << [:EOL, :EOL]
 
     define_singleton_method(:next_token) { tokens.shift }
 
     do_parse
  
-    @variables
+    @ast
   end

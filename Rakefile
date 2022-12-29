@@ -1,7 +1,9 @@
-task default: %i[
-  lib/code_section_parser.tab.rb
-  spec
-]
+RACC_FILES = {
+  "lib/code_section_parser.tab.rb" => "racc/code_section_parser.y",
+  "lib/cell_value_parser.tab.rb" => "racc/cell_value_parser.y",
+}
+
+task default: RACC_FILES.keys.map(&:to_sym) + %i[spec]
 
 begin
   require 'rspec/core/rake_task'
@@ -9,7 +11,8 @@ begin
 rescue LoadError
 end
 
-file "lib/code_section_parser.tab.rb" => ["racc/code_section_parser.y"] do |t|
-  sh "racc -o #{t.name} #{t.prerequisites.join(' ')}"
+RACC_FILES.each do |dep, source|
+  file dep => source do |t|
+    sh "racc -o #{t.name} #{t.prerequisites.join(' ')}"
+  end
 end
-
