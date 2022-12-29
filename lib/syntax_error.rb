@@ -1,4 +1,4 @@
-module GSPush
+module CSVPlusPlus
   class SyntaxError < StandardError
     def initialize(message, input, 
                    row_number: nil, cell_number: nil, line_number: nil)
@@ -12,11 +12,11 @@ module GSPush
     # XXX include the filename in here too
     def to_s
       if @row_number
-        "gspush: #@message #@row_number:#@cell_number: #@input"
+        "csv++: #@message #@row_number:#@cell_number: #@input"
       elsif @line_number
-        "gspush: #@message #@line_number: #@input"
+        "csv++: #@message #@line_number: #@input"
       else
-        "gspush: #@message: #@input"
+        "csv++: #@message: #@input"
       end
     end
   end

@@ -1,6 +1,6 @@
 require_relative 'syntax_error'
 
-module GSPush
+module CSVPlusPlus
   Expand = Struct.new(:repetitions) do
     def infinite?
       repetitions.nil?

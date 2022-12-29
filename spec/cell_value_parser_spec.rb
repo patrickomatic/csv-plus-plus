@@ -1,8 +1,8 @@
 require 'cell_value_parser.tab'
 
-describe GSPush::CellValueParser do
+describe CSVPlusPlus::CellValueParser do
   describe "#parse" do 
-    subject { GSPush::CellValueParser.new.parse(cell_value) }
+    subject { CSVPlusPlus::CellValueParser.new.parse(cell_value) }
     describe "without a formula" do
       let(:cell_value) { "just a value" }
       it { should be_nil }

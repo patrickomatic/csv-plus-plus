@@ -1,6 +1,6 @@
 require 'spreadsheet'
 
-describe GSPush::Spreadsheet do
+describe CSVPlusPlus::Spreadsheet do
   let(:sheet_id) { "sheet-id1234" }
   let(:sheet_name) { "Finances" }
   subject { Spreadsheet.new(sheet_id, sheet_name) }

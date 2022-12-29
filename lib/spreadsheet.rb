@@ -1,7 +1,7 @@
 require 'googleauth'
 require 'google/apis/sheets_v4'
 
-module GSPush
+module CSVPlusPlus
   class Spreadsheet 
     SPREADSHEET_AUTH_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
     # XXX it would be nice to raise this but we shouldn't expand out more than necessary for our data

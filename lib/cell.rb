@@ -2,7 +2,7 @@ require_relative 'cell_value_parser.tab'
 require_relative 'modifier'
 require_relative 'ast'
 
-module GSPush
+module CSVPlusPlus
   class Cell
     attr_reader :ast, :modifier
 

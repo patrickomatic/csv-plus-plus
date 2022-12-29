@@ -22,14 +22,16 @@ unless sheet_id && sheet_name
   exit 1
 end
 
+key_values = Hash[[options[:"key-values"].split("=")]] rescue {}
+
 begin
-  GSPush.apply_template_to_sheet!(ARGF.read, 
-                                  sheet_id,
-                                  sheet_name,
-                                  row_offset: options[:"offset-rows"],
-                                  cell_offset: options[:"offset-cells"],
-                                  key_values: (Hash[[options[:"key-values"].split("=")]] rescue {}), 
-                                  verbose: options[:verbose])
+  CSVPlusPlus.apply_template_to_sheet!(ARGF.read, 
+                                       sheet_id,
+                                       sheet_name,
+                                       row_offset: options[:"offset-rows"],
+                                       cell_offset: options[:"offset-cells"],
+                                       key_values:,
+                                       verbose: options[:verbose])
 rescue GSPush::SyntaxError => e
   $stderr.puts e
   exit 1

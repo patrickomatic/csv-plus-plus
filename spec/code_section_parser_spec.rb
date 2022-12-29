@@ -1,8 +1,8 @@
 require 'code_section_parser.tab'
 
-describe GSPush::CodeSectionParser do
+describe CSVPlusPlus::CodeSectionParser do
   describe "#parse" do
-    subject { GSPush::CodeSectionParser.new.parse(code_section) }
+    subject { CSVPlusPlus::CodeSectionParser.new.parse(code_section) }
 
     describe "comments" do
       let(:code_section) do

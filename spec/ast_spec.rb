@@ -1,6 +1,6 @@
 require 'ast'
 
-describe GSPush::AST do
+describe CSVPlusPlus::AST do
   describe "::extract_variables" do
     # TODO
   end
@@ -10,13 +10,13 @@ describe GSPush::AST do
   end
 
   describe "::dfs" do
-    subject { GSPush::AST::dfs ast }
+    subject { AST::dfs ast }
 
     describe "a literal" do
       let(:ast) { [:literal, "5"] }
       it "yields the literal" do
         expect {|block| 
-          GSPush::AST::dfs(ast, &block)
+          CSVPlusPlus::AST::dfs(ast, &block)
         }.to yield_successive_args([:literal, "5"])
       end
     end
@@ -25,7 +25,7 @@ describe GSPush::AST do
       let(:ast) { [[:fn, "MULTIPLY"], [[:literal, "5"], [:literal, "5"]]] }
       it "yields the function and arguments in order" do
         expect {|block| 
-          GSPush::AST::dfs(ast, &block)
+          CSVPlusPlus::AST::dfs(ast, &block)
         }.to yield_successive_args(
           [:before_fn],
           [:fn, "MULTIPLY"], 

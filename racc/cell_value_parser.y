@@ -1,4 +1,4 @@
-class GSPush::CellValueParser
+class CSVPlusPlus::CellValueParser
 prechigh
   left '(' ')'
   left '*' '/'

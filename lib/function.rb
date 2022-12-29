@@ -1,4 +1,4 @@
-module GSPush
+module CSVPlusPlus
   Function = Struct.new(:name, :arguments, :body, :line_number) do
     def to_s
       "#{line_number}:=#{name}(#{arguments}) { #{body} }"

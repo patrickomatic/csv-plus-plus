@@ -1,4 +1,4 @@
-class GSPush::CodeSectionParser
+class CSVPlusPlus::CodeSectionParser
 prechigh
   left '(' ')'
   left '*' '/'

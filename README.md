@@ -1,6 +1,6 @@
-# gs-push-template 
+# csv++
 
-A tool that allows you to work on CSV-ish files locally in your favorite text editor, and write their results to existing Google Sheets.  This allows you to write a spreadsheet template, check it into git and push changes out to spreadsheets automatically.
+A tool that allows you to work on enhanced CSV files locally in your favorite text editor, and write their results to existing Google Sheets.  This allows you to write a spreadsheet template, check it into git and push changes out to spreadsheets automatically.
 
 ## Setup
 

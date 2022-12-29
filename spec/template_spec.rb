@@ -1,8 +1,8 @@
 require 'template'
 
-describe GSPush::Template do
+describe CSVPlusPlus::Template do
   describe "#process!" do
-    let(:template) { GSPush::Template.process!(input) }
+    let(:template) { CSVPlusPlus::Template.process!(input) }
     let(:input) { "foo,bar,baz" }
 
     it "creates rows" do

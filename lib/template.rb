@@ -6,7 +6,7 @@ require_relative 'row'
 require_relative 'spreadsheet'
 require_relative 'code_section'
 
-module GSPush
+module CSVPlusPlus
   class Template
     attr_reader :rows
 

@@ -3,7 +3,7 @@ require_relative 'function'
 require_relative 'syntax_error'
 require_relative 'code_section_parser.tab'
 
-module GSPush
+module CSVPlusPlus
   class CodeSection
     attr_reader :variables
 

@@ -1,8 +1,7 @@
 require 'cell'
-require 'function'
 
-describe GSPush::Cell do
-  let(:cell) { GSPush::Cell.new(value) }
+describe CSVPlusPlus::Cell do
+  let(:cell) { CSVPlusPlus::Cell.new(value) }
 
   describe "#value" do
     subject { cell.value }

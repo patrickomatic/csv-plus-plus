@@ -1,9 +1,9 @@
 require 'tempfile'
 require 'code_section'
 
-describe GSPush::CodeSection do
+describe CSVPlusPlus::CodeSection do
   describe "::parse!" do
-    subject { GSPush::CodeSection.parse!(input) }
+    subject { CSVPlusPlus::CodeSection.parse!(input) }
     let(:input) do
       Tempfile.new.tap do |f| 
         f.write(file_contents) 

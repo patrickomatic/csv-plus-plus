@@ -8,7 +8,7 @@ require 'racc/parser.rb'
 
 require 'strscan'
 
-module GSPush
+module CSVPlusPlus
   class CellValueParser < Racc::Parser
 
 module_eval(<<'...end cell_value_parser.y/module_eval...', 'cell_value_parser.y', 30)
@@ -279,4 +279,4 @@ def _reduce_none(val, _values, result)
 end
 
   end   # class CellValueParser
-end   # module GSPush
+end   # module CSVPlusPlus

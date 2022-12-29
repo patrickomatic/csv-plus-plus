@@ -8,7 +8,7 @@ require 'racc/parser.rb'
 
 require 'strscan'
 
-module GSPush
+module CSVPlusPlus
   class CodeSectionParser < Racc::Parser
 
 module_eval(<<'...end code_section_parser.y/module_eval...', 'code_section_parser.y', 42)
@@ -295,4 +295,4 @@ def _reduce_none(val, _values, result)
 end
 
   end   # class CodeSectionParser
-end   # module GSPush
+end   # module CSVPlusPlus

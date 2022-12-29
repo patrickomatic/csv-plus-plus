@@ -1,7 +1,7 @@
 require_relative 'template'
 require_relative 'spreadsheet'
 
-module GSPush 
+module CSVPlusPlus
   def self.apply_template_to_sheet!(template_input, sheet_id, sheet_name, 
                                     row_offset: 0, cell_offset: 0, key_values: {}, verbose: false)
     template = Template.process!(template_input, key_values:, verbose:)

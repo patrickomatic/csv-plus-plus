@@ -1,7 +1,7 @@
 require_relative 'modifier'
 require_relative 'cell'
 
-module GSPush
+module CSVPlusPlus
   class Row 
     attr_reader :cells, :modifier
 

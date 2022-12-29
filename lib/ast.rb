@@ -1,4 +1,4 @@
-module GSPush
+module CSVPlusPlus
   class AST
     END_OF_CODE_SECTION = "---"
     VARIABLE_REF = "$$"
@@ -16,7 +16,6 @@ module GSPush
         yield ast
       else 
         node, rest = ast[0], ast[1]
-        type = node.first
         yield [:before_fn]
         yield node
         rest.each {|r| self.dfs(r, &block)}
