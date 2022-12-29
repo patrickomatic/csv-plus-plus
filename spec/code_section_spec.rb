@@ -20,23 +20,35 @@ describe GSPush::CodeSection do
       it "has empty variables" do
         expect(subject.variables).to be_empty
       end
+
+      it "leaves the CSV in the tempfile" do
+        expect(input.read).to eq("foo,bar,baz")
+      end
     end
 
     context "with comments" do
-      let(:file_contents) { "# this is a comment\n" }
+      let(:file_contents) { "# this is a comment\n---\nfoo,bar,bar" }
 
       it { should_not be_nil }
       it "has empty variables" do
         expect(subject.variables).to be_empty
       end
+      it "leaves the CSV in the tempfile" do
+        subject
+        expect(input.read).to eq("foo,bar,bar")
+      end
     end
 
     context "with variable definitions" do
-      let(:file_contents) { "foo := 1\n" }
+      let(:file_contents) { "foo := 1\n---\nfoo,bar,baz" }
 
       it { should_not be_nil }
       it "sets a variable" do
-        expect(subject.variables).to eq({ "foo" => "1" })
+        expect(subject.variables).to eq({ "foo" => [:literal, "1"] })
+      end
+      it "leaves the CSV in the tempfile" do
+        subject
+        expect(input.read).to eq("foo,bar,baz")
       end
     end
   end

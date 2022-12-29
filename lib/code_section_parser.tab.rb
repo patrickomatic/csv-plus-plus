@@ -42,7 +42,7 @@ module_eval(<<'...end code_section_parser.y/module_eval...', 'code_section_parse
       when s.scan(/[\(\)\{\}\/\*\+\-,=]/) 
         tokens << [s.matched, s.matched]
       else
-        raise "Unable to parse starting at: <#{s.rest}>"
+        raise "Unable to parse starting at: <#{s.peek 100}>"
       end 
     end
     return @variables if tokens.empty?

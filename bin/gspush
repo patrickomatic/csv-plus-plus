@@ -30,7 +30,7 @@ begin
                                   cell_offset: options[:"offset-cells"],
                                   key_values: (Hash[[options[:"key-values"].split("=")]] rescue {}), 
                                   verbose: options[:verbose])
-rescue GSPush::Modifier::SyntaxError => e
+rescue GSPush::SyntaxError => e
   $stderr.puts e
   exit 1
 end

@@ -69,7 +69,7 @@ require 'strscan'
       when s.scan(/[\(\)\{\}\/\*\+\-,=]/) 
         tokens << [s.matched, s.matched]
       else
-        raise "Unable to parse starting at: <#{s.rest}>"
+        raise "Unable to parse starting at: <#{s.peek 100}>"
       end 
     end
     return @variables if tokens.empty?

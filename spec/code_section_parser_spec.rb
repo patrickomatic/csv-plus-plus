@@ -50,8 +50,6 @@ foo,bar,baz
 " 
     end
 
-    it { should eq({"foo" => ["ADD", 
-                              [["MULTIPLY", [[:literal, "C1"], [:literal, "8"]]], 
-                               [:literal, "42"]]]}) }
+    it { should eq({"foo" => ["ADD", [["MULTIPLY", [[:literal, "C1"], [:literal, "8"]]], [:literal, "42"]]]}) }
   end
 end
