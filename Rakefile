@@ -33,6 +33,7 @@ namespace :test do
     task :stocks do
       sh %Q!./bin/csv++ -n "Test: Stocks" -i #{ENV['GOOGLE_SHEET_ID']} examples/stocks.csvpp!
     end
+
     task :all_modifiers do
       sh %Q!./bin/csv++ -n "Test: All Modifiers" -i #{ENV['GOOGLE_SHEET_ID']} examples/all_modifiers.csvpp!
     end

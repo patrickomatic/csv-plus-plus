@@ -3,6 +3,7 @@ prechigh
   left '(' ')'
   left '*' '/'
   left '+' '-'
+  left '&'
 preclow
 
 token ID EOL NUMBER STRING TRUE FALSE ASSIGN
@@ -14,6 +15,7 @@ rule
   
   exp: ID '(' fn_call_args ')'        { result = [[:fn, val[0]], val[2]]                }
      | ID '(' ')'                     { result = [[:fn, val[0]]]                        }
+     | exp '&' exp                    { result = [[:fn, "CONCAT"], [val[0], val[2]]]    }
      | exp '*' exp                    { result = [[:fn, "MULTIPLY"], [val[0], val[2]]]  }
      | exp '/' exp                    { result = [[:fn, "DIVIDE"], [val[0], val[2]]]    }
      | exp '+' exp                    { result = [[:fn, "ADD"], [val[0], val[2]]]       }
@@ -59,7 +61,7 @@ require_relative 'code_section'
         tokens << [:NUMBER, s.matched]
       when s.scan(/[\$\w_]+/)
         tokens << [:ID, s.matched]
-      when s.scan(/[\(\)\{\}\/\*\+\-,=]/) 
+      when s.scan(/[\(\)\{\}\/\*\+\-,=&]/)
         tokens << [s.matched, s.matched]
       else
         raise SyntaxError.new("Unable to parse starting at", s.peek(100))
