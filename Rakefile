@@ -19,21 +19,25 @@ rescue LoadError
 end
 
 RACC_FILES.each do |dep, source|
+  desc "Compile #{dep}"
   file dep => source do |t|
     sh "racc -o #{t.name} #{t.prerequisites.join(' ')}"
   end
 end
 
+desc "Remove generated files"
 task :clean do
   sh "rm -f #{RACC_FILES.keys.join(' ')}"
 end
 
 namespace :test do
   namespace :integration do
+    desc "Test with the examples/stocks.csvpp template"
     task :stocks do
       sh %Q!./bin/csv++ -n "Test: Stocks" -i #{ENV['GOOGLE_SHEET_ID']} examples/stocks.csvpp!
     end
 
+    desc "Test with the examples/all_modifiers.csvpp template"
     task :all_modifiers do
       sh %Q!./bin/csv++ -n "Test: All Modifiers" -i #{ENV['GOOGLE_SHEET_ID']} examples/all_modifiers.csvpp!
     end
