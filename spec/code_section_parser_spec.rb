@@ -1,4 +1,4 @@
-require 'code_section_parser.tab'
+require 'code_section.tab'
 
 describe CSVPlusPlus::CodeSectionParser do
   describe "#parse" do

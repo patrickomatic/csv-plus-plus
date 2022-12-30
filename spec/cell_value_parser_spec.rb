@@ -1,4 +1,4 @@
-require 'cell_value_parser.tab'
+require 'cell_value.tab'
 
 describe CSVPlusPlus::CellValueParser do
   describe "#parse" do 

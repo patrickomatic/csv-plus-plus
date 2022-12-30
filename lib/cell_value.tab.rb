@@ -11,7 +11,7 @@ require 'strscan'
 module CSVPlusPlus
   class CellValueParser < Racc::Parser
 
-module_eval(<<'...end cell_value_parser.y/module_eval...', 'cell_value_parser.y', 30)
+module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 30)
   attr_accessor :ast
 
   def parse(text)
@@ -46,7 +46,7 @@ module_eval(<<'...end cell_value_parser.y/module_eval...', 'cell_value_parser.y'
  
     @ast
   end
-...end cell_value_parser.y/module_eval...
+...end cell_value.y/module_eval...
 ##### State transition tables begin ###
 
 racc_action_table = [
@@ -187,77 +187,77 @@ Racc_debug_parser = false
 
 # reduce 0 omitted
 
-module_eval(<<'.,.,', 'cell_value_parser.y', 8)
+module_eval(<<'.,.,', 'cell_value.y', 8)
   def _reduce_1(val, _values, result)
      @ast = val[1]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value_parser.y', 10)
+module_eval(<<'.,.,', 'cell_value.y', 10)
   def _reduce_2(val, _values, result)
      result = [[:fn, val[0]], val[2]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value_parser.y', 11)
+module_eval(<<'.,.,', 'cell_value.y', 11)
   def _reduce_3(val, _values, result)
      result = [[:fn, val[0]]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value_parser.y', 12)
+module_eval(<<'.,.,', 'cell_value.y', 12)
   def _reduce_4(val, _values, result)
      result = [[:fn, "MULTIPLY"], [val[0], val[2]]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value_parser.y', 13)
+module_eval(<<'.,.,', 'cell_value.y', 13)
   def _reduce_5(val, _values, result)
      result = [[:fn, "DIVIDE"], [val[0], val[2]]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value_parser.y', 14)
+module_eval(<<'.,.,', 'cell_value.y', 14)
   def _reduce_6(val, _values, result)
      result = [[:fn, "ADD"], [val[0], val[2]]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value_parser.y', 15)
+module_eval(<<'.,.,', 'cell_value.y', 15)
   def _reduce_7(val, _values, result)
      result = [[:fn, "MINUS"], [val[0], val[2]]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value_parser.y', 16)
+module_eval(<<'.,.,', 'cell_value.y', 16)
   def _reduce_8(val, _values, result)
      result = [:group, [val[1]]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value_parser.y', 17)
+module_eval(<<'.,.,', 'cell_value.y', 17)
   def _reduce_9(val, _values, result)
      result = [:literal, val[0]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value_parser.y', 19)
+module_eval(<<'.,.,', 'cell_value.y', 19)
   def _reduce_10(val, _values, result)
      result = [val[0], val[2]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value_parser.y', 20)
+module_eval(<<'.,.,', 'cell_value.y', 20)
   def _reduce_11(val, _values, result)
      result = val[0]
     result

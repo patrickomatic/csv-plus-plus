@@ -1,7 +1,7 @@
 require_relative 'ast'
 require_relative 'function'
 require_relative 'syntax_error'
-require_relative 'code_section_parser.tab'
+require_relative 'code_section.tab'
 
 module CSVPlusPlus
   class CodeSection

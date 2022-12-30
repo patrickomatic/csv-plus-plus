@@ -1,6 +1,6 @@
 RACC_FILES = {
-  "lib/code_section_parser.tab.rb" => "racc/code_section_parser.y",
-  "lib/cell_value_parser.tab.rb" => "racc/cell_value_parser.y",
+  "lib/code_section.tab.rb" => "parsers/code_section.y",
+  "lib/cell_value.tab.rb" => "parsers/cell_value.y",
 }
 
 task default: RACC_FILES.keys.map(&:to_sym) + %i[spec]

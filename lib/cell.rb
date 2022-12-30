@@ -1,4 +1,4 @@
-require_relative 'cell_value_parser.tab'
+require_relative 'cell_value.tab'
 require_relative 'modifier'
 require_relative 'ast'
 
