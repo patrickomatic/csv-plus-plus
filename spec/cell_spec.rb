@@ -23,29 +23,19 @@ describe CSVPlusPlus::Cell do
   end
 
   describe "#interpolate_variables!" do
-    let(:variables) { { rownum: 1 } }
+    let(:variables) { { "rownum" => [:literal, "1"] } }
     before(:each) { cell.interpolate_variables!(variables) }
 
-    subject { cell.value }
+    subject { cell.ast }
 
     context "with variables to interpolate" do
       let(:value) { "=2 + $$rownum" }
-      it { should eq("=2 + 1") }
+      it { should eq([[:fn, "ADD"], [[:literal, "2"], [:literal, "1"]]]) }
 
       context "when the same value needs to be interpolated multiple times" do
         let(:value) { "=$$rownum - $$rownum" }
-        it { should eq("=1 - 1") }
+        it { should eq([[:fn, "MINUS"], [[:literal, "1"], [:literal, "1"]]]) }
       end
-    end
-
-    context "when value is nil" do
-      let(:value) { nil }
-      it { should be_nil }
-    end
-
-    context "with no variables to interpolate" do
-      let(:value) { "test" }
-      it { should eq(value) }
     end
   end
 

@@ -62,8 +62,9 @@ module CSVPlusPlus
       @rows.each.with_index(1) do |row, row_number|
         row.cells.each do |cell|
           cell.interpolate_variables!({ 
-            rownum: row_number, 
+            rownum: [:literal, row_number], 
             **variables,
+            # XXX need to convert key_values to the literal format
             **@key_values,
           })
         end

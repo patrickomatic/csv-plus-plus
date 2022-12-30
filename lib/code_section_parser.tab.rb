@@ -11,7 +11,7 @@ require 'strscan'
 module CSVPlusPlus
   class CodeSectionParser < Racc::Parser
 
-module_eval(<<'...end code_section_parser.y/module_eval...', 'code_section_parser.y', 42)
+module_eval(<<'...end code_section_parser.y/module_eval...', 'code_section_parser.y', 34)
   attr_accessor :variables
 
   def parse(text)
@@ -203,77 +203,77 @@ Racc_debug_parser = false
 
 # reduce 2 omitted
 
-module_eval(<<'.,.,', 'code_section_parser.y', 16)
+module_eval(<<'.,.,', 'code_section_parser.y', 12)
   def _reduce_3(val, _values, result)
-     @variables[val[0]]  = val[2]
+     @variables[val[0]] = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section_parser.y', 18)
+module_eval(<<'.,.,', 'code_section_parser.y', 14)
   def _reduce_4(val, _values, result)
      result = [[:fn, val[0]], val[2]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section_parser.y', 19)
+module_eval(<<'.,.,', 'code_section_parser.y', 15)
   def _reduce_5(val, _values, result)
      result = [[:fn, val[0]]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section_parser.y', 20)
+module_eval(<<'.,.,', 'code_section_parser.y', 16)
   def _reduce_6(val, _values, result)
      result = [[:fn, "MULTIPLY"], [val[0], val[2]]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section_parser.y', 21)
+module_eval(<<'.,.,', 'code_section_parser.y', 17)
   def _reduce_7(val, _values, result)
      result = [[:fn, "DIVIDE"], [val[0], val[2]]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section_parser.y', 22)
+module_eval(<<'.,.,', 'code_section_parser.y', 18)
   def _reduce_8(val, _values, result)
      result = [[:fn, "ADD"], [val[0], val[2]]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section_parser.y', 23)
+module_eval(<<'.,.,', 'code_section_parser.y', 19)
   def _reduce_9(val, _values, result)
      result = [[:fn, "MINUS"], [val[0], val[2]]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section_parser.y', 24)
+module_eval(<<'.,.,', 'code_section_parser.y', 20)
   def _reduce_10(val, _values, result)
      result = [:group, [val[1]]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section_parser.y', 25)
+module_eval(<<'.,.,', 'code_section_parser.y', 21)
   def _reduce_11(val, _values, result)
      result = [:literal, val[0]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section_parser.y', 27)
+module_eval(<<'.,.,', 'code_section_parser.y', 23)
   def _reduce_12(val, _values, result)
      result = [val[0], val[2]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section_parser.y', 28)
+module_eval(<<'.,.,', 'code_section_parser.y', 24)
   def _reduce_13(val, _values, result)
      result = val[0]
     result

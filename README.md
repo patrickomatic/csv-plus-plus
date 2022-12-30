@@ -34,7 +34,7 @@ specifying formatting or various other modifiers to the cell.  Additionally a ro
 
 which will apply that modifier to all cells in the row.
 
-You can also define a code section at the top of the CSV where you can put shared variables and calculations:
+You can also define a code section at the top of the CSV to put shared variables and calculations:
 
 ```
 fees := 0.65 # my broker charges $0.65 a trade

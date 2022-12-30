@@ -13,8 +13,8 @@ module CSVPlusPlus
     end
 
     def interpolate_variables!(variables)
-      return nil if @value.nil?
-      @ast = AST.interpolate_variables(ast, variables)
+      return nil if @value.nil? || @ast.nil?
+      @ast = AST::interpolate_variables(@ast, variables)
     end
 
     def value
@@ -24,25 +24,19 @@ module CSVPlusPlus
 
     def to_csv
       argument_index = nil
-      str = "="
-      AST::dfs(@ast) do |node|
+      "=" + (AST::depth_first_search @ast do |node|
         type, value = node
         case type
         when :fn
-          str << "#{value}("
           argument_index = 0
+          "#{value}("
         when :literal
-          if argument_index == 0
-            str << value
-          else 
-            str << ", #{value}"
-          end
           argument_index += 1
+          argument_index == 1 ? value : ", #{value}"
         when :after_fn
-          str << ")"
+          ")"
         end
-      end
-      str
+      end).join('')
     end
   end
 end

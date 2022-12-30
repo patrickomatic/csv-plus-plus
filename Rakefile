@@ -16,3 +16,7 @@ RACC_FILES.each do |dep, source|
     sh "racc -o #{t.name} #{t.prerequisites.join(' ')}"
   end
 end
+
+task :clean do
+  sh "rm -f #{RACC_FILES.keys.join(' ')}"
+end
