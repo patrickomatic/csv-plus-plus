@@ -7,11 +7,12 @@
 require 'racc/parser.rb'
 
 require 'strscan'
+require_relative 'syntax_error'
 
 module CSVPlusPlus
   class CellValueParser < Racc::Parser
 
-module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 30)
+module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 31)
   attr_accessor :ast
 
   def parse(text)
@@ -35,7 +36,7 @@ module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 30)
       when s.scan(/[\(\)\/\*\+\-,=]/) 
         tokens << [s.matched, s.matched]
       else
-        raise "Unable to parse starting at: <#{s.peek 100}>"
+        raise SyntaxError.new("Unable to parse starting at", s.peek(100))
       end 
     end
     tokens << [:EOL, :EOL]

@@ -1,12 +1,14 @@
 module CSVPlusPlus
   class SyntaxError < StandardError
     def initialize(message, input, 
-                   row_number: nil, cell_number: nil, line_number: nil)
+                   row_number: nil, cell_number: nil, line_number: nil,
+                   wrapped_error: nil)
       @message = message
       @input = input
       @line_number = line_number
       @row_number = row_number
       @cell_number = cell_number
+      @wrapped_error = wrapped_error
     end
 
     # XXX include the filename in here too

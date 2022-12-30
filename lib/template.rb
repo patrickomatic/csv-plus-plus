@@ -1,6 +1,5 @@
 require 'csv'
 require 'tempfile'
-require_relative 'modifier'
 require_relative 'row'
 # TODO break this dependency (we only need it for SPREADSHEET_INFINITY)
 require_relative 'spreadsheet'

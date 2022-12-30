@@ -1,4 +1,4 @@
-require_relative 'modifier'
+require_relative 'modifier.tab'
 require_relative 'cell'
 
 module CSVPlusPlus
@@ -7,15 +7,17 @@ module CSVPlusPlus
 
     def self.parse_row(csv_row, row_number)
       row_modifier = nil
+
       cells = csv_row.map.with_index do |value, cell_number|
-        modifier = Modifier.get_modifier_from_value(value, row_number, cell_number)
+        modifier = ModifierParser.new.parse(value, row_number, cell_number)
+
         if modifier && modifier.row_level?
           row_modifier = modifier
-          Cell.new(modifier.value_without_modifier)
+          Cell.new value
         elsif modifier
-          Cell.new(modifier.value_without_modifier, modifier)
+          Cell.new(value, modifier)
         else
-          Cell.new(value)
+          Cell.new value
         end
       end
 

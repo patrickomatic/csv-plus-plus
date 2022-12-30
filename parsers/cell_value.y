@@ -25,6 +25,7 @@ end
 
 ---- header
 require 'strscan'
+require_relative 'syntax_error'
 
 ---- inner
   attr_accessor :ast
@@ -50,7 +51,7 @@ require 'strscan'
       when s.scan(/[\(\)\/\*\+\-,=]/) 
         tokens << [s.matched, s.matched]
       else
-        raise "Unable to parse starting at: <#{s.peek 100}>"
+        raise SyntaxError.new("Unable to parse starting at", s.peek(100))
       end 
     end
     tokens << [:EOL, :EOL]
