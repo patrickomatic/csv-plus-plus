@@ -25,11 +25,7 @@ describe CSVPlusPlus::AST do
     it { should eq([[:fn, "MULTIPLY$$"], [variables["rownum"], variables["foo"]]]) }
 
     context "with undefined variables" do
-      let(:variables) {
-        {
-          "foo" => [:literal, "$$thisdoesnotexist"],
-        }
-      }
+      let(:variables) { { "foo" => [:literal, "$$thisdoesnotexist"] } }
 
       it "should raise a SyntaxError" do
         expect { subject }.to raise_error(CSVPlusPlus::SyntaxError)
@@ -55,8 +51,6 @@ describe CSVPlusPlus::AST do
 
   describe "::depth_first_search" do
     let(:ast) { [[:fn, "MULTIPLY"], [[:literal, "5"], [:literal, "5"]]] }
-
-    subject { AST::dfs ast }
 
     it "accumulates each value returned by the block" do
       expect(CSVPlusPlus::AST::depth_first_search(ast) {|n| 1 }).to eq([1, 1, 1, 1, 1])
