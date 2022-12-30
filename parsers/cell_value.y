@@ -58,7 +58,11 @@ require_relative 'syntax_error'
 
     define_singleton_method(:next_token) { tokens.shift }
 
-    do_parse
- 
+    begin
+      do_parse
+    rescue Racc::ParseError => e
+      raise SyntaxError.new("Error parsing code section", e.message, 
+                    wrapped_error: e, row_number:, cell_number:,)
+    end
     @ast
   end

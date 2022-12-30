@@ -43,8 +43,12 @@ module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 31)
 
     define_singleton_method(:next_token) { tokens.shift }
 
-    do_parse
- 
+    begin
+      do_parse
+    rescue Racc::ParseError => e
+      raise SyntaxError.new("Error parsing code section", e.message, 
+                    wrapped_error: e, row_number:, cell_number:,)
+    end
     @ast
   end
 ...end cell_value.y/module_eval...

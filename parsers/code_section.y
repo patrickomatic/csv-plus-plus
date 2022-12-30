@@ -29,14 +29,14 @@ end
 
 ---- header
 require 'strscan'
-require 'syntax_error'
+require_relative 'syntax_error'
+require_relative 'code_section'
 
 ---- inner
   attr_accessor :variables
 
   def parse(text)
     tokens = []
-    @variables = {}
 
     s = StringScanner.new text
     until s.empty?
@@ -65,11 +65,16 @@ require 'syntax_error'
         raise SyntaxError.new("Unable to parse starting at", s.peek(100))
       end 
     end
-    return @variables if tokens.empty?
+    return CodeSection.new if tokens.empty?
 
     define_singleton_method(:next_token) { tokens.shift }
 
-    do_parse
- 
-    @variables
+    @variables = {}
+    begin
+      do_parse
+    rescue Racc::ParseError => e
+      raise SyntaxError.new("Error parsing code section", e.message, 
+                    wrapped_error: e, row_number:, cell_number:,)
+    end
+    CodeSection.new(@variables)
   end

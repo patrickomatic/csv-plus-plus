@@ -18,7 +18,7 @@ module CSVPlusPlus
       eoc_index = all_lines.index(AST::END_OF_CODE_SECTION)
       return CodeSection.new if eoc_index.nil?
 
-      variables = CodeSectionParser.new.parse(all_lines.join("\n"))
+      code_section = CodeSectionParser.new.parse(all_lines.join("\n"))
 
       csv_lines = all_lines[(eoc_index + 1) ...]
 
@@ -26,7 +26,7 @@ module CSVPlusPlus
       input.write(csv_lines.join("\n"))
       input.rewind
 
-      CodeSection.new(variables)
+      code_section
     end
   end
 end

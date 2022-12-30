@@ -7,17 +7,17 @@
 require 'racc/parser.rb'
 
 require 'strscan'
-require 'syntax_error'
+require_relative 'syntax_error'
+require_relative 'code_section'
 
 module CSVPlusPlus
   class CodeSectionParser < Racc::Parser
 
-module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 35)
+module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 36)
   attr_accessor :variables
 
   def parse(text)
     tokens = []
-    @variables = {}
 
     s = StringScanner.new text
     until s.empty?
@@ -46,13 +46,18 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 35)
         raise SyntaxError.new("Unable to parse starting at", s.peek(100))
       end 
     end
-    return @variables if tokens.empty?
+    return CodeSection.new if tokens.empty?
 
     define_singleton_method(:next_token) { tokens.shift }
 
-    do_parse
- 
-    @variables
+    @variables = {}
+    begin
+      do_parse
+    rescue Racc::ParseError => e
+      raise SyntaxError.new("Error parsing code section", e.message, 
+                    wrapped_error: e, row_number:, cell_number:,)
+    end
+    CodeSection.new(@variables)
   end
 ...end code_section.y/module_eval...
 ##### State transition tables begin ###

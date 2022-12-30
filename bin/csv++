@@ -33,7 +33,7 @@ begin
                                        cell_offset: options[:"offset-cells"],
                                        key_values:,
                                        verbose: options[:verbose])
-rescue GSPush::SyntaxError => e
+rescue CSVPlusPlus::SyntaxError => e
   $stderr.puts e
   exit 1
 end

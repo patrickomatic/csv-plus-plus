@@ -2,7 +2,7 @@ require 'code_section.tab'
 
 describe CSVPlusPlus::CodeSectionParser do
   describe "#parse" do
-    subject { CSVPlusPlus::CodeSectionParser.new.parse(code_section) }
+    subject { CSVPlusPlus::CodeSectionParser.new.parse(code_section).variables }
 
     describe "comments" do
       let(:code_section) do
