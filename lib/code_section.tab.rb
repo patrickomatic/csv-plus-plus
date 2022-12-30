@@ -40,7 +40,7 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 38)
         tokens << [:NUMBER, s.matched]
       when s.scan(/[\$\w_]+/)
         tokens << [:ID, s.matched]
-      when s.scan(/[\(\)\{\}\/\*\+\-,=&]/) 
+      when s.scan(/[\(\)\{\}\/\*\+\-,=&]/)
         tokens << [s.matched, s.matched]
       else
         raise SyntaxError.new("Unable to parse starting at", s.peek(100))
@@ -54,8 +54,7 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 38)
     begin
       do_parse
     rescue Racc::ParseError => e
-      raise SyntaxError.new("Error parsing code section", e.message, 
-                    wrapped_error: e, row_number:, cell_number:,)
+      raise SyntaxError.new("Error parsing code section", e.message, wrapped_error: e)
     end
     CodeSection.new(@variables)
   end

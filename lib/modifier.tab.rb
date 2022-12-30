@@ -16,6 +16,7 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 100)
   attr_accessor :modifiers, :row_level
 
   def parse(text, row_number = nil, cell_number = nil)
+    return nil if text.nil?
     return nil unless text.strip.start_with?("[[") || text.start_with?("![[")
     tokens = []
 
@@ -57,7 +58,7 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 100)
       do_parse
     rescue Racc::ParseError => e
       raise SyntaxError.new("Error parsing modifier", e.message, 
-                    wrapped_error: e, row_number:, cell_number:,)
+          wrapped_error: e, row_number:, cell_number:,)
     end
     @m
   end

@@ -33,7 +33,7 @@ module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 32)
         tokens << [:NUMBER, s.matched]
       when s.scan(/[\$\w_]+/)
         tokens << [:ID, s.matched]
-      when s.scan(/[\(\)\/\*\+\-,=&]/) 
+      when s.scan(/[\(\)\/\*\+\-,=&]/)
         tokens << [s.matched, s.matched]
       else
         raise SyntaxError.new("Unable to parse starting at", s.peek(100))

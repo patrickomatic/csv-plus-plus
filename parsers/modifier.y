@@ -24,17 +24,17 @@ rule
 
   modifier: 'align'       '=' align_options
           | 'border'      '=' border_options
-          | 'borderstyle' '=' borderstyle_option  { @m.borderstyle = val[2]                       }  
+          | 'borderstyle' '=' borderstyle_option  { @m.borderstyle = val[2]                       }
           | 'expand'      '=' INTEGER             { @m.expand = Modifier::Expand.new val[2].to_i  }
-          | 'expand'                              { @m.expand = Modifier::Expand.new              }  
-          | 'font'        '=' STRING              { @m.font = val[2]                              }  
-          | 'fontfamily'  '=' INTEGER             { @m.fontfamily = val[2]                        }  
-          | 'fontcolor'   '=' STRING | HEX_COLOR  { @m.fontcolor = val[2]                         }  
+          | 'expand'                              { @m.expand = Modifier::Expand.new              }
+          | 'font'        '=' STRING              { @m.font = val[2]                              }
+          | 'fontfamily'  '=' INTEGER             { @m.fontfamily = val[2]                        }
+          | 'fontcolor'   '=' STRING | HEX_COLOR  { @m.fontcolor = val[2]                         }
           | 'format'      '=' format_options
           | 'freeze'                              { @m.freeze!                                    }
-          | 'hyperlink'   '=' URL                 { @m.hyperlink = val[2]                         }  
-          | 'note'        '=' STRING              { @m.note = val[2]                              }  
-          | 'validate'    '=' condition           { @m.validation = val[2]                        }  
+          | 'hyperlink'   '=' URL                 { @m.hyperlink = val[2]                         }
+          | 'note'        '=' STRING              { @m.note = val[2]                              }
+          | 'validate'    '=' condition           { @m.validation = val[2]                        }
 
   format_options: format_options format_option | format_option { @m.formats = val[0] }
   format_option: 'bold' | 'italic' | 'strikethrough' | 'underline'
@@ -100,6 +100,7 @@ require_relative 'modifier'
   attr_accessor :modifiers, :row_level
 
   def parse(text, row_number = nil, cell_number = nil)
+    return nil if text.nil?
     return nil unless text.strip.start_with?("[[") || text.start_with?("![[")
     tokens = []
 
@@ -107,11 +108,11 @@ require_relative 'modifier'
     until s.empty?
       case
       when s.scan(/\s+/)
-      when s.scan(/\[\[/)  
+      when s.scan(/\[\[/)
         tokens << [:START_CELL_MODIFIERS, s.matched]
-      when s.scan(/\!\[\[/)  
+      when s.scan(/\!\[\[/)
         tokens << [:START_ROW_MODIFIERS, s.matched]
-      when s.scan(/\]\]/)  
+      when s.scan(/\]\]/)
         tokens << [:END_MODIFIERS, s.matched]
         break
       when s.scan(/\#[a-fA-F0-9]{3,6};?/)
@@ -122,14 +123,14 @@ require_relative 'modifier'
         tokens << [s.matched, s.matched]
       when s.scan(/-?\d+/)
         tokens << [:INTEGER, s.matched]
-      when s.scan(/\w+:\/\/.+/)  
+      when s.scan(/\w+:\/\/.+/)
         tokens << [:URL, s.matched]
       when s.scan(/\//) 
         tokens << [:MODIFIER_SEPARATOR, s.matched]
       when s.scan(/\w+/)
         tokens << [s.matched, s.matched]
       else
-        raise SyntaxError.new("Unable to parse starting at", s.peek(100), 
+        raise SyntaxError.new("Unable to parse starting at", s.peek(100),
                   row_number:, cell_number:,)
       end 
     end
@@ -140,8 +141,8 @@ require_relative 'modifier'
     begin
       do_parse
     rescue Racc::ParseError => e
-      raise SyntaxError.new("Error parsing modifier", e.message, 
-                    wrapped_error: e, row_number:, cell_number:,)
+      raise SyntaxError.new("Error parsing modifier", e.message,
+          wrapped_error: e, row_number:, cell_number:,)
     end
     @m
   end

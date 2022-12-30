@@ -41,7 +41,7 @@ require_relative 'syntax_error'
       when s.scan(/\s+/)
       when s.scan(/TRUE/)
         tokens << [:TRUE, s.matched]
-      when s.scan(/FALSE/) 
+      when s.scan(/FALSE/)
         tokens << [:FALSE, s.matched]
       when s.scan(/"(?:[^"\\]|\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/)
         tokens << [:STRING, s.matched]
@@ -62,7 +62,7 @@ require_relative 'syntax_error'
     begin
       do_parse
     rescue Racc::ParseError => e
-      raise SyntaxError.new("Error parsing code section", e.message, 
+      raise SyntaxError.new("Error parsing code section", e.message,
                     wrapped_error: e, row_number:, cell_number:,)
     end
     @ast

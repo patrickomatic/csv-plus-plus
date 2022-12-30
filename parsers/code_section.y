@@ -10,9 +10,9 @@ token ID EOL NUMBER STRING TRUE FALSE ASSIGN
 
 rule
   code: code var | var
- 
+
   var: ID ASSIGN exp                  { @variables[val[0]] = val[2] }
-  
+
   exp: ID '(' fn_call_args ')'        { result = [[:fn, val[0]], val[2]]                }
      | ID '(' ')'                     { result = [[:fn, val[0]]]                        }
      | exp '&' exp                    { result = [[:fn, "CONCAT"], [val[0], val[2]]]    }
@@ -45,15 +45,15 @@ require_relative 'code_section'
       case
       when s.scan(/\s+/)
       when s.scan(/\#[^\n]+\n/)
-      when s.scan(/---/) 
+      when s.scan(/---/)
         break
-      when s.scan(/\n/)  
+      when s.scan(/\n/)
         tokens << [:EOL, s.matched]
-      when s.scan(/:=/)  
+      when s.scan(/:=/)
         tokens << [:ASSIGN, s.matched]
       when s.scan(/TRUE/)
         tokens << [:TRUE, s.matched]
-      when s.scan(/FALSE/) 
+      when s.scan(/FALSE/)
         tokens << [:FALSE, s.matched]
       when s.scan(/"(?:[^"\\]|\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/)
         tokens << [:STRING, s.matched]
@@ -65,7 +65,7 @@ require_relative 'code_section'
         tokens << [s.matched, s.matched]
       else
         raise SyntaxError.new("Unable to parse starting at", s.peek(100))
-      end 
+      end
     end
     return CodeSection.new if tokens.empty?
 
@@ -75,8 +75,7 @@ require_relative 'code_section'
     begin
       do_parse
     rescue Racc::ParseError => e
-      raise SyntaxError.new("Error parsing code section", e.message, 
-                    wrapped_error: e, row_number:, cell_number:,)
+      raise SyntaxError.new("Error parsing code section", e.message, wrapped_error: e)
     end
     CodeSection.new(@variables)
   end
