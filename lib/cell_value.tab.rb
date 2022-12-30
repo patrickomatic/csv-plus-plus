@@ -25,7 +25,7 @@ module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 32)
       when s.scan(/\s+/)
       when s.scan(/TRUE/)
         tokens << [:TRUE, s.matched]
-      when s.scan(/FALSE/) 
+      when s.scan(/FALSE/)
         tokens << [:FALSE, s.matched]
       when s.scan(/"(?:[^"\\]|\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/)
         tokens << [:STRING, s.matched]
@@ -46,7 +46,7 @@ module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 32)
     begin
       do_parse
     rescue Racc::ParseError => e
-      raise SyntaxError.new("Error parsing code section", e.message, 
+      raise SyntaxError.new("Error parsing code section", e.message,
                     wrapped_error: e, row_number:, cell_number:,)
     end
     @ast

@@ -24,11 +24,11 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 100)
     until s.empty?
       case
       when s.scan(/\s+/)
-      when s.scan(/\[\[/)  
+      when s.scan(/\[\[/)
         tokens << [:START_CELL_MODIFIERS, s.matched]
-      when s.scan(/\!\[\[/)  
+      when s.scan(/\!\[\[/)
         tokens << [:START_ROW_MODIFIERS, s.matched]
-      when s.scan(/\]\]/)  
+      when s.scan(/\]\]/)
         tokens << [:END_MODIFIERS, s.matched]
         break
       when s.scan(/\#[a-fA-F0-9]{3,6};?/)
@@ -39,16 +39,16 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 100)
         tokens << [s.matched, s.matched]
       when s.scan(/-?\d+/)
         tokens << [:INTEGER, s.matched]
-      when s.scan(/\w+:\/\/.+/)  
+      when s.scan(/\w+:\/\/.+/)
         tokens << [:URL, s.matched]
       when s.scan(/\//) 
         tokens << [:MODIFIER_SEPARATOR, s.matched]
       when s.scan(/\w+/)
         tokens << [s.matched, s.matched]
       else
-        raise SyntaxError.new("Unable to parse starting at", s.peek(100), 
+        raise SyntaxError.new("Unable to parse starting at", s.peek(100),
                   row_number:, cell_number:,)
-      end 
+      end
     end
 
     define_singleton_method(:next_token) { tokens.shift }
@@ -57,7 +57,7 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 100)
     begin
       do_parse
     rescue Racc::ParseError => e
-      raise SyntaxError.new("Error parsing modifier", e.message, 
+      raise SyntaxError.new("Error parsing modifier", e.message,
           wrapped_error: e, row_number:, cell_number:,)
     end
     @m

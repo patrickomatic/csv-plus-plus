@@ -132,7 +132,7 @@ require_relative 'modifier'
       else
         raise SyntaxError.new("Unable to parse starting at", s.peek(100),
                   row_number:, cell_number:,)
-      end 
+      end
     end
 
     define_singleton_method(:next_token) { tokens.shift }

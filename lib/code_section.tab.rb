@@ -24,15 +24,15 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 38)
       case
       when s.scan(/\s+/)
       when s.scan(/\#[^\n]+\n/)
-      when s.scan(/---/) 
+      when s.scan(/---/)
         break
-      when s.scan(/\n/)  
+      when s.scan(/\n/)
         tokens << [:EOL, s.matched]
-      when s.scan(/:=/)  
+      when s.scan(/:=/)
         tokens << [:ASSIGN, s.matched]
       when s.scan(/TRUE/)
         tokens << [:TRUE, s.matched]
-      when s.scan(/FALSE/) 
+      when s.scan(/FALSE/)
         tokens << [:FALSE, s.matched]
       when s.scan(/"(?:[^"\\]|\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/)
         tokens << [:STRING, s.matched]
@@ -44,7 +44,7 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 38)
         tokens << [s.matched, s.matched]
       else
         raise SyntaxError.new("Unable to parse starting at", s.peek(100))
-      end 
+      end
     end
     return CodeSection.new if tokens.empty?
 
