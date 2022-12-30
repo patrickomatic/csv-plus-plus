@@ -7,6 +7,7 @@ gem 'googleauth'
 
 group :development do
   gem 'dotenv'
+  gem 'rake'
 end
 
 group :test do

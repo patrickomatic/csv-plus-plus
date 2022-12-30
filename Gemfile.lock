@@ -35,6 +35,7 @@ GEM
     multi_json (1.15.0)
     os (1.1.4)
     public_suffix (5.0.1)
+    rake (13.0.6)
     representable (3.2.0)
       declarative (< 0.1.0)
       trailblazer-option (>= 0.1.1, < 0.2.0)
@@ -71,6 +72,7 @@ DEPENDENCIES
   dotenv
   google-apis-sheets_v4
   googleauth
+  rake
   rspec
 
 BUNDLED WITH
