@@ -1,9 +1,9 @@
-fees := 0.65 # my broker charges $0.65 a trade
+commission_charge := 0.65 # my broker charges $0.65 a trade
 
-is_call := EQ($$rownum, "call")
-commission := IFS($$is_call, ADD($$rownum * $$fees, $$rownum))
+# use INDIRECT() to take a cell and number and get a reference
+fees := $$commission_charge * (INDIRECT("D" & $$rownum))
 
-profit := MULTIPLY(INDIRECT("C" & $$rownum), INDIRECT("D" & $$rownum))
+profit := MULTIPLY(INDIRECT("B" & $$rownum), INDIRECT("C" & $$rownum)) - $$fees
 ---
 ![[format=bold/align=center/freeze]]Date,Purchase,Price,Quantity,Total,Fees
-![[expand]],[[format=bold]],,,"$$profit",
+![[expand]],[[format=bold]],,,"=ADD($$profit, 1)","=ADD($$fees, 1)"

@@ -102,8 +102,8 @@ require_relative 'modifier'
   def parse(text, row_number = nil, cell_number = nil)
     return nil if text.nil?
     return nil unless text.strip.start_with?("[[") || text.start_with?("![[")
-    tokens = []
 
+    tokens, value_without_modifier = [], ''
     s = StringScanner.new text
     until s.empty?
       case
@@ -114,6 +114,7 @@ require_relative 'modifier'
         tokens << [:START_ROW_MODIFIERS, s.matched]
       when s.scan(/\]\]/)
         tokens << [:END_MODIFIERS, s.matched]
+        value_without_modifier = s.rest
         break
       when s.scan(/\#[a-fA-F0-9]{3,6};?/)
         tokens << [:HEX_COLOR, s.matched]
@@ -144,5 +145,5 @@ require_relative 'modifier'
       raise SyntaxError.new("Error parsing modifier", e.message,
           wrapped_error: e, row_number:, cell_number:,)
     end
-    @m
+    [@m, value_without_modifier]
   end

@@ -1,12 +1,12 @@
 require_relative 'template'
-require_relative 'spreadsheet'
+require_relative 'google_sheet'
 
 module CSVPlusPlus
   def self.apply_template_to_sheet!(template_input, sheet_id, sheet_name, 
                                     row_offset: 0, cell_offset: 0, key_values: {}, verbose: false)
     template = Template.process!(template_input, key_values:, verbose:)
 
-    spreadsheet = Spreadsheet.new(sheet_id, sheet_name, verbose:, row_offset:, cell_offset:)
+    spreadsheet = GoogleSheet.new(sheet_id, sheet_name, verbose:, row_offset:, cell_offset:)
     spreadsheet.push!(template)
   rescue Google::Apis::ClientError => e
     if verbose

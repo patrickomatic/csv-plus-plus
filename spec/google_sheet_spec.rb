@@ -1,9 +1,9 @@
-require 'spreadsheet'
+require 'google_sheet'
 
-describe CSVPlusPlus::Spreadsheet do
+describe CSVPlusPlus::GoogleSheet do
   let(:sheet_id) { "sheet-id1234" }
   let(:sheet_name) { "Finances" }
-  subject { Spreadsheet.new(sheet_id, sheet_name) }
+  subject { GoogleSheet.new(sheet_id, sheet_name) }
 
   before(:each) do
     # XXX mock out google APIs

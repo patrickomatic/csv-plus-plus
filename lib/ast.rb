@@ -9,16 +9,14 @@ module CSVPlusPlus
     def self.variable_references(ast)
       depth_first_search ast do |node|
         type, value = node
-        value.gsub(VARIABLE_REF, '') if type == :literal && value.start_with?(VARIABLE_REF) 
+        value if type == :var
       end
     end
 
     def self.interpolate_variables(ast, variables) 
       # we have a hash of variables => ASTs but they might have references to each other, so 
-      # we need to interpolate them first (before doing the cell values)
-      var_dependencies  = GraphHash[
-        variables.map {|k, v| [k.gsub(VARIABLE_REF, ''), variable_references(v)]}
-      ]
+      # we need to interpolate them first (before interpolating the cell values)
+      var_dependencies  = GraphHash[variables.map {|k, v| [k, variable_references(v)]}]
 
       # are there any references that we don't have variables for? (aka undefined variable)
       unbound_vars = var_dependencies.values.flatten - variables.keys
@@ -56,7 +54,7 @@ module CSVPlusPlus
     end
 
     def self.interpolate_variable(ast, var, value)
-      copy_tree(ast) {|node| node[1] == VARIABLE_REF + var ? value : node}
+      copy_tree(ast) {|node| node[0] == :var && node[1] == var ? value : node}
     end
 
     def self.copy_tree(ast, &block)
@@ -77,9 +75,10 @@ module CSVPlusPlus
       else 
         node, rest = ast
 
-        yield_and_accum.call [:before_fn]
         yield_and_accum.call node
-        rest.each {|r| depth_first_search(r, accum, &block)}
+        rest.each do |r| 
+          depth_first_search(r, accum, &block)
+        end
         yield_and_accum.call [:after_fn]
       end
 

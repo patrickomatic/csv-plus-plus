@@ -1,3 +1,4 @@
+- [ ] make some of the lexer regexes and logic reusable
 - [ ] option to create the spreadsheet if it doesn't exist
 - [ ] CLI-specified offsets working
 - [ ] conditional formatting modifiers

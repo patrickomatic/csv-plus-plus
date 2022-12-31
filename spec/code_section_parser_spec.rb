@@ -34,23 +34,49 @@ foo,bar,baz
 "
 foo := 1
 ---
-foo,bar,baz
+=$$foo,bar,baz
 " 
       end
 
-      it { should eq({"foo" => [:literal, "1"]}) }
+      it { should eq({"foo" => [:number, 1]}) }
     end
 
     describe "a variable definition with function calls" do
       let(:code_section) do
 "
-foo := ADD(MULTIPLY(C1, 8), 42)
+foo := ADD(MULTIPLY(C1, 8), $$var)
 ---
-foo,bar,baz
+=$$foo,bar,baz
 " 
       end
 
-      it { should eq({"foo" => [[:fn, "ADD"], [[[:fn, "MULTIPLY"], [[:literal, "C1"], [:literal, "8"]]], [:literal, "42"]]]}) }
+      it do
+        should eq({
+          "foo" => [[:fn, "ADD"], 
+                    [
+                      [[:fn, "MULTIPLY"], 
+                       [[:id, "C1"], [:number, 8]]],
+                      [:var, "var"]]]
+        }) 
+      end
+    end
+
+    describe "a variable referencing other variables" do
+      let(:code_section) do
+"
+foo := 1
+bar := $$foo + 2
+---
+=$$foo,=$$bar,baz
+" 
+      end
+
+      it do
+        should eq({ 
+          "foo" => [:number, 1], 
+          "bar" => [[:fn, "ADD"], [[:var, "foo"], [:number, 2]]] 
+        })
+      end
     end
   end
 end

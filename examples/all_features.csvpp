@@ -1,8 +1,7 @@
-fees := 0.65 # my broker charges $0.65 a trade
+# just a comment
+simple_var := 1
 
-is_call := EQ(A$$rownum, "call")
-commission := IFS($$is_call, ADD(C$$rownum * $$fees, A$$rownum))
-
+depends_on_another := $$simple_var + 2
 ---
 ![[format=bold/align=center]]Date,Purchase,Price,Quantity,Total,Fees
-![[expand]],[[format=bold]],,,"=PROFIT(C$$rownum, D$$rownum)",
+![[expand]],[[format=bold]],,$$depends_on_another,$$simple_var,

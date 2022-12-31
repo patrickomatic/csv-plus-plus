@@ -3,7 +3,7 @@ require 'syntax_error'
 
 describe CSVPlusPlus::AST do
   describe "::variable_references" do
-    let(:ast) { [[:fn, "MULTIPLY$$"], [[:literal, "C$$rownum"], [:literal, "$$foo"]]] }
+    let(:ast) { [[:fn, "MULTIPLY"], [[:string, "C"], [:var, "foo"]]] }
 
     subject { CSVPlusPlus::AST::variable_references ast }
 
@@ -11,21 +11,21 @@ describe CSVPlusPlus::AST do
   end
 
   describe "::interpolate_variables" do
-    let(:ast) { [[:fn, "MULTIPLY$$"], [[:literal, "$$rownum"], [:literal, "$$foo"]]] }
+    let(:ast) { [[:fn, "MULTIPLY"], [[:var, "rownum"], [:var, "foo"]]] }
     let(:variables) {
       {
-        "rownum" => [:literal, "1"],
-        "foo" => [[:fn, "ADD"], [[:literal, "5"], [:literal, "42"]]],
-        "dep" => [[:fn, "ADD"], [[:literal, "$$rownum"], [:literal, "42"]]],
+        "rownum" => [:number, 1],
+        "foo" => [[:fn, "ADD"], [[:number, 5], [:number, 42]]],
+        "dep" => [[:fn, "ADD"], [[:var, "rownum"], [:number, 42]]],
       }
     }
 
     subject { CSVPlusPlus::AST::interpolate_variables(ast, variables) }
 
-    it { should eq([[:fn, "MULTIPLY$$"], [variables["rownum"], variables["foo"]]]) }
+    it { should eq([[:fn, "MULTIPLY"], [variables["rownum"], variables["foo"]]]) }
 
     context "with undefined variables" do
-      let(:variables) { { "foo" => [:literal, "$$thisdoesnotexist"] } }
+      let(:variables) { { "foo" => [:var, "thisdoesnotexist"] } }
 
       it "should raise a SyntaxError" do
         expect { subject }.to raise_error(CSVPlusPlus::SyntaxError)
@@ -34,15 +34,15 @@ describe CSVPlusPlus::AST do
   end
 
   describe "::interpolate_variable" do
-    let(:ast) { [[:fn, "MULTIPLY$$"], [[:literal, "$$rownum"], [:literal, "$$foo"]]] }
+    let(:ast) { [[:fn, "MULTIPLY"], [[:var, "rownum"], [:var, "foo"]]] }
 
-    subject { CSVPlusPlus::AST::interpolate_variable(ast, "rownum", [:literal, "1"]) }
+    subject { CSVPlusPlus::AST::interpolate_variable(ast, "rownum", [:number, 1]) }
 
-    it { should eq([[:fn, "MULTIPLY$$"], [[:literal, "1"], [:literal, "$$foo"]]]) }
+    it { should eq([[:fn, "MULTIPLY"], [[:number, 1], [:var, "foo"]]]) }
   end
 
   describe "::copy_tree" do
-    let(:ast) { [[:fn, "MULTIPLY$$"], [[:literal, "$$rownum"], [:literal, "$$foo"]]] }
+    let(:ast) { [[:fn, "MULTIPLY"], [[:var, "rownum"], [:var, "foo"]]] }
 
     subject { CSVPlusPlus::AST::copy_tree(ast) {|n| n} }
 
@@ -50,33 +50,32 @@ describe CSVPlusPlus::AST do
   end
 
   describe "::depth_first_search" do
-    let(:ast) { [[:fn, "MULTIPLY"], [[:literal, "5"], [:literal, "5"]]] }
+    let(:ast) { [[:fn, "MULTIPLY"], [[:number, "5"], [:number, "5"]]] }
 
     it "accumulates each value returned by the block" do
-      expect(CSVPlusPlus::AST::depth_first_search(ast) {|n| 1 }).to eq([1, 1, 1, 1, 1])
+      expect(CSVPlusPlus::AST::depth_first_search(ast) {|n| 1 }).to eq([1, 1, 1, 1])
     end
 
-    context "with a literal" do
-      let(:ast) { [:literal, "5"] }
+    context "with a number" do
+      let(:ast) { [:number, 5] }
 
       it "yields the literal" do
         expect {|block|
           CSVPlusPlus::AST::depth_first_search(ast, &block)
-        }.to yield_successive_args([:literal, "5"])
+        }.to yield_successive_args([:number, 5])
       end
     end
 
     context "a function call" do
-      let(:ast) { [[:fn, "MULTIPLY"], [[:literal, "5"], [:literal, "5"]]] }
+      let(:ast) { [[:fn, "MULTIPLY"], [[:number, 5], [:number, 5]]] }
 
       it "yields the function and arguments in order" do
         expect {|block|
           CSVPlusPlus::AST::depth_first_search(ast, &block)
         }.to yield_successive_args(
-          [:before_fn],
           [:fn, "MULTIPLY"],
-          [:literal, "5"],
-          [:literal, "5"],
+          [:number, 5],
+          [:number, 5],
           [:after_fn],
         )
       end

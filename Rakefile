@@ -34,12 +34,12 @@ namespace :test do
   namespace :integration do
     desc "Test with the examples/stocks.csvpp template"
     task :stocks do
-      sh %Q!./bin/csv++ -n "Test: Stocks" -i #{ENV['GOOGLE_SHEET_ID']} examples/stocks.csvpp!
+      sh %Q!./bin/csv++ -n "Sheet1" -i #{ENV['GOOGLE_SHEET_ID']} examples/stocks.csvpp!
     end
 
-    desc "Test with the examples/all_modifiers.csvpp template"
+    desc "Test with the examples/all_features.csvpp template"
     task :all_modifiers do
-      sh %Q!./bin/csv++ -n "Test: All Modifiers" -i #{ENV['GOOGLE_SHEET_ID']} examples/all_modifiers.csvpp!
+      sh %Q!./bin/csv++ -n "Sheet2" -i #{ENV['GOOGLE_SHEET_ID']} examples/all_features.csvpp!
     end
   end
 end

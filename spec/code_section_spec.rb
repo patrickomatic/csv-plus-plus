@@ -42,7 +42,7 @@ describe CSVPlusPlus::CodeSection do
 
       it { should_not be_nil }
       it "sets a variable" do
-        expect(subject.variables).to eq({ "foo" => [:literal, "1"] })
+        expect(subject.variables).to eq({ "foo" => [:number, 1] })
       end
       it "leaves the CSV in the tempfile" do
         subject

@@ -1,10 +1,19 @@
+# TODO add support for A1
 class CSVPlusPlus::CellValueParser
 prechigh
   left '(' ')'
   left '*' '/'
   left '+' '-'
 preclow
-token ID EOL NUMBER STRING TRUE FALSE
+token A1
+      EOL 
+      FALSE
+      ID 
+      NUMBER 
+      STRING 
+      TRUE 
+      VAR_EXPAND
+
 rule
   cell_value: '=' exp EOL             { @ast = val[1] }
  
@@ -16,12 +25,16 @@ rule
      | exp '+' exp                    { result = [[:fn, "ADD"], [val[0], val[2]]]       }
      | exp '-' exp                    { result = [[:fn, "MINUS"], [val[0], val[2]]]     }
      | '(' exp ')'                    { result = [:group, [val[1]]]                     }
-     | literal                        { result = [:literal, val[0]]                     }
+     | VAR_EXPAND ID                  { result = [:var, val[1]]                         } 
+     | STRING                         { result = [:string, val[0].gsub('"', '')]        }
+     | NUMBER                         { result = [:number, val[0].to_i]                 }
+     | TRUE                           { result = [:boolean, true]                       }
+     | FALSE                          { result = [:boolean, false]                      }
+     | ID                             { result = [:id, val[0]]                          }
 
   fn_call_args: fn_call_args ',' exp  { result = [val[0], val[2]] }
-              | exp                   { result = val[0] }
+              | exp                   { result = val[0]           }
 
-  literal: STRING | NUMBER | TRUE | FALSE | ID
 end
 
 ---- header
@@ -47,12 +60,14 @@ require_relative 'syntax_error'
         tokens << [:STRING, s.matched]
       when s.scan(/-?[\d.]+/)
         tokens << [:NUMBER, s.matched]
+      when s.scan(/\$\$/)
+        tokens << [:VAR_EXPAND, s.matched]
       when s.scan(/[\$\w_]+/)
         tokens << [:ID, s.matched]
       when s.scan(/[\(\)\/\*\+\-,=&]/)
         tokens << [s.matched, s.matched]
       else
-        raise SyntaxError.new("Unable to parse starting at", s.peek(100))
+        raise SyntaxError.new("Unable to parse starting at", s.rest)
       end 
     end
     tokens << [:EOL, :EOL]
@@ -62,8 +77,7 @@ require_relative 'syntax_error'
     begin
       do_parse
     rescue Racc::ParseError => e
-      raise SyntaxError.new("Error parsing code section", e.message,
-                    wrapped_error: e, row_number:, cell_number:,)
+      raise SyntaxError.new("Error parsing code section", e.message, wrapped_error: e)
     end
     @ast
   end

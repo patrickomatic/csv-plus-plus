@@ -2,7 +2,7 @@ require 'googleauth'
 require 'google/apis/sheets_v4'
 
 module CSVPlusPlus
-  class Spreadsheet 
+  class GoogleSheet
     SPREADSHEET_AUTH_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
     # XXX it would be nice to raise this but we shouldn't expand out more than necessary for our data
     SPREADSHEET_INFINITY = 1000
@@ -51,7 +51,7 @@ module CSVPlusPlus
     end
 
     def full_range
-      "#{@sheet_name}!#{FULL_RANGE}"
+      "'#{@sheet_name}'!#{FULL_RANGE}"
     end
 
     def push!(template)
@@ -95,7 +95,7 @@ module CSVPlusPlus
         puts "Calling batch_update_spreadsheet on #@sheet_id/#@sheet_name with", batch_request
       end
 
-      @gs.batch_update_spreadsheet(@sheet_id, batch_request)
+      #@gs.batch_update_spreadsheet(@sheet_id, batch_request)
     end
 
     # TODO use @cell_offset and @row_offset
@@ -107,7 +107,7 @@ module CSVPlusPlus
               row.cells.map.with_index do |c, cell_index|
                 c.value.nil? ? 
                   (@current_values[row_index][cell_index] rescue nil) : 
-                  c.value
+                  c.to_csv
               end
             end
 
@@ -115,8 +115,7 @@ module CSVPlusPlus
             d.range = "A1:Z#{template.rows.length}"
           end
         ]
-        r.value_input_option = 'USER_ENTERED'
-      end
+        r.value_input_option = 'USER_ENTERED' end
 
       if @verbose
         puts "Calling batch_update_values on #@sheet_id/#@sheet_name with", request

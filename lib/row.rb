@@ -9,13 +9,13 @@ module CSVPlusPlus
       row_modifier = nil
 
       cells = csv_row.map.with_index do |value, cell_number|
-        modifier = ModifierParser.new.parse(value, row_number, cell_number)
+        modifier, value_without_modifier = ModifierParser.new.parse(value, row_number, cell_number)
 
         if modifier && modifier.row_level?
           row_modifier = modifier
-          Cell.new value
+          Cell.new value_without_modifier
         elsif modifier
-          Cell.new(value, modifier)
+          Cell.new(value_without_modifier, modifier)
         else
           Cell.new value
         end
