@@ -65,7 +65,7 @@ foo := ADD(MULTIPLY(C1, 8), $$var)
       let(:code_section) do
 "
 foo := 1
-bar := $$foo + 2
+bar := ADD($$foo, 2)
 ---
 =$$foo,=$$bar,baz
 " 
@@ -75,6 +75,46 @@ bar := $$foo + 2
         should eq({ 
           "foo" => [:number, 1], 
           "bar" => [[:fn, "ADD"], [[:var, "foo"], [:number, 2]]] 
+        })
+      end
+    end
+
+    describe "an infix function" do
+      let(:code_section) do
+"
+foo := ADD(1, 2)
+---
+=$$foo,bar,baz
+" 
+      end
+
+      it { should eq({ "foo" => [[:fn, "ADD"], [[:number, 1], [:number, 2]]] }) }
+    end
+
+    describe "an function with a single arg" do
+      let(:code_section) do
+"
+foo := BAR(1)
+---
+=$$foo,bar,baz
+" 
+      end
+
+      it { should eq({ "foo" => [[:fn, "BAR"], [[:number, 1]]] }) }
+    end
+
+    xdescribe "parenthesis to group operations" do
+      let(:code_section) do
+"
+foo := (1 + 2) * 8
+---
+=$$foo,bar,baz
+" 
+      end
+
+      it do
+        should eq({ 
+          "foo" => [[:fn, "MULTIPLY"], [[[:fn, "ADD"], [[:number, 1], [:number, 2]]]], [:number, 8]],
         })
       end
     end

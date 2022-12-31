@@ -10,7 +10,7 @@ describe CSVPlusPlus::CellValueParser do
     end
 
     describe "an infix formula" do
-      let(:cell_value) { "=5 * 5" }
+      let(:cell_value) { "=MULTIPLY(5, 5)" }
       it { should eq([[:fn, "MULTIPLY"], [[:number, 5], [:number, 5]]]) }
     end
 

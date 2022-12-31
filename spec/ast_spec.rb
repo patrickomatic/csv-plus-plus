@@ -50,7 +50,7 @@ describe CSVPlusPlus::AST do
   end
 
   describe "::depth_first_search" do
-    let(:ast) { [[:fn, "MULTIPLY"], [[:number, "5"], [:number, "5"]]] }
+    let(:ast) { [[:fn, "MULTIPLY"], [[:number, 5], [:number, 5]]] }
 
     it "accumulates each value returned by the block" do
       expect(CSVPlusPlus::AST::depth_first_search(ast) {|n| 1 }).to eq([1, 1, 1, 1])

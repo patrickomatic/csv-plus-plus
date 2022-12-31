@@ -1,9 +1,9 @@
 class CSVPlusPlus::CodeSectionParser
 prechigh
   left '(' ')'
+  left '&'
   left '*' '/'
   left '+' '-'
-  left '&'
 preclow
 
 token A1
@@ -23,12 +23,13 @@ rule
 
   exp: ID '(' fn_call_args ')'        { result = [[:fn, val[0]], val[2]]                }
      | ID '(' ')'                     { result = [[:fn, val[0]]]                        }
-     | exp '&' exp                    { result = [[:fn, "CONCAT"], [val[0], val[2]]]    }
-     | exp '*' exp                    { result = [[:fn, "MULTIPLY"], [val[0], val[2]]]  }
-     | exp '/' exp                    { result = [[:fn, "DIVIDE"], [val[0], val[2]]]    }
-     | exp '+' exp                    { result = [[:fn, "ADD"], [val[0], val[2]]]       }
-     | exp '-' exp                    { result = [[:fn, "MINUS"], [val[0], val[2]]]     }
-     | '(' exp ')'                    { result = [:group, [val[1]]]                     }
+     | ID '(' exp ')'                 { result = [[:fn, val[0]], [val[2]]]              }
+#     | exp '&' exp                    { result = [[:fn, "CONCAT"], [val[0], val[2]]]    }
+#     | exp '*' exp                    { result = [[:fn, "MULTIPLY"], [val[0], val[2]]]  }
+#     | exp '/' exp                    { result = [[:fn, "DIVIDE"], [val[0], val[2]]]    }
+#     | exp '+' exp                    { result = [[:fn, "ADD"], [val[0], val[2]]]       }
+#     | exp '-' exp                    { result = [[:fn, "MINUS"], [val[0], val[2]]]     }
+#     | '(' exp ')'                    { result = val[1]                                 }
      | VAR_EXPAND ID                  { result = [:var, val[1]]                         } 
      | STRING                         { result = [:string, val[0].gsub('"', '')]        }
      | NUMBER                         { result = [:number, val[0].to_i]                 }

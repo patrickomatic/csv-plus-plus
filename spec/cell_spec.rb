@@ -29,11 +29,11 @@ describe CSVPlusPlus::Cell do
     subject { cell.ast }
 
     context "with variables to interpolate" do
-      let(:value) { "=2 + $$rownum" }
+      let(:value) { "=ADD(2, $$rownum)" }
       it { should eq([[:fn, "ADD"], [[:number, 2], [:number, 1]]]) }
 
       context "when the same value needs to be interpolated multiple times" do
-        let(:value) { "=$$rownum - $$rownum" }
+        let(:value) { "=MINUS($$rownum, $$rownum)" }
         it { should eq([[:fn, "MINUS"], [[:number, 1], [:number, 1]]]) }
       end
     end
@@ -42,11 +42,20 @@ describe CSVPlusPlus::Cell do
   describe "#to_csv" do
     subject { cell.to_csv }
 
-    context "with a variable" do
+    context "with a function" do
       let(:value) { "=MULTIPLY(5, 5)" }
 
       it "goes through parsing and recreates the same value" do 
         expect(subject).to eq(value)
+      end
+    end
+
+    context "with a variable" do
+      let(:value) { "=$$foo" }
+      before(:each) { cell.interpolate_variables!({ "foo" => [:number, 1] }) }
+
+      it "goes through parsing and recreates the same value" do 
+        expect(subject).to eq("=1")
       end
     end
   end

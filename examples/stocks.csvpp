@@ -1,9 +1,9 @@
 commission_charge := 0.65 # my broker charges $0.65 a trade
 
 # use INDIRECT() to take a cell and number and get a reference
-fees := $$commission_charge * (INDIRECT("D" & $$rownum))
+fees := MULTIPLY($$commission_charge, INDIRECT(CONCAT("D", $$rownum)))
 
-profit := MULTIPLY(INDIRECT("B" & $$rownum), INDIRECT("C" & $$rownum)) - $$fees
+profit := MINUS(MULTIPLY(INDIRECT(CONCAT("B", $$rownum)), INDIRECT(CONCAT("C", $$rownum))), $$fees)
 ---
 ![[format=bold/align=center/freeze]]Date,Purchase,Price,Quantity,Total,Fees
-![[expand]],[[format=bold]],,,"=ADD($$profit, 1)","=ADD($$fees, 1)"
+![[expand]],[[format=bold]],,,"=ADD($$commission_charge, 1)","=ADD($$commission_charge, 1)"

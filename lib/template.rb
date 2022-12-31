@@ -1,8 +1,6 @@
 require 'csv'
 require 'tempfile'
 require_relative 'row'
-# TODO break this dependency (we only need it for SPREADSHEET_INFINITY)
-require_relative 'google_sheet'
 require_relative 'code_section'
 
 module CSVPlusPlus
@@ -46,7 +44,8 @@ module CSVPlusPlus
       expanded_rows = []
       @rows.each do |row|
         if !row.modifier.nil? && !row.modifier.expand.nil?
-          (row.modifier.expand.repetitions || (GoogleSheet::SPREADSHEET_INFINITY - @rows.length)).times do
+          # TODO make the 1000 agreed upon somewhere
+          (row.modifier.expand.repetitions || (1000 - @rows.length)).times do
             expanded_rows = expanded_rows << Marshal.load(Marshal.dump(row))
           end
         else
@@ -61,8 +60,9 @@ module CSVPlusPlus
       @rows.each.with_index(1) do |row, row_number|
         row.cells.each do |cell|
           cell.interpolate_variables!({
-            "rownum" => [:literal, row_number],
-            **Hash[@key_values.map {|k, v| [k, [:literal, v]]}],
+            "rownum" => [:number, row_number],
+            # TODO infer a type from the key_values
+            **Hash[@key_values.map {|k, v| [k, [:unknown, v]]}],
             **variables,
           })
         end

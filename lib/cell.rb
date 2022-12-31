@@ -25,7 +25,7 @@ module CSVPlusPlus
     def to_csv
       return value if @ast.nil?
 
-      argument_index = nil
+      argument_index = 0
 
       "=" + (AST::depth_first_search @ast do |node|
         type, value = node

@@ -4,15 +4,22 @@ require_relative '../lib/csvpp'
 
 options = {}
 OptionParser.new do |parser|
-  parser.on("-h", "--help", "Show help information")
-  parser.on("-y", "--offset-rows OFFSET", "Apply the template offset by OFFSET rows")
-  parser.on("-x", "--offset-columns OFFSET", "Apply the template offset by OFFSET cells")
+  parser.on("-c", "--create", 
+            "Create the sheet if it doesn't exist")
+  parser.on("-h", "--help", 
+            "Show help information")
   parser.on("-i", "--sheet-id SHEET_ID",
             "The id of the sheet - you can extract this from the URL: https://docs.google.com/spreadsheets/d/< ... SHEET_ID ... >/edit#gid=0")
-  parser.on("-n", "--sheet-name SHEET_NAME", "The name of the sheet to apply the template to")
   parser.on("-k", "--key-values KEY_VALUES", 
             "A comma-separated list of key=values which will be made available to the template")
-  parser.on("-v", "--verbose", "Enable verbose output")
+  parser.on("-n", "--sheet-name SHEET_NAME", 
+            "The name of the sheet to apply the template to")
+  parser.on("-v", "--verbose", 
+            "Enable verbose output")
+  parser.on("-x", "--offset-columns OFFSET", 
+            "Apply the template offset by OFFSET cells")
+  parser.on("-y", "--offset-rows OFFSET", 
+            "Apply the template offset by OFFSET rows")
 end.parse!(into: options)
 
 sheet_id, sheet_name = options[:"sheet-id"], options[:"sheet-name"]
@@ -29,10 +36,11 @@ begin
   CSVPlusPlus.apply_template_to_sheet!(ARGF.read, 
                                        sheet_id,
                                        sheet_name,
+                                       create_if_not_exists: options.include?(:"create"),
                                        row_offset: options[:"offset-rows"],
                                        cell_offset: options[:"offset-cells"],
                                        key_values:,
-                                       verbose: options[:verbose])
+                                       verbose: options.include?(:"verbose"))
 rescue CSVPlusPlus::SyntaxError => e
   $stderr.puts e
   exit 1

@@ -76,9 +76,7 @@ module CSVPlusPlus
         node, rest = ast
 
         yield_and_accum.call node
-        rest.each do |r| 
-          depth_first_search(r, accum, &block)
-        end
+        rest.each {|r| depth_first_search(r, accum, &block)}
         yield_and_accum.call [:after_fn]
       end
 
