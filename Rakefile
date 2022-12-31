@@ -9,7 +9,7 @@ RACC_FILES = {
 task default: RACC_FILES.keys.map(&:to_sym) + %i[
   spec
   test:integration:stocks
-  test:integration:all_modifiers
+  test:integration:all_features
 ]
 
 begin
@@ -34,12 +34,12 @@ namespace :test do
   namespace :integration do
     desc "Test with the examples/stocks.csvpp template"
     task :stocks do
-      sh %Q!./bin/csv++ -n "Sheet1" -i #{ENV['GOOGLE_SHEET_ID']} examples/stocks.csvpp!
+      sh %Q!./bin/csv++ -n "Sheet1" -g #{ENV['GOOGLE_SHEET_ID']} examples/stocks.csvpp!
     end
 
     desc "Test with the examples/all_features.csvpp template"
-    task :all_modifiers do
-      sh %Q!./bin/csv++ -n "Sheet2" -i #{ENV['GOOGLE_SHEET_ID']} examples/all_features.csvpp!
+    task :all_features do
+      sh %Q!./bin/csv++ -n "Sheet2" -g #{ENV['GOOGLE_SHEET_ID']} examples/all_features.csvpp!
     end
   end
 end

@@ -3,5 +3,5 @@ simple_var := 1
 
 depends_on_another := ADD($$simple_var, 2)
 ---
-![[format=bold/align=center]]Date,Purchase,Price,Quantity,Total,Fees
-![[expand]],[[format=bold]],,=$$depends_on_another,=$$simple_var,
+![[format=bold/align=center]]Header1,[[format=underline]],Header2,[[border=top/border=bottom]]Header3,[[align=bottom]]Header4,Header5
+![[expand]]=$$depends_on_another,[[format=bold]]=$$simple_var,,,,

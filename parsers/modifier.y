@@ -47,7 +47,7 @@ rule
   valign_option: 'top'  | 'center' | 'bottom'
 
   border_options: border_options border_option | border_option { @m.borders = val[0] }
-  border_option: 'top' | 'right' | 'left' | 'bottom'
+  border_option: 'all' | 'top' | 'right' | 'left' | 'bottom'
 
   borderstyle_option: 'dashed' | 'dotted' | 'double' | 'solid' | 'solid_medium' | 'solid_thick'
 

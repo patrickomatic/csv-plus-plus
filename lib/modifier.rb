@@ -19,7 +19,7 @@ module CSVPlusPlus
                   :font,
                   :fontcolor,
                   :fontfamily,
-                  :foreground_color,
+                  :hyperlink,
                   :note,
                   :validation
 

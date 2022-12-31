@@ -6,14 +6,13 @@ module CSVPlusPlus
     SPREADSHEET_AUTH_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
     # XXX it would be nice to raise this but we shouldn't expand out more than necessary for our data
     SPREADSHEET_INFINITY = 1000
-    FULL_RANGE = "1:#{SPREADSHEET_INFINITY}"
+    FULL_RANGE = "A1:Z#{SPREADSHEET_INFINITY}"
 
     SheetsApi = Google::Apis::SheetsV4
 
     attr_reader :sheet_id, :sheet_name
 
-    def initialize(sheet_id, sheet_name, 
-                   verbose: false, cell_offset: 0, row_offset: 0)
+    def initialize(sheet_id, sheet_name: nil, verbose: false, cell_offset: 0, row_offset: 0)
       @sheet_name = sheet_name
       @sheet_id = sheet_id
       @verbose = verbose
@@ -50,38 +49,89 @@ module CSVPlusPlus
       end
     end
 
+    def format_range range
+      @sheet_name ? "'#{@sheet_name}'!#{range}" : range
+    end
+
     def full_range
-      "'#{@sheet_name}'!#{FULL_RANGE}"
+      format_range FULL_RANGE
     end
 
     def push!(template)
       get_current_values!
-      update_cell_formatting!(template)
-      update_cell_values!(template)
+      update_cells!(template)
+      #update_cell_values!(template)
     end
 
     private
 
-    # TODO use @cell_offset and @row_offset
-    def update_cell_formatting!(template)
+    def extended_value_type(value)
+      if value.nil? 
+        return 'string'
+      elsif value.start_with? '='
+        return 'formula'
+      elsif value.match(/^-?[\d\.]+$/)
+        return 'number'
+      elsif value.downcase == 'true' || value.downcase == 'false'
+        return 'boolean'
+      else
+        return 'string'
+      end
+    end
+
+    def update_cells!(template)
       batch_request = SheetsApi::BatchUpdateSpreadsheetRequest.new.tap do |bu|
         bu.requests = template.rows.each_slice(1000).to_a.map do |rows|
           SheetsApi::Request.new.tap do |r|
             r.update_cells = SheetsApi::UpdateCellsRequest.new.tap do |uc|
               uc.fields = '*'
-              uc.range = full_range
-              uc.rows = rows.map do |row| 
+              uc.start = SheetsApi::GridCoordinate.new.tap do |gc|
+                # figure out how to query this
+                gc.sheet_id = @sheet_name == "Sheet1" ? 0 : 1704582377
+                gc.column_index = @cell_offset
+                gc.row_index = @row_offset
+              end
+
+              uc.rows = rows.map.with_index do |row, row_index|
                 SheetsApi::RowData.new.tap do |rd|
-                  rd.values = row.cells.map do |cell| 
+                  rd.values = row.cells.map.with_index do |cell, cell_index| 
+                    mod = cell.modifier
+
                     SheetsApi::CellData.new.tap do |cd|
                       cd.user_entered_format = SheetsApi::CellFormat.new.tap do |cf| 
+                        # XXX I'm not sure if these work (bold,etc)
                         cf.text_format = SheetsApi::TextFormat.new.tap do |tf|
-                          tf.bold = true if cell.modifier&.bold? || row.modifier&.bold?
-                          tf.italic = true if cell.modifier&.italic? || row.modifier&.italic?
+                          tf.bold = true if mod&.bold?
+                          tf.italic = true if mod&.italic? 
+                          tf.underline = true if mod&.underline? 
+                          tf.strikethrough = true if mod&.strikethrough? 
+                          tf.font_family = mod.fontfamily if mod&.fontfamily
+                          tf.foreground_color = mod.fontcolor if mod&.fontcolor
+                          # TODO what's the difference with this one
+                          # tf.foreground_color_style = cell.fontcolor if cell.fontcolor
                         end
                       end
-                      # TODO cd.note
-                      # TODO cd.hyperlink
+
+                      cd.note = mod.note if mod&.note 
+                      cd.hyperlink = mod.hyperlink if mod&.hyperlink
+                      # XXX apply borders
+                      # XXX apply data validation
+                      cd.user_entered_value = SheetsApi::ExtendedValue.new.tap do |xv|
+                        value = cell.value.nil? ? 
+                            (@current_values[row_index][cell_index] rescue nil) : 
+                            cell.to_csv
+
+                        case extended_value_type(value)
+                        when 'string'
+                          xv.string_value = value
+                        when 'boolean'
+                          xv.boolean_value = value
+                        when 'formula'
+                          xv.formula_value = value
+                        when 'number'
+                          xv.number_value = value
+                        end
+                      end
                     end
                   end
                 end
@@ -95,33 +145,7 @@ module CSVPlusPlus
         puts "Calling batch_update_spreadsheet on #@sheet_id/#@sheet_name with", batch_request
       end
 
-      #@gs.batch_update_spreadsheet(@sheet_id, batch_request)
-    end
-
-    # TODO use @cell_offset and @row_offset
-    def update_cell_values!(template)
-      request = SheetsApi::BatchUpdateValuesRequest.new.tap do |r|
-        r.data = [
-          SheetsApi::ValueRange.new.tap do |d|
-            d.values = template.rows.map.with_index do |row, row_index|
-              row.cells.map.with_index do |c, cell_index|
-                c.value.nil? ? 
-                  (@current_values[row_index][cell_index] rescue nil) : 
-                  c.to_csv
-              end
-            end
-
-            d.major_dimension = "ROWS"
-            d.range = "A1:Z#{template.rows.length}"
-          end
-        ]
-        r.value_input_option = 'USER_ENTERED' end
-
-      if @verbose
-        puts "Calling batch_update_values on #@sheet_id/#@sheet_name with", request
-      end
-
-      @gs.batch_update_values(@sheet_id, request)
+      @gs.batch_update_spreadsheet(@sheet_id, batch_request)
     end
   end
 end

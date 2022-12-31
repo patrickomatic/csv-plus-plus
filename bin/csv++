@@ -4,29 +4,33 @@ require_relative '../lib/csvpp'
 
 options = {}
 OptionParser.new do |parser|
-  parser.on("-c", "--create", 
-            "Create the sheet if it doesn't exist")
-  parser.on("-h", "--help", 
-            "Show help information")
-  parser.on("-i", "--sheet-id SHEET_ID",
+  parser.on("-g SHEET_ID", "--google-sheet-id SHEET_ID",
             "The id of the sheet - you can extract this from the URL: https://docs.google.com/spreadsheets/d/< ... SHEET_ID ... >/edit#gid=0")
-  parser.on("-k", "--key-values KEY_VALUES", 
+
+  parser.on("-c", "--create", "Create the sheet if it doesn't exist")
+
+  parser.on("-k KEY_VALUES", "--key-values KEY_VALUES", 
             "A comma-separated list of key=values which will be made available to the template")
-  parser.on("-n", "--sheet-name SHEET_NAME", 
-            "The name of the sheet to apply the template to")
-  parser.on("-v", "--verbose", 
-            "Enable verbose output")
-  parser.on("-x", "--offset-columns OFFSET", 
-            "Apply the template offset by OFFSET cells")
-  parser.on("-y", "--offset-rows OFFSET", 
-            "Apply the template offset by OFFSET rows")
+
+  parser.on("-n SHEET_NAME", "--sheet-name SHEET_NAME", "The name of the sheet to apply the template to")
+
+  parser.on("-v", "--verbose", "Enable verbose output")
+
+  parser.on("-x OFFSET", "--offset-columns OFFSET", "Apply the template offset by OFFSET cells")
+
+  parser.on("-y OFFSET", "--offset-rows OFFSET", "Apply the template offset by OFFSET rows")
+
+  parser.on("-h", "--help", "Show help information") do
+    puts parser
+    exit
+  end
 end.parse!(into: options)
 
-sheet_id, sheet_name = options[:"sheet-id"], options[:"sheet-name"]
+google_sheet_id = options[:"google-sheet-id"]
 
 # TODO why doesn't OptionParser enforce this
-unless sheet_id && sheet_name
-  $stderr.puts "SHEET_ID and SHEET_NAME are required"
+unless google_sheet_id 
+  $stderr.puts "You must specify a --google-sheet-id/-g param for the sheet to write to."
   exit 1
 end
 
@@ -34,8 +38,8 @@ key_values = Hash[[options[:"key-values"].split("=")]] rescue {}
 
 begin
   CSVPlusPlus.apply_template_to_sheet!(ARGF.read, 
-                                       sheet_id,
-                                       sheet_name,
+                                       google_sheet_id,
+                                       sheet_name: options[:"sheet-name"],
                                        create_if_not_exists: options.include?(:"create"),
                                        row_offset: options[:"offset-rows"],
                                        cell_offset: options[:"offset-cells"],
