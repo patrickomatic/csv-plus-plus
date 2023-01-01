@@ -60,22 +60,21 @@ module CSVPlusPlus
     def push!(template)
       get_current_values!
       update_cells!(template)
-      #update_cell_values!(template)
     end
 
     private
 
-    def extended_value_type(value)
+    def set_extended_value_type!(extended_value, value)
       if value.nil? 
-        return 'string'
+        extended_value.string_value = value
       elsif value.start_with? '='
-        return 'formula'
+        extended_value.formula_value = value
       elsif value.match(/^-?[\d\.]+$/)
-        return 'number'
+        extended_value.number_value = value
       elsif value.downcase == 'true' || value.downcase == 'false'
-        return 'boolean'
+        extended_value.boolean_value = value
       else
-        return 'string'
+        extended_value.string_value = value
       end
     end
 
@@ -86,7 +85,7 @@ module CSVPlusPlus
             r.update_cells = SheetsApi::UpdateCellsRequest.new.tap do |uc|
               uc.fields = '*'
               uc.start = SheetsApi::GridCoordinate.new.tap do |gc|
-                # figure out how to query this
+                # XXX figure out how to query this
                 gc.sheet_id = @sheet_name == "Sheet1" ? 0 : 1704582377
                 gc.column_index = @cell_offset
                 gc.row_index = @row_offset
@@ -99,38 +98,33 @@ module CSVPlusPlus
 
                     SheetsApi::CellData.new.tap do |cd|
                       cd.user_entered_format = SheetsApi::CellFormat.new.tap do |cf| 
-                        # XXX I'm not sure if these work (bold,etc)
                         cf.text_format = SheetsApi::TextFormat.new.tap do |tf|
-                          tf.bold = true if mod&.bold?
-                          tf.italic = true if mod&.italic? 
-                          tf.underline = true if mod&.underline? 
-                          tf.strikethrough = true if mod&.strikethrough? 
-                          tf.font_family = mod.fontfamily if mod&.fontfamily
-                          tf.foreground_color = mod.fontcolor if mod&.fontcolor
+                          tf.bold = true if mod.bold?
+                          tf.italic = true if mod.italic? 
+                          tf.strikethrough = true if mod.strikethrough? 
+                          tf.underline = true if mod.underline? 
+
+                          tf.font_family = mod.fontfamily if mod.fontfamily
+                          tf.foreground_color = mod.fontcolor if mod.fontcolor
+
                           # TODO what's the difference with this one
                           # tf.foreground_color_style = cell.fontcolor if cell.fontcolor
                         end
                       end
 
-                      cd.note = mod.note if mod&.note 
-                      cd.hyperlink = mod.hyperlink if mod&.hyperlink
-                      # XXX apply borders
+                      cd.note = mod.note if mod.note 
+                      cd.hyperlink = mod.hyperlink if mod.hyperlink
+
+                      if mod.has_border?
+                        # XXX apply borders
+                      end
                       # XXX apply data validation
                       cd.user_entered_value = SheetsApi::ExtendedValue.new.tap do |xv|
                         value = cell.value.nil? ? 
                             (@current_values[row_index][cell_index] rescue nil) : 
                             cell.to_csv
 
-                        case extended_value_type(value)
-                        when 'string'
-                          xv.string_value = value
-                        when 'boolean'
-                          xv.boolean_value = value
-                        when 'formula'
-                          xv.formula_value = value
-                        when 'number'
-                          xv.number_value = value
-                        end
+                        set_extended_value_type!(xv, value)
                       end
                     end
                   end

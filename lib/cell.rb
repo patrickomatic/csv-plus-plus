@@ -6,7 +6,7 @@ module CSVPlusPlus
   class Cell
     attr_reader :ast, :modifier
 
-    def initialize(value, modifier = nil)
+    def initialize(value, modifier)
       @value = value
       @ast = CellValueParser.new.parse(value) unless value.nil?
       @modifier = modifier

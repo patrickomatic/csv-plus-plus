@@ -6,25 +6,19 @@ module CSVPlusPlus
     attr_reader :cells, :modifier
 
     def self.parse_row(csv_row, row_number)
-      row_modifier = nil
+      row_modifier = Modifier.new(row_level: false)
 
       cells = csv_row.map.with_index do |value, cell_number|
-        modifier, value_without_modifier = ModifierParser.new.parse(value, row_number, cell_number)
-
-        if modifier && modifier.row_level?
-          row_modifier = modifier
-          Cell.new value_without_modifier
-        elsif modifier
-          Cell.new(value_without_modifier, modifier)
-        else
-          Cell.new value
-        end
+        cell_modifier = row_modifier.clone_defaults_from
+        parsed_value = ModifierParser.new.parse(value, row_modifier:, cell_modifier:,
+                                                row_number:, cell_number:)
+        Cell.new(parsed_value, cell_modifier)
       end
 
       Row.new(cells, row_modifier)
     end
 
-    def initialize(cells, modifier = nil)
+    def initialize(cells, modifier)
       @cells = cells
       @modifier = modifier
     end

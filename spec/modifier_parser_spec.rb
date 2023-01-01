@@ -1,44 +1,50 @@
 require 'modifier.tab'
+require 'modifier'
 
 describe CSVPlusPlus::ModifierParser do
   describe "#parse" do
-    subject { CSVPlusPlus::ModifierParser.new.parse(modifier) }
+    let(:row_modifier) { CSVPlusPlus::Modifier.new }
+    let(:cell_modifier) { CSVPlusPlus::Modifier.new }
+
+    before(:each) { subject }
+    subject { CSVPlusPlus::ModifierParser.new.parse(value, cell_modifier:, row_modifier:) }
 
     context "without a modifier" do
-      let(:modifier) { "foo" }
-      it { should be_nil }
+      let(:value) { "foo" }
+      it { is_expected.to eq "foo" }
     end
 
     context "one modifier" do
-      let(:modifier) { "[[align=left]]foo" }
+      let(:value) { "[[align=left]]foo" }
 
-      it "creates a modifier with align=left" do
-        expect(subject.first.align).to eq(['left'])
-      end
-      it "returns the part after that wasn't parsed" do
-        expect(subject[1]).to eq('foo')
+      it { is_expected.to eq "foo" }
+
+      it "updates the cell_modifier with align=left" do
+        expect(cell_modifier.align).to eq(['left'])
       end
     end
 
     context "multiple modifiers" do
-      let(:modifier) { "[[align=left/format=bold/format=underline]]" }
+      let(:value) { "[[align=left/format=bold/format=underline]]=A + B" }
 
-      subject { CSVPlusPlus::ModifierParser.new.parse(modifier).first }
+      it { is_expected.to eq "=A + B" }
 
-      it { should be_bold }
-      it { should be_underline }
-
-      it "creates a modifier" do
-        expect(subject.align).to eq(['left'])
+      it "updates cell_modifier" do
+        expect(cell_modifier).to be_bold
+        expect(cell_modifier).to be_underline
+        expect(cell_modifier.align).to eq(['left'])
       end
     end
 
-    context "row-based modifier" do
-      let(:modifier) { "![[align=center / format=bold]]" }
+    context "row-based modifiers" do
+      let(:value) { "![[align=center / format=bold]]Stocks" }
 
-      subject { CSVPlusPlus::ModifierParser.new.parse(modifier).first }
+      it { is_expected.to eq "Stocks" }
 
-      it { should be_row_level }
+      it "updates row_modifier" do
+        expect(row_modifier).to be_bold
+        expect(row_modifier.align).to eq(['center'])
+      end
     end
   end
 end

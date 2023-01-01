@@ -6,8 +6,8 @@ describe CSVPlusPlus::Modifier do
   describe "#borders=" do
     context "with a single values" do
       before do
-        modifier.borders = 'top'
-        modifier.borders = 'left'
+        modifier.border = 'top'
+        modifier.border = 'left'
       end
 
       it "sets borders" do
@@ -19,8 +19,8 @@ describe CSVPlusPlus::Modifier do
   describe "#formats=" do
     context "with a single values" do
       before do
-        modifier.formats = 'bold'
-        modifier.formats = 'strikethrough'
+        modifier.format = 'bold'
+        modifier.format = 'strikethrough'
       end
 
       it "sets formats" do

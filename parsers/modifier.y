@@ -17,36 +17,40 @@ token A1_NOTATION
       URL
 
 rule
-  modifiers_definition: START_ROW_MODIFIERS modifiers END_MODIFIERS  { @m.row_level! }
-                      | START_CELL_MODIFIERS modifiers END_MODIFIERS
+  modifiers_definition: START_ROW_MODIFIERS   { parsing_row! }
+                        modifiers 
+                        END_MODIFIERS  
+                      | START_CELL_MODIFIERS  { parsing_cell! }
+                        modifiers 
+                        END_MODIFIERS 
 
   modifiers: modifiers MODIFIER_SEPARATOR modifier | modifier
 
   modifier: 'align'       '=' align_options
           | 'border'      '=' border_options
-          | 'borderstyle' '=' borderstyle_option  { @m.borderstyle = val[2]                       }
-          | 'expand'      '=' INTEGER             { @m.expand = Modifier::Expand.new val[2].to_i  }
-          | 'expand'                              { @m.expand = Modifier::Expand.new              }
-          | 'font'        '=' STRING              { @m.font = val[2]                              }
-          | 'fontfamily'  '=' INTEGER             { @m.fontfamily = val[2]                        }
-          | 'fontcolor'   '=' STRING | HEX_COLOR  { @m.fontcolor = val[2]                         }
+          | 'borderstyle' '=' borderstyle_option  { s!(:borderstyle, val[2])                        }
+          | 'expand'      '=' INTEGER             { s!(:expand, Modifier::Expand.new(val[2].to_i))  }
+          | 'expand'                              { s!(:expand, Modifier::Expand.new)               }
+          | 'font'        '=' STRING              { s!(:font, val[2])                               }
+          | 'fontfamily'  '=' INTEGER             { s!(:fontfamily, val[2])                         }
+          | 'fontcolor'   '=' STRING | HEX_COLOR  { s!(:fontcolor, val[2])                          }
           | 'format'      '=' format_options
-          | 'freeze'                              { @m.freeze!                                    }
-          | 'hyperlink'   '=' URL                 { @m.hyperlink = val[2]                         }
-          | 'note'        '=' STRING              { @m.note = val[2]                              }
-          | 'validate'    '=' condition           { @m.validation = val[2]                        }
+          | 'freeze'                              { freeze!                                         }
+          | 'hyperlink'   '=' URL                 { s!(:hyperlink, val[2])                          }
+          | 'note'        '=' STRING              { s!(:note, val[2])                               }
+          | 'validate'    '=' condition           { s!(:validation, val[2])                         }
 
-  format_options: format_options format_option | format_option { @m.formats = val[0] }
+  format_options: format_options format_option | format_option { s!(:format, val[0]) }
   format_option: 'bold' | 'italic' | 'strikethrough' | 'underline'
 
-  align_options: halign_option valign_option  { @m.align = val[0]; @m.align = val[1] }
-               | valign_option halign_option  { @m.align = val[0]; @m.align = val[1] }
-               | halign_option                { @m.align = val[0] }
-               | valign_option                { @m.align = val[0] }
+  align_options: halign_option valign_option  { s!(:align, val[0]); s!(:align, val[1]) }
+               | valign_option halign_option  { s!(:align, val[0]); s!(:align, val[1]) }
+               | halign_option                { s!(:align, val[0]) }
+               | valign_option                { s!(:align, val[0]) }
   halign_option: 'left' | 'center' | 'right'
   valign_option: 'top'  | 'center' | 'bottom'
 
-  border_options: border_options border_option | border_option { @m.borders = val[0] }
+  border_options: border_options border_option | border_option { s!(:border, val[0]) }
   border_option: 'all' | 'top' | 'right' | 'left' | 'bottom'
 
   borderstyle_option: 'dashed' | 'dotted' | 'double' | 'solid' | 'solid_medium' | 'solid_thick'
@@ -97,11 +101,35 @@ require 'strscan'
 require_relative 'modifier'
 
 ---- inner
-  attr_accessor :modifiers, :row_level
+  attr_accessor :cell_modifier, :row_modifier
 
-  def parse(text, row_number = nil, cell_number = nil)
-    return nil if text.nil?
-    return nil unless text.strip.start_with?("[[") || text.start_with?("![[")
+  def initialize
+    @parsing_row = false
+  end
+
+  def parsing_row!
+    @parsing_row = true
+  end
+
+  def parsing_cell!
+    @parsing_row = false
+  end
+
+  def freeze!
+    (@parsing_row ? @row_modifier : @cell_modifier).freeze!
+  end
+
+  def s!(property, value)
+    target = @parsing_row ? @row_modifier : @cell_modifier
+    target.public_send("#{property}=".to_sym, value)
+  end
+
+  def parse(text, cell_modifier:, row_modifier:, row_number: nil, cell_number: nil)
+    return text if text.nil?
+    return text unless text.strip.start_with?("[[") || text.start_with?("![[")
+
+    @cell_modifier = cell_modifier
+    @row_modifier = row_modifier
 
     tokens, value_without_modifier = [], ''
     s = StringScanner.new text
@@ -113,6 +141,7 @@ require_relative 'modifier'
       when s.scan(/\!\[\[/)
         tokens << [:START_ROW_MODIFIERS, s.matched]
       when s.scan(/\]\]/)
+        # XXX we need to keep going if there are two modifiers
         tokens << [:END_MODIFIERS, s.matched]
         value_without_modifier = s.rest
         break
@@ -138,12 +167,12 @@ require_relative 'modifier'
 
     define_singleton_method(:next_token) { tokens.shift }
 
-    @m = Modifier.new
     begin
       do_parse
     rescue Racc::ParseError => e
-      raise SyntaxError.new("Error parsing modifier", e.message,
-          wrapped_error: e, row_number:, cell_number:,)
+      raise SyntaxError.new("Error parsing modifier", e.message, 
+                        wrapped_error: e, row_number:, cell_number:,)
     end
-    [@m, value_without_modifier]
+
+    value_without_modifier
   end

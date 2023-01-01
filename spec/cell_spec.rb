@@ -1,7 +1,9 @@
 require 'cell'
+require 'modifier'
 
 describe CSVPlusPlus::Cell do
-  let(:cell) { CSVPlusPlus::Cell.new(value) }
+  let(:modifier) { CSVPlusPlus::Modifier.new }
+  let(:cell) { CSVPlusPlus::Cell.new(value, modifier) }
 
   describe "#value" do
     subject { cell.value }

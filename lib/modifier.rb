@@ -21,10 +21,11 @@ module CSVPlusPlus
                   :fontfamily,
                   :hyperlink,
                   :note,
+                  :row_level,
                   :validation
 
-    def initialize
-      @row_level = false
+    def initialize(row_level: false)
+      @row_level = row_level
       @freeze = false
       @align = Set.new
       @borders = Set.new
@@ -43,15 +44,19 @@ module CSVPlusPlus
       @borders.to_a
     end
 
-    def borders=(value)
+    def border=(value)
       @borders << value
+    end
+
+    def has_border?
+      !@borders.empty?
     end
 
     def formats
       @formats.to_a
     end
 
-    def formats=(value)
+    def format=(value)
       @formats << value
     end
 
@@ -89,6 +94,14 @@ module CSVPlusPlus
 
     def cell_level?
       !@row_level
+    end
+
+    def clone_defaults_from
+      self.clone.tap do |m|
+        # unset row-specific modifiers, leave the rest alone (we want them as defaults)
+        m.expand = nil
+        m.row_level = false
+      end
     end
   end
 end
