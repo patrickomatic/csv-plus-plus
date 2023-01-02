@@ -6,12 +6,11 @@ depends_on_another := ADD($$simple_var, 2)
 ---
 ![[format=bold/align=center]]Header1,[[format=underline]]Header2,[[border=top/border=bottom/format=strikethrough]]Header3,[[align=bottom/format=italic]]Header4,Header5
 =$$depends_on_another,[[format=underline]]=$$simple_var,These are variables,,,
-[[hyperlink='https://github.com/patrickomatic/csv-plus-plus']]Link to project website,,,,
 [[note='this is a note']]A note,,,,
-[[fontcolor='#FF0000']]The font is red,,,,
+[[fontcolor=#FF0000]]The font is red,,,,
 [[font='Comic Sans MS']]The font is 'Comic Sans MS',,,,
 [[fontsize=20]]The font is size 20,,,,
-[[color='#00FF00']]The cell is green,,,,
+[[color=#00FF00]]The cell is green,,,,
 ![[expand=3]]This line is repeated 3 times,,,,,
 [[border=all]]All borders,,,,
 ,[[border=top]]Top border,,,,

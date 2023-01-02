@@ -13,15 +13,25 @@ module CSVPlusPlus
       end
     end
 
+    class Color
+      attr_reader :red, :green, :blue
+
+      def initialize(hex_string)
+        @red, @green, @blue = hex_string
+          .gsub(/^#?/, '')
+          .match(/(\w\w?)(\w\w?)(\w\w?)/)
+          .captures
+          .map {|s| 255 / (s.length == 2 ? s : s + s).to_i(16) rescue 0}
+      end
+    end
+
     attr_accessor :bordercolor,
-                  :bordersize,
                   :borderstyle,
                   :color,
                   :expand,
                   :fontcolor,
                   :fontfamily,
                   :fontsize,
-                  :hyperlink,
                   :note,
                   :row_level,
                   :validation
@@ -58,6 +68,10 @@ module CSVPlusPlus
       @align.include?('bottom')
     end
 
+    def color=(hex_value)
+      @color = Color.new(hex_value)
+    end
+
     def borders
       @borders
     end
@@ -86,8 +100,16 @@ module CSVPlusPlus
       border_all? || @borders.include?('left')
     end
 
+    def bordercolor=(hex_value)
+      @bordercolor = Color.new(hex_value)
+    end
+
     def has_border?
       !@borders.empty?
+    end
+
+    def fontcolor=(hex_value)
+      @fontcolor = Color.new(hex_value)
     end
 
     def formats
@@ -146,12 +168,10 @@ module CSVPlusPlus
         @borderstyle
         @color
         @formats
-        @bordersize
         @borderstyle
         @fontcolor
         @fontfamily
         @fontsize
-        @hyperlink
         @note
         @validation
       ].each do |property|

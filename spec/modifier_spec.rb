@@ -3,7 +3,7 @@ require 'modifier'
 describe CSVPlusPlus::Modifier do
   let (:modifier) { CSVPlusPlus::Modifier.new }
 
-  describe "borders" do
+  describe "border=" do
     context "with a single values" do
       before do
         modifier.border = 'top'
@@ -28,7 +28,7 @@ describe CSVPlusPlus::Modifier do
     end
   end
 
-  describe "formats" do
+  describe "format=" do
     context "with a single values" do
       before do
         modifier.format = 'bold'
@@ -42,7 +42,7 @@ describe CSVPlusPlus::Modifier do
     end
   end
 
-  describe "expand" do
+  describe "expand=" do
     let(:amount) { nil }
     before { modifier.expand = expand }
     subject(:expand) { CSVPlusPlus::Modifier::Expand.new amount }
@@ -53,6 +53,27 @@ describe CSVPlusPlus::Modifier do
       let(:amount) { 2 }
 
       it { is_expected.not_to be_infinite }
+    end
+  end
+
+  describe "color=" do
+    before { modifier.color = hex_value }
+    let(:hex_value) { '#FF00FF' }
+
+    it "sets the red, green, blue values" do
+      expect(modifier.color.red).to eq 1
+      expect(modifier.color.green).to eq 0
+      expect(modifier.color.blue).to eq 1
+    end
+
+    context "with a 3-digit hex value" do
+      let(:hex_value) { '#F0F' }
+
+      it "sets the red, green, blue values" do
+        expect(modifier.color.red).to eq 1
+        expect(modifier.color.green).to eq 0
+        expect(modifier.color.blue).to eq 1
+      end
     end
   end
 end

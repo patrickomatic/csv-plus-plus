@@ -91,29 +91,39 @@ module CSVPlusPlus
       @sheet_name = @spreadsheet.sheets.last.properties.title
     end
 
-    def build_text_format(modifier)
+    def build_text_format(mod)
       SheetsApi::CellFormat.new.tap do |cf| 
         cf.text_format = SheetsApi::TextFormat.new.tap do |tf|
-          tf.bold = true if modifier.bold?
-          tf.italic = true if modifier.italic? 
-          tf.strikethrough = true if modifier.strikethrough? 
-          tf.underline = true if modifier.underline? 
+          tf.bold = true if mod.bold?
+          tf.italic = true if mod.italic?
+          tf.strikethrough = true if mod.strikethrough?
+          tf.underline = true if mod.underline?
 
-          tf.font_family = modifier.fontfamily if modifier.fontfamily
-          tf.foreground_color = modifier.fontcolor if modifier.fontcolor
-
-          # TODO what's the difference with this one
-          # tf.foreground_color_style = cell.fontcolor if cell.fontcolor
+          tf.font_family = mod.fontfamily if mod.fontfamily
+          tf.font_size = mod.fontsize if mod.fontsize
+          if mod.fontcolor
+            tf.foreground_color = SheetsApi::Color.new(
+              red: mod.fontcolor.red,
+              green: mod.fontcolor.green,
+              blue: mod.fontcolor.blue,
+            )
+          end
         end
 
-        cf.horizontal_alignment = 'LEFT' if modifier.left_align?
-        cf.horizontal_alignment = 'RIGHT' if modifier.right_align?
-        cf.horizontal_alignment = 'CENTER' if modifier.center_align?
+        cf.horizontal_alignment = 'LEFT' if mod.left_align?
+        cf.horizontal_alignment = 'RIGHT' if mod.right_align?
+        cf.horizontal_alignment = 'CENTER' if mod.center_align?
 
-        cf.vertical_alignment = 'TOP' if modifier.top_align?
-        cf.vertical_alignment = 'BOTTOM' if modifier.bottom_align?
+        cf.vertical_alignment = 'TOP' if mod.top_align?
+        cf.vertical_alignment = 'BOTTOM' if mod.bottom_align?
 
-        cf.background_color = modifier.color
+        if mod.color
+          cf.background_color = SheetsApi::Color.new(
+            red: mod.color.red,
+            green: mod.color.green,
+            blue: mod.color.blue,
+          )
+        end
       end
     end
 
@@ -144,10 +154,7 @@ module CSVPlusPlus
 
       SheetsApi::CellData.new.tap do |cd|
         cd.user_entered_format = build_text_format(cell.modifier)
-
         cd.note = mod.note if mod.note 
-        # TODO hyperlinks are weird because they turn into a cell with value "=HYPERLINK()" (this is readonly)
-        cd.hyperlink = mod.hyperlink if mod.hyperlink
 
         # XXX apply data validation
         cd.user_entered_value = build_cell_value(cell)
@@ -171,14 +178,18 @@ module CSVPlusPlus
     end
 
     def build_update_borders_request(cell)
+      mod = cell.modifier
       SheetsApi::Request.new.tap do |r|
         r.update_borders = SheetsApi::UpdateBordersRequest.new.tap do |br|
           # TODO allow different border styles per side
-          border = SheetsApi::Border.new(color: '#000000', style: 'solid')
-          br.top = border if cell.modifier.border_top?
-          br.right = border if cell.modifier.border_right?
-          br.left = border if cell.modifier.border_left?
-          br.bottom = border if cell.modifier.border_bottom?
+          border = SheetsApi::Border.new(
+            color: mod.bordercolor || '#000000',
+            style: mod.borderstyle || 'solid',
+          )
+          br.top = border if mod.border_top?
+          br.right = border if mod.border_right?
+          br.left = border if mod.border_left?
+          br.bottom = border if mod.border_bottom?
 
           br.range = grid_range_for_cell cell
         end

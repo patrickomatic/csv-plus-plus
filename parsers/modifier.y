@@ -33,22 +33,19 @@ rule
 
   modifier: 'align'       '=' align_options
           | 'border'      '=' border_options
-          | 'bordercolor' '=' color               { s!(:bordercolor, val[2])                        }
+          | 'bordercolor' '=' HEX_COLOR           { s!(:bordercolor, val[2])                        }
           | 'borderstyle' '=' borderstyle_option  { s!(:borderstyle, val[2])                        }
-          | 'color'       '=' color               { s!(:color, val[2])                              }
+          | 'color'       '=' HEX_COLOR           { s!(:color, val[2])                              }
           | 'expand'      '=' NUMBER              { s!(:expand, Modifier::Expand.new(val[2].to_i))  }
           | 'expand'                              { s!(:expand, Modifier::Expand.new)               }
           | 'font'        '=' STRING              { s!(:fontfamily, val[2])                         }
-          | 'fontcolor'   '=' color               { s!(:fontcolor, val[2])                          }
+          | 'fontcolor'   '=' HEX_COLOR           { s!(:fontcolor, val[2])                          }
           | 'fontfamily'  '=' STRING              { s!(:fontfamily, val[2])                         }
           | 'fontsize'    '=' NUMBER              { s!(:fontsize, val[2].to_f)                      }
           | 'format'      '=' format_options
           | 'freeze'                              { freeze!                                         }
-          | 'hyperlink'   '=' STRING              { s!(:hyperlink, val[2])                          }
           | 'note'        '=' STRING              { s!(:note, val[2])                               }
           | 'validate'    '=' condition           { s!(:validation, val[2])                         }
-
-  color: STRING | HEX_COLOR
 
   format_options: format_options format_option | format_option { s!(:format, val[0]) }
   format_option: 'bold' | 'italic' | 'strikethrough' | 'underline'
@@ -163,7 +160,7 @@ require_relative 'modifier'
         tokens << [:END_MODIFIERS, s.matched]
         value_without_modifier = s.rest
         break
-      when s.scan(/\#[a-fA-F0-9]{3,6};?/)
+      when s.scan(/^#(([0-9a-fA-F]{2}){3}|([0-9a-fA-F]){3})/)
         tokens << [:HEX_COLOR, s.matched]
       when s.scan(/(['\w]+\!)?[\w\d]+:[\w\d]+/)
         tokens << [:A1_NOTATION, s.matched]
