@@ -17,12 +17,17 @@ token A1_NOTATION
       URL
 
 rule
-  modifiers_definition: START_ROW_MODIFIERS   { parsing_row! }
-                        modifiers 
-                        END_MODIFIERS  
-                      | START_CELL_MODIFIERS  { parsing_cell! }
-                        modifiers 
-                        END_MODIFIERS 
+  modifiers_definition: row_modifiers cell_modifiers 
+                      | row_modifiers 
+                      | cell_modifiers
+
+  row_modifiers: START_ROW_MODIFIERS    { parsing_row! }
+                 modifiers 
+                 END_MODIFIERS          { finished_row! }
+
+  cell_modifiers: START_CELL_MODIFIERS  { parsing_cell! }
+                  modifiers 
+                  END_MODIFIERS 
 
   modifiers: modifiers MODIFIER_SEPARATOR modifier | modifier
 
@@ -31,12 +36,13 @@ rule
           | 'borderstyle' '=' borderstyle_option  { s!(:borderstyle, val[2])                        }
           | 'expand'      '=' INTEGER             { s!(:expand, Modifier::Expand.new(val[2].to_i))  }
           | 'expand'                              { s!(:expand, Modifier::Expand.new)               }
-          | 'font'        '=' STRING              { s!(:font, val[2])                               }
-          | 'fontfamily'  '=' INTEGER             { s!(:fontfamily, val[2])                         }
+          | 'font'        '=' STRING              { s!(:fontfamily, val[2])                         }
           | 'fontcolor'   '=' STRING | HEX_COLOR  { s!(:fontcolor, val[2])                          }
+          | 'fontfamily'  '=' STRING              { s!(:fontfamily, val[2])                         }
+          | 'fontsize'    '=' INTEGER             { s!(:fontsize, val[2].to_f)                      }
           | 'format'      '=' format_options
           | 'freeze'                              { freeze!                                         }
-          | 'hyperlink'   '=' URL                 { s!(:hyperlink, val[2])                          }
+          | 'hyperlink'   '=' STRING              { s!(:hyperlink, val[2])                          }
           | 'note'        '=' STRING              { s!(:note, val[2])                               }
           | 'validate'    '=' condition           { s!(:validation, val[2])                         }
 
@@ -47,6 +53,7 @@ rule
                | valign_option halign_option  { s!(:align, val[0]); s!(:align, val[1]) }
                | halign_option                { s!(:align, val[0]) }
                | valign_option                { s!(:align, val[0]) }
+
   halign_option: 'left' | 'center' | 'right'
   valign_option: 'top'  | 'center' | 'bottom'
 
@@ -111,8 +118,13 @@ require_relative 'modifier'
     @parsing_row = true
   end
 
+  def finished_row!
+    parsing_cell!
+  end
+
   def parsing_cell!
     @parsing_row = false
+    @cell_modifier.take_defaults_from!(@row_modifier)
   end
 
   def freeze!
@@ -125,8 +137,10 @@ require_relative 'modifier'
   end
 
   def parse(text, cell_modifier:, row_modifier:, row_number: nil, cell_number: nil)
-    return text if text.nil?
-    return text unless text.strip.start_with?("[[") || text.start_with?("![[")
+    if text.nil? || !(text.strip.start_with?("[[") || text.start_with?("![["))
+      cell_modifier.take_defaults_from!(row_modifier)
+      return text
+    end
 
     @cell_modifier = cell_modifier
     @row_modifier = row_modifier
@@ -153,8 +167,8 @@ require_relative 'modifier'
         tokens << [s.matched, s.matched]
       when s.scan(/-?\d+/)
         tokens << [:INTEGER, s.matched]
-      when s.scan(/\w+:\/\/.+/)
-        tokens << [:URL, s.matched]
+      when s.scan(/'(?:[^'\\]|\\(?:['\\\/bfnrt]|u[0-9a-fA-F]{4}))*'/)
+        tokens << [:STRING, s.matched.gsub(/^'|'$/, '')]
       when s.scan(/\//) 
         tokens << [:MODIFIER_SEPARATOR, s.matched]
       when s.scan(/\w+/)

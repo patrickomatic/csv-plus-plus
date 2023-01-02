@@ -2,15 +2,16 @@ require 'csv'
 require 'tempfile'
 require_relative 'row'
 require_relative 'code_section'
+require_relative 'syntax_error'
 
 module CSVPlusPlus
   class Template
     attr_reader :rows
 
-    def initialize(key_values: {}, verbose: false)
+    def initialize(key_values: {}, verbose: false, rows: [])
       @key_values = key_values
       @verbose = verbose
-      @rows = []
+      @rows = rows
     end
 
     def self.process!(input, key_values: {}, verbose: false)
@@ -32,25 +33,37 @@ module CSVPlusPlus
       end
     end
 
-    # TODO move this into a CsvSection?
     def parse_rows!(file)
-      @rows = CSV.new(file).map.with_index(1) do |row, row_number|
-        Row.parse_row(row, row_number)
+      infinite_expands = 0
+      @rows = CSV.new(file).map.with_index do |row, row_number|
+        row = Row.parse_row(row, row_number)
+
+        infinite_expands += 1 if row.modifier.expand&.infinite?
+        if infinite_expands > 1
+          raise SyntaxError.new('You can only have one infinite expand= (on all others you must specify an amount)',
+                                row_number:)
+        end
+
+        row
       end
     end
 
     def expand_rows!
-      # TODO we should have a check that you can only have one infinite expand
       expanded_rows = []
       @rows.each do |row|
-        if !row.modifier.nil? && !row.modifier.expand.nil?
-          # TODO make the 1000 agreed upon somewhere
-          (row.modifier.expand.repetitions || (1000 - @rows.length)).times do
-            expanded_rows = expanded_rows << Marshal.load(Marshal.dump(row))
-          end
+        if row.modifier.expand
+          # TODO ideally we want to merge the contents of the expanded row to the rows below it.
+          # an example is you wanted a formula to apply for the rest of the sheet but you also
+          # wanted to supply the first couple rows for it underneath it's expand definition
+          row.expand_amount.times { expanded_rows << row.deep_clone }
         else
-          expanded_rows = expanded_rows << Marshal.load(Marshal.dump(row))
+          expanded_rows << row
         end
+      end
+
+      # expanding screwed up row indexes, so recalculate them
+      expanded_rows.each_with_index do |row, index|
+        row.index = index
       end
 
       @rows = expanded_rows
@@ -62,8 +75,9 @@ module CSVPlusPlus
           cell.interpolate_variables!({
             "rownum" => [:number, row_number],
             # TODO infer a type from the key_values
-            **Hash[@key_values.map {|k, v| [k, [:unknown, v]]}],
             **variables,
+            # user-supplied key/values come last so they can override everything if the user wants
+            **Hash[@key_values.map {|k, v| [k, [:unknown, v]]}],
           })
         end
       end

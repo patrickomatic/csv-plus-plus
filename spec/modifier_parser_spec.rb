@@ -11,6 +11,7 @@ describe CSVPlusPlus::ModifierParser do
 
     context "without a modifier" do
       let(:value) { "foo" }
+
       it { is_expected.to eq "foo" }
     end
 
@@ -18,7 +19,6 @@ describe CSVPlusPlus::ModifierParser do
       let(:value) { "[[align=left]]foo" }
 
       it { is_expected.to eq "foo" }
-
       it "updates the cell_modifier with align=left" do
         expect(cell_modifier.align).to eq(['left'])
       end
@@ -28,7 +28,6 @@ describe CSVPlusPlus::ModifierParser do
       let(:value) { "[[align=left/format=bold/format=underline]]=A + B" }
 
       it { is_expected.to eq "=A + B" }
-
       it "updates cell_modifier" do
         expect(cell_modifier).to be_bold
         expect(cell_modifier).to be_underline
@@ -40,10 +39,27 @@ describe CSVPlusPlus::ModifierParser do
       let(:value) { "![[align=center / format=bold]]Stocks" }
 
       it { is_expected.to eq "Stocks" }
-
       it "updates row_modifier" do
         expect(row_modifier).to be_bold
         expect(row_modifier.align).to eq(['center'])
+      end
+    end
+
+    context "a note" do
+      let(:value) { "[[note='this is a note']]=A + B" }
+
+      it { is_expected.to eq "=A + B" }
+      it "sets the note" do
+        expect(cell_modifier.note).to eq('this is a note')
+      end
+    end
+
+    context "a hyperlink" do
+      let(:value) { "[[hyperlink='https://foo.bar']]value" }
+
+      it { is_expected.to eq "value" }
+      it "sets the hyperlink" do
+        expect(cell_modifier.hyperlink).to eq('https://foo.bar')
       end
     end
   end

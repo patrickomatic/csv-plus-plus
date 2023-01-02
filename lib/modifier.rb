@@ -5,7 +5,7 @@ module CSVPlusPlus
   class Modifier
     Expand = Struct.new(:repetitions) do
       def infinite?
-        repetitions.ni?
+        repetitions.nil?
       end
 
       def to_s
@@ -16,9 +16,9 @@ module CSVPlusPlus
     attr_accessor :bordersize,
                   :borderstyle,
                   :expand,
-                  :font,
                   :fontcolor,
                   :fontfamily,
+                  :fontsize,
                   :hyperlink,
                   :note,
                   :row_level,
@@ -41,11 +41,31 @@ module CSVPlusPlus
     end
 
     def borders
-      @borders.to_a
+      @borders
     end
 
     def border=(value)
       @borders << value
+    end
+
+    def border_all?
+      @borders.include? 'all'
+    end
+
+    def border_top?
+      border_all? || @borders.include?('top')
+    end
+
+    def border_right?
+      border_all? || @borders.include?('right')
+    end
+
+    def border_bottom?
+      border_all? || @borders.include?('bottom')
+    end
+
+    def border_left?
+      border_all? || @borders.include?('left')
     end
 
     def has_border?
@@ -53,7 +73,7 @@ module CSVPlusPlus
     end
 
     def formats
-      @formats.to_a
+      @formats
     end
 
     def format=(value)
@@ -96,11 +116,27 @@ module CSVPlusPlus
       !@row_level
     end
 
-    def clone_defaults_from
-      self.clone.tap do |m|
-        # unset row-specific modifiers, leave the rest alone (we want them as defaults)
-        m.expand = nil
-        m.row_level = false
+    def borderstyle
+      @borderstyle || 'solid'
+    end
+
+    def take_defaults_from!(m)
+      %i[
+        @align 
+        @borderstyle 
+        @borders
+        @formats
+        @bordersize
+        @borderstyle
+        @fontcolor
+        @fontfamily
+        @fontsize
+        @hyperlink
+        @note
+        @validation
+      ].each do |property|
+        value = m.instance_variable_get property
+        self.instance_variable_set(property, value.clone)
       end
     end
   end

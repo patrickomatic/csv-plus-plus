@@ -12,22 +12,43 @@ module CSVPlusPlus
 
     attr_reader :sheet_id, :sheet_name
 
-    def initialize(sheet_id, sheet_name: nil, verbose: false, cell_offset: 0, row_offset: 0)
+    def initialize(sheet_id,
+                   sheet_name: nil, verbose: false,
+                   cell_offset: 0, row_offset: 0, create_if_not_exists: false)
       @sheet_name = sheet_name
       @sheet_id = sheet_id
       @verbose = verbose
       @cell_offset = cell_offset
       @row_offset = row_offset
-
-      auth_with_gs!
     end
 
-    def auth_with_gs!
+    def push!(template)
+      auth!
+
+      get_spreadsheet!
+      get_spreadsheet_values!
+
+      create_sheet! if @create_if_not_exists
+
+      update_cells!(template)
+    end
+
+    protected
+
+    def format_range range
+      @sheet_name ? "'#{@sheet_name}'!#{range}" : range
+    end
+
+    def full_range
+      format_range FULL_RANGE
+    end
+
+    def auth!
       @gs ||= SheetsApi::SheetsService.new
       @gs.authorization = Google::Auth.get_application_default(SPREADSHEET_AUTH_SCOPES)
     end
 
-    def get_current_values!
+    def get_spreadsheet_values!
       formatted_values = @gs.get_spreadsheet_values(@sheet_id, full_range,
                                                     value_render_option: 'FORMATTED_VALUE')
       formula_values = @gs.get_spreadsheet_values(@sheet_id, full_range,
@@ -49,17 +70,134 @@ module CSVPlusPlus
       end
     end
 
-    def format_range range
-      @sheet_name ? "'#{@sheet_name}'!#{range}" : range
+    def sheet
+      return nil unless @sheet_name
+      @spreadsheet.sheets.find {|s| s.properties.title.strip == @sheet_name.strip}
     end
 
-    def full_range
-      format_range FULL_RANGE
+    def get_spreadsheet!
+      @spreadsheet = @gs.get_spreadsheet(@sheet_id)
+
+      if @sheet_name.nil?
+        @sheet_name = @spreadsheet.sheets.first.properties.title
+      end
     end
 
-    def push!(template)
-      get_current_values!
-      update_cells!(template)
+    def create_sheet!
+      return if sheet
+
+      @gs.create_spreadsheet(@sheet_name)
+      get_spreadsheet!
+      @sheet_name = @spreadsheet.sheets.last.properties.title
+    end
+
+    def build_text_format(modifier)
+      SheetsApi::CellFormat.new.tap do |cf| 
+        cf.text_format = SheetsApi::TextFormat.new.tap do |tf|
+          tf.bold = true if modifier.bold?
+          tf.italic = true if modifier.italic? 
+          tf.strikethrough = true if modifier.strikethrough? 
+          tf.underline = true if modifier.underline? 
+
+          tf.font_family = modifier.fontfamily if modifier.fontfamily
+          tf.foreground_color = modifier.fontcolor if modifier.fontcolor
+
+          # TODO what's the difference with this one
+          # tf.foreground_color_style = cell.fontcolor if cell.fontcolor
+        end
+      end
+    end
+
+    # TODO eventually we can probably have a mix-in and put some methods in Cell
+    # or maybe make a GoogleSheetCell wrapper that has a Cell
+    def grid_range_for_cell(cell)
+      SheetsApi::GridRange.new(
+        sheet_id: sheet.properties.sheet_id,
+        start_column_index: cell.index,
+        end_column_index: cell.index + 1,
+        start_row_index: cell.row_index,
+        end_row_index: cell.row_index + 1,
+      )
+    end
+
+    def build_cell_value(cell)
+      SheetsApi::ExtendedValue.new.tap do |xv|
+        value = cell.value.nil? ?
+          (@current_values[cell.row_index][cell.index] rescue nil) : 
+          cell.to_csv
+
+        set_extended_value_type!(xv, value)
+      end
+    end
+
+    def build_cell_data(cell)
+      mod = cell.modifier
+
+      SheetsApi::CellData.new.tap do |cd|
+        cd.user_entered_format = build_text_format(cell.modifier)
+        cd.note = mod.note if mod.note 
+        # TODO hyperlinks are weird because they turn into a cell with value "=HYPERLINK()" (this is readonly)
+        cd.hyperlink = mod.hyperlink if mod.hyperlink
+
+        # XXX apply align
+        # XXX apply data validation
+        cd.user_entered_value = build_cell_value(cell)
+      end
+    end
+
+    def build_row_data(row) 
+      SheetsApi::RowData.new(values: row.cells.map {|cell| build_cell_data(cell)})
+    end
+
+    def build_update_cells_request(rows)
+      SheetsApi::UpdateCellsRequest.new.tap do |uc|
+        uc.fields = '*'
+        uc.start = SheetsApi::GridCoordinate.new(
+          sheet_id: sheet.properties.sheet_id,
+          row_index: @row_offset,
+          column_index: @cell_offset,
+        )
+        uc.rows = rows.map do |row|
+          build_row_data(row)
+        end
+      end
+    end
+
+    def build_update_borders_request(cell)
+      SheetsApi::Request.new.tap do |r|
+        r.update_borders = SheetsApi::UpdateBordersRequest.new.tap do |br|
+          # TODO allow different border styles
+          border = SheetsApi::Border.new(color: '#000000', style: 'solid')
+          br.top = border if cell.modifier.border_top?
+          br.right = border if cell.modifier.border_right?
+          br.left = border if cell.modifier.border_left?
+          br.bottom = border if cell.modifier.border_bottom?
+
+          br.range = grid_range_for_cell cell
+        end
+      end
+    end
+
+    def update_cells!(template)
+      batch_request = SheetsApi::BatchUpdateSpreadsheetRequest.new.tap do |bu|
+        bu.requests = template.rows.each_slice(1000).to_a.map do |rows|
+          SheetsApi::Request.new.tap do |r|
+            r.update_cells = build_update_cells_request(rows)
+          end
+        end
+
+        template.rows.each do |row|
+          row.cells.filter {|c| c.modifier.has_border? }.each do |cell|
+            bu.requests << build_update_borders_request(cell)
+          end
+        end
+      end
+
+      if @verbose
+        puts "Calling batch_update_spreadsheet on #@sheet_id/#@sheet_name with", batch_request
+      end
+
+      @gs.batch_update_spreadsheet(@sheet_id, batch_request)
     end
 
     private
@@ -76,70 +214,6 @@ module CSVPlusPlus
       else
         extended_value.string_value = value
       end
-    end
-
-    def update_cells!(template)
-      batch_request = SheetsApi::BatchUpdateSpreadsheetRequest.new.tap do |bu|
-        bu.requests = template.rows.each_slice(1000).to_a.map do |rows|
-          SheetsApi::Request.new.tap do |r|
-            r.update_cells = SheetsApi::UpdateCellsRequest.new.tap do |uc|
-              uc.fields = '*'
-              uc.start = SheetsApi::GridCoordinate.new.tap do |gc|
-                # XXX figure out how to query this
-                gc.sheet_id = @sheet_name == "Sheet1" ? 0 : 1704582377
-                gc.column_index = @cell_offset
-                gc.row_index = @row_offset
-              end
-
-              uc.rows = rows.map.with_index do |row, row_index|
-                SheetsApi::RowData.new.tap do |rd|
-                  rd.values = row.cells.map.with_index do |cell, cell_index| 
-                    mod = cell.modifier
-
-                    SheetsApi::CellData.new.tap do |cd|
-                      cd.user_entered_format = SheetsApi::CellFormat.new.tap do |cf| 
-                        cf.text_format = SheetsApi::TextFormat.new.tap do |tf|
-                          tf.bold = true if mod.bold?
-                          tf.italic = true if mod.italic? 
-                          tf.strikethrough = true if mod.strikethrough? 
-                          tf.underline = true if mod.underline? 
-
-                          tf.font_family = mod.fontfamily if mod.fontfamily
-                          tf.foreground_color = mod.fontcolor if mod.fontcolor
-
-                          # TODO what's the difference with this one
-                          # tf.foreground_color_style = cell.fontcolor if cell.fontcolor
-                        end
-                      end
-
-                      cd.note = mod.note if mod.note 
-                      cd.hyperlink = mod.hyperlink if mod.hyperlink
-
-                      if mod.has_border?
-                        # XXX apply borders
-                      end
-                      # XXX apply data validation
-                      cd.user_entered_value = SheetsApi::ExtendedValue.new.tap do |xv|
-                        value = cell.value.nil? ? 
-                            (@current_values[row_index][cell_index] rescue nil) : 
-                            cell.to_csv
-
-                        set_extended_value_type!(xv, value)
-                      end
-                    end
-                  end
-                end
-              end
-            end
-          end
-        end
-      end
-
-      if @verbose
-        puts "Calling batch_update_spreadsheet on #@sheet_id/#@sheet_name with", batch_request
-      end
-
-      @gs.batch_update_spreadsheet(@sheet_id, batch_request)
     end
   end
 end

@@ -4,12 +4,15 @@ require_relative 'ast'
 
 module CSVPlusPlus
   class Cell
-    attr_reader :ast, :modifier
+    attr_accessor :row_index
+    attr_reader :ast, :index, :modifier
 
-    def initialize(value, modifier)
+    def initialize(row_index, index, value, modifier)
       @value = value
       @ast = CellValueParser.new.parse(value) unless value.nil?
       @modifier = modifier
+      @index = index
+      @row_index = row_index
     end
 
     def interpolate_variables!(variables)

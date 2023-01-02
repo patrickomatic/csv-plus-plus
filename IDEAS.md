@@ -1,7 +1,7 @@
 # Modifiers to rows & cells
 
 - [ ] conditional formatting
-- [ ] make cell-level modifiers override row-level
+- [x] make cell-level modifiers override row-level
 - [x] data validation
 - [x] fonts
 - [x] freeze
@@ -23,6 +23,6 @@
 
 - [ ] Charts
 - [ ] Pivot table support - not sure what this would even look like
-- [ ] create the spreadsheet if it doesn't exist
 - [ ] backups before each write?
+- [x] create the spreadsheet if it doesn't exist
 - [x] verbose mode

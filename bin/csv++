@@ -7,12 +7,14 @@ OptionParser.new do |parser|
   parser.on("-g SHEET_ID", "--google-sheet-id SHEET_ID",
             "The id of the sheet - you can extract this from the URL: https://docs.google.com/spreadsheets/d/< ... SHEET_ID ... >/edit#gid=0")
 
-  parser.on("-c", "--create", "Create the sheet if it doesn't exist")
+  parser.on("-c", "--create",
+            "Create the sheet if it doesn't exist.  It will use --sheet-name if specified")
 
   parser.on("-k KEY_VALUES", "--key-values KEY_VALUES", 
             "A comma-separated list of key=values which will be made available to the template")
 
-  parser.on("-n SHEET_NAME", "--sheet-name SHEET_NAME", "The name of the sheet to apply the template to")
+  parser.on("-n SHEET_NAME", "--sheet-name SHEET_NAME",
+            "The name of the sheet to apply the template to")
 
   parser.on("-v", "--verbose", "Enable verbose output")
 
@@ -28,7 +30,6 @@ end.parse!(into: options)
 
 google_sheet_id = options[:"google-sheet-id"]
 
-# TODO why doesn't OptionParser enforce this
 unless google_sheet_id 
   $stderr.puts "You must specify a --google-sheet-id/-g param for the sheet to write to."
   exit 1
