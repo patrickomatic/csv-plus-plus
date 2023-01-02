@@ -105,6 +105,15 @@ module CSVPlusPlus
           # TODO what's the difference with this one
           # tf.foreground_color_style = cell.fontcolor if cell.fontcolor
         end
+
+        cf.horizontal_alignment = 'LEFT' if modifier.left_align?
+        cf.horizontal_alignment = 'RIGHT' if modifier.right_align?
+        cf.horizontal_alignment = 'CENTER' if modifier.center_align?
+
+        cf.vertical_alignment = 'TOP' if modifier.top_align?
+        cf.vertical_alignment = 'BOTTOM' if modifier.bottom_align?
+
+        cf.background_color = modifier.color
       end
     end
 
@@ -135,11 +144,11 @@ module CSVPlusPlus
 
       SheetsApi::CellData.new.tap do |cd|
         cd.user_entered_format = build_text_format(cell.modifier)
+
         cd.note = mod.note if mod.note 
         # TODO hyperlinks are weird because they turn into a cell with value "=HYPERLINK()" (this is readonly)
         cd.hyperlink = mod.hyperlink if mod.hyperlink
 
-        # XXX apply align
         # XXX apply data validation
         cd.user_entered_value = build_cell_value(cell)
       end
@@ -157,16 +166,14 @@ module CSVPlusPlus
           row_index: @row_offset,
           column_index: @cell_offset,
         )
-        uc.rows = rows.map do |row|
-          build_row_data(row)
-        end
+        uc.rows = rows.map {|row| build_row_data(row)}
       end
     end
 
     def build_update_borders_request(cell)
       SheetsApi::Request.new.tap do |r|
         r.update_borders = SheetsApi::UpdateBordersRequest.new.tap do |br|
-          # TODO allow different border styles
+          # TODO allow different border styles per side
           border = SheetsApi::Border.new(color: '#000000', style: 'solid')
           br.top = border if cell.modifier.border_top?
           br.right = border if cell.modifier.border_right?

@@ -8,7 +8,7 @@ preclow
 token A1_NOTATION
       END_MODIFIERS
       HEX_COLOR
-      INTEGER
+      NUMBER
       MODIFIER_ID
       MODIFIER_SEPARATOR
       START_CELL_MODIFIERS
@@ -33,18 +33,22 @@ rule
 
   modifier: 'align'       '=' align_options
           | 'border'      '=' border_options
+          | 'bordercolor' '=' color               { s!(:bordercolor, val[2])                        }
           | 'borderstyle' '=' borderstyle_option  { s!(:borderstyle, val[2])                        }
-          | 'expand'      '=' INTEGER             { s!(:expand, Modifier::Expand.new(val[2].to_i))  }
+          | 'color'       '=' color               { s!(:color, val[2])                              }
+          | 'expand'      '=' NUMBER              { s!(:expand, Modifier::Expand.new(val[2].to_i))  }
           | 'expand'                              { s!(:expand, Modifier::Expand.new)               }
           | 'font'        '=' STRING              { s!(:fontfamily, val[2])                         }
-          | 'fontcolor'   '=' STRING | HEX_COLOR  { s!(:fontcolor, val[2])                          }
+          | 'fontcolor'   '=' color               { s!(:fontcolor, val[2])                          }
           | 'fontfamily'  '=' STRING              { s!(:fontfamily, val[2])                         }
-          | 'fontsize'    '=' INTEGER             { s!(:fontsize, val[2].to_f)                      }
+          | 'fontsize'    '=' NUMBER              { s!(:fontsize, val[2].to_f)                      }
           | 'format'      '=' format_options
           | 'freeze'                              { freeze!                                         }
           | 'hyperlink'   '=' STRING              { s!(:hyperlink, val[2])                          }
           | 'note'        '=' STRING              { s!(:note, val[2])                               }
           | 'validate'    '=' condition           { s!(:validation, val[2])                         }
+
+  color: STRING | HEX_COLOR
 
   format_options: format_options format_option | format_option { s!(:format, val[0]) }
   format_option: 'bold' | 'italic' | 'strikethrough' | 'underline'
@@ -165,8 +169,8 @@ require_relative 'modifier'
         tokens << [:A1_NOTATION, s.matched]
       when s.scan(/=/)
         tokens << [s.matched, s.matched]
-      when s.scan(/-?\d+/)
-        tokens << [:INTEGER, s.matched]
+      when s.scan(/-?[\d.]+/)
+        tokens << [:NUMBER, s.matched]
       when s.scan(/'(?:[^'\\]|\\(?:['\\\/bfnrt]|u[0-9a-fA-F]{4}))*'/)
         tokens << [:STRING, s.matched.gsub(/^'|'$/, '')]
       when s.scan(/\//) 

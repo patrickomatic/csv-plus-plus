@@ -20,7 +20,7 @@ describe CSVPlusPlus::ModifierParser do
 
       it { is_expected.to eq "foo" }
       it "updates the cell_modifier with align=left" do
-        expect(cell_modifier.align).to eq(['left'])
+        expect(cell_modifier).to be_left_align
       end
     end
 
@@ -31,7 +31,7 @@ describe CSVPlusPlus::ModifierParser do
       it "updates cell_modifier" do
         expect(cell_modifier).to be_bold
         expect(cell_modifier).to be_underline
-        expect(cell_modifier.align).to eq(['left'])
+        expect(cell_modifier).to be_left_align
       end
     end
 
@@ -41,7 +41,7 @@ describe CSVPlusPlus::ModifierParser do
       it { is_expected.to eq "Stocks" }
       it "updates row_modifier" do
         expect(row_modifier).to be_bold
-        expect(row_modifier.align).to eq(['center'])
+        expect(row_modifier).to be_center_align
       end
     end
 

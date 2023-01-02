@@ -13,8 +13,10 @@ module CSVPlusPlus
       end
     end
 
-    attr_accessor :bordersize,
+    attr_accessor :bordercolor,
+                  :bordersize,
                   :borderstyle,
+                  :color,
                   :expand,
                   :fontcolor,
                   :fontfamily,
@@ -32,12 +34,28 @@ module CSVPlusPlus
       @formats = Set.new
     end
 
-    def align
-      @align.to_a
-    end
-
     def align=(value)
       @align << value
+    end
+
+    def center_align?
+      @align.include?('center')
+    end
+
+    def left_align?
+      @align.include?('left')
+    end
+
+    def right_align?
+      @align.include?('right')
+    end
+
+    def top_align?
+      @align.include?('top')
+    end
+
+    def bottom_align?
+      @align.include?('bottom')
     end
 
     def borders
@@ -122,9 +140,11 @@ module CSVPlusPlus
 
     def take_defaults_from!(m)
       %i[
-        @align 
-        @borderstyle 
+        @align
+        @bordercolor
         @borders
+        @borderstyle
+        @color
         @formats
         @bordersize
         @borderstyle

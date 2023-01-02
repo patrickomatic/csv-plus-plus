@@ -1,12 +1,13 @@
+- [ ] make a "dateformat" and "numberformat" with types like "accounting", "currency", etc
 - [ ] make some of the lexer regexes and logic reusable
-- [ ] option to create the spreadsheet if it doesn't exist
-- [ ] CLI-specified offsets working
 - [ ] conditional formatting modifiers
-- [ ] cell color modifiers
 - [ ] make verbose mode better/implement better to\_s throughout
 - [ ] incorporate the input filename into error traces
 - [ ] API-level error handling is pretty bad
-- [ ] Can we default to choosing the first sheet rather than having to supply --sheet-name
+- [x] CLI-specified offsets working
+- [x] cell color modifiers
+- [x] Can we default to choosing the first sheet rather than having to supply --sheet-name
+- [x] option to create the spreadsheet if it doesn't exist
 - [x] hyperlink modifiers
 - [x] note modifiers
 - [x] border modifiers

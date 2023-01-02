@@ -19,7 +19,7 @@ describe CSVPlusPlus::Template do
       let(:input) { "foo,[[align=right/format=bold]]bar,baz" }
 
       it "creates cells with the modifiers" do
-        expect(template.rows[0].cells[1].modifier.align).to eq(['right'])
+        expect(template.rows[0].cells[1].modifier).to be_right_align
         expect(template.rows[0].cells[1].modifier).to be_bold
       end
     end
@@ -37,7 +37,7 @@ describe CSVPlusPlus::Template do
       let(:input) { "![[align=center/format=bold]]foo,bar,baz" }
 
       it "creates rows with the modifiers" do
-        expect(template.rows[0].modifier.align).to eq(['center'])
+        expect(template.rows[0].modifier).to be_center_align
         expect(template.rows[0].modifier).to be_bold
       end
     end
