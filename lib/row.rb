@@ -26,6 +26,7 @@ module CSVPlusPlus
     end
 
     def index=(i)
+      @index = i
       @cells.each {|cell| cell.row_index = i}
     end
 

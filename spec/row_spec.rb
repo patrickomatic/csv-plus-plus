@@ -94,6 +94,10 @@ describe CSVPlusPlus::Row do
 
     before { row.index = 10 }
 
+    it "sets the value" do
+      expect(row.index).to eq 10
+    end
+
     it "propagates the change to each cell.row_index" do
       expect(row.cells[0].row_index).to eq 10
       expect(row.cells[1].row_index).to eq 10

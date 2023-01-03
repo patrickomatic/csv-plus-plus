@@ -40,8 +40,11 @@ module CSVPlusPlus
 
         infinite_expands += 1 if row.modifier.expand&.infinite?
         if infinite_expands > 1
-          raise SyntaxError.new('You can only have one infinite expand= (on all others you must specify an amount)',
-                                row_number:)
+          raise SyntaxError.new(
+            'You can only have one infinite expand= (on all others you must specify an amount)',
+            row,
+            row_number:,
+          )
         end
 
         row
@@ -62,9 +65,7 @@ module CSVPlusPlus
       end
 
       # expanding screwed up row indexes, so recalculate them
-      expanded_rows.each_with_index do |row, index|
-        row.index = index
-      end
+      expanded_rows.each_with_index {|row, index| row.index = index}
 
       @rows = expanded_rows
     end
@@ -74,8 +75,8 @@ module CSVPlusPlus
         row.cells.each do |cell|
           cell.interpolate_variables!({
             "rownum" => [:number, row_number],
-            # TODO infer a type from the key_values
             **variables,
+            # TODO infer a type from the key_values
             # user-supplied key/values come last so they can override everything if the user wants
             **Hash[@key_values.map {|k, v| [k, [:unknown, v]]}],
           })
