@@ -33,6 +33,7 @@ module CSVPlusPlus
                   :fontfamily,
                   :fontsize,
                   :note,
+                  :numberformat,
                   :row_level,
                   :validation
 

@@ -124,6 +124,10 @@ module CSVPlusPlus
             blue: mod.color.blue,
           )
         end
+
+        if mod.numberformat
+          cf.number_format = SheetsApi::NumberFormat.new(type: mod.numberformat)
+        end
       end
     end
 
