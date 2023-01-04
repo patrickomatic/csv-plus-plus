@@ -31,21 +31,22 @@ rule
 
   modifiers: modifiers MODIFIER_SEPARATOR modifier | modifier
 
-  modifier: 'align'       '=' align_options
-          | 'border'      '=' border_options
-          | 'bordercolor' '=' HEX_COLOR           { s!(:bordercolor, val[2])                        }
-          | 'borderstyle' '=' borderstyle_option  { s!(:borderstyle, val[2])                        }
-          | 'color'       '=' HEX_COLOR           { s!(:color, val[2])                              }
-          | 'expand'      '=' NUMBER              { s!(:expand, Modifier::Expand.new(val[2].to_i))  }
-          | 'expand'                              { s!(:expand, Modifier::Expand.new)               }
-          | 'font'        '=' STRING              { s!(:fontfamily, val[2])                         }
-          | 'fontcolor'   '=' HEX_COLOR           { s!(:fontcolor, val[2])                          }
-          | 'fontfamily'  '=' STRING              { s!(:fontfamily, val[2])                         }
-          | 'fontsize'    '=' NUMBER              { s!(:fontsize, val[2].to_f)                      }
-          | 'format'      '=' format_options
-          | 'freeze'                              { freeze!                                         }
-          | 'note'        '=' STRING              { s!(:note, val[2])                               }
-          | 'validate'    '=' condition           { s!(:validation, val[2])                         }
+  modifier: 'align'        '=' align_options
+          | 'border'       '=' border_options
+          | 'bordercolor'  '=' HEX_COLOR           { s!(:bordercolor, val[2])                        }
+          | 'borderstyle'  '=' borderstyle_option  { s!(:borderstyle, val[2])                        }
+          | 'color'        '=' HEX_COLOR           { s!(:color, val[2])                              }
+          | 'expand'       '=' NUMBER              { s!(:expand, Modifier::Expand.new(val[2].to_i))  }
+          | 'expand'                               { s!(:expand, Modifier::Expand.new)               }
+          | 'font'         '=' STRING              { s!(:fontfamily, val[2])                         }
+          | 'fontcolor'    '=' HEX_COLOR           { s!(:fontcolor, val[2])                          }
+          | 'fontfamily'   '=' STRING              { s!(:fontfamily, val[2])                         }
+          | 'fontsize'     '=' NUMBER              { s!(:fontsize, val[2].to_f)                      }
+          | 'format'       '=' format_options
+          | 'freeze'                               { freeze!                                         }
+          | 'note'         '=' STRING              { s!(:note, val[2])                               }
+          | 'numberformat' '=' numberformat_option { s!(:numberformat, val[2])                       }
+          | 'validate'     '=' condition           { s!(:validation, val[2])                         }
 
   format_options: format_options format_option | format_option { s!(:format, val[0]) }
   format_option: 'bold' | 'italic' | 'strikethrough' | 'underline'
@@ -62,6 +63,15 @@ rule
   border_option: 'all' | 'top' | 'right' | 'left' | 'bottom'
 
   borderstyle_option: 'dashed' | 'dotted' | 'double' | 'solid' | 'solid_medium' | 'solid_thick'
+
+  numberformat_option: 'currency'
+                     | 'date'
+                     | 'date_time'
+                     | 'number'
+                     | 'percent'
+                     | 'text'
+                     | 'time'
+                     | 'scientific'
 
   condition: 'blank'
            | 'boolean'
@@ -138,7 +148,8 @@ require_relative 'modifier'
   end
 
   def parse(text, cell_modifier:, row_modifier:, row_number: nil, cell_number: nil)
-    if text.nil? || !(text.strip.start_with?("[[") || text.start_with?("![["))
+    modifiers_to_parse = (text || '').scan(/!?\[\[/).count
+    if modifiers_to_parse == 0
       cell_modifier.take_defaults_from!(row_modifier)
       return text
     end
@@ -156,10 +167,13 @@ require_relative 'modifier'
       when s.scan(/\!\[\[/)
         tokens << [:START_ROW_MODIFIERS, s.matched]
       when s.scan(/\]\]/)
-        # XXX we need to keep going if there are two modifiers
+        modifiers_to_parse -= 1 
         tokens << [:END_MODIFIERS, s.matched]
-        value_without_modifier = s.rest
-        break
+
+        if modifiers_to_parse == 0
+          value_without_modifier = s.rest
+          break
+        end
       when s.scan(/^#(([0-9a-fA-F]{2}){3}|([0-9a-fA-F]){3})/)
         tokens << [:HEX_COLOR, s.matched]
       when s.scan(/(['\w]+\!)?[\w\d]+:[\w\d]+/)

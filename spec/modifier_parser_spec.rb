@@ -69,5 +69,22 @@ describe CSVPlusPlus::ModifierParser do
         expect(cell_modifier.color.blue).to eq 1
       end
     end
+
+    context "a row and a cell modifier" do
+      let(:value) { "![[align=center / format=bold]][[format=underline]]Stocks" }
+
+      it { is_expected.to eq "Stocks" }
+
+      it "parses the row modifier" do
+        expect(row_modifier).to be_bold
+        expect(row_modifier).to be_center_align
+      end
+
+      it "also parses the cell modifier and applies the row modifier" do
+        expect(cell_modifier).to be_bold
+        expect(cell_modifier).to be_underline
+        expect(cell_modifier).to be_center_align
+      end
+    end
   end
 end
