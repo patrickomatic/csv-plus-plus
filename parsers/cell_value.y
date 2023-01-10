@@ -1,41 +1,33 @@
-# TODO add support for A1
-class CSVPlusPlus::CellValueParser
+class CSVPlusPlus::Language::CellValueParser
 prechigh
   left '(' ')'
   left '&'
   left '*' '/'
   left '+' '-'
 preclow
-token A1
-      EOL 
+token EOL
       FALSE
-      ID 
-      NUMBER 
-      STRING 
-      TRUE 
-      VAR_EXPAND
+      ID
+      NUMBER
+      STRING
+      TRUE
+      VAR_REF
 
 rule
-  cell_value: '=' exp EOL             { @ast = val[1] }
+  cell_value: '=' exp EOL                   { @ast = val[1]                                         }
 
-  exp: ID '(' fn_call_args ')'        { result = [[:fn, val[0]], val[2]]                }
-     | ID '(' ')'                     { result = [[:fn, val[0]]]                        }
-     | ID '(' exp ')'                 { result = [[:fn, val[0]], [val[2]]]              }
-#     | exp '&' exp                    { result = [[:fn, "CONCAT"], [val[0], val[2]]]    }
-#     | exp '*' exp                    { result = [[:fn, "MULTIPLY"], [val[0], val[2]]]  }
-#     | exp '/' exp                    { result = [[:fn, "DIVIDE"], [val[0], val[2]]]    }
-#     | exp '+' exp                    { result = [[:fn, "ADD"], [val[0], val[2]]]       }
-#     | exp '-' exp                    { result = [[:fn, "MINUS"], [val[0], val[2]]]     }
-#     | '(' exp ')'                    { result = val[1]                                 }
-     | VAR_EXPAND ID                  { result = [:var, val[1]]                         } 
-     | STRING                         { result = [:string, val[0].gsub('"', '')]        }
-     | NUMBER                         { result = [:number, val[0].to_i]                 }
-     | TRUE                           { result = [:boolean, true]                       }
-     | FALSE                          { result = [:boolean, false]                      }
-     | ID                             { result = [:id, val[0]]                          }
+  exp: ID '(' fn_call_args ')'              { result = Language::FunctionCall.new(val[0], val[2])   }
+     | ID '(' ')'                           { result = Language::FunctionCall.new(val[0], [])       }
+     | ID '(' exp ')'                       { result = Language::FunctionCall.new(val[0], [val[2]]) }
+     | VAR_REF ID                           { result = Language::Variable.new(val[1])               }
+     | STRING                               { result = Language::String.new(val[0].gsub('"', ''))   }
+     | NUMBER                               { result = Language::Number.new(val[0])                 }
+     | TRUE                                 { result = Language::Boolean.new(true)                  }
+     | FALSE                                { result = Language::Boolean.new(false)                 }
+     | ID                                   { result = val[0]                                       }
 
-  fn_call_args: fn_call_args ',' exp  { result = [val[0], val[2]] }
-              | exp                   { result = val[0]           }
+  fn_call_args: fn_call_args ',' exp        { result = [val[0], val[2]]                             }
+              | exp                         { result = val[0]                                       }
 
 end
 
@@ -46,7 +38,7 @@ require_relative 'syntax_error'
 ---- inner
   attr_accessor :ast
 
-  def parse(text)
+  def parse(text, execution_context)
     return nil unless text.strip.start_with?('=')
     tokens = []
 
@@ -63,13 +55,13 @@ require_relative 'syntax_error'
       when s.scan(/-?[\d.]+/)
         tokens << [:NUMBER, s.matched]
       when s.scan(/\$\$/)
-        tokens << [:VAR_EXPAND, s.matched]
+        tokens << [:VAR_REF, s.matched]
       when s.scan(/[\$\w_]+/)
         tokens << [:ID, s.matched]
       when s.scan(/[\(\)\/\*\+\-,=&]/)
         tokens << [s.matched, s.matched]
       else
-        raise SyntaxError.new("Unable to parse starting at", s.rest)
+        raise SyntaxError.new("Unable to parse starting at", s.rest, execution_context)
       end 
     end
     tokens << [:EOL, :EOL]
@@ -79,7 +71,8 @@ require_relative 'syntax_error'
     begin
       do_parse
     rescue Racc::ParseError => e
-      raise SyntaxError.new("Error parsing code section", e.message, wrapped_error: e)
+      raise SyntaxError.new("Error parsing code section", e.message, execution_context, 
+                            wrapped_error: e)
     end
     @ast
   end

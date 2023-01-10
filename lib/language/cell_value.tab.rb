@@ -10,12 +10,13 @@ require 'strscan'
 require_relative 'syntax_error'
 
 module CSVPlusPlus
-  class CellValueParser < Racc::Parser
+  module Language
+    class CellValueParser < Racc::Parser
 
-module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 47)
+module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 39)
   attr_accessor :ast
 
-  def parse(text)
+  def parse(text, execution_context)
     return nil unless text.strip.start_with?('=')
     tokens = []
 
@@ -32,13 +33,13 @@ module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 47)
       when s.scan(/-?[\d.]+/)
         tokens << [:NUMBER, s.matched]
       when s.scan(/\$\$/)
-        tokens << [:VAR_EXPAND, s.matched]
+        tokens << [:VAR_REF, s.matched]
       when s.scan(/[\$\w_]+/)
         tokens << [:ID, s.matched]
       when s.scan(/[\(\)\/\*\+\-,=&]/)
         tokens << [s.matched, s.matched]
       else
-        raise SyntaxError.new("Unable to parse starting at", s.rest)
+        raise SyntaxError.new("Unable to parse starting at", s.rest, execution_context)
       end 
     end
     tokens << [:EOL, :EOL]
@@ -48,7 +49,8 @@ module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 47)
     begin
       do_parse
     rescue Racc::ParseError => e
-      raise SyntaxError.new("Error parsing code section", e.message, wrapped_error: e)
+      raise SyntaxError.new("Error parsing code section", e.message, execution_context, 
+                            wrapped_error: e)
     end
     @ast
   end
@@ -56,17 +58,17 @@ module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 47)
 ##### State transition tables begin ###
 
 racc_action_table = [
-    18,    16,    10,     5,     8,     7,     9,     6,     2,    10,
-     5,     8,     7,     9,     6,    19,    10,     5,     8,     7,
-     9,     6,     3,    11,    12,    13,    14,    20 ]
+    18,    16,    10,     5,     8,     7,     9,     6,    10,     5,
+     8,     7,     9,     6,    19,    10,     5,     8,     7,     9,
+     6,     2,     3,    11,    12,    13,    14,    20 ]
 
 racc_action_check = [
-    15,    13,     2,     2,     2,     2,     2,     2,     0,    13,
-    13,    13,    13,    13,    13,    15,    19,    19,    19,    19,
-    19,    19,     1,     3,     4,     5,     6,    17 ]
+    15,    13,     2,     2,     2,     2,     2,     2,    13,    13,
+    13,    13,    13,    13,    15,    19,    19,    19,    19,    19,
+    19,     0,     1,     3,     4,     5,     6,    17 ]
 
 racc_action_pointer = [
-    -9,    22,    -9,    23,    14,    23,    14,   nil,   nil,   nil,
+     5,    22,    -8,    23,    15,    23,    15,   nil,   nil,   nil,
    nil,   nil,   nil,    -2,   nil,    -3,   nil,    24,   nil,     5,
    nil,   nil ]
 
@@ -91,18 +93,18 @@ racc_goto_default = [
 
 racc_reduce_table = [
   0, 0, :racc_error,
-  3, 20, :_reduce_1,
-  4, 21, :_reduce_2,
-  3, 21, :_reduce_3,
-  4, 21, :_reduce_4,
-  2, 21, :_reduce_5,
-  1, 21, :_reduce_6,
-  1, 21, :_reduce_7,
-  1, 21, :_reduce_8,
-  1, 21, :_reduce_9,
-  1, 21, :_reduce_10,
-  3, 22, :_reduce_11,
-  1, 22, :_reduce_12 ]
+  3, 19, :_reduce_1,
+  4, 20, :_reduce_2,
+  3, 20, :_reduce_3,
+  4, 20, :_reduce_4,
+  2, 20, :_reduce_5,
+  1, 20, :_reduce_6,
+  1, 20, :_reduce_7,
+  1, 20, :_reduce_8,
+  1, 20, :_reduce_9,
+  1, 20, :_reduce_10,
+  3, 21, :_reduce_11,
+  1, 21, :_reduce_12 ]
 
 racc_reduce_n = 13
 
@@ -118,18 +120,17 @@ racc_token_table = {
   "/" => 6,
   "+" => 7,
   "-" => 8,
-  :A1 => 9,
-  :EOL => 10,
-  :FALSE => 11,
-  :ID => 12,
-  :NUMBER => 13,
-  :STRING => 14,
-  :TRUE => 15,
-  :VAR_EXPAND => 16,
-  "=" => 17,
-  "," => 18 }
+  :EOL => 9,
+  :FALSE => 10,
+  :ID => 11,
+  :NUMBER => 12,
+  :STRING => 13,
+  :TRUE => 14,
+  :VAR_REF => 15,
+  "=" => 16,
+  "," => 17 }
 
-racc_nt_base = 19
+racc_nt_base = 18
 
 racc_use_result_var = true
 
@@ -159,14 +160,13 @@ Racc_token_to_s_table = [
   "\"/\"",
   "\"+\"",
   "\"-\"",
-  "A1",
   "EOL",
   "FALSE",
   "ID",
   "NUMBER",
   "STRING",
   "TRUE",
-  "VAR_EXPAND",
+  "VAR_REF",
   "\"=\"",
   "\",\"",
   "$start",
@@ -180,84 +180,84 @@ Racc_debug_parser = false
 
 # reduce 0 omitted
 
-module_eval(<<'.,.,', 'cell_value.y', 18)
+module_eval(<<'.,.,', 'cell_value.y', 16)
   def _reduce_1(val, _values, result)
      @ast = val[1]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 20)
+module_eval(<<'.,.,', 'cell_value.y', 18)
   def _reduce_2(val, _values, result)
-     result = [[:fn, val[0]], val[2]]
+     result = Language::FunctionCall.new(val[0], val[2])
+    result
+  end
+.,.,
+
+module_eval(<<'.,.,', 'cell_value.y', 19)
+  def _reduce_3(val, _values, result)
+     result = Language::FunctionCall.new(val[0], [])
+    result
+  end
+.,.,
+
+module_eval(<<'.,.,', 'cell_value.y', 20)
+  def _reduce_4(val, _values, result)
+     result = Language::FunctionCall.new(val[0], [val[2]])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 21)
-  def _reduce_3(val, _values, result)
-     result = [[:fn, val[0]]]
+  def _reduce_5(val, _values, result)
+     result = Language::Variable.new(val[1])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 22)
-  def _reduce_4(val, _values, result)
-     result = [[:fn, val[0]], [val[2]]]
-    result
-  end
-.,.,
-
-module_eval(<<'.,.,', 'cell_value.y', 29)
-  def _reduce_5(val, _values, result)
-     result = [:var, val[1]]
-    result
-  end
-.,.,
-
-module_eval(<<'.,.,', 'cell_value.y', 30)
   def _reduce_6(val, _values, result)
-     result = [:string, val[0].gsub('"', '')]
+     result = Language::String.new(val[0].gsub('"', ''))
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 31)
+module_eval(<<'.,.,', 'cell_value.y', 23)
   def _reduce_7(val, _values, result)
-     result = [:number, val[0].to_i]
+     result = Language::Number.new(val[0])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 32)
+module_eval(<<'.,.,', 'cell_value.y', 24)
   def _reduce_8(val, _values, result)
-     result = [:boolean, true]
+     result = Language::Boolean.new(true)
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 33)
+module_eval(<<'.,.,', 'cell_value.y', 25)
   def _reduce_9(val, _values, result)
-     result = [:boolean, false]
+     result = Language::Boolean.new(false)
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 34)
+module_eval(<<'.,.,', 'cell_value.y', 26)
   def _reduce_10(val, _values, result)
-     result = [:id, val[0]]
+     result = val[0]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 36)
+module_eval(<<'.,.,', 'cell_value.y', 28)
   def _reduce_11(val, _values, result)
      result = [val[0], val[2]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 37)
+module_eval(<<'.,.,', 'cell_value.y', 29)
   def _reduce_12(val, _values, result)
      result = val[0]
     result
@@ -268,5 +268,6 @@ def _reduce_none(val, _values, result)
   val[0]
 end
 
-  end   # class CellValueParser
+    end   # class CellValueParser
+  end   # module Language
 end   # module CSVPlusPlus

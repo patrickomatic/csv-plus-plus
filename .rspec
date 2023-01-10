@@ -1,1 +1,2 @@
 --require spec_helper
+-I lib -I lib/language

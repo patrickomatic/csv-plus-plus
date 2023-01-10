@@ -4,6 +4,8 @@ require_relative '../lib/csvpp'
 
 options = {}
 OptionParser.new do |parser|
+  parser.on("-b", "--backup", "Create a backup of the spreadsheet before applying changes.")
+
   parser.on("-g SHEET_ID", "--google-sheet-id SHEET_ID",
             "The id of the sheet - you can extract this from the URL: https://docs.google.com/spreadsheets/d/< ... SHEET_ID ... >/edit#gid=0")
 
@@ -39,9 +41,11 @@ key_values = Hash[[options[:"key-values"].split("=")]] rescue {}
 
 begin
   CSVPlusPlus.apply_template_to_sheet!(ARGF.read, 
-                                       google_sheet_id,
+                                       ARGF.filename,
+                                       google_sheet_id: google_sheet_id,
                                        sheet_name: options[:"sheet-name"],
                                        create_if_not_exists: options.include?(:"create"),
+                                       # backup: options[:"backup"], XXX
                                        row_offset: options[:"offset-rows"],
                                        cell_offset: options[:"offset-cells"],
                                        key_values:,

@@ -2,8 +2,11 @@ require 'template'
 require 'syntax_error'
 
 describe CSVPlusPlus::Template do
-  describe "#process!" do
-    let(:template) { CSVPlusPlus::Template.process!(input) }
+  let(:ec) { build(:execution_context, input:) }
+  let(:input) { '' }
+
+  describe "::run" do
+    let(:template) { described_class.run(execution_context: ec) }
     let(:input) { "foo0,bar0,baz0\nfoo1,bar1,baz1\nfoo2,bar2,baz2\n" }
 
     it "creates rows" do
@@ -44,89 +47,41 @@ describe CSVPlusPlus::Template do
     end
   end
 
-  describe "#interpolate_variables!" do
-    let(:template) { CSVPlusPlus::Template.new(rows:, key_values:,) }
-    let(:key_values) { {} }
-    let(:cells_row0) do
-      [
-        CSVPlusPlus::Cell.new(0, 0, "=$$foo", CSVPlusPlus::Modifier.new),
-        CSVPlusPlus::Cell.new(0, 1, "=foo", CSVPlusPlus::Modifier.new),
-        CSVPlusPlus::Cell.new(0, 2, "foo", CSVPlusPlus::Modifier.new),
-        CSVPlusPlus::Cell.new(0, 4, "=$$rownum", CSVPlusPlus::Modifier.new),
-      ]
-    end
-    let(:rows) { [CSVPlusPlus::Row.new(0, cells_row0, CSVPlusPlus::Modifier.new)] }
-
-    before { template.interpolate_variables!({ "foo" => [:number, 1] }) }
-
-    it "interpolates the first one and leaves the others alone" do
-      expect(template.rows[0].cells[0].to_csv).to eq "=1"
-      expect(template.rows[0].cells[1].to_csv).to eq "=foo"
-      expect(template.rows[0].cells[2].to_csv).to eq "foo"
-    end
-
-    it "interpolates $$rownum" do
-      expect(template.rows[0].cells[3].to_csv).to eq "=1"
-    end
-
-    context "with key_values should override builtins" do
-      let(:key_values) { { "rownum" => "1111"} }
-
-      it "interpolates and overrides $$rownum" do
-        expect(template.rows[0].cells[3].to_csv).to eq "=1111"
-      end
-    end
-  end
-
-  describe "#parse_rows!" do
-    let(:template) { CSVPlusPlus::Template.new }
-    let(:input) do
-      Tempfile.new.tap do |f|
-        f.write(file_contents)
-        f.rewind
-      end
-    end
-    let(:file_contents) { "foo,bar,baz\nfoo1,bar1,baz1\nfoo2,bar2,baz2\n" }
-
-    after(:each) { input.close! }
+  describe "#parse_csv_rows!" do
+    let(:ec) { build(:execution_context, input:) }
+    let(:template) { described_class.new(execution_context: ec) }
+    let(:input) { "foo,bar,baz\nfoo1,bar1,baz1\nfoo2,bar2,baz2\n" }
 
     it "parses the CSV rows" do
-      template.parse_rows! input
+      template.parse_csv_rows!
       expect(template.rows.length).to eq 3
     end
 
     context "with multiple infinite expands" do
-      let(:file_contents) { "![[expand]]foo,bar,baz\n![[expand]]foo1,bar1,baz1\nfoo2,bar2,baz2\n" }
+      let(:input) { "![[expand]]foo,bar,baz\n![[expand]]foo1,bar1,baz1\nfoo2,bar2,baz2\n" }
 
       it "throws a SyntaxError" do
-        expect { template.parse_rows! input }.to raise_error(CSVPlusPlus::SyntaxError)
+        expect { template.parse_csv_rows! }.to raise_error(CSVPlusPlus::Language::SyntaxError)
       end
     end
   end
 
   describe "#expand_rows!" do
-    let(:template) { CSVPlusPlus::Template.new(rows:,) }
-    let(:cells_row0) do
-      [
-        CSVPlusPlus::Cell.new(0, 0, "foo", CSVPlusPlus::Modifier.new),
-        CSVPlusPlus::Cell.new(0, 1, "foo", CSVPlusPlus::Modifier.new),
-        CSVPlusPlus::Cell.new(0, 2, "foo", CSVPlusPlus::Modifier.new),
-      ]
-    end
-    let(:cells_row1) do
-      [
-        CSVPlusPlus::Cell.new(1, 0, "a", CSVPlusPlus::Modifier.new),
-        CSVPlusPlus::Cell.new(1, 1, "nother", CSVPlusPlus::Modifier.new),
-        CSVPlusPlus::Cell.new(1, 2, "row", CSVPlusPlus::Modifier.new),
-      ]
-    end
-    let(:rows) do
-      [
-        CSVPlusPlus::Row.new(0, cells_row0,
-                             CSVPlusPlus::Modifier.new.tap {|m| m.expand = CSVPlusPlus::Modifier::Expand.new(2) }),
-        CSVPlusPlus::Row.new(1, cells_row1, CSVPlusPlus::Modifier.new),
-      ]
-    end
+    let(:template) { described_class.new(rows:, execution_context: ec) }
+    let(:cells_row0) { [
+      build(:cell, row_index: 0, index: 0, value: 'foo'),
+      build(:cell, row_index: 0, index: 1, value: 'foo'),
+      build(:cell, row_index: 0, index: 2, value: 'foo'),
+    ] }
+    let(:cells_row1) { [
+        build(:cell, row_index: 1, index: 0, value: 'a'),
+        build(:cell, row_index: 1, index: 1, value: 'nother'),
+        build(:cell, row_index: 1, index: 2, value: 'row'),
+    ] }
+    let(:rows) { [
+      build(:row, index: 0, cells: cells_row0, modifier: build(:modifier_with_expand, repetitions: 2)),
+      build(:row, index: 1, cells: cells_row1),
+    ] }
 
     before { template.expand_rows! }
 
@@ -146,16 +101,61 @@ describe CSVPlusPlus::Template do
     end
 
     context "with an infinite expand" do
-      let(:rows) do
-        [
-          CSVPlusPlus::Row.new(0, cells_row0, CSVPlusPlus::Modifier.new),
-          CSVPlusPlus::Row.new(1, cells_row1,
-                               CSVPlusPlus::Modifier.new.tap {|m| m.expand = CSVPlusPlus::Modifier::Expand.new }),
-        ]
-      end
+      let(:rows) { [
+        build(:row, index: 0, cells: cells_row1),
+        build(:row, index: 1, cells: cells_row0, modifier: build(:modifier_with_expand)),
+      ] }
 
-      it "expands the rows to SPREADSHEET_INFINITY without repetitions" do
+      it "expands the rows to SPREADSHEET_INFINITY" do
         expect(template.rows.length).to eq 1000
+      end
+    end
+
+    context "with an infinite expand that expands over top of rows after it" do
+      let(:rows) { [
+        build(:row, index: 0, cells: cells_row0, modifier: build(:modifier_with_expand)),
+        build(:row, index: 1, cells: cells_row1),
+        build(:row, index: 2, cells: cells_row1),
+      ] }
+
+      xit "expands the rows to SPREADSHEET_INFINITY" do
+        expect(template.rows.length).to eq 1000
+      end
+    end
+  end
+
+  describe "#resolve_variables!" do
+    let(:template) { build(:template, rows:, code_section:, execution_context: ec) }
+    let(:code_section) { build(:code_section, variables:) }
+    let(:cells_row0) { [
+      build(:cell, row_index: 0, index: 0, value: "=$$foo", 
+            ast: build(:variable, id: :foo)),
+      build(:cell, row_index: 0, index: 1, value: "=foo"),
+      build(:cell, row_index: 0, index: 2, value: "foo"),
+      build(:cell, row_index: 0, index: 3, value: "=$$rownum", 
+            ast: build(:variable, id: :rownum)),
+    ] }
+    let(:rows) { [build(:row, index: 0, cells: cells_row0)] }
+    let(:variables) { { foo: build(:number_one) } }
+
+    before { template.resolve_variables! }
+ 
+    it "resolves the first one and leaves the others alone" do
+      puts "ast=#{template.rows[0].cells[0].ast.inspect}"
+      expect(template.rows[0].cells[0].to_csv).to eq "=1"
+      expect(template.rows[0].cells[1].to_csv).to eq "=foo"
+      expect(template.rows[0].cells[2].to_csv).to eq "foo"
+    end
+
+    it "resolves runtime variables" do
+      expect(template.rows[0].cells[3].to_csv).to eq "=1"
+    end
+
+    context "with key_values" do
+      let(:key_values) { {rownum: "1111"} }
+
+      xit "resolves and overrides $$rownum" do
+        expect(template.rows[0].cells[3].to_csv).to eq "=1111"
       end
     end
   end

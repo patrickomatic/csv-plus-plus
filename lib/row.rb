@@ -11,18 +11,18 @@ module CSVPlusPlus
       @index = index
     end
 
-    def self.parse_row(csv_row, row_number)
+    def self.parse(csv_row, execution_context)
       row_modifier = Modifier.new(row_level: true)
 
-      cells = csv_row.map.with_index do |value, cell_number|
+      cells = execution_context.map_row(csv_row) do |value, cell_index|
         cell_modifier = Modifier.new
-        parsed_value = ModifierParser.new.parse(value, 
-                                                row_modifier:, cell_modifier:,
-                                                row_number:, cell_number:)
-        Cell.new(row_number, cell_number, parsed_value, cell_modifier)
+        parsed_value = ModifierParser.new.parse(value, execution_context:,
+                                                row_modifier:, cell_modifier:)
+        Cell.new(execution_context.row_index, 
+                 cell_index, parsed_value, cell_modifier)
       end
 
-      Row.new(row_number, cells, row_modifier)
+      Row.new(execution_context.row_index, cells, row_modifier)
     end
 
     def index=(i)
@@ -36,7 +36,7 @@ module CSVPlusPlus
     end
 
     def to_s
-      @cells
+      "Row(index: #{index.to_s}, modifier: #{modifier.to_s}, cells: #{cells.to_s})"
     end
 
     def deep_clone

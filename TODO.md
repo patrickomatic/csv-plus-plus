@@ -1,9 +1,9 @@
-- [ ] make a "dateformat" and "numberformat" with types like "accounting", "currency", etc
 - [ ] make some of the lexer regexes and logic reusable
 - [ ] conditional formatting modifiers
 - [ ] make verbose mode better/implement better to\_s throughout
 - [ ] incorporate the input filename into error traces
 - [ ] API-level error handling is pretty bad
+- [x] make a "dateformat" and "numberformat" with types like "accounting", "currency", etc
 - [x] CLI-specified offsets working
 - [x] cell color modifiers
 - [x] Can we default to choosing the first sheet rather than having to supply --sheet-name

@@ -1,23 +1,23 @@
-require_relative 'cell_value.tab'
-require_relative 'modifier'
-require_relative 'ast'
+require_relative './modifier'
+#require_relative './language/ast'
+require_relative './language/cell_value.tab'
 
 module CSVPlusPlus
   class Cell
-    attr_accessor :row_index
-    attr_reader :ast, :index, :modifier
+    attr_accessor :ast, :row_index
+    attr_reader :index, :modifier
 
     def initialize(row_index, index, value, modifier)
       @value = value
-      @ast = CellValueParser.new.parse(value) unless value.nil?
       @modifier = modifier
       @index = index
       @row_index = row_index
     end
 
-    def interpolate_variables!(variables)
-      return nil if @value.nil? || @ast.nil?
-      @ast = AST::interpolate_variables(@ast, variables)
+    def self.parse(value, execution_context:, index:, modifier:, row_index:)
+      Cell.new(value, row_index, index, modifier).tap do |c| 
+        c.ast = Language::CellValueParser.new.parse(value, execution_context)
+      end
     end
 
     def value
@@ -25,24 +25,32 @@ module CSVPlusPlus
       @value.strip
     end
 
+    def to_s
+      "Cell(index: #{index} row_index: #{row_index} value: #{value} modifier: #{modifier})"
+    end
+
     def to_csv
-      return value if @ast.nil?
+      return @value if @ast.nil?
+      to_csv_dfs(@ast).join('')
+    end
 
-      argument_index = 0
+    private
 
-      "=" + (AST::depth_first_search @ast do |node|
-        type, value = node
-        case type
-        when :fn
-          argument_index = 0
-          "#{value}("
-        when :after_fn
-          ")"
-        else
-          argument_index += 1
-          argument_index == 1 ? value : ", #{value}"
+    def to_csv_dfs node, output: ['='], add_comma: false
+      output << node.to_s
+      output << ', ' if add_comma
+
+      if node.type == :function_call
+        output << '('
+        arg_length = node.arguments.length
+        node.arguments.each_with_index do |n, i|
+          to_csv_dfs(n,
+                     output:,
+                     add_comma: i < arg_length - 1)
         end
-      end).join('')
+        output << ')'
+      end
+      output
     end
   end
 end

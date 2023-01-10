@@ -1,6 +1,11 @@
+# Formats
+- [ ] make it output to CSV (loses formatting, but keeps formulas and variables)
+- [ ] output to excel or whatever openoffice format is
+
 # Modifiers to rows & cells
 
 - [ ] conditional formatting
+- [ ] data validation
 - [x] make cell-level modifiers override row-level
 - [x] data validation
 - [x] fonts
@@ -15,12 +20,20 @@
 
 # Variables and functions
 
-- [ ] helper for referencing other sheets
-- [x] custom functions at the top?
+- [ ] CELLREF()
+- [ ] SHEETREF()
+- [ ] user defined functions at the top
 - [x] `$$row` current row
+
+# Performance
+
+- [ ] concurrently process each cell?
+- [ ] memoization and lazy evaluation as much as possible
+- [ ] matrix libs?
 
 # Other
 
+- [ ] Rubocop
 - [ ] Charts
 - [ ] Pivot table support - not sure what this would even look like
 - [ ] backups before each write?

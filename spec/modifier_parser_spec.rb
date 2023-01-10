@@ -2,12 +2,14 @@ require 'modifier.tab'
 require 'modifier'
 
 describe CSVPlusPlus::ModifierParser do
+  let(:ec) { build(:execution_context) }
+
   describe "#parse" do
-    let(:row_modifier) { CSVPlusPlus::Modifier.new }
-    let(:cell_modifier) { CSVPlusPlus::Modifier.new }
+    let(:row_modifier) { build(:modifier) }
+    let(:cell_modifier) { build(:modifier) }
 
     before(:each) { subject }
-    subject { CSVPlusPlus::ModifierParser.new.parse(value, cell_modifier:, row_modifier:) }
+    subject { described_class.new.parse(value, execution_context: ec, cell_modifier:, row_modifier:) }
 
     context "without a modifier" do
       let(:value) { "foo" }

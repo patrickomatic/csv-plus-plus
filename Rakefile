@@ -1,8 +1,8 @@
 require 'dotenv/load'
 
 RACC_FILES = {
-  "lib/code_section.tab.rb" => "parsers/code_section.y",
-  "lib/cell_value.tab.rb" => "parsers/cell_value.y",
+  "lib/language/code_section.tab.rb" => "parsers/code_section.y",
+  "lib/language/cell_value.tab.rb" => "parsers/cell_value.y",
   "lib/modifier.tab.rb" => "parsers/modifier.y",
 }
 

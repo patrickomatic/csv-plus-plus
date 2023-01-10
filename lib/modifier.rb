@@ -1,5 +1,5 @@
 require 'set'
-require_relative 'syntax_error'
+require_relative './language/syntax_error'
 
 module CSVPlusPlus
   class Modifier
@@ -161,7 +161,13 @@ module CSVPlusPlus
       @borderstyle || 'solid'
     end
 
+    def to_s
+      "Modifier(row_level: #{@row_level} align: #{@align.to_s} format: #{@formats.to_s} " \
+        + "font_size: #{@font_size})" # TODO... I dunno, not sure how to manage this
+    end
+
     def take_defaults_from!(m)
+      # TODO can I just infer the instance vars?
       %i[
         @align
         @bordercolor
@@ -169,11 +175,11 @@ module CSVPlusPlus
         @borderstyle
         @color
         @formats
-        @borderstyle
         @fontcolor
         @fontfamily
         @fontsize
         @note
+        @numberformat
         @validation
       ].each do |property|
         value = m.instance_variable_get property

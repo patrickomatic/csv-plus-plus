@@ -12,14 +12,13 @@ module CSVPlusPlus
 
     attr_reader :sheet_id, :sheet_name
 
-    def initialize(sheet_id,
-                   sheet_name: nil, verbose: false,
-                   cell_offset: 0, row_offset: 0, create_if_not_exists: false)
+    def initialize(sheet_id, execution_context:,
+                   sheet_name: nil, cell_offset: 0, row_offset: 0, create_if_not_exists: false)
       @sheet_name = sheet_name
       @sheet_id = sheet_id
-      @verbose = verbose
       @cell_offset = cell_offset
       @row_offset = row_offset
+      @execution_context = execution_context
     end
 
     def push!(template)
