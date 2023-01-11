@@ -1,46 +1,59 @@
-require_relative 'modifier.tab'
+# frozen_string_literal: true
+
 require_relative 'cell'
+require_relative 'modifier.tab'
 
 module CSVPlusPlus
-  class Row 
+  ##
+  # A row of a template
+  class Row
     attr_reader :cells, :index, :modifier
 
+    # Using the current +execution_context+ and the given +csv_row+ parse it into a Row of Cells
+    # +csv_row+ should have already been run through a CSV parser and is an array of strings
+    def self.parse(csv_row, execution_context)
+      row_modifier = ::CSVPlusPlus::Modifier.new(row_level: true)
+
+      cells =
+        execution_context.map_row(csv_row) do |value, cell_index|
+          cell_modifier = ::CSVPlusPlus::Modifier.new
+          parsed_value = ::CSVPlusPlus::ModifierParser.new.parse(
+            value, execution_context:, row_modifier:, cell_modifier:
+          )
+          ::CSVPlusPlus::Cell.new(execution_context.row_index, cell_index, parsed_value, cell_modifier)
+        end
+
+      new(execution_context.row_index, cells, row_modifier)
+    end
+
+    # initialize
     def initialize(index, cells, modifier)
       @cells = cells
       @modifier = modifier
       @index = index
     end
 
-    def self.parse(csv_row, execution_context)
-      row_modifier = Modifier.new(row_level: true)
-
-      cells = execution_context.map_row(csv_row) do |value, cell_index|
-        cell_modifier = Modifier.new
-        parsed_value = ModifierParser.new.parse(value, execution_context:,
-                                                row_modifier:, cell_modifier:)
-        Cell.new(execution_context.row_index, 
-                 cell_index, parsed_value, cell_modifier)
-      end
-
-      Row.new(execution_context.row_index, cells, row_modifier)
+    # Set the row index. And update the index of all affected cells
+    def index=(index)
+      @index = index
+      @cells.each { |cell| cell.row_index = index }
     end
 
-    def index=(i)
-      @index = i
-      @cells.each {|cell| cell.row_index = i}
-    end
-
+    # How much this row will expand itself, if at all (0)
     def expand_amount
       return 0 unless @modifier.expand
-      @modifier.expand.repetitions || 1000 - @index
+
+      @modifier.expand.repetitions || (1000 - @index)
     end
 
+    # to_s
     def to_s
-      "Row(index: #{index.to_s}, modifier: #{modifier.to_s}, cells: #{cells.to_s})"
+      "Row(index: #{index}, modifier: #{modifier}, cells: #{cells})"
     end
 
+    # Return a deep copy of this row
     def deep_clone
-      Marshal.load(Marshal.dump(self))
+      ::Marshal.load(::Marshal.dump(self))
     end
   end
-end 
+end

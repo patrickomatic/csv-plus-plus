@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 require_relative '../../lib/template'
 
-FactoryBot.define do
-  factory :template, class: CSVPlusPlus::Template do
+::FactoryBot.define do
+  factory :template, class: ::CSVPlusPlus::Template do
     transient do
       execution_context { build(:execution_context) }
       code_section { build(:code_section) }
@@ -11,4 +13,3 @@ FactoryBot.define do
     initialize_with { new(rows:, code_section:, execution_context:) }
   end
 end
-

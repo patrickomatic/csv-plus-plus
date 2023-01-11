@@ -55,7 +55,7 @@ require_relative '../code_section'
   def parse(execution_context)
     rest = nil
     execution_context.parsing_code_section! do |input|
-      text = input.read
+      text = input.read.strip
       @code_section = CodeSection.new
 
       eoc_index = text.index(Language::END_OF_CODE_SECTION)

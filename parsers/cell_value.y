@@ -61,7 +61,10 @@ require_relative 'syntax_error'
       when s.scan(/[\(\)\/\*\+\-,=&]/)
         tokens << [s.matched, s.matched]
       else
-        raise SyntaxError.new("Unable to parse starting at", s.rest, execution_context)
+        raise(
+          SyntaxError.new(s.rest, execution_context),
+          "Unable to parse starting at"
+        )
       end 
     end
     tokens << [:EOL, :EOL]
@@ -71,8 +74,10 @@ require_relative 'syntax_error'
     begin
       do_parse
     rescue Racc::ParseError => e
-      raise SyntaxError.new("Error parsing code section", e.message, execution_context, 
-                            wrapped_error: e)
+      raise(
+        SyntaxError.new(e.message, execution_context, wrapped_error: e), 
+        "Error parsing code section"
+      )
     end
     @ast
   end

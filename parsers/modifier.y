@@ -33,28 +33,28 @@ rule
 
   modifier: 'align'        '=' align_options
           | 'border'       '=' border_options
-          | 'bordercolor'  '=' HEX_COLOR           { s!(:bordercolor, val[2])                        }
-          | 'borderstyle'  '=' borderstyle_option  { s!(:borderstyle, val[2])                        }
-          | 'color'        '=' HEX_COLOR           { s!(:color, val[2])                              }
-          | 'expand'       '=' NUMBER              { s!(:expand, Modifier::Expand.new(val[2].to_i))  }
-          | 'expand'                               { s!(:expand, Modifier::Expand.new)               }
-          | 'font'         '=' STRING              { s!(:fontfamily, val[2])                         }
-          | 'fontcolor'    '=' HEX_COLOR           { s!(:fontcolor, val[2])                          }
-          | 'fontfamily'   '=' STRING              { s!(:fontfamily, val[2])                         }
-          | 'fontsize'     '=' NUMBER              { s!(:fontsize, val[2].to_f)                      }
+          | 'bordercolor'  '=' HEX_COLOR           { s!(:bordercolor, val[2])               }
+          | 'borderstyle'  '=' borderstyle_option  { s!(:borderstyle, val[2])               }
+          | 'color'        '=' HEX_COLOR           { s!(:color, val[2])                     }
+          | 'expand'       '=' NUMBER              { s!(:expand, Expand.new(val[2].to_i))   }
+          | 'expand'                               { s!(:expand, Expand.new)                }
+          | 'font'         '=' STRING              { s!(:fontfamily, val[2])                }
+          | 'fontcolor'    '=' HEX_COLOR           { s!(:fontcolor, val[2])                 }
+          | 'fontfamily'   '=' STRING              { s!(:fontfamily, val[2])                }
+          | 'fontsize'     '=' NUMBER              { s!(:fontsize, val[2].to_f)             }
           | 'format'       '=' format_options
-          | 'freeze'                               { freeze!                                         }
-          | 'note'         '=' STRING              { s!(:note, val[2])                               }
-          | 'numberformat' '=' numberformat_option { s!(:numberformat, val[2])                       }
-          | 'validate'     '=' condition           { s!(:validation, val[2])                         }
+          | 'freeze'                               { freeze!                                }
+          | 'note'         '=' STRING              { s!(:note, val[2])                      }
+          | 'numberformat' '=' numberformat_option { s!(:numberformat, val[2])              }
+          | 'validate'     '=' condition           { s!(:validation, val[2])                }
 
-  format_options: format_options format_option | format_option { s!(:format, val[0]) }
+  format_options: format_options format_option | format_option { s!(:format, val[0])        }
   format_option: 'bold' | 'italic' | 'strikethrough' | 'underline'
 
-  align_options: halign_option valign_option  { s!(:align, val[0]); s!(:align, val[1]) }
-               | valign_option halign_option  { s!(:align, val[0]); s!(:align, val[1]) }
-               | halign_option                { s!(:align, val[0]) }
-               | valign_option                { s!(:align, val[0]) }
+  align_options: halign_option valign_option  { s!(:align, val[0]); s!(:align, val[1])      }
+               | valign_option halign_option  { s!(:align, val[0]); s!(:align, val[1])      }
+               | halign_option                { s!(:align, val[0])                          }
+               | valign_option                { s!(:align, val[0])                          }
 
   halign_option: 'left' | 'center' | 'right'
   valign_option: 'top'  | 'center' | 'bottom'
@@ -116,8 +116,9 @@ end
 
 ---- header
 require 'strscan'
-require_relative './modifier'
+require_relative './expand'
 require_relative './language/syntax_error'
+require_relative './modifier'
 
 ---- inner
   attr_accessor :cell_modifier, :row_modifier

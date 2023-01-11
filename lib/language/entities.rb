@@ -1,182 +1,224 @@
+# frozen_string_literal: true
+
 module CSVPlusPlus
   module Language
-    protected
-
+    # A basic building block of the language/AST
     class Entity
-      attr_reader :type
+      attr_reader :id, :type
 
-      def id=(id)
-        @id = id.downcase.to_sym
+      # initialize
+      def initialize(type, id: nil)
+        @type = type.to_sym
+        @id = id.downcase.to_sym if id
       end
 
+      # Is this a function-like entity?
+      def function?
+        false
+      end
+
+      # ==
       def ==(other)
-        @type == other.type
+        @type == other.type && @id == other.id
       end
     end
 
-    # TODO use mixins instead of inheritance for @id, @arguments logic
+    # TODO: use mixins instead of inheritance for @id, @arguments logic
+    ##
+    # An entity that can take arguments
     class EntityWithArguments < Entity
       attr_reader :arguments
 
-      def initialize(arguments)
+      # initialize
+      def initialize(type, id: nil, arguments: [])
+        super(type, id:)
         @arguments = arguments
       end
 
+      # ==
       def ==(other)
         super || @arguments == other.arguments
       end
 
+      # This entity is a function.  Worth distinction because it can have recursively
+      # defined variables and forms the branching of our ASTs
+      def function?
+        true
+      end
+
       protected
 
-      def arguments=(a)
-        @arguments = a
-      end
+      attr_writer :arguments
     end
 
-    public
-
+    ##
+    # A static function definition
     class Function < EntityWithArguments
-      attr_reader :body, :id
+      attr_reader :body
 
+      # initialize
       def initialize(id, arguments, body)
-        @type = :function
+        super(:function, id:, arguments: arguments.map(&:to_sym))
+
         @body = body
-
-        self.id = id
-
-        super arguments.map(&:to_sym)
       end
 
+      # to_s
       def to_s
         @id.to_s.upcase
       end
 
+      # ==
       def ==(other)
         super || (
-          self.body == body && 
-          self.id == id
+          @body == other.body && @id == other.id
         )
       end
     end
 
+    ##
+    # A function call
     class FunctionCall < EntityWithArguments
-      attr_reader :id
-
+      # initialize
       def initialize(id, arguments)
-        @type = :function_call
-        @arguments = arguments
-
-        self.id = id
-
-        super arguments
+        super(:function_call, id:, arguments:)
       end
 
+      # to_s
       def to_s
         @id.to_s.upcase
       end
 
+      # ==
       def ==(other)
-        super || self.id == id
+        super || @id == other.id
       end
     end
 
+    ##
+    # A reference to a cell
     class CellReference < Entity
-      attr_reader :id
-
+      # initialize
       def initialize(id)
-        @type = :cell_reference
-        self.id = id
+        super(:cell_reference, id:)
       end
 
+      # to_s
       def to_s
         @id.to_s.upcase
       end
 
+      # ==
       def ==(other)
-        super || self.id == id
+        super || @id == other.id
       end
     end
 
+    ##
+    # A boolean value
     class Boolean < Entity
       attr_reader :value
 
+      # initialize
       def initialize(value)
-        @type = :boolean
+        super(:boolean)
         @value = value
       end
 
+      # to_s
       def to_s
         @value.to_s.upcase
       end
 
+      # ==
       def ==(other)
-        super || self.value == value
+        super || value == other.value
       end
     end
 
+    ##
+    # A number value
     class Number < Entity
       attr_reader :value
 
+      # initialize
       def initialize(value)
-        @type = :number
-        if @value.is_a? String
-          @value = value.include?('.') ? value.to_f : value.to_i
-        else
-          @value = value
-        end
+        super(:number)
+        @value =
+          if @value.is_a?(::String)
+            value.include?('.') ? Float(value) : Integer(value, 10)
+          else
+            value
+          end
       end
 
+      # to_s
       def to_s
         @value.to_s
       end
 
+      # ==
       def ==(other)
-        super || self.value == value
+        super || value == other.value
       end
     end
 
+    ##
+    # A string value
     class String < Entity
       attr_reader :value
 
+      # initialize
       def initialize(value)
-        @type = :string
+        super(:string)
         @value = value.gsub(/^"|"$/, '')
       end
 
+      # to_s
       def to_s
-        '"' + @value + '"'
+        "\"#{@value}\""
       end
 
+      # ==
       def ==(other)
-        super || self.value == value
+        super || value == other.value
       end
     end
 
+    ##
+    # A reference to a variable
     class Variable < Entity
-      attr_reader :id
-
+      # initialize
       def initialize(id)
-        @type = :variable
-        self.id = id
+        super(:variable, id:)
       end
 
+      # to_s
       def to_s
-        "$$#{@id.to_s}"
+        "$$#{@id}"
       end
 
+      # ==
       def ==(other)
-        super || self.id == id
+        super || id == other.id
       end
     end
 
+    ##
+    # A runtime value
+    #
+    # These are values which can be materialized at any point via the +resolve_fn+
+    # which takes an ExecutionContext as a param
     class RuntimeValue < Entity
       attr_reader :resolve_fn
 
+      # initialize
       def initialize(resolve_fn)
-        @type = :runtime_variable
+        super(:runtime_variable)
         @resolve_fn = resolve_fn
       end
 
+      # to_s
       def to_s
         @resolve_fn
       end

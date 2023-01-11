@@ -1,0 +1,16 @@
+AllCops:
+  EnabledByDefault: true
+
+  Exclude:
+    - 'lib/**/*.tab.rb'
+
+Style/DisableCopsWithinSourceCodeDirective:
+  Enabled: false
+
+Style/Copyright:
+  Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - 'Rakefile'
+    - 'spec/**/*.rb'

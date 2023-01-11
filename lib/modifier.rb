@@ -1,173 +1,121 @@
+# frozen_string_literal: true
+
 require 'set'
+require_relative './color'
+require_relative './expand'
 require_relative './language/syntax_error'
 
 module CSVPlusPlus
+  ##
+  # A container representing the operations that can be applied to a cell or row
   class Modifier
-    Expand = Struct.new(:repetitions) do
-      def infinite?
-        repetitions.nil?
-      end
+    attr_reader :bordercolor, :borders, :color, :fontcolor, :formats
+    attr_accessor :expand, :fontfamily, :fontsize, :note, :numberformat, :row_level, :validation
 
-      def to_s
-        "Expand #{repetitions || 'infinity'}"
-      end
-    end
-
-    class Color
-      attr_reader :red, :green, :blue
-
-      def initialize(hex_string)
-        @red, @green, @blue = hex_string
-          .gsub(/^#?/, '')
-          .match(/(\w\w?)(\w\w?)(\w\w?)/)
-          .captures
-          .map {|s| 255 / (s.length == 2 ? s : s + s).to_i(16) rescue 0}
-      end
-    end
-
-    attr_accessor :bordercolor,
-                  :borderstyle,
-                  :color,
-                  :expand,
-                  :fontcolor,
-                  :fontfamily,
-                  :fontsize,
-                  :note,
-                  :numberformat,
-                  :row_level,
-                  :validation
-
+    # initialize
     def initialize(row_level: false)
       @row_level = row_level
       @freeze = false
-      @align = Set.new
-      @borders = Set.new
-      @formats = Set.new
+      @align = ::Set.new
+      @borders = ::Set.new
+      @formats = ::Set.new
     end
 
-    def align=(value)
-      @align << value
+    # Set an align format. +direction+ must be 'center', 'left', 'right', 'bottom'
+    def align=(direction)
+      @align << direction
     end
 
-    def center_align?
-      @align.include?('center')
+    # Is it aligned to a given direction?
+    def aligned?(direction)
+      @align.include?(direction)
     end
 
-    def left_align?
-      @align.include?('left')
-    end
-
-    def right_align?
-      @align.include?('right')
-    end
-
-    def top_align?
-      @align.include?('top')
-    end
-
-    def bottom_align?
-      @align.include?('bottom')
-    end
-
+    # Set the color.  hex_value is a String
     def color=(hex_value)
-      @color = Color.new(hex_value)
+      @color = ::CSVPlusPlus::Color.new(hex_value)
     end
 
-    def borders
-      @borders
+    # Assign a border.  +side+ must be 'top', 'left', 'bottom', 'right' or 'all'
+    def border=(side)
+      @borders << side
     end
 
-    def border=(value)
-      @borders << value
+    # Does this have a border along +side+?
+    def border_along?(side)
+      border_all? || @borders.include?(side)
     end
 
+    # Does this have a border along all sides?
     def border_all?
-      @borders.include? 'all'
+      @borders.include?('all')
     end
 
-    def border_top?
-      border_all? || @borders.include?('top')
-    end
-
-    def border_right?
-      border_all? || @borders.include?('right')
-    end
-
-    def border_bottom?
-      border_all? || @borders.include?('bottom')
-    end
-
-    def border_left?
-      border_all? || @borders.include?('left')
-    end
-
+    # Set the bordercolor
     def bordercolor=(hex_value)
-      @bordercolor = Color.new(hex_value)
+      @bordercolor = ::CSVPlusPlus::Color.new(hex_value)
     end
 
-    def has_border?
+    # Are there any borders set?
+    def any_border?
       !@borders.empty?
     end
 
+    # Set the fontcolor
     def fontcolor=(hex_value)
-      @fontcolor = Color.new(hex_value)
+      @fontcolor = ::CSVPlusPlus::Color.new(hex_value)
     end
 
-    def formats
-      @formats
-    end
-
+    # Set a format.  +type+ must be 'bold', 'italic', 'underline' or 'strikethrough'
     def format=(value)
       @formats << value
     end
 
+    # Is the given format set?
+    def formatted?(type)
+      @formats.include?(type)
+    end
+
+    # Freeze the row from edits
     def freeze!
       @frozen = true
     end
 
+    # Is the row forzen?
     def frozen?
       @frozen
     end
 
-    def bold?
-      @formats.include? 'bold'
-    end
-
-    def italic?
-      @formats.include? 'italic'
-    end
-
-    def strikethrough?
-      @formats.include? 'strikethrough'
-    end
-
-    def underline?
-      @formats.include? 'underline'
-    end
-
+    # Mark this modifer as row-level
     def row_level!
       @row_level = true
     end
 
+    # Is this a row-level modifier?
     def row_level?
       @row_level
     end
 
+    # Is this a cell-level modifier?
     def cell_level?
       !@row_level
     end
 
+    # Style of border
     def borderstyle
       @borderstyle || 'solid'
     end
 
+    # to_s
     def to_s
-      "Modifier(row_level: #{@row_level} align: #{@align.to_s} format: #{@formats.to_s} " \
-        + "font_size: #{@font_size})" # TODO... I dunno, not sure how to manage this
+      # TODO... I dunno, not sure how to manage this
+      "Modifier(row_level: #{@row_level} align: #{@align} format: #{@formats} font_size: #{@font_size})"
     end
 
-    def take_defaults_from!(m)
-      # TODO can I just infer the instance vars?
+    # Create a new modifier instance, with all values defaulted from +other+
+    # rubocop:disable Metrics/MethodLength
+    def take_defaults_from!(other)
+      # TODO: can I just infer the instance vars?
       %i[
         @align
         @bordercolor
@@ -182,9 +130,10 @@ module CSVPlusPlus
         @numberformat
         @validation
       ].each do |property|
-        value = m.instance_variable_get property
-        self.instance_variable_set(property, value.clone)
+        value = other.instance_variable_get(property)
+        instance_variable_set(property, value.clone)
       end
     end
+    # rubocop:enable Metrics/MethodLength
   end
 end

@@ -1,8 +1,10 @@
+# frozen_string_literal: true
+
 require 'tempfile'
 require_relative '../../lib/language/execution_context'
 
-FactoryBot.define do
-  factory :execution_context, class: CSVPlusPlus::Language::ExecutionContext do
+::FactoryBot.define do
+  factory :execution_context, class: ::CSVPlusPlus::Language::ExecutionContext do
     transient do
       filename { 'foo_stocks.csvpp' }
       verbose { false }
@@ -13,7 +15,7 @@ FactoryBot.define do
       cell { nil }
     end
 
-    initialize_with do 
+    initialize_with do
       new(input:, filename:, verbose:).tap do |instance|
         instance.row_index = row_index
         instance.line_number = line_number

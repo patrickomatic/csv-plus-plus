@@ -81,3 +81,5 @@ Date,[[align=left]]Amount,Quantity,[[align=center/format=bold italic]]Price
 * `-x, --offset-columns OFFSET` Apply the template offset by OFFSET cells
 * `-v, --verbose` Enable verbose output
 * `-h, --help` Show help information
+
+[![Ruby Style Guide](https://img.shields.io/badge/code_style-community-brightgreen.svg)](https://rubystyle.guide)

@@ -1,33 +1,35 @@
+# frozen_string_literal: true
+
 require 'syntax_error'
 
-describe CSVPlusPlus::Language::SyntaxError do
+describe ::CSVPlusPlus::Language::SyntaxError do
   let(:filename) { 'foo.csvpp' }
   let(:line_number) { 1 }
   let(:row_index) { nil }
   let(:cell_index) { nil }
   let(:ec) { build(:execution_context, filename:, cell:, line_number:, row_index:, cell_index:) }
 
-  describe "#to_s" do
+  describe '#to_trace' do
     let(:cell) { nil }
-    let(:syntax_error) { described_class.new('Invalid token', 'this$![ is bad input', ec) } 
+    let(:syntax_error) { described_class.new('Invalid token', 'this$![ is bad input', ec) }
 
-    subject { syntax_error.to_s }
+    subject { syntax_error.to_trace }
 
-    it { is_expected.to eq 'csv++ foo.csvpp:1 Invalid token: "this$![ is bad input"' }
+    it { is_expected.to(eq('csv++ foo.csvpp:1 Invalid token: "this$![ is bad input"')) }
 
-    context "with a row_index" do
+    context 'with a row_index' do
       let(:row_index) { 0 }
 
-      it { is_expected.to eq 'csv++ foo.csvpp:1[0] Invalid token: "this$![ is bad input"' }
+      it { is_expected.to(eq('csv++ foo.csvpp:1[0] Invalid token: "this$![ is bad input"')) }
     end
 
-    context "with a cell and row index" do
+    context 'with a cell and row index' do
       let(:line_number) { 1 }
       let(:row_index) { 0 }
       let(:cell) { build(:cell, index: cell_index) }
       let(:cell_index) { 5 }
 
-      it { is_expected.to eq 'csv++ foo.csvpp:1[0,5] Invalid token: "this$![ is bad input"' }
+      it { is_expected.to(eq('csv++ foo.csvpp:1[0,5] Invalid token: "this$![ is bad input"')) }
     end
   end
 end
