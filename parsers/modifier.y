@@ -149,7 +149,7 @@ require_relative './modifier'
     target.public_send("#{property}=".to_sym, value)
   end
 
-  def parse(text, execution_context:, cell_modifier:, row_modifier:)
+  def parse(text, compiler:, cell_modifier:, row_modifier:)
     cell_value = (text || '').strip
 
     modifiers_to_parse = cell_value.scan(/!?\[\[/).count
@@ -193,7 +193,7 @@ require_relative './modifier'
       when s.scan(/\w+/)
         tokens << [s.matched, s.matched]
       else
-        raise Language::SyntaxError.new("Unable to parse starting at", s.peek(100), execution_context)
+        raise Language::SyntaxError.new("Unable to parse modifier starting at", s.peek(100), compiler)
       end
     end
 
@@ -202,7 +202,7 @@ require_relative './modifier'
     begin
       do_parse
     rescue Racc::ParseError => e
-      raise Language::SyntaxError.new("Error parsing modifier", e.message, execution_context, 
+      raise Language::SyntaxError.new("Error parsing modifier", e.message, compiler, 
                                       wrapped_error: e)
     end
 

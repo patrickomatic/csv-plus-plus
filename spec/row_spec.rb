@@ -3,12 +3,12 @@
 require 'row'
 
 describe ::CSVPlusPlus::Row do
-  let(:execution_context) { build(:execution_context) }
+  let(:compiler) { build(:compiler) }
 
   describe '#parse' do
     let(:values) { %w[foo bar baz] }
 
-    subject(:row) { described_class.parse(values, execution_context) }
+    subject(:row) { described_class.parse(values, compiler) }
 
     it { is_expected.to(be_a(described_class)) }
 

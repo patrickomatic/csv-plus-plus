@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'tempfile'
+require_relative 'code_section.tab'
 require_relative 'entities'
 require_relative 'global_scope'
 
@@ -9,16 +10,16 @@ module CSVPlusPlus
     ##
     # Encapsulates the runtime of a processing of a csvpp file
     # rubocop:disable Metrics/ClassLength
-    class ExecutionContext
+    class Compiler
       attr_reader :filename, :global_scope
       attr_accessor :verbose, :cell, :cell_index, :row_index, :line_number
 
-      # Create an execution context and make sure it gets cleaned up
-      def self.with_execution_context(input:, filename:, verbose: false)
-        ec = new(input:, filename:, verbose:)
-        yield(ec)
-      rescue ::StandardError
-        ec.unlink!
+      # Create a compiler and make sure it gets cleaned up
+      def self.with_compiler(input:, filename:, verbose: false)
+        compiler = new(input:, filename:, verbose:)
+        yield(compiler)
+      ensure
+        compiler.unlink!
       end
 
       # initialize
@@ -47,8 +48,7 @@ module CSVPlusPlus
       def map_lines(lines, &block)
         lines.map do |line|
           block.call(line).tap do
-            @row_index += 1 unless @row_index.nil?
-            @line_number += 1
+            increment_row!
           end
         end
       end
@@ -63,24 +63,35 @@ module CSVPlusPlus
       end
 
       # map over all rows and keep track of row and line numbers
-      # rubocop:disable Metrics/MethodLength
       def map_rows(rows, cells_too: false, &block)
         rows.map do |row|
-          if cells_too
-            # it's either CSV or a Row object
-            cells = row&.cells || row
-            ret = map_row(cells, &block)
-          else
-            ret = block.call(row)
+          (
+            if cells_too
+              # it's either CSV or a Row object
+              map_row(row&.cells || row, &block)
+            else
+              block.call(row)
+            end).tap do
+            increment_row!
           end
-
-          @row_index += 1
-          @line_number += 1
-
-          ret
         end
       end
-      # rubocop:enable Metrics/MethodLength
+
+      # parses the input file and returns a +CodeSection+
+      def parse_code_section(key_values: {})
+        code_section = nil
+        parsing_code_section! do |input|
+          code_section, csv_section = ::CSVPlusPlus::Language::CodeSectionParser.new.parse(input, self)
+          # TODO: infer a type
+          # allow user-supplied key/values to override anything global or from the code section
+          code_section.def_variables(key_values.transform_values { |v| ::CSVPlusPlus::Language::String.new(v.to_s) })
+          # resolve all non-runtime variables
+          code_section.def_variables(resolve_static_variables!(code_section))
+          # return the csv_section to the caller because they're gonna re-write @tmp with it
+          next csv_section
+        end
+        code_section
+      end
 
       # workflow when parsing the code section
       def parsing_code_section!(&block)
@@ -116,7 +127,7 @@ module CSVPlusPlus
       # workflow when resolving static variable definitions
       def resolve_static_variables!(code_section)
         # TODO: this indirection seems kinda unnecessary
-        @global_scope = ::CSVPlusPlus::Language::GlobalScope.new(code_section)
+        @global_scope ||= ::CSVPlusPlus::Language::GlobalScope.new(code_section)
         @global_scope.resolve_static_variables(code_section.variables, self)
       end
 
@@ -148,7 +159,7 @@ module CSVPlusPlus
 
       # to_s
       def to_s
-        "ExecutionContext(filename: #{filename}, state: #{state}, line_number: #{line_number}, " \
+        "Compiler(filename: #{filename}, state: #{state}, line_number: #{line_number}, " \
           "row_index: #{row_index}, cell: #{cell})"
       end
 
@@ -167,10 +178,12 @@ module CSVPlusPlus
         @tmp.rewind
       end
 
-      # TODO: we could add a progress loader here... but hopefully it never gets so slow
-      # to warrant that
-      # rubocop:disable Metrics/MethodLength
-      def workflow(log_subject:, processing_code_section: false)
+      def increment_row!
+        @row_index += 1 unless @row_index.nil?
+        @line_number += 1
+      end
+
+      def before_workflow!(log_subject, processing_code_section)
         log("Started #{log_subject}")
 
         if processing_code_section
@@ -179,16 +192,19 @@ module CSVPlusPlus
           @row_index = @cell_index = 0
           @line_number = @length_of_code_section || 1
         end
-
-        ret = yield
-
-        @cell = @cell_index = @row_index = @line_number = nil
-
-        log("Finished #{log_subject}")
-
-        ret
       end
-      # rubocop:enable Metrics/MethodLength
+
+      def after_workflow!(log_subject)
+        @cell = @cell_index = @row_index = @line_number = nil
+        log("Finished #{log_subject}")
+      end
+
+      # TODO: we could add a progress loader here... but hopefully it never gets so slow
+      # to warrant that
+      def workflow(log_subject:, processing_code_section: false)
+        before_workflow!(log_subject, processing_code_section)
+        yield.tap { after_workflow!(log_subject) }
+      end
     end
     # rubocop:enable Metrics/ClassLength
   end

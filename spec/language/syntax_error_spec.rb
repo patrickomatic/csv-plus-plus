@@ -7,11 +7,11 @@ describe ::CSVPlusPlus::Language::SyntaxError do
   let(:line_number) { 1 }
   let(:row_index) { nil }
   let(:cell_index) { nil }
-  let(:ec) { build(:execution_context, filename:, cell:, line_number:, row_index:, cell_index:) }
+  let(:compiler) { build(:compiler, filename:, cell:, line_number:, row_index:, cell_index:) }
 
   describe '#to_trace' do
     let(:cell) { nil }
-    let(:syntax_error) { described_class.new('Invalid token', 'this$![ is bad input', ec) }
+    let(:syntax_error) { described_class.new('Invalid token', 'this$![ is bad input', compiler) }
 
     subject { syntax_error.to_trace }
 

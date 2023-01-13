@@ -4,7 +4,7 @@ require 'entities'
 require 'global_scope'
 
 describe ::CSVPlusPlus::Language::GlobalScope do
-  let(:ec) { build(:execution_context) }
+  let(:compiler) { build(:compiler) }
   let(:code_section) { build(:code_section) }
   let(:global_scope) { described_class.new(code_section) }
 
@@ -53,7 +53,7 @@ describe ::CSVPlusPlus::Language::GlobalScope do
       }
     end
 
-    subject { global_scope.resolve_static_variables(variables, execution_context: ec) }
+    subject { global_scope.resolve_static_variables(variables, compiler:) }
 
     it 'resolves the variables in dep' do
       expect(subject[:dep]).to(eq(build(:fn_call, name: :multiply, a: variables[:bar], b: variables[:foo])))

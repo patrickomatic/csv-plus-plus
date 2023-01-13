@@ -3,12 +3,15 @@
 require 'code_section.tab'
 
 describe ::CSVPlusPlus::Language::CodeSectionParser do
-  let(:ec) { build(:execution_context, input:) }
-
   describe '#parse' do
-    subject { described_class.new.parse(ec).variables }
+    let(:compiler) { build(:compiler) }
+    let(:sections) { described_class.new.parse(::StringIO.new(input), compiler) }
+    let(:code_section) { sections[0] }
+    let(:csv_section) { sections[1] }
 
-    describe '#variables' do
+    describe 'CodeSection#variables' do
+      subject { code_section.variables }
+
       context 'with comments' do
         let(:input) do
           "
@@ -19,6 +22,10 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
         end
 
         it { is_expected.to(eq({})) }
+
+        it 'returns the csv section' do
+          expect(csv_section).to(eq('foo,bar,baz'))
+        end
       end
 
       context 'with a bunch of spacing' do
@@ -32,6 +39,10 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
         end
 
         it { is_expected.to(eq({})) }
+
+        it 'returns the csv section' do
+          expect(csv_section).to(eq('foo,bar,baz'))
+        end
       end
 
       context 'with a simple variable definition' do
@@ -44,6 +55,10 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
         end
 
         it { is_expected.to(eq({ foo: build(:number_one) })) }
+
+        it 'returns the csv section' do
+          expect(csv_section).to(eq('=$$foo,bar,baz'))
+        end
       end
 
       context 'with a variable definition with function calls' do
@@ -93,6 +108,10 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
             )
           )
         end
+
+        it 'returns the csv section' do
+          expect(csv_section).to(eq('=$$foo,=$$bar,baz'))
+        end
       end
 
       context 'with an function with a single arg' do
@@ -110,7 +129,8 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
       end
     end
 
-    describe '#functions' do
+    describe 'CodeSection#functions' do
+      subject { code_section.functions }
       # XXX
     end
   end

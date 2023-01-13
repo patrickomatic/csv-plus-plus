@@ -4,11 +4,11 @@ require 'syntax_error'
 require 'template'
 
 describe ::CSVPlusPlus::Template do
-  let(:ec) { build(:execution_context, input:) }
+  let(:compiler) { build(:compiler, input:) }
   let(:input) { '' }
 
   describe '::run' do
-    let(:template) { described_class.run(execution_context: ec) }
+    let(:template) { described_class.run(compiler:) }
     let(:input) { "foo0,bar0,baz0\nfoo1,bar1,baz1\nfoo2,bar2,baz2\n" }
 
     it 'creates rows' do
@@ -50,8 +50,7 @@ describe ::CSVPlusPlus::Template do
   end
 
   describe '#parse_csv_rows!' do
-    let(:ec) { build(:execution_context, input:) }
-    let(:template) { described_class.new(execution_context: ec) }
+    let(:template) { described_class.new(compiler:) }
     let(:input) { "foo,bar,baz\nfoo1,bar1,baz1\nfoo2,bar2,baz2\n" }
 
     it 'parses the CSV rows' do
@@ -70,7 +69,7 @@ describe ::CSVPlusPlus::Template do
   end
 
   describe '#expand_rows!' do
-    let(:template) { described_class.new(rows:, execution_context: ec) }
+    let(:template) { described_class.new(rows:, compiler:) }
     let(:cells_row0) do
       [
         build(:cell, row_index: 0, index: 0, value: 'foo'),
@@ -138,7 +137,7 @@ describe ::CSVPlusPlus::Template do
   end
 
   describe '#resolve_variables!' do
-    let(:template) { build(:template, rows:, code_section:, execution_context: ec) }
+    let(:template) { build(:template, rows:, code_section:, compiler:) }
     let(:code_section) { build(:code_section, variables:) }
     let(:cells_row0) do
       [

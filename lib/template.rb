@@ -1,9 +1,8 @@
 # frozen_string_literal: true
 
 require 'csv'
-require_relative './language/execution_context'
+require_relative './language/compiler'
 require_relative './language/syntax_error'
-require_relative 'code_section'
 require_relative 'row'
 
 module CSVPlusPlus
@@ -12,8 +11,8 @@ module CSVPlusPlus
     attr_reader :code_section, :rows
 
     # Run the full lifecycle of a template
-    def self.run(execution_context:, key_values: {})
-      new(execution_context:).tap do |t|
+    def self.run(compiler:, key_values: {})
+      new(compiler:).tap do |t|
         t.parse_code_section!(key_values)
         t.parse_csv_rows!
         t.expand_rows!
@@ -23,54 +22,38 @@ module CSVPlusPlus
     end
 
     # initialize
-    def initialize(execution_context:, rows: [], code_section: nil)
+    def initialize(compiler:, rows: [], code_section: nil)
       @rows = rows
       @code_section = code_section
-      @ec = execution_context
+      @compiler = compiler
     end
 
     # to_s
     def to_s
-      "Template(key_values: #{@key_values}, rows: #{@rows}, execution_context: #{ec})"
+      "Template(key_values: #{@key_values}, rows: #{@rows}, compiler: #{@compiler})"
     end
 
     # Parse the code section of the template
-    def parse_code_section!(_key_values)
-      @code_section = ::CSVPlusPlus::CodeSection.parse(@ec)
+    def parse_code_section!(key_values)
+      @code_section = @compiler.parse_code_section(key_values:)
     end
 
     # Parse the CSV section of the template
-    # rubocop:todo Metrics/MethodLength
     def parse_csv_rows!
-      @ec.parsing_csv! do |input|
-        infinite_expand = nil
-
+      @compiler.parsing_csv! do |input|
         @rows =
-          @ec.map_rows(::CSV.new(input)) do |csv_row|
-            ::CSVPlusPlus::Row.parse(csv_row, @ec).tap do |r|
-              next unless r.modifier.expand&.infinite?
-
-              if infinite_expand
-                raise(
-                  ::CSVPlusPlus::Language::SyntaxError.new(
-                    'You can only have one infinite expand= (on all others you must specify an amount)',
-                    csv_row,
-                    @ec
-                  )
-                )
-              else
-                infinite_expand = r.modifier
-              end
-            end
+          @compiler.map_rows(::CSV.new(input)) do |csv_row|
+            ::CSVPlusPlus::Row.parse(csv_row, @compiler)
           end
+
+        validate_infinite_expands
       end
     end
-    # rubocop:enable Metrics/MethodLength
 
     # Apply any expand= modifiers to the parsed template
     # rubocop:todo Metrics/MethodLength
     def expand_rows!
-      @ec.expanding! do
+      @compiler.expanding! do
         expanded_rows = []
         row_index = 0
 
@@ -83,7 +66,7 @@ module CSVPlusPlus
 
         # TODO: make it so that an infinite expand will not overwrite the rows below it, but
         # instead merge with them
-        @ec.map_rows(@rows) do |row|
+        @compiler.map_rows(@rows) do |row|
           if row.modifier.expand
             row.expand_amount.times do
               push_row.call(row.deep_clone)
@@ -100,15 +83,30 @@ module CSVPlusPlus
 
     # Apply any runtime or user-supplied variables to the individual cell values
     def resolve_variables!
-      @ec.resolve_all_cells!(@code_section, @rows)
+      @compiler.resolve_all_cells!(@code_section, @rows)
     end
 
     # Apply any runtime or user-supplied functions  to the individual cell values
     def apply_functions!
-      @ec.applying_functions! do
+      @compiler.applying_functions! do
         # XXX do a DFS, replacing each function (just builtins for now) with their AST, with the
         # args interpolated
       end
+    end
+
+    private
+
+    def validate_infinite_expands
+      infinite_expand_rows = @rows.filter { |r| r.modifier.expand&.infinite? }
+      return unless infinite_expand_rows.length > 1
+
+      raise(
+        ::CSVPlusPlus::Language::SyntaxError.new(
+          'You can only have one infinite expand= (on all others you must specify an amount)',
+          infinite_expand_rows[1],
+          @compiler
+        )
+      )
     end
   end
 end

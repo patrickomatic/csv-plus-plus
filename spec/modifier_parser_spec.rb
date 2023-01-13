@@ -1,17 +1,16 @@
 # frozen_string_literal: true
 
-require 'modifier'
 require 'modifier.tab'
 
 describe ::CSVPlusPlus::ModifierParser do
-  let(:ec) { build(:execution_context) }
+  let(:compiler) { build(:compiler) }
 
   describe '#parse' do
     let(:row_modifier) { build(:modifier) }
     let(:cell_modifier) { build(:modifier) }
 
     before(:each) { subject }
-    subject { described_class.new.parse(value, execution_context: ec, cell_modifier:, row_modifier:) }
+    subject { described_class.new.parse(value, compiler:, cell_modifier:, row_modifier:) }
 
     context 'without a modifier' do
       let(:value) { 'foo' }

@@ -15,139 +15,138 @@ module CSVPlusPlus
   module Language
     class CodeSectionParser < Racc::Parser
 
-module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 55)
-  def parse(execution_context)
-    rest = nil
-    execution_context.parsing_code_section! do |input|
-      text = input.read.strip
-      @code_section = CodeSection.new
+module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 59)
+  def parse(input, compiler)
+    text = input.read.strip
+    @code_section = CodeSection.new
 
-      eoc_index = text.index(Language::END_OF_CODE_SECTION)
-      next text if eoc_index.nil?
+    eoc_index = text.index(Language::END_OF_CODE_SECTION)
+    return @code_section, text if eoc_index.nil?
 
-      tokens = []
+    tokens, rest = [], ''
 
-      s = StringScanner.new text
-      until s.empty?
-        case
-        when s.scan(/\s+/)
-        when s.scan(/\#[^\n]+\n/)
-        when s.scan(/---/)
-          break
-        when s.scan(/\n/)
-          tokens << [:EOL, s.matched]
-        when s.scan(/:=/)
-          tokens << [:ASSIGN, s.matched]
-        when s.scan(/\bdef\b/)
-          tokens << [:FUNCTION_DEF, s.matched]
-        when s.scan(/TRUE/)
-          tokens << [:TRUE, s.matched]
-        when s.scan(/FALSE/)
-          tokens << [:FALSE, s.matched]
-        when s.scan(/"(?:[^"\\]|\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/)
-          tokens << [:STRING, s.matched]
-        when s.scan(/-?[\d.]+/)
-          tokens << [:NUMBER, s.matched]
-        when s.scan(/\$\$/)
-          tokens << [:VAR_REF, s.matched]
-        when s.scan(/[\w_]+/)
-          tokens << [:ID, s.matched]
-        when s.scan(/[\(\)\{\}\/\*\+\-,=&]/)
-          tokens << [s.matched, s.matched]
-        else
-          raise SyntaxError.new("Unable to parse starting at", s.rest, execution_context)
-        end
+    s = StringScanner.new(text)
+    until s.empty?
+      case
+      when s.scan(/\s+/)
+      when s.scan(/\#[^\n]+\n/)
+      when s.scan(/---/)
+        tokens << [:END_OF_CODE, s.matched]
+        rest = s.rest.strip
+        break
+      when s.scan(/\n/)
+        tokens << [:EOL, s.matched]
+      when s.scan(/:=/)
+        tokens << [:ASSIGN, s.matched]
+      when s.scan(/\bdef\b/)
+        tokens << [:FUNCTION_DEF, s.matched]
+      when s.scan(/TRUE/)
+        tokens << [:TRUE, s.matched]
+      when s.scan(/FALSE/)
+        tokens << [:FALSE, s.matched]
+      when s.scan(/"(?:[^"\\]|\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/)
+        tokens << [:STRING, s.matched]
+      when s.scan(/-?[\d.]+/)
+        tokens << [:NUMBER, s.matched]
+      when s.scan(/\$\$/)
+        tokens << [:VAR_REF, s.matched]
+      when s.scan(/[\w_]+/)
+        tokens << [:ID, s.matched]
+      when s.scan(/[\(\)\{\}\/\*\+\-,=&]/)
+        tokens << [s.matched, s.matched]
+      else
+        raise SyntaxError.new("Unable to parse code section starting at", s.peek(100), compiler)
       end
-
-      next text if tokens.empty?
-
-      define_singleton_method(:next_token) { tokens.shift }
-
-      begin
-        do_parse
-      rescue Racc::ParseError => e
-        raise SyntaxError.new("Error parsing code section", e.message, execution_context,
-                              wrapped_error: e)
-      end
-
-      # return the rest of the file (the CSV part) to the execution_context because they're
-      # going to use it to rewrite the input file and further parse
-      s.rest
     end
 
-    @code_section
+    return @code_section, rest if tokens.empty?
+
+    define_singleton_method(:next_token) { tokens.shift }
+
+    begin
+      do_parse
+    rescue Racc::ParseError => e
+      raise SyntaxError.new("Error parsing code section", e.message, compiler,
+                            wrapped_error: e)
+    end
+
+    return @code_section, rest
   end
 ...end code_section.y/module_eval...
 ##### State transition tables begin ###
 
 racc_action_table = [
-     7,     5,     5,    25,    26,    33,    34,    29,     6,     6,
-    19,    14,    17,    16,    18,    15,    19,    14,    17,    16,
-    18,    15,    19,    14,    17,    16,    18,    15,    19,    14,
-    17,    16,    18,    15,    19,    14,    17,    16,    18,    15,
-    21,     9,    10,    11,    22,    12,    23,    24,    32,    35 ]
+    32,    28,    29,     9,    22,    17,    20,    19,    21,    18,
+     7,     7,    24,    36,    37,     3,    10,    25,     8,     8,
+    22,    17,    20,    19,    21,    18,    22,    17,    20,    19,
+    21,    18,    22,    17,    20,    19,    21,    18,    22,    17,
+    20,    19,    21,    18,    12,    13,    14,    15,    26,    27,
+    35,    38 ]
 
 racc_action_check = [
-     1,     0,     1,    20,    20,    28,    28,    23,     0,     1,
-    23,    23,    23,    23,    23,    23,    10,    10,    10,    10,
-    10,    10,    21,    21,    21,    21,    21,    21,    25,    25,
-    25,    25,    25,    25,    34,    34,    34,    34,    34,    34,
-    12,     5,     6,     7,    12,     9,    14,    15,    26,    30 ]
+    26,    23,    23,     1,    26,    26,    26,    26,    26,    26,
+     0,     2,    15,    31,    31,     0,     2,    15,     0,     2,
+    13,    13,    13,    13,    13,    13,    24,    24,    24,    24,
+    24,    24,    28,    28,    28,    28,    28,    28,    37,    37,
+    37,    37,    37,    37,     7,     8,     9,    12,    17,    18,
+    29,    33 ]
 
 racc_action_pointer = [
-    -1,     0,   nil,   nil,   nil,    32,    39,    43,   nil,    41,
-     8,   nil,    35,   nil,    42,    38,   nil,   nil,   nil,   nil,
-    -2,    14,   nil,     2,   nil,    20,    39,   nil,     0,   nil,
-    44,   nil,   nil,   nil,    26,   nil,   nil ]
+     8,     3,     9,   nil,   nil,   nil,   nil,    34,    42,    46,
+   nil,   nil,    43,    11,   nil,     7,   nil,    44,    39,   nil,
+   nil,   nil,   nil,    -4,    17,   nil,    -5,   nil,    23,    40,
+   nil,     8,   nil,    46,   nil,   nil,   nil,    29,   nil,   nil ]
 
 racc_action_default = [
-   -21,   -21,    -2,    -3,    -4,   -21,   -21,   -21,    -1,   -21,
-   -21,    37,   -21,    -9,   -18,   -21,   -14,   -15,   -16,   -17,
-   -21,   -21,    -8,   -21,   -13,   -21,   -21,    -6,   -21,   -11,
-   -20,    -5,    -7,   -10,   -21,   -12,   -19 ]
+   -23,   -23,   -23,    -2,    -4,    -5,    -6,   -23,   -23,   -23,
+    -1,    -3,   -23,   -23,    40,   -23,   -11,   -20,   -23,   -16,
+   -17,   -18,   -19,   -23,   -23,   -10,   -23,   -15,   -23,   -23,
+    -8,   -23,   -13,   -22,    -7,    -9,   -12,   -23,   -14,   -21 ]
 
 racc_goto_table = [
-    13,     2,     8,     1,    20,    28,   nil,   nil,   nil,   nil,
-   nil,    27,   nil,    30,   nil,    31,   nil,   nil,   nil,   nil,
-   nil,   nil,   nil,   nil,    36 ]
+    16,     4,     1,    11,     2,    23,    31,   nil,   nil,   nil,
+   nil,    30,   nil,    33,   nil,    34,   nil,   nil,   nil,   nil,
+   nil,   nil,   nil,   nil,    39 ]
 
 racc_goto_check = [
-     6,     2,     2,     1,     5,     7,   nil,   nil,   nil,   nil,
-   nil,     6,   nil,     6,   nil,     6,   nil,   nil,   nil,   nil,
-   nil,   nil,   nil,   nil,     6 ]
+     7,     3,     1,     3,     2,     6,     8,   nil,   nil,   nil,
+   nil,     7,   nil,     7,   nil,     7,   nil,   nil,   nil,   nil,
+   nil,   nil,   nil,   nil,     7 ]
 
 racc_goto_pointer = [
-   nil,     3,     1,   nil,   nil,    -8,   -10,   -18 ]
+   nil,     2,     4,     1,   nil,   nil,   -10,   -13,   -20 ]
 
 racc_goto_default = [
-   nil,   nil,   nil,     3,     4,   nil,   nil,   nil ]
+   nil,   nil,   nil,   nil,     5,     6,   nil,   nil,   nil ]
 
 racc_reduce_table = [
   0, 0, :racc_error,
-  2, 15, :_reduce_none,
-  1, 15, :_reduce_none,
+  2, 16, :_reduce_none,
   1, 16, :_reduce_none,
-  1, 16, :_reduce_none,
-  6, 17, :_reduce_5,
-  5, 17, :_reduce_6,
-  3, 19, :_reduce_7,
-  1, 19, :_reduce_8,
-  3, 18, :_reduce_9,
-  4, 20, :_reduce_10,
+  2, 17, :_reduce_none,
+  1, 17, :_reduce_none,
+  1, 18, :_reduce_none,
+  1, 18, :_reduce_none,
+  6, 19, :_reduce_7,
+  5, 19, :_reduce_8,
+  3, 21, :_reduce_9,
+  1, 21, :_reduce_10,
   3, 20, :_reduce_11,
-  4, 20, :_reduce_12,
-  2, 20, :_reduce_13,
-  1, 20, :_reduce_14,
-  1, 20, :_reduce_15,
-  1, 20, :_reduce_16,
-  1, 20, :_reduce_17,
-  1, 20, :_reduce_18,
-  3, 21, :_reduce_19,
-  1, 21, :_reduce_20 ]
+  4, 22, :_reduce_12,
+  3, 22, :_reduce_13,
+  4, 22, :_reduce_14,
+  2, 22, :_reduce_15,
+  1, 22, :_reduce_16,
+  1, 22, :_reduce_17,
+  1, 22, :_reduce_18,
+  1, 22, :_reduce_19,
+  1, 22, :_reduce_20,
+  3, 23, :_reduce_21,
+  1, 23, :_reduce_22 ]
 
-racc_reduce_n = 21
+racc_reduce_n = 23
 
-racc_shift_n = 37
+racc_shift_n = 40
 
 racc_token_table = {
   false => 0,
@@ -157,15 +156,16 @@ racc_token_table = {
   "(" => 4,
   ")" => 5,
   "," => 6,
-  :EOL => 7,
-  :FALSE => 8,
-  :ID => 9,
-  :NUMBER => 10,
-  :STRING => 11,
-  :TRUE => 12,
-  :VAR_REF => 13 }
+  :END_OF_CODE => 7,
+  :EOL => 8,
+  :FALSE => 9,
+  :ID => 10,
+  :NUMBER => 11,
+  :STRING => 12,
+  :TRUE => 13,
+  :VAR_REF => 14 }
 
-racc_nt_base = 14
+racc_nt_base = 15
 
 racc_use_result_var = true
 
@@ -193,6 +193,7 @@ Racc_token_to_s_table = [
   "\"(\"",
   "\")\"",
   "\",\"",
+  "END_OF_CODE",
   "EOL",
   "FALSE",
   "ID",
@@ -201,6 +202,7 @@ Racc_token_to_s_table = [
   "TRUE",
   "VAR_REF",
   "$start",
+  "code_section",
   "code",
   "def",
   "fn_def",
@@ -223,113 +225,117 @@ Racc_debug_parser = false
 
 # reduce 4 omitted
 
-module_eval(<<'.,.,', 'code_section.y', 24)
-  def _reduce_5(val, _values, result)
+# reduce 5 omitted
+
+# reduce 6 omitted
+
+module_eval(<<'.,.,', 'code_section.y', 28)
+  def _reduce_7(val, _values, result)
      @code_section.def_function(val[0], val[2], val[3])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 25)
-  def _reduce_6(val, _values, result)
+module_eval(<<'.,.,', 'code_section.y', 29)
+  def _reduce_8(val, _values, result)
      @code_section.def_function(val[0], [], val[3])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 27)
-  def _reduce_7(val, _values, result)
-     result = [val[0], val[2]]
-    result
-  end
-.,.,
-
-module_eval(<<'.,.,', 'code_section.y', 28)
-  def _reduce_8(val, _values, result)
-     result = val[0]
-    result
-  end
-.,.,
-
-module_eval(<<'.,.,', 'code_section.y', 30)
+module_eval(<<'.,.,', 'code_section.y', 31)
   def _reduce_9(val, _values, result)
-     @code_section.def_variable(val[0], val[2])
+     result = [val[0], val[2]]
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 32)
   def _reduce_10(val, _values, result)
-     result = Language::FunctionCall.new(val[0], val[2])
-    result
-  end
-.,.,
-
-module_eval(<<'.,.,', 'code_section.y', 33)
-  def _reduce_11(val, _values, result)
-     result = Language::FunctionCall.new(val[0], [])
-    result
-  end
-.,.,
-
-module_eval(<<'.,.,', 'code_section.y', 34)
-  def _reduce_12(val, _values, result)
-     result = Language::FunctionCall.new(val[0], [val[2]])
-    result
-  end
-.,.,
-
-module_eval(<<'.,.,', 'code_section.y', 35)
-  def _reduce_13(val, _values, result)
-     result = Language::Variable.new(val[1])
-    result
-  end
-.,.,
-
-module_eval(<<'.,.,', 'code_section.y', 36)
-  def _reduce_14(val, _values, result)
-     result = Language::String.new(val[0])
-    result
-  end
-.,.,
-
-module_eval(<<'.,.,', 'code_section.y', 37)
-  def _reduce_15(val, _values, result)
-     result = Language::Number.new(val[0])
-    result
-  end
-.,.,
-
-module_eval(<<'.,.,', 'code_section.y', 38)
-  def _reduce_16(val, _values, result)
-     result = Language::Boolean.new(true)
-    result
-  end
-.,.,
-
-module_eval(<<'.,.,', 'code_section.y', 39)
-  def _reduce_17(val, _values, result)
-     result = Language::Boolean.new(false)
-    result
-  end
-.,.,
-
-module_eval(<<'.,.,', 'code_section.y', 40)
-  def _reduce_18(val, _values, result)
      result = val[0]
     result
   end
 .,.,
 
+module_eval(<<'.,.,', 'code_section.y', 34)
+  def _reduce_11(val, _values, result)
+     @code_section.def_variable(val[0], val[2])
+    result
+  end
+.,.,
+
+module_eval(<<'.,.,', 'code_section.y', 36)
+  def _reduce_12(val, _values, result)
+     result = Language::FunctionCall.new(val[0], val[2])
+    result
+  end
+.,.,
+
+module_eval(<<'.,.,', 'code_section.y', 37)
+  def _reduce_13(val, _values, result)
+     result = Language::FunctionCall.new(val[0], [])
+    result
+  end
+.,.,
+
+module_eval(<<'.,.,', 'code_section.y', 38)
+  def _reduce_14(val, _values, result)
+     result = Language::FunctionCall.new(val[0], [val[2]])
+    result
+  end
+.,.,
+
+module_eval(<<'.,.,', 'code_section.y', 39)
+  def _reduce_15(val, _values, result)
+     result = Language::Variable.new(val[1])
+    result
+  end
+.,.,
+
+module_eval(<<'.,.,', 'code_section.y', 40)
+  def _reduce_16(val, _values, result)
+     result = Language::String.new(val[0])
+    result
+  end
+.,.,
+
+module_eval(<<'.,.,', 'code_section.y', 41)
+  def _reduce_17(val, _values, result)
+     result = Language::Number.new(val[0])
+    result
+  end
+.,.,
+
 module_eval(<<'.,.,', 'code_section.y', 42)
-  def _reduce_19(val, _values, result)
-     result = [val[0], val[2]]
+  def _reduce_18(val, _values, result)
+     result = Language::Boolean.new(true)
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 43)
+  def _reduce_19(val, _values, result)
+     result = Language::Boolean.new(false)
+    result
+  end
+.,.,
+
+module_eval(<<'.,.,', 'code_section.y', 44)
   def _reduce_20(val, _values, result)
+     result = val[0]
+    result
+  end
+.,.,
+
+module_eval(<<'.,.,', 'code_section.y', 46)
+  def _reduce_21(val, _values, result)
+     result = [val[0], val[2]]
+    result
+  end
+.,.,
+
+module_eval(<<'.,.,', 'code_section.y', 47)
+  def _reduce_22(val, _values, result)
      result = val[0]
     result
   end

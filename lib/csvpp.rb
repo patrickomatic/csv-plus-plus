@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'google_sheet'
-require_relative 'language/execution_context'
+require_relative 'language/compiler'
 require_relative 'template'
 
 # A language for writing rich CSV data
@@ -12,13 +12,12 @@ module CSVPlusPlus
     input, filename, google_sheet_id:, sheet_name:, row_offset:, cell_offset:,
     key_values:, verbose:, create_if_not_exists:
   )
-    ::CSVPlusPlus::Language::ExecutionContext.with_execution_context(input:, filename:, verbose:) do |ec|
-      template = ::Template.parse(execution_context: ec, key_values:)
+    ::CSVPlusPlus::Language::Compiler.with_compiler(input:, filename:, verbose:) do |c|
+      template = ::CSVPlusPlus::Template.run(compiler: c, key_values:)
 
       spreadsheet = ::CSVPlusPlus::GoogleSheet.new(
         google_sheet_id,
         sheet_name:,
-        execution_context: ec,
         row_offset:,
         cell_offset:,
         create_if_not_exists:

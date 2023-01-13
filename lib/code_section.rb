@@ -2,26 +2,12 @@
 
 require_relative './language/code_section.tab'
 require_relative './language/entities'
-require_relative './language/syntax_error'
 
 module CSVPlusPlus
   ##
   # A representation of the code section part of a template (the variable and function definitions)
   class CodeSection
     attr_reader :functions, :variables
-
-    # Parse a file into an instance of CodeSection
-    def self.parse(execution_context, key_values = {})
-      ::CSVPlusPlus::Language::CodeSectionParser.new.parse(execution_context).tap do |c|
-        # TODO: infer a type
-        # allow user-supplied key/values to override anything global or from the code section
-        c.def_variables(key_values.transform_values { |v| ::CSVPlusPlus::Language::String.new(v.to_s) })
-
-        resolved_variables = execution_context.resolve_static_variables!(c)
-        # statically resolve all non-runtime variables
-        c.def_variables(resolved_variables)
-      end
-    end
 
     # initialize
     def initialize(variables: {}, functions: {})

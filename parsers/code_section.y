@@ -5,9 +5,11 @@ prechigh
   left ASSIGN
   left '(' ')'
   left ','
+  right END_OF_CODE
 preclow
 
 token ASSIGN
+      END_OF_CODE
       EOL
       FALSE
       FN_DEF
@@ -18,6 +20,8 @@ token ASSIGN
       VAR_REF
 
 rule
+  code_section: code END_OF_CODE | END_OF_CODE
+
   code: code def | def
 
   def: fn_def | var_def
@@ -52,64 +56,59 @@ require_relative './syntax_error'
 require_relative '../code_section'
 
 ---- inner
-  def parse(execution_context)
-    rest = nil
-    execution_context.parsing_code_section! do |input|
-      text = input.read.strip
-      @code_section = CodeSection.new
+  def parse(input, compiler)
+    text = input.read.strip
+    @code_section = CodeSection.new
 
-      eoc_index = text.index(Language::END_OF_CODE_SECTION)
-      next text if eoc_index.nil?
+    eoc_index = text.index(Language::END_OF_CODE_SECTION)
+    return @code_section, text if eoc_index.nil?
 
-      tokens = []
+    tokens, rest = [], ''
 
-      s = StringScanner.new text
-      until s.empty?
-        case
-        when s.scan(/\s+/)
-        when s.scan(/\#[^\n]+\n/)
-        when s.scan(/---/)
-          break
-        when s.scan(/\n/)
-          tokens << [:EOL, s.matched]
-        when s.scan(/:=/)
-          tokens << [:ASSIGN, s.matched]
-        when s.scan(/\bdef\b/)
-          tokens << [:FUNCTION_DEF, s.matched]
-        when s.scan(/TRUE/)
-          tokens << [:TRUE, s.matched]
-        when s.scan(/FALSE/)
-          tokens << [:FALSE, s.matched]
-        when s.scan(/"(?:[^"\\]|\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/)
-          tokens << [:STRING, s.matched]
-        when s.scan(/-?[\d.]+/)
-          tokens << [:NUMBER, s.matched]
-        when s.scan(/\$\$/)
-          tokens << [:VAR_REF, s.matched]
-        when s.scan(/[\w_]+/)
-          tokens << [:ID, s.matched]
-        when s.scan(/[\(\)\{\}\/\*\+\-,=&]/)
-          tokens << [s.matched, s.matched]
-        else
-          raise SyntaxError.new("Unable to parse starting at", s.rest, execution_context)
-        end
+    s = StringScanner.new(text)
+    until s.empty?
+      case
+      when s.scan(/\s+/)
+      when s.scan(/\#[^\n]+\n/)
+      when s.scan(/---/)
+        tokens << [:END_OF_CODE, s.matched]
+        rest = s.rest.strip
+        break
+      when s.scan(/\n/)
+        tokens << [:EOL, s.matched]
+      when s.scan(/:=/)
+        tokens << [:ASSIGN, s.matched]
+      when s.scan(/\bdef\b/)
+        tokens << [:FUNCTION_DEF, s.matched]
+      when s.scan(/TRUE/)
+        tokens << [:TRUE, s.matched]
+      when s.scan(/FALSE/)
+        tokens << [:FALSE, s.matched]
+      when s.scan(/"(?:[^"\\]|\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/)
+        tokens << [:STRING, s.matched]
+      when s.scan(/-?[\d.]+/)
+        tokens << [:NUMBER, s.matched]
+      when s.scan(/\$\$/)
+        tokens << [:VAR_REF, s.matched]
+      when s.scan(/[\w_]+/)
+        tokens << [:ID, s.matched]
+      when s.scan(/[\(\)\{\}\/\*\+\-,=&]/)
+        tokens << [s.matched, s.matched]
+      else
+        raise SyntaxError.new("Unable to parse code section starting at", s.peek(100), compiler)
       end
-
-      next text if tokens.empty?
-
-      define_singleton_method(:next_token) { tokens.shift }
-
-      begin
-        do_parse
-      rescue Racc::ParseError => e
-        raise SyntaxError.new("Error parsing code section", e.message, execution_context,
-                              wrapped_error: e)
-      end
-
-      # return the rest of the file (the CSV part) to the execution_context because they're
-      # going to use it to rewrite the input file and further parse
-      s.rest
     end
 
-    @code_section
+    return @code_section, rest if tokens.empty?
+
+    define_singleton_method(:next_token) { tokens.shift }
+
+    begin
+      do_parse
+    rescue Racc::ParseError => e
+      raise SyntaxError.new("Error parsing code section", e.message, compiler,
+                            wrapped_error: e)
+    end
+
+    return @code_section, rest
   end

@@ -3,10 +3,10 @@
 require 'cell_value.tab'
 
 describe ::CSVPlusPlus::Language::CellValueParser do
-  let(:ec) { build(:execution_context) }
+  let(:compiler) { build(:compiler) }
 
   describe '#parse' do
-    subject { described_class.new.parse(cell_value, ec) }
+    subject { described_class.new.parse(cell_value, compiler) }
 
     describe 'without a formula' do
       let(:cell_value) { 'just a value' }

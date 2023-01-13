@@ -16,6 +16,7 @@ module CSVPlusPlus
     class GraphHash < Hash
       include ::TSort
       alias tsort_each_node each_key
+
       # sort each child
       def tsort_each_child(node, &)
         fetch(node).each(&)
@@ -28,13 +29,13 @@ module CSVPlusPlus
     class GlobalScope
       RUNTIME_VARIABLES = {
         rownum: ::CSVPlusPlus::Language::RuntimeValue.new(
-          lambda do |ec|
-            ::CSVPlusPlus::Language::Number.new(ec.row_index + 1)
+          lambda do |compiler|
+            ::CSVPlusPlus::Language::Number.new(compiler.row_index + 1)
           end
         ),
         cellnum: ::CSVPlusPlus::Language::RuntimeValue.new(
-          lambda do |ec|
-            ::CSVPlusPlus::Language::Number.new(ec.cell_index + 1)
+          lambda do |compiler|
+            ::CSVPlusPlus::Language::Number.new(compiler.cell_index + 1)
           end
         )
       }.freeze
@@ -44,7 +45,7 @@ module CSVPlusPlus
       BUILTIN_FUNCTIONS = {
         # TODO: not sure we need this...
         # =REF(C) === =INDIRECT($$C)
-        #       ref: -> (args, ec) {
+        #       ref: -> (args, compiler) {
         #         Function.new(:ref,
         #                      [Variable.new(:cell)],
         #                      FunctionCall.new(:indirect,
@@ -52,7 +53,7 @@ module CSVPlusPlus
         #       }
         #
         #       # =CELLREF(C) === =INDIRECT(CONCAT($$C, $$rownum))
-        #       cellref: -> (args, ec) {
+        #       cellref: -> (args, compiler) {
         #         Function.new(:cellref,
         #                      [Variable.new(:cell)],
         #                      FunctionCall.new(:indirect,
@@ -60,7 +61,7 @@ module CSVPlusPlus
         #                                       [Variable.new(:cell), Variable.new(:rownum)])]))
         #       }
 
-        # sheetref: lambda { |_args, _ec|
+        # sheetref: lambda { |args, compiler|
         # }
       }.freeze
       private_constant :BUILTIN_FUNCTIONS
@@ -71,20 +72,20 @@ module CSVPlusPlus
       end
 
       # Resolve all values in the ast of the current cell being processed
-      def resolve_cell_value(execution_context)
-        ast = execution_context.cell.ast
+      def resolve_cell_value(compiler)
+        ast = compiler.cell.ast
         return if ast.nil?
 
         variables_referenced = variable_references(ast, include_runtime: true)
         variables_referenced.reduce(ast.dup) do |resolved_ast, var|
-          resolve_variable(resolved_ast, var, resolve_to(var, execution_context))
+          resolve_variable(resolved_ast, var, resolve_to(var, compiler))
         end
       end
 
       # XXX this is weird because we already have a reference to code_section
       # Resolve all variables references defined statically in the code section
       # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-      def resolve_static_variables(variables, execution_context)
+      def resolve_static_variables(variables, compiler)
         # we have a hash of variables => ASTs but they might have references to each other, so
         # we need to interpolate them first (before interpolating the cell values)
         var_dependencies = ::CSVPlusPlus::Language::GraphHash[
@@ -93,7 +94,7 @@ module CSVPlusPlus
           end
         ]
 
-        check_unbound_vars(var_dependencies, variables, execution_context)
+        check_unbound_vars(var_dependencies, variables, compiler)
 
         # are there any references that we don't have variables for? (aka undefined variable)
         resolved_vars = {}
@@ -112,7 +113,7 @@ module CSVPlusPlus
         rescue ::TSort::Cyclic
           raise(
             ::CSVPlusPlus::Language::SyntaxError.new(
-              'Cyclic variable dependency detected', var_refs.keys, execution_context
+              'Cyclic variable dependency detected', var_refs.keys, compiler
             )
           )
         end
@@ -169,23 +170,23 @@ module CSVPlusPlus
         self.class::RUNTIME_VARIABLES[id]
       end
 
-      def resolve_to(var_id, execution_context)
+      def resolve_to(var_id, compiler)
         if @code_section.variables.key?(var_id)
           @code_section.variables[var_id]
         elsif (runtime_var = runtime_variable(var_id))
-          runtime_var.resolve_fn.call(execution_context)
+          runtime_var.resolve_fn.call(compiler)
         else
-          raise(::CSVPlusPlus::Language::SyntaxError.new('Undefined variable reference', var_id, execution_context))
+          raise(::CSVPlusPlus::Language::SyntaxError.new('Undefined variable reference', var_id, compiler))
         end
       end
 
-      def check_unbound_vars(dependencies, variables, execution_context)
+      def check_unbound_vars(dependencies, variables, compiler)
         unbound_vars = dependencies.values.flatten - variables.keys
         return if unbound_vars.empty?
 
         raise(
           ::CSVPlusPlus::Language::SyntaxError.new(
-            'Undefined variables', unbound_vars.map(&:to_s).join(', '), execution_context
+            'Undefined variables', unbound_vars.map(&:to_s).join(', '), compiler
           )
         )
       end

@@ -4,30 +4,23 @@ require 'google/apis/sheets_v4'
 require 'googleauth'
 
 SheetsApi = ::Google::Apis::SheetsV4
+AUTH_SCOPES = ['https://www.googleapis.com/auth/spreadsheets'].freeze
+FULL_RANGE = 'A1:Z1000'
 
 module CSVPlusPlus
   ##
   # A class which can output a Template to Google Spredsheets (via their API)
   # rubocop:disable Metrics/ClassLength
   class GoogleSheet
-    SPREADSHEET_AUTH_SCOPES = ['https://www.googleapis.com/auth/spreadsheets'].freeze
-    private_constant :SPREADSHEET_AUTH_SCOPES
-
     # XXX it would be nice to raise this but we shouldn't expand out more than necessary for our data
     SPREADSHEET_INFINITY = 1000
     public_constant :SPREADSHEET_INFINITY
 
-    # TODO: another 1000 reference
-    FULL_RANGE = 'A1:Z1000'
-    private_constant :FULL_RANGE
-
     attr_reader :sheet_id, :sheet_name
 
     # initialize
-    # rubocop:disable Metrics/ParameterLists
     def initialize(
       sheet_id,
-      execution_context:,
       sheet_name: nil,
       cell_offset: 0,
       row_offset: 0,
@@ -37,10 +30,8 @@ module CSVPlusPlus
       @sheet_id = sheet_id
       @cell_offset = cell_offset
       @row_offset = row_offset
-      @execution_context = execution_context
       @create_if_not_exists = create_if_not_exists
     end
-    # rubocop:enable Metrics/ParameterLists
 
     # Write the template to Google Sheets
     def push!(template)
@@ -66,7 +57,7 @@ module CSVPlusPlus
 
     def auth!
       @gs ||= ::SheetsApi::SheetsService.new
-      @gs.authorization = ::Google::Auth.get_application_default(self.SPREADSHEET_AUTH_SCOPES)
+      @gs.authorization = ::Google::Auth.get_application_default(::AUTH_SCOPES)
     end
 
     # rubocop:disable Metrics/AbcSize, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity, Metrics/MethodLength
@@ -231,7 +222,7 @@ module CSVPlusPlus
             end
 
           template.rows.each do |row|
-            row.cells.filter { |c| c.modifier.has_border? }
+            row.cells.filter { |c| c.modifier.any_border? }
                .each do |cell|
               bu.requests << build_update_borders_request(cell)
             end
@@ -251,11 +242,12 @@ module CSVPlusPlus
     end
 
     def set_extended_value_type!(extended_value, value)
-      if value.start_with?('=')
+      v = value || ''
+      if v.start_with?('=')
         extended_value.formula_value = value
-      elsif value.match(/^-?[\d.]+$/)
+      elsif v.match(/^-?[\d.]+$/)
         extended_value.number_value = value
-      elsif value.downcase == 'true' || value.downcase == 'false'
+      elsif v.downcase == 'true' || v.downcase == 'false'
         extended_value.boolean_value = value
       else
         extended_value.string_value = value

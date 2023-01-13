@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 require 'tempfile'
-require_relative '../../lib/language/execution_context'
+require_relative '../../lib/language/compiler'
 
 ::FactoryBot.define do
-  factory :execution_context, class: ::CSVPlusPlus::Language::ExecutionContext do
+  factory :compiler, class: ::CSVPlusPlus::Language::Compiler do
     transient do
       filename { 'foo_stocks.csvpp' }
       verbose { false }

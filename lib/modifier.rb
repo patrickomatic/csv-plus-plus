@@ -10,6 +10,7 @@ module CSVPlusPlus
   # A container representing the operations that can be applied to a cell or row
   class Modifier
     attr_reader :bordercolor, :borders, :color, :fontcolor, :formats
+    attr_writer :borderstyle
     attr_accessor :expand, :fontfamily, :fontsize, :note, :numberformat, :row_level, :validation
 
     # initialize
