@@ -38,7 +38,7 @@ require_relative 'syntax_error'
 ---- inner
   attr_accessor :ast
 
-  def parse(text, compiler)
+  def parse(text, runtime)
     return nil unless text.strip.start_with?('=')
     tokens = []
 
@@ -61,13 +61,7 @@ require_relative 'syntax_error'
       when s.scan(/[\(\)\/\*\+\-,=&]/)
         tokens << [s.matched, s.matched]
       else
-        raise(
-          ::CSVPlusPlus::Language::SyntaxError.new(
-            "Unable to parse cell value starting at",
-            s.peek(100),
-            compiler
-          )
-        )
+        runtime.raise_syntax_error("Unable to parse cell value starting at", s.peek(100))
       end 
     end
     tokens << [:EOL, :EOL]
@@ -77,14 +71,8 @@ require_relative 'syntax_error'
     begin
       do_parse
     rescue ::Racc::ParseError => e
-      raise(
-        ::CSVPlusPlus::Language::SyntaxError.new(
-          "Error parsing cell value",
-          e.message,
-          compiler,
-          wrapped_error: e
-        ) 
-      )
+      runtime.raise_syntax_error("Error parsing cell value", e.message, wrapped_error: e)
     end
+
     @ast
   end

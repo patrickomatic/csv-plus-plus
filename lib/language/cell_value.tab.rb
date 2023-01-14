@@ -16,7 +16,7 @@ module CSVPlusPlus
 module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 39)
   attr_accessor :ast
 
-  def parse(text, compiler)
+  def parse(text, runtime)
     return nil unless text.strip.start_with?('=')
     tokens = []
 
@@ -39,13 +39,7 @@ module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 39)
       when s.scan(/[\(\)\/\*\+\-,=&]/)
         tokens << [s.matched, s.matched]
       else
-        raise(
-          ::CSVPlusPlus::Language::SyntaxError.new(
-            "Unable to parse cell value starting at",
-            s.peek(100),
-            compiler
-          )
-        )
+        runtime.raise_syntax_error("Unable to parse cell value starting at", s.peek(100))
       end 
     end
     tokens << [:EOL, :EOL]
@@ -55,15 +49,9 @@ module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 39)
     begin
       do_parse
     rescue ::Racc::ParseError => e
-      raise(
-        ::CSVPlusPlus::Language::SyntaxError.new(
-          "Error parsing cell value",
-          e.message,
-          compiler,
-          wrapped_error: e
-        ) 
-      )
+      runtime.raise_syntax_error("Error parsing cell value", e.message, wrapped_error: e)
     end
+
     @ast
   end
 ...end cell_value.y/module_eval...

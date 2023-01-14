@@ -9,22 +9,6 @@ module CSVPlusPlus
   class Row
     attr_reader :cells, :index, :modifier
 
-    # Using the current +compiler+ and the given +csv_row+ parse it into a Row of Cells
-    # +csv_row+ should have already been run through a CSV parser and is an array of strings
-    def self.parse(csv_row, compiler)
-      row_modifier = ::CSVPlusPlus::Modifier.new(row_level: true)
-
-      cells =
-        compiler.map_row(csv_row) do |value, cell_index|
-          cell_modifier = ::CSVPlusPlus::Modifier.new
-          parsed_value = ::CSVPlusPlus::ModifierParser.new.parse(value, compiler:, row_modifier:, cell_modifier:)
-
-          ::CSVPlusPlus::Cell.new(compiler.row_index, cell_index, parsed_value, cell_modifier)
-        end
-
-      new(compiler.row_index, cells, row_modifier)
-    end
-
     # initialize
     def initialize(index, cells, modifier)
       @cells = cells

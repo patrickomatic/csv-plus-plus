@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
+require_relative '../code_section'
 require_relative './entities'
 require 'tsort'
 require_relative './syntax_error'
+
+LANG = ::CSVPlusPlus::Language
 
 module CSVPlusPlus
   module Language
@@ -24,20 +27,12 @@ module CSVPlusPlus
     end
 
     ##
-    # A class representing the global scope of the current Template
-    # rubocop:disable Metrics/ClassLength
-    class GlobalScope
+    # A class representing the scope of the current Template and responsible for
+    # resolving variables
+    class Scope
       RUNTIME_VARIABLES = {
-        rownum: ::CSVPlusPlus::Language::RuntimeValue.new(
-          lambda do |compiler|
-            ::CSVPlusPlus::Language::Number.new(compiler.row_index + 1)
-          end
-        ),
-        cellnum: ::CSVPlusPlus::Language::RuntimeValue.new(
-          lambda do |compiler|
-            ::CSVPlusPlus::Language::Number.new(compiler.cell_index + 1)
-          end
-        )
+        rownum: ::LANG::RuntimeValue.new(->(r) { ::LANG::Number.new(r.row_index + 1) }),
+        cellnum: ::LANG::RuntimeValue.new(->(r) { ::LANG::Number.new(r.cell_index + 1) })
       }.freeze
       # XXX why doesn't this work as a private??
       public_constant :RUNTIME_VARIABLES
@@ -45,7 +40,7 @@ module CSVPlusPlus
       BUILTIN_FUNCTIONS = {
         # TODO: not sure we need this...
         # =REF(C) === =INDIRECT($$C)
-        #       ref: -> (args, compiler) {
+        #       ref: -> (args, runtime) {
         #         Function.new(:ref,
         #                      [Variable.new(:cell)],
         #                      FunctionCall.new(:indirect,
@@ -53,7 +48,7 @@ module CSVPlusPlus
         #       }
         #
         #       # =CELLREF(C) === =INDIRECT(CONCAT($$C, $$rownum))
-        #       cellref: -> (args, compiler) {
+        #       cellref: -> (args, runtime) {
         #         Function.new(:cellref,
         #                      [Variable.new(:cell)],
         #                      FunctionCall.new(:indirect,
@@ -61,31 +56,33 @@ module CSVPlusPlus
         #                                       [Variable.new(:cell), Variable.new(:rownum)])]))
         #       }
 
-        # sheetref: lambda { |args, compiler|
+        # sheetref: lambda { |args, runtime|
         # }
       }.freeze
       private_constant :BUILTIN_FUNCTIONS
 
+      attr_accessor :code_section
+
       # initialize with a CodeSection
-      def initialize(code_section)
-        @code_section = code_section
+      def initialize(code_section = nil)
+        @code_section = code_section || ::CSVPlusPlus::CodeSection.new
       end
 
       # Resolve all values in the ast of the current cell being processed
-      def resolve_cell_value(compiler)
-        ast = compiler.cell.ast
+      def resolve_cell_value(runtime)
+        ast = runtime.cell.ast
         return if ast.nil?
 
         variables_referenced = variable_references(ast, include_runtime: true)
         variables_referenced.reduce(ast.dup) do |resolved_ast, var|
-          resolve_variable(resolved_ast, var, resolve_to(var, compiler))
+          resolve_variable(resolved_ast, var, resolve_to(var, runtime))
         end
       end
 
       # XXX this is weird because we already have a reference to code_section
       # Resolve all variables references defined statically in the code section
       # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-      def resolve_static_variables(variables, compiler)
+      def resolve_static_variables(variables, runtime)
         # we have a hash of variables => ASTs but they might have references to each other, so
         # we need to interpolate them first (before interpolating the cell values)
         var_dependencies = ::CSVPlusPlus::Language::GraphHash[
@@ -94,7 +91,7 @@ module CSVPlusPlus
           end
         ]
 
-        check_unbound_vars(var_dependencies, variables, compiler)
+        check_unbound_vars(var_dependencies, variables, runtime)
 
         # are there any references that we don't have variables for? (aka undefined variable)
         resolved_vars = {}
@@ -111,11 +108,7 @@ module CSVPlusPlus
             end
           end
         rescue ::TSort::Cyclic
-          raise(
-            ::CSVPlusPlus::Language::SyntaxError.new(
-              'Cyclic variable dependency detected', var_refs.keys, compiler
-            )
-          )
+          runtime.raise_syntax_error('Cyclic variable dependency detected', var_refs.keys)
         end
 
         resolved_vars
@@ -164,33 +157,33 @@ module CSVPlusPlus
         graph.tsort
       end
 
+      # to_s
+      def to_s
+        'Scope(TODO)'
+      end
+
       private
 
       def runtime_variable(id)
         self.class::RUNTIME_VARIABLES[id]
       end
 
-      def resolve_to(var_id, compiler)
+      def resolve_to(var_id, runtime)
         if @code_section.variables.key?(var_id)
           @code_section.variables[var_id]
         elsif (runtime_var = runtime_variable(var_id))
-          runtime_var.resolve_fn.call(compiler)
+          runtime_var.resolve_fn.call(runtime)
         else
-          raise(::CSVPlusPlus::Language::SyntaxError.new('Undefined variable reference', var_id, compiler))
+          runtime.raise_syntax_error('Undefined variable reference', var_id)
         end
       end
 
-      def check_unbound_vars(dependencies, variables, compiler)
+      def check_unbound_vars(dependencies, variables, runtime)
         unbound_vars = dependencies.values.flatten - variables.keys
         return if unbound_vars.empty?
 
-        raise(
-          ::CSVPlusPlus::Language::SyntaxError.new(
-            'Undefined variables', unbound_vars.map(&:to_s).join(', '), compiler
-          )
-        )
+        runtime.raise_syntax_error('Undefined variables', unbound_vars.map(&:to_s).join(', '))
       end
     end
-    # rubocop:enable Metrics/ClassLength
   end
 end

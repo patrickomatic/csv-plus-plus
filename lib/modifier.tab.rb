@@ -8,13 +8,12 @@ require 'racc/parser.rb'
 
 require 'strscan'
 require_relative './expand'
-require_relative './language/syntax_error'
 require_relative './modifier'
 
 module CSVPlusPlus
   class ModifierParser < Racc::Parser
 
-module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 124)
+module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 123)
   attr_accessor :cell_modifier, :row_modifier
 
   def initialize
@@ -43,7 +42,7 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 124)
     target.public_send("#{property}=".to_sym, value)
   end
 
-  def parse(text, compiler:, cell_modifier:, row_modifier:)
+  def parse(text, runtime:, cell_modifier:, row_modifier:)
     cell_value = (text || '').strip
 
     modifiers_to_parse = cell_value.scan(/!?\[\[/).count
@@ -87,7 +86,7 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 124)
       when s.scan(/\w+/)
         tokens << [s.matched, s.matched]
       else
-        raise Language::SyntaxError.new("Unable to parse modifier starting at", s.peek(100), compiler)
+        runtime.raise_syntax_error('Unable to parse modifier starting at', s.peek(100))
       end
     end
 
@@ -96,8 +95,7 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 124)
     begin
       do_parse
     rescue Racc::ParseError => e
-      raise Language::SyntaxError.new("Error parsing modifier", e.message, compiler, 
-                                      wrapped_error: e)
+      runtime.raise_syntax_error('Error parsing modifier', e.message, wrapped_error: e)
     end
 
     value_without_modifier

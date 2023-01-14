@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
 require 'entities'
-require 'global_scope'
+require 'scope'
 
-describe ::CSVPlusPlus::Language::GlobalScope do
-  let(:compiler) { build(:compiler) }
+describe ::CSVPlusPlus::Language::Scope do
+  let(:runtime) { build(:runtime) }
   let(:code_section) { build(:code_section) }
-  let(:global_scope) { described_class.new(code_section) }
+  let(:scope) { described_class.new(code_section) }
 
   describe '#variable_references' do
-    subject { global_scope.variable_references(ast) }
+    subject { scope.variable_references(ast) }
 
     context 'without any references' do
       let(:ast) { build :number_one }
@@ -53,7 +53,7 @@ describe ::CSVPlusPlus::Language::GlobalScope do
       }
     end
 
-    subject { global_scope.resolve_static_variables(variables, compiler:) }
+    subject { scope.resolve_static_variables(variables, runtime) }
 
     it 'resolves the variables in dep' do
       expect(subject[:dep]).to(eq(build(:fn_call, name: :multiply, a: variables[:bar], b: variables[:foo])))
@@ -93,7 +93,7 @@ describe ::CSVPlusPlus::Language::GlobalScope do
       build(:fn_call, name: :multiply, a: build(:variable, id: :rownum), b: build(:variable, id: :foo))
     end
 
-    subject { global_scope.resolve_variable(ast, :rownum, build(:number_one)) }
+    subject { scope.resolve_variable(ast, :rownum, build(:number_one)) }
 
     it {
       is_expected.to(eq(build(:fn_call, name: :multiply, a: build(:number_one), b: build(:variable, id: :foo))))
@@ -113,7 +113,7 @@ describe ::CSVPlusPlus::Language::GlobalScope do
     end
     let(:include_runtime) { false }
 
-    subject { global_scope.variable_references(ast, include_runtime:) }
+    subject { scope.variable_references(ast, include_runtime:) }
 
     it { is_expected.to(eq(%i[foo bar])) }
 
@@ -133,7 +133,7 @@ describe ::CSVPlusPlus::Language::GlobalScope do
       )
     end
 
-    subject { global_scope.copy_tree_with_replacement(ast, :fooz, :bar) }
+    subject { scope.copy_tree_with_replacement(ast, :fooz, :bar) }
 
     it { is_expected.to(eq(ast)) }
 
@@ -145,21 +145,21 @@ describe ::CSVPlusPlus::Language::GlobalScope do
     let(:ast) { build(:fn_call, name: :multiply, a: number5, b: number5) }
 
     it 'accumulates each value returned by the block' do
-      expect(global_scope.depth_first_search(ast) { |_n| 1 }).to(eq([1, 1, 1]))
+      expect(scope.depth_first_search(ast) { |_n| 1 }).to(eq([1, 1, 1]))
     end
 
     context 'with a number' do
       let(:ast) { build(:number_one) }
 
       it 'yields the literal' do
-        expect { |block| global_scope.depth_first_search(ast, &block) }
+        expect { |block| scope.depth_first_search(ast, &block) }
           .to(yield_successive_args(ast))
       end
     end
 
     context 'a function call' do
       it 'yields the function and arguments in order' do
-        expect { |block| global_scope.depth_first_search(ast, &block) }
+        expect { |block| scope.depth_first_search(ast, &block) }
           .to(yield_successive_args(ast, number5, number5))
       end
     end
@@ -170,7 +170,7 @@ describe ::CSVPlusPlus::Language::GlobalScope do
       ::CSVPlusPlus::Language::GraphHash[[['a', %w[b c]], ['b', ['c']], ['c', ['d']], ['d', []]]]
     end
 
-    subject { global_scope.topological_sort(dependencies) }
+    subject { scope.topological_sort(dependencies) }
 
     it 'orders the keys by their required resolution order' do
       expect(subject).to(eq(%w[d c b a]))
@@ -186,5 +186,12 @@ describe ::CSVPlusPlus::Language::GlobalScope do
           .to(raise_error(::TSort::Cyclic))
       end
     end
+  end
+
+  describe 'to_s' do
+    subject { scope.to_s }
+
+    # TODO
+    it { is_expected.to(eq('Scope(TODO)')) }
   end
 end

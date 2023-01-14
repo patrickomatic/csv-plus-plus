@@ -3,71 +3,76 @@
 
 require 'optparse'
 require_relative '../lib/csvpp'
+require_relative '../lib/options'
+
+options = ::CSVPlusPlus::Options.new
 
 option_parser =
+  # rubocop:disable Metrics/BlockLength
   ::OptionParser.new do |parser|
-    parser.on('-b', '--backup', 'Create a backup of the spreadsheet before applying changes.')
+    parser.on('-b', '--backup', 'Create a backup of the spreadsheet before applying changes.') do
+      options.backup = true
+    end
 
     parser.on(
       '-g SHEET_ID',
       '--google-sheet-id SHEET_ID',
       'The id of the sheet - you can extract this from the URL: ' \
       'https://docs.google.com/spreadsheets/d/< ... SHEET_ID ... >/edit#gid=0'
-    )
+    ) do |v|
+      options.google.sheet_id = v
+    end
 
-    parser.on('-c', '--create', "Create the sheet if it doesn't exist.  It will use --sheet-name if specified")
+    parser.on('-c', '--create', "Create the sheet if it doesn't exist.  It will use --sheet-name if specified") do
+      options.create_if_not_exists = true
+    end
 
     parser.on(
       '-k KEY_VALUES',
       '--key-values KEY_VALUES',
       'A comma-separated list of key=values which will be made available to the template'
-    )
+    ) do |v|
+      options.key_values =
+        begin
+          [v.split('=')].to_h
+        rescue ::StandardError
+          {}
+        end
+    end
 
-    parser.on('-n SHEET_NAME', '--sheet-name SHEET_NAME', 'The name of the sheet to apply the template to')
+    parser.on('-n SHEET_NAME', '--sheet-name SHEET_NAME', 'The name of the sheet to apply the template to') do |v|
+      options.sheet_name = v
+    end
 
-    parser.on('-v', '--verbose', 'Enable verbose output')
+    parser.on('-v', '--verbose', 'Enable verbose output') do
+      options.verbose = true
+    end
 
-    parser.on('-x OFFSET', '--offset-columns OFFSET', 'Apply the template offset by OFFSET cells')
+    parser.on('-x OFFSET', '--offset-columns OFFSET', 'Apply the template offset by OFFSET cells') do |v|
+      options.offset[0] = v
+    end
 
-    parser.on('-y OFFSET', '--offset-rows OFFSET', 'Apply the template offset by OFFSET rows')
+    parser.on('-y OFFSET', '--offset-rows OFFSET', 'Apply the template offset by OFFSET rows') do |v|
+      options.offset[1] = v
+    end
 
     parser.on('-h', '--help', 'Show help information') do
       puts(parser)
       exit
     end
   end
+# rubocop:enable Metrics/BlockLength
 
-options = {}
-option_parser.parse!(into: options)
+option_parser.parse!
 
-google_sheet_id = options[:'google-sheet-id']
-
-unless google_sheet_id
+unless options.google.sheet_id
   warn 'You must specify a --google-sheet-id/-g param for the sheet to write to.'
   exit 1
 end
 
-key_values =
-  begin
-    [options[:'key-values'].split('=')].to_h
-  rescue ::StandardError
-    {}
-  end
-
 begin
-  ::CSVPlusPlus.apply_template_to_sheet!(
-    ::ARGF.read,
-    ::ARGF.filename,
-    google_sheet_id:,
-    sheet_name: options[:'sheet-name'],
-    create_if_not_exists: options.include?(:create),
-    # backup: options[:"backup"], XXX
-    row_offset: options[:'offset-rows'],
-    cell_offset: options[:'offset-cells'],
-    key_values:,
-    verbose: options.include?(:verbose)
-  )
+  ::CSVPlusPlus.apply_template_to_sheet!(::ARGF.read, ::ARGF.filename, options)
 rescue ::CSVPlusPlus::Language::SyntaxError => e
-  warn(e)
+  warn(options.verbose ? e.to_verbose_trace : e.to_trace)
   exit(1)
 end

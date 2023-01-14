@@ -3,14 +3,14 @@
 require 'modifier.tab'
 
 describe ::CSVPlusPlus::ModifierParser do
-  let(:compiler) { build(:compiler) }
+  let(:runtime) { build(:runtime) }
 
   describe '#parse' do
     let(:row_modifier) { build(:modifier) }
     let(:cell_modifier) { build(:modifier) }
 
     before(:each) { subject }
-    subject { described_class.new.parse(value, compiler:, cell_modifier:, row_modifier:) }
+    subject { described_class.new.parse(value, runtime:, cell_modifier:, row_modifier:) }
 
     context 'without a modifier' do
       let(:value) { 'foo' }

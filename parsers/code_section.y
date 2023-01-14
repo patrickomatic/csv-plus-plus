@@ -51,12 +51,10 @@ end
 
 ---- header
 require 'strscan'
-require_relative './global_scope'
-require_relative './syntax_error'
 require_relative '../code_section'
 
 ---- inner
-  def parse(input, compiler)
+  def parse(input, runtime)
     text = input.read.strip
     @code_section = CodeSection.new
 
@@ -95,7 +93,7 @@ require_relative '../code_section'
       when s.scan(/[\(\)\{\}\/\*\+\-,=&]/)
         tokens << [s.matched, s.matched]
       else
-        raise SyntaxError.new("Unable to parse code section starting at", s.peek(100), compiler)
+        runtime.raise_syntax_error('Unable to parse code section starting at', s.peek(100))
       end
     end
 
@@ -106,8 +104,7 @@ require_relative '../code_section'
     begin
       do_parse
     rescue Racc::ParseError => e
-      raise SyntaxError.new("Error parsing code section", e.message, compiler,
-                            wrapped_error: e)
+      runtime.raise_syntax_error('Error parsing code section', e.message, wrapped_error: e)
     end
 
     return @code_section, rest

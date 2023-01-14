@@ -7,31 +7,25 @@ require_relative 'template'
 # A language for writing rich CSV data
 module CSVPlusPlus
   # Create a template and output it using a GoogleSheet
-  # rubocop:disable Metrics/MethodLength, Metrics/ParameterLists
-  def self.apply_template_to_sheet!(
-    input, filename, google_sheet_id:, sheet_name:, row_offset:, cell_offset:,
-    key_values:, verbose:, create_if_not_exists:
-  )
-    ::CSVPlusPlus::Language::Compiler.with_compiler(input:, filename:, verbose:) do |c|
-      template = ::CSVPlusPlus::Template.run(compiler: c, key_values:)
+  def self.apply_template_to_sheet!(input, filename, options)
+    ::CSVPlusPlus::Language::Compiler.with_compiler(input:, filename:, options:) do |c|
+      template = c.parse_template
 
-      spreadsheet = ::CSVPlusPlus::GoogleSheet.new(
-        google_sheet_id,
-        sheet_name:,
-        row_offset:,
-        cell_offset:,
-        create_if_not_exists:
-      )
+      spreadsheet = ::CSVPlusPlus::GoogleSheet.new(options)
       spreadsheet.push!(template)
     end
-  # TODO: move this catch somewhere else? we could have centralized handling in ExecutionContext
   rescue ::Google::Apis::ClientError => e
-    if verbose
-      warn("#{e.status_code} Error making Google Sheets API request [#{e.message}]: #{e.body}")
+    handle_google_error(e, options)
+  end
+
+  private
+
+  def handle_google_error(error, options)
+    if options.verbose
+      warn("#{error.status_code} Error making Google Sheets API request [#{error.message}]: #{error.body}")
     else
-      warn("Error making Google Sheets API request: #{e.message}")
+      warn("Error making Google Sheets API request: #{error.message}")
     end
     exit(1)
   end
-  # rubocop:enable Metrics/MethodLength, Metrics/ParameterLists
 end

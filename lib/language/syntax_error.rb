@@ -1,17 +1,14 @@
 # frozen_string_literal: true
 
-require_relative './compiler'
-
 module CSVPlusPlus
   module Language
     ##
     # An error that can be thrown for various syntax errors
     class SyntaxError < StandardError
-      # TODO: this should probably take a compiler_state rather than an entire compiler
       # initialize
-      def initialize(message, bad_input, compiler, wrapped_error: nil)
+      def initialize(message, bad_input, runtime, wrapped_error: nil)
         @bad_input = bad_input.to_s
-        @compiler = compiler
+        @runtime = runtime
         @wrapped_error = wrapped_error
         @message = message
 
@@ -20,21 +17,26 @@ module CSVPlusPlus
 
       # to_s
       def to_s
-        @message
+        to_trace
       end
 
-      # Output a user-helpful string that references the relevant indexes and line number
+      # Output a verbose user-helpful string that references the current runtime
+      def to_verbose_trace
+        warn(@wrapped_error.full_message)
+        to_trace
+      end
+
+      # Output a user-helpful string that references the runtime state
       def to_trace
-        warn(@wrapped_error.full_message) if @compiler.verbose && @wrapped_error
         "#{message_prefix}#{cell_index} #{message_postfix}"
       end
 
       private
 
       def cell_index
-        row_index = @compiler&.row_index
-        if @compiler.cell_index
-          "[#{row_index},#{@compiler.cell_index}]"
+        row_index = @runtime.row_index
+        if @runtime.cell_index
+          "[#{row_index},#{@runtime.cell_index}]"
         elsif row_index
           "[#{row_index}]"
         else
@@ -43,8 +45,8 @@ module CSVPlusPlus
       end
 
       def message_prefix
-        line_number = @compiler.line_number
-        filename = @compiler.filename
+        line_number = @runtime.line_number
+        filename = @runtime.filename
 
         line_str = line_number ? ":#{line_number}" : ''
         "csv++ #{filename}#{line_str}"

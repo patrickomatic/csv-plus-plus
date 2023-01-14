@@ -12,6 +12,8 @@ module CSVPlusPlus
   # A class which can output a Template to Google Spredsheets (via their API)
   # rubocop:disable Metrics/ClassLength
   class GoogleSheet
+    extend ::Forwardable
+
     # XXX it would be nice to raise this but we shouldn't expand out more than necessary for our data
     SPREADSHEET_INFINITY = 1000
     public_constant :SPREADSHEET_INFINITY
@@ -19,18 +21,10 @@ module CSVPlusPlus
     attr_reader :sheet_id, :sheet_name
 
     # initialize
-    def initialize(
-      sheet_id,
-      sheet_name: nil,
-      cell_offset: 0,
-      row_offset: 0,
-      create_if_not_exists: false
-    )
-      @sheet_name = sheet_name
-      @sheet_id = sheet_id
-      @cell_offset = cell_offset
-      @row_offset = row_offset
-      @create_if_not_exists = create_if_not_exists
+    def initialize(options)
+      @sheet_id = options.google.sheet_id
+      @options = options
+      @sheet_name = options.sheet_name
     end
 
     # Write the template to Google Sheets
@@ -40,7 +34,7 @@ module CSVPlusPlus
       save_spreadsheet!
       save_spreadsheet_values!
 
-      create_sheet! if @create_if_not_exists
+      create_sheet! if @options.create_if_not_exists
 
       update_cells!(template)
     end
@@ -184,8 +178,8 @@ module CSVPlusPlus
         uc.fields = '*'
         uc.start = ::SheetsApi::GridCoordinate.new(
           sheet_id: sheet.properties.sheet_id,
-          row_index: @row_offset,
-          column_index: @cell_offset
+          column_index: @options.offset[1],
+          row_index: @options.offset[0]
         )
         uc.rows = rows.map { |row| build_row_data(row) }
       end

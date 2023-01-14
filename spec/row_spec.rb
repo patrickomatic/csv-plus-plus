@@ -3,60 +3,6 @@
 require 'row'
 
 describe ::CSVPlusPlus::Row do
-  let(:compiler) { build(:compiler) }
-
-  describe '#parse' do
-    let(:values) { %w[foo bar baz] }
-
-    subject(:row) { described_class.parse(values, compiler) }
-
-    it { is_expected.to(be_a(described_class)) }
-
-    it 'sets rows.index' do
-      expect(row.index).to(eq(0))
-    end
-
-    it 'sets cell.index' do
-      expect(row.cells[0].index).to(eq(0))
-      expect(row.cells[1].index).to(eq(1))
-      expect(row.cells[2].index).to(eq(2))
-    end
-
-    it 'sets cell.row_index' do
-      expect(row.cells[0].row_index).to(eq(row.index))
-      expect(row.cells[1].row_index).to(eq(row.index))
-      expect(row.cells[2].row_index).to(eq(row.index))
-    end
-
-    context 'with a cell modifier' do
-      let(:values) { ['[[format=bold]]foo', 'bar', 'baz'] }
-
-      it 'does not set the modifier on the row' do
-        expect(row.modifier).not_to(be_formatted('bold'))
-      end
-
-      it 'sets bold only on one cell' do
-        expect(row.cells[0].modifier).to(be_formatted('bold'))
-        expect(row.cells[1].modifier).not_to(be_formatted('bold'))
-        expect(row.cells[2].modifier).not_to(be_formatted('bold'))
-      end
-    end
-
-    describe 'a row modifier provides defaults for the row' do
-      let(:values) { ['![[format=bold]]foo', 'bar', 'baz'] }
-
-      it 'sets bold on the row' do
-        expect(row.modifier).to(be_formatted('bold'))
-      end
-
-      it 'sets bold on each cell' do
-        expect(row.cells[0].modifier).to(be_formatted('bold'))
-        expect(row.cells[1].modifier).to(be_formatted('bold'))
-        expect(row.cells[2].modifier).to(be_formatted('bold'))
-      end
-    end
-  end
-
   describe '#expand_amount' do
     let(:index) { 0 }
     let(:expand_amount) { 2 }
