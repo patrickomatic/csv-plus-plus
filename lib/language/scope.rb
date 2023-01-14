@@ -34,39 +34,54 @@ module CSVPlusPlus
     # A class representing the scope of the current Template and responsible for
     # resolving variables
     class Scope
-      attr_accessor :code_section
+      attr_reader :code_section, :runtime
 
-      # initialize with a CodeSection
-      def initialize(code_section = nil)
-        @code_section = code_section || ::CSVPlusPlus::CodeSection.new
+      # initialize with a +Runtime+ and optional +CodeSection+
+      def initialize(runtime:, code_section: nil)
+        @code_section = code_section if code_section
+        @runtime = runtime
+      end
+
+      # Resolve all values in the ast of the current cell being processed
+      def resolve_cell_value
+        ast = @runtime.cell&.ast
+        return if ast.nil?
+
+        variables_referenced = ::CSVPlusPlus::Graph.variable_references(ast, @runtime, include_runtime_variables: true)
+        variables_referenced.reduce(ast.dup) do |resolved_ast, var_id|
+          copy_tree_with_replacement(resolved_ast, var_id, resolve(var_id))
+        end
+        # TODO: this needs to also resolve any known functions
+      end
+
+      # Set the +code_section+ and resolve all inner dependencies in it's @variables and @functions.
+      def code_section=(code_section)
+        @code_section = code_section
+
+        resolve_static_variables!
+        resolve_static_functions!
       end
 
       # to_s
       def to_s
-        "Scope(code_section: #{@code_section})"
+        "Scope(code_section: #{@code_section}, runtime: #{@runtime})"
       end
 
-      # Resolve all values in the ast of the current cell being processed
-      def resolve_cell_value(runtime)
-        ast = runtime.cell.ast
-        return if ast.nil?
+      private
 
-        variables_referenced = ::CSVPlusPlus::Graph.variable_references(ast, runtime, include_runtime_variables: true)
-        variables_referenced.reduce(ast.dup) do |resolved_ast, var|
-          resolve_variable(resolved_ast, var, resolve(var, runtime))
-        end
-      end
-
-      # Resolve all variables references defined statically in the code section
-      def resolve_static_variables!(runtime)
+      # Resolve all variable references defined statically in the code section
+      def resolve_static_variables!
         variables = @code_section.variables
-        var_dependencies, resolution_order = variable_resolution_order(variables, runtime)
+        var_dependencies, resolution_order = variable_resolution_order(variables)
         resolve_dependencies(var_dependencies, resolution_order, variables)
       end
 
-      # Resolve a single variable in a given +ast+
-      def resolve_variable(ast, var_id, value)
-        copy_tree_with_replacement(ast, var_id, value)
+      # Resolve all functions defined statically in the code section
+      def resolve_static_functions!
+        # functions = @code_section.functions
+        # resolution_order = variable_resolution_order(variables, runtime)
+        # TODO
+        #
       end
 
       # Make a copy of the AST represented by +node+ and replace +var_id+ with +replacement+ as we go
@@ -81,34 +96,32 @@ module CSVPlusPlus
         end
       end
 
-      private
-
-      def resolve(var_id, runtime)
+      def resolve(var_id)
         return @code_section.variables[var_id] if @code_section.variables.key?(var_id)
 
         # this will throw a syntax error if it doesn't exist (which is what we want)
-        runtime.runtime_value(var_id)
+        @runtime.runtime_value(var_id)
       end
 
-      def check_unbound_vars(dependencies, variables, runtime)
+      def check_unbound_vars(dependencies, variables)
         unbound_vars = dependencies.values.flatten - variables.keys
         return if unbound_vars.empty?
 
-        runtime.raise_syntax_error('Undefined variables', unbound_vars.map(&:to_s).join(', '))
+        @runtime.raise_syntax_error('Undefined variables', unbound_vars.map(&:to_s).join(', '))
       end
 
-      def variable_resolution_order(variables, runtime)
+      def variable_resolution_order(variables)
         # we have a hash of variables => ASTs but they might have references to each other, so
         # we need to interpolate them first (before interpolating the cell values)
-        var_dependencies = ::CSVPlusPlus::Graph.dependency_graph(variables, runtime)
+        var_dependencies = ::CSVPlusPlus::Graph.dependency_graph(variables, @runtime)
         # are there any references that we don't have variables for? (undefined variable)
-        check_unbound_vars(var_dependencies, variables, runtime)
+        check_unbound_vars(var_dependencies, variables)
 
         # a topological sort will give us the order of dependencies
         [var_dependencies, ::CSVPlusPlus::Graph.topological_sort(var_dependencies)]
         # TODO: don't expose this exception directly to the caller
       rescue ::TSort::Cyclic
-        runtime.raise_syntax_error('Cyclic variable dependency detected', var_refs.keys)
+        @runtime.raise_syntax_error('Cyclic variable dependency detected', var_refs.keys)
       end
 
       def resolve_dependencies(var_dependencies, resolution_order, variables)
@@ -119,7 +132,7 @@ module CSVPlusPlus
           resolved_vars[var] = variables[var].dup
 
           var_dependencies[var].each do |dependency|
-            resolved_vars[var] = resolve_variable(resolved_vars[var], dependency, variables[dependency])
+            resolved_vars[var] = copy_tree_with_replacement(resolved_vars[var], dependency, variables[dependency])
           end
         end
 

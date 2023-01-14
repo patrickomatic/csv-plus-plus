@@ -6,10 +6,10 @@ require_relative '../../lib/language/compiler'
   factory :compiler, class: ::CSVPlusPlus::Language::Compiler do
     transient do
       options { build(:options) }
-      runtime { build(:runtime) }
-      scope { build(:scope) }
+      scope { build(:scope, runtime: runtime || build(:runtime)) }
+      runtime { nil }
     end
 
-    initialize_with { new(runtime:, options:, scope:) }
+    initialize_with { new(runtime: scope.runtime, options:, scope:) }
   end
 end

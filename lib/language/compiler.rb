@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 require 'csv'
+require_relative '../cell'
+require_relative '../modifier'
+require_relative '../modifier.tab'
+require_relative '../row'
 require_relative '../template'
 require_relative 'code_section.tab'
 require_relative 'entities'
@@ -28,16 +32,16 @@ module CSVPlusPlus
       def initialize(runtime:, options:, scope: nil)
         @options = options
         @runtime = runtime
-        @scope = scope || ::CSVPlusPlus::Language::Scope.new
+        @scope = scope || ::CSVPlusPlus::Language::Scope.new(runtime:)
       end
 
       # Parse an entire template and return a +::CSVPlusPlus::Template+ instance
       def parse_template
         parse_code_section!
-        @scope.resolve_static_variables!(@runtime)
-
         rows = parse_csv_section!
-        ::CSVPlusPlus::Template.new(code_section: @scope.code_section, rows:).tap do |t|
+
+        # TODO: should probably just flip this so it goes Template -> Scope -> CodeSection
+        ::CSVPlusPlus::Template.new(rows:, scope: @scope).tap do |t|
           t.validate_infinite_expands(@runtime)
           expanding { t.expand_rows! }
           # TODO: wrap these in a workflow (I guess?)
@@ -106,7 +110,7 @@ module CSVPlusPlus
       def resolve_all_cells!(template)
         workflow(log_subject: 'resolving all cell value variable references') do
           @runtime.map_rows(template.rows, cells_too: true) do |cell|
-            cell.ast = @scope.resolve_cell_value(@runtime) if cell.ast
+            cell.ast = @scope.resolve_cell_value if cell.ast
           end
         end
       end
@@ -160,7 +164,7 @@ module CSVPlusPlus
 
       def before_workflow!(log_subject, processing_code_section)
         log("Started #{log_subject}")
-        @runtime.init!(processing_code_section ? 1 : (runtime.length_of_code_section || 1))
+        @runtime.init!(processing_code_section ? 1 : (@runtime.length_of_code_section || 1))
       end
 
       def after_workflow!(log_subject)

@@ -5,10 +5,10 @@ require_relative '../../lib/template'
 ::FactoryBot.define do
   factory :template, class: ::CSVPlusPlus::Template do
     transient do
-      code_section { build(:code_section) }
+      scope { build(:scope) }
       rows { [] }
     end
 
-    initialize_with { new(rows:, code_section:) }
+    initialize_with { new(rows:, scope:) }
   end
 end

@@ -5,7 +5,7 @@ require 'compiler'
 describe ::CSVPlusPlus::Language::Compiler do
   let(:input) { '' }
   let(:key_values) { {} }
-  let(:scope) { build(:scope) }
+  let(:scope) { build(:scope, runtime:) }
   let(:runtime) { build(:runtime, input:) }
   let(:options) { build(:options, key_values:) }
   let(:compiler) { build(:compiler, runtime:, options:, scope:) }
@@ -181,7 +181,8 @@ describe ::CSVPlusPlus::Language::Compiler do
   end
 
   describe '#resolve_all_cells!' do
-    let(:template) { build(:template, rows:, code_section:) }
+    let(:template) { build(:template, rows:, scope:) }
+    let(:scope) { build(:scope, code_section:) }
     let(:code_section) { build(:code_section, variables:) }
     let(:cells_row0) do
       [
@@ -193,7 +194,6 @@ describe ::CSVPlusPlus::Language::Compiler do
     end
     let(:rows) { [build(:row, index: 0, cells: cells_row0)] }
     let(:variables) { { foo: build(:number_one) } }
-    let(:scope) { build(:scope, code_section:) }
 
     before { compiler.resolve_all_cells!(template) }
 

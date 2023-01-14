@@ -1,22 +1,19 @@
 # frozen_string_literal: true
 
-require_relative './language/syntax_error'
-require_relative 'row'
-
 module CSVPlusPlus
   # Contains the flow and data from a code section and CSV section
   class Template
-    attr_reader :code_section, :rows
+    attr_reader :rows, :scope
 
     # initialize
-    def initialize(rows: [], code_section: nil)
+    def initialize(rows:, scope:)
       @rows = rows
-      @code_section = code_section
+      @scope = scope
     end
 
     # to_s
     def to_s
-      "Template(code_section: #{@code_section}, rows: #{@rows})"
+      "Template(rows: #{@rows}, scope: #{@scope})"
     end
 
     # Apply any expand= modifiers to the parsed template

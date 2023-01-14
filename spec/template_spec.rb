@@ -5,7 +5,7 @@ require 'template'
 
 describe ::CSVPlusPlus::Template do
   describe '#expand_rows!' do
-    let(:template) { described_class.new(rows:) }
+    let(:template) { build(:template, rows:) }
     let(:cells_row0) do
       [
         build(:cell, row_index: 0, index: 0, value: 'foo'),

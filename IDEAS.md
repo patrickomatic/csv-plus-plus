@@ -34,6 +34,7 @@
 
 # Other
 
+- [ ] Benchmarks in verbose mode
 - [ ] Revise the "how to use" docs
 - [ ] Charts
 - [ ] Pivot table support - not sure what this would even look like
