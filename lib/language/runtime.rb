@@ -1,14 +1,22 @@
 # frozen_string_literal: true
 
+require_relative 'entities'
 require_relative 'syntax_error'
 require 'tempfile'
+
+LANG = ::CSVPlusPlus::Language
+
+RUNTIME_VARIABLES = {
+  rownum: ::LANG::RuntimeValue.new(->(r) { ::LANG::Number.new(r.row_index + 1) }),
+  cellnum: ::LANG::RuntimeValue.new(->(r) { ::LANG::Number.new(r.cell_index + 1) })
+}.freeze
 
 module CSVPlusPlus
   module Language
     ##
     # The runtime state of the compiler (the current linenumber/row, cell, etc)
     class Runtime
-      attr_reader :filename, :length_of_code_section, :length_of_original_file
+      attr_reader :filename, :length_of_code_section, :length_of_csv_section, :length_of_original_file
 
       attr_accessor :cell, :cell_index, :row_index, :line_number
 
@@ -22,15 +30,15 @@ module CSVPlusPlus
 
       # map over an unparsed file and keep track of line_number and row_index
       def map_lines(lines, &block)
+        @line_number = 1
         lines.map do |line|
-          block.call(line).tap do
-            next_line!
-          end
+          block.call(line).tap { next_line! }
         end
       end
 
       # map over a single row and keep track of the cell and it's index
       def map_row(row, &block)
+        @cell_index = 0
         row.map.with_index do |cell, index|
           set_cell!(cell, index)
           block.call(cell, index)
@@ -39,14 +47,14 @@ module CSVPlusPlus
 
       # map over all rows and keep track of row and line numbers
       def map_rows(rows, cells_too: false, &block)
-        rows.map do |row|
-          (
-            if cells_too
-              # it's either CSV or a Row object
-              map_row(row&.cells || row, &block)
-            else
-              block.call(row)
-            end).tap { next_line! }
+        @row_index = 0
+        map_lines(rows) do |row|
+          if cells_too
+            # it's either CSV or a Row object
+            map_row((row.is_a?(::CSVPlusPlus::Row) ? row.cells : row), &block)
+          else
+            block.call(row)
+          end
         end
       end
 
@@ -65,13 +73,32 @@ module CSVPlusPlus
       # Each time we run a parse on the input, call this so that the runtime state
       # is set to it's default values
       def init!(start_line_number_at)
-        @row_index = @cell_index = 0
+        @row_index = @cell_index = nil
         @line_number = start_line_number_at
       end
 
       # Reset back to neutral state
       def unset!
         @cell = @cell_index = @row_index = @line_number = nil
+      end
+
+      # to_s
+      def to_s
+        "Runtime(cell: #{@cell}, row_index: #{@row_index}, cell_index: #{@cell_index})"
+      end
+
+      # get the current (entity) value of a runtime value
+      def runtime_value(var_id)
+        if runtime_variable?(var_id)
+          ::RUNTIME_VARIABLES[var_id.to_sym].resolve_fn.call(self)
+        else
+          raise_syntax_error('Undefined variable', var_id)
+        end
+      end
+
+      # Is +var_id+ a runtime variable?  (it's a static variable otherwise)
+      def runtime_variable?(var_id)
+        ::RUNTIME_VARIABLES.key?(var_id.to_sym)
       end
 
       # Called when an error is encoutered during parsing.  It will construct a useful
@@ -102,17 +129,17 @@ module CSVPlusPlus
         @tmp = nil
       end
 
-      # to_s
-      def to_s
-        "Runtime(cell: #{@cell}, row_index: #{@row_index}, cell_index: #{@cell_index})"
-      end
-
       private
+
+      def count_code_section_lines(lines)
+        eoc = ::CSVPlusPlus::Language::END_OF_CODE_SECTION
+        lines.include?(eoc) ? (lines.take_while { |l| l != eoc }).length + 1 : 0
+      end
 
       def init_input!(input)
         lines = (input || '').split(/\s*\n\s*/)
         @length_of_original_file = lines.length
-        @length_of_code_section = lines.include?('---') ? (lines.take_while { |l| l != '---' }).length + 1 : 0
+        @length_of_code_section = count_code_section_lines(lines)
         @length_of_csv_section = @length_of_original_file - @length_of_code_section
 
         # we're gonna take our input file, write it to a tmp file then each

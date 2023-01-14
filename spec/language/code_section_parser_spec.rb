@@ -131,7 +131,30 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
 
     describe 'CodeSection#functions' do
       subject { code_section.functions }
-      # XXX
+
+      context 'with a single function that takes no args' do
+        let(:input) do
+          "
+  def foo() INDIRECT(\"BAR\")
+  ---
+  =$$foo(A1, B1),bar,baz
+  "
+        end
+
+        it { is_expected.to(eq({ foo: build(:fn_foo) })) }
+      end
+
+      context 'with a single function that takes multiple args' do
+        let(:input) do
+          "
+  def foo(a, b) ADD($$a, $$b)
+  ---
+  =$$foo(A1, B1),bar,baz
+  "
+        end
+
+        it { is_expected.to(eq({ foo: build(:fn_add) })) }
+      end
     end
   end
 end

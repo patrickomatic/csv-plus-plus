@@ -1,6 +1,8 @@
+[![Ruby Style Guide](https://img.shields.io/badge/code_style-community-brightgreen.svg)](https://rubystyle.guide)
+
 # csv++
 
-A tool that allows you to programtically author spreadsheets in your favorite text editor and write their results to existing Google Sheets (in the future it can probably support Excel).  This allows you to write a spreadsheet template, check it into git and push changes out to spreadsheets automatically.
+A tool that allows you to programatically author spreadsheets in your favorite text editor and write their results to existing Google Sheets (in the future it can probably support Excel).  This allows you to write a spreadsheet template, check it into git and push changes out to spreadsheets using typical dev tools.
 
 ## Setup
 
@@ -74,12 +76,15 @@ Date,[[align=left]]Amount,Quantity,[[align=center/format=bold italic]]Price
 
 ## CLI Arguments
 
-* `-i, --sheet-id SHEET_ID` The id of the sheet - you can extract this from the URL: https://docs.google.com/spreadsheets/d/< ... SHEET_ID ... >/edit#gid=0
-* `-n, --sheet-name SHEET_NAME` The name of the sheet to apply the template to
-* `-k, --key-values KEY_VALUES` A comma-separated list of key=values which will be made available to the template
-* `-y, --offset-rows OFFSET` Apply the template offset by OFFSET rows
-* `-x, --offset-columns OFFSET` Apply the template offset by OFFSET cells
-* `-v, --verbose` Enable verbose output
-* `-h, --help` Show help information
-
-[![Ruby Style Guide](https://img.shields.io/badge/code_style-community-brightgreen.svg)](https://rubystyle.guide)
+```
+Usage: csv++ [options]
+    -b, --backup                     Create a backup of the spreadsheet before applying changes.
+    -g, --google-sheet-id SHEET_ID   The id of the sheet - you can extract this from the URL: https://docs.google.com/spreadsheets/d/< ... SHEET_ID ... >/edit#gid=0
+    -c, --create                     Create the sheet if it doesn't exist.  It will use --sheet-name if specified
+    -k, --key-values KEY_VALUES      A comma-separated list of key=values which will be made available to the template
+    -n, --sheet-name SHEET_NAME      The name of the sheet to apply the template to
+    -v, --verbose                    Enable verbose output
+    -x, --offset-columns OFFSET      Apply the template offset by OFFSET cells
+    -y, --offset-rows OFFSET         Apply the template offset by OFFSET rows
+    -h, --help                       Show help information
+```

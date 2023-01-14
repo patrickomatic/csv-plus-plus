@@ -13,4 +13,4 @@ Style/Copyright:
 Metrics/BlockLength:
   Exclude:
     - 'Rakefile'
-    - 'spec/**/*.rb'
+    - 'spec/**/*_spec.rb'

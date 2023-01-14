@@ -37,12 +37,12 @@ namespace :test do
   namespace :integration do
     desc 'Test with the examples/stocks.csvpp template'
     task :stocks do
-      sh %(./bin/csv++ -n "Sheet1" -g #{::ENV.fetch('GOOGLE_SHEET_ID', nil)} examples/stocks.csvpp)
+      sh %(./bin/csv++ -v -n "Sheet1" -g #{::ENV.fetch('GOOGLE_SHEET_ID', nil)} examples/stocks.csvpp)
     end
 
     desc 'Test with the examples/all_features.csvpp template'
     task :all_features do
-      sh %(./bin/csv++ -n "Sheet2" -g #{::ENV.fetch('GOOGLE_SHEET_ID', nil)} examples/all_features.csvpp)
+      sh %(./bin/csv++ --verbose -n "Sheet2" -g #{::ENV.fetch('GOOGLE_SHEET_ID', nil)} examples/all_features.csvpp)
     end
   end
 end

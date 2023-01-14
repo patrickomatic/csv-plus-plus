@@ -27,12 +27,12 @@ module CSVPlusPlus
 
     # Define a (or re-define an existing) function
     def def_function(id, arguments, body)
-      @function[id.to_sym] = ::CSVPlusPlus::Language::Function.new(id, arguments, body)
+      @functions[id.to_sym] = ::CSVPlusPlus::Language::Function.new(id, arguments, body)
     end
 
     # to_s
     def to_s
-      "CodeSection(variables: #{@variables} functions: #{@functions})"
+      "CodeSection(functions: #{@functions}, variables: #{@variables})"
     end
   end
 end

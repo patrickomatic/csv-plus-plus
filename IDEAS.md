@@ -1,6 +1,7 @@
 # Formats
-- [ ] make it output to CSV (loses formatting, but keeps formulas and variables)
-- [ ] output to excel or whatever openoffice format is
+- [ ] make it output to CSV (loses formatting, but keeps formulas, variables and expansions)
+- [ ] Excel - look into Apache POI or openxml
+- [ ] OpenOffice - whatever it's equivalent format is
 
 # Modifiers to rows & cells
 
@@ -33,9 +34,10 @@
 
 # Other
 
-- [ ] Rubocop
+- [ ] Revise the "how to use" docs
 - [ ] Charts
 - [ ] Pivot table support - not sure what this would even look like
 - [ ] backups before each write?
+- [X] Rubocop
 - [x] create the spreadsheet if it doesn't exist
 - [x] verbose mode

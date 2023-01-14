@@ -2,7 +2,13 @@
 
 module CSVPlusPlus
   module Language
-    # A basic building block of the language/AST
+    END_OF_CODE_SECTION = '---'
+    public_constant :END_OF_CODE_SECTION
+
+    VARIABLE_REF = '$$'
+    public_constant :VARIABLE_REF
+
+    # A basic building block of the abstract syntax tree (AST)
     class Entity
       attr_reader :id, :type
 

@@ -8,17 +8,19 @@ require 'racc/parser.rb'
 
 require 'strscan'
 require_relative '../code_section'
+require_relative 'entities'
 
 module CSVPlusPlus
   module Language
     class CodeSectionParser < Racc::Parser
 
-module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 57)
+module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 58)
   def parse(input, runtime)
     text = input.read.strip
     @code_section = CodeSection.new
 
-    eoc_index = text.index(Language::END_OF_CODE_SECTION)
+    eoc = ::CSVPlusPlus::Language::END_OF_CODE_SECTION
+    eoc_index = text.index(eoc)
     return @code_section, text if eoc_index.nil?
 
     tokens, rest = [], ''
@@ -28,7 +30,7 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 57)
       case
       when s.scan(/\s+/)
       when s.scan(/\#[^\n]+\n/)
-      when s.scan(/---/)
+      when s.scan(/#{eoc}/)
         tokens << [:END_OF_CODE, s.matched]
         rest = s.rest.strip
         break
@@ -37,7 +39,7 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 57)
       when s.scan(/:=/)
         tokens << [:ASSIGN, s.matched]
       when s.scan(/\bdef\b/)
-        tokens << [:FUNCTION_DEF, s.matched]
+        tokens << [:FN_DEF, s.matched]
       when s.scan(/TRUE/)
         tokens << [:TRUE, s.matched]
       when s.scan(/FALSE/)
@@ -228,14 +230,14 @@ Racc_debug_parser = false
 
 module_eval(<<'.,.,', 'code_section.y', 28)
   def _reduce_7(val, _values, result)
-     @code_section.def_function(val[0], val[2], val[3])
+     @code_section.def_function(val[1], val[3], val[5])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 29)
   def _reduce_8(val, _values, result)
-     @code_section.def_function(val[0], [], val[3])
+     @code_section.def_function(val[1], [], val[4])
     result
   end
 .,.,

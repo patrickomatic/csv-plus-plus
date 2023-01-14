@@ -26,8 +26,8 @@ rule
 
   def: fn_def | var_def
 
-  fn_def: FN_DEF ID '(' fn_def_args ')' exp   { @code_section.def_function(val[0], val[2], val[3])    }
-  fn_def: FN_DEF ID '(' ')' exp               { @code_section.def_function(val[0], [], val[3])        }
+  fn_def: FN_DEF ID '(' fn_def_args ')' exp   { @code_section.def_function(val[1], val[3], val[5])    }
+  fn_def: FN_DEF ID '(' ')' exp               { @code_section.def_function(val[1], [], val[4])        }
 
   fn_def_args: fn_def_args ',' ID             { result = [val[0], val[2]]                             }
              | ID                             { result = val[0]                                       }
@@ -52,13 +52,15 @@ end
 ---- header
 require 'strscan'
 require_relative '../code_section'
+require_relative 'entities'
 
 ---- inner
   def parse(input, runtime)
     text = input.read.strip
     @code_section = CodeSection.new
 
-    eoc_index = text.index(Language::END_OF_CODE_SECTION)
+    eoc = ::CSVPlusPlus::Language::END_OF_CODE_SECTION
+    eoc_index = text.index(eoc)
     return @code_section, text if eoc_index.nil?
 
     tokens, rest = [], ''
@@ -68,7 +70,7 @@ require_relative '../code_section'
       case
       when s.scan(/\s+/)
       when s.scan(/\#[^\n]+\n/)
-      when s.scan(/---/)
+      when s.scan(/#{eoc}/)
         tokens << [:END_OF_CODE, s.matched]
         rest = s.rest.strip
         break
@@ -77,7 +79,7 @@ require_relative '../code_section'
       when s.scan(/:=/)
         tokens << [:ASSIGN, s.matched]
       when s.scan(/\bdef\b/)
-        tokens << [:FUNCTION_DEF, s.matched]
+        tokens << [:FN_DEF, s.matched]
       when s.scan(/TRUE/)
         tokens << [:TRUE, s.matched]
       when s.scan(/FALSE/)

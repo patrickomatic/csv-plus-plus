@@ -34,6 +34,7 @@ module CSVPlusPlus
       # Parse an entire template and return a +::CSVPlusPlus::Template+ instance
       def parse_template
         parse_code_section!
+        @scope.resolve_static_variables!(@runtime)
 
         rows = parse_csv_section!
         ::CSVPlusPlus::Template.new(code_section: @scope.code_section, rows:).tap do |t|
@@ -54,8 +55,6 @@ module CSVPlusPlus
           code_section.def_variables(
             options.key_values.transform_values { |v| ::CSVPlusPlus::Language::String.new(v.to_s) }
           )
-          # resolve all non-runtime variables
-          code_section.def_variables(resolve_static_variables!(code_section))
           @scope.code_section = code_section
 
           # return the csv_section to the caller because they're gonna re-write input with it
@@ -131,14 +130,15 @@ module CSVPlusPlus
         "Compiler(options: #{@options}, runtime: #{@runtime}, scope: #{@scope})"
       end
 
-      private
-
+      # Log a message when in verbose mode
       def log(message)
         return unless @options.verbose
 
         # TODO: include line_number and other info if we have it
-        warn(message)
+        warn("csv++: #{message}")
       end
+
+      private
 
       # workflow when parsing the code section
       def parsing_code_section(&block)
