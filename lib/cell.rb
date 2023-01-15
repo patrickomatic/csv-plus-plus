@@ -53,7 +53,7 @@ module CSVPlusPlus
       output << node.to_s
       output << ', ' if add_comma
 
-      if node.type == :function_call
+      if node.function_call?
         output << '('
         arg_length = node.arguments.length
         node.arguments.each_with_index do |n, i|

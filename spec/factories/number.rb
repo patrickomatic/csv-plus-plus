@@ -2,25 +2,24 @@
 
 require_relative '../../lib/language/entities'
 
-ns = ::CSVPlusPlus::Language
-
 ::FactoryBot.define do
-  factory :number, class: ns::Number do
+  factory :number, class: ::CSVPlusPlus::Language::Number do
     transient do
       n { 0 }
     end
+
     initialize_with { new n }
-  end
 
-  factory :number_zero, class: ns::Number do
-    initialize_with { new 0 }
-  end
+    factory :number_zero do
+      n { 0 }
+    end
 
-  factory :number_one, class: ns::Number do
-    initialize_with { new 1 }
-  end
+    factory :number_one do
+      n { 1 }
+    end
 
-  factory :number_two, class: ns::Number do
-    initialize_with { new 2 }
+    factory :number_two do
+      n { 2 }
+    end
   end
 end

@@ -15,6 +15,15 @@ module CSVPlusPlus
     class CodeSectionParser < Racc::Parser
 
 module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 58)
+  def def_function(id, arguments, body)
+    fn_call = ::CSVPlusPlus::Language::Function.new(id, arguments, body)
+    @code_section.def_function(fn_call.id, fn_call)
+  end
+
+  def def_variable(id, ast)
+    @code_section.def_variable(id, ast)
+  end
+
   def parse(input, runtime)
     text = input.read.strip
     @code_section = CodeSection.new
@@ -230,14 +239,14 @@ Racc_debug_parser = false
 
 module_eval(<<'.,.,', 'code_section.y', 28)
   def _reduce_7(val, _values, result)
-     @code_section.def_function(val[1], val[3], val[5])
+     def_function(val[1], val[3], val[5])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 29)
   def _reduce_8(val, _values, result)
-     @code_section.def_function(val[1], [], val[4])
+     def_function(val[1], [], val[4])
     result
   end
 .,.,
@@ -258,7 +267,7 @@ module_eval(<<'.,.,', 'code_section.y', 32)
 
 module_eval(<<'.,.,', 'code_section.y', 34)
   def _reduce_11(val, _values, result)
-     @code_section.def_variable(val[0], val[2])
+     def_variable(val[0], val[2])
     result
   end
 .,.,

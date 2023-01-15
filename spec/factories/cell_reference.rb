@@ -2,10 +2,8 @@
 
 require_relative '../../lib/language/entities'
 
-ns = ::CSVPlusPlus::Language
-
 ::FactoryBot.define do
-  factory :cell_reference, class: ns::CellReference do
+  factory :cell_reference, class: ::CSVPlusPlus::Language::CellReference do
     transient do
       ref { 'C1' }
     end

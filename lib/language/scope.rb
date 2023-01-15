@@ -31,8 +31,7 @@ BUILTIN_FUNCTIONS = {
 module CSVPlusPlus
   module Language
     ##
-    # A class representing the scope of the current Template and responsible for
-    # resolving variables
+    # A class representing the scope of the current Template and responsible for resolving variables
     class Scope
       attr_reader :code_section, :runtime
 
@@ -43,16 +42,22 @@ module CSVPlusPlus
       end
 
       # Resolve all values in the ast of the current cell being processed
+      # rubocop:disable Metrics/CyclomaticComplexity
       def resolve_cell_value
-        ast = @runtime.cell&.ast
-        return if ast.nil?
+        return unless (ast = @runtime.cell&.ast)
 
-        variables_referenced = ::CSVPlusPlus::Graph.variable_references(ast, @runtime, include_runtime_variables: true)
-        variables_referenced.reduce(ast.dup) do |resolved_ast, var_id|
-          copy_tree_with_replacement(resolved_ast, var_id, resolve(var_id))
-        end
-        # TODO: this needs to also resolve any known functions
+        references_to_resolve = cell_references_to_resolve(ast)
+        var_references_to_resolve = references_to_resolve.filter(&:variable?)
+        fn_references_to_resolve = references_to_resolve.filter(&:function_call?)
+
+        ast =
+          var_references_to_resolve.reduce(ast.dup) do |resolved_ast, var|
+            variable_replace(resolved_ast, var.id, resolve(var.id))
+          end
+
+        fn_references_to_resolve.reduce(ast) { |acc, elem| acc if elem }
       end
+      # rubocop:enable Metrics/CyclomaticComplexity
 
       # Set the +code_section+ and resolve all inner dependencies in it's @variables and @functions.
       def code_section=(code_section)
@@ -69,6 +74,13 @@ module CSVPlusPlus
 
       private
 
+      def cell_references_to_resolve(ast)
+        ::CSVPlusPlus::Graph.depth_first_search(ast) do |node|
+          # functions that are defined and variablesj
+          next node if node.variable? || (node.function_call? && @code_section.function_defined?(node.name))
+        end
+      end
+
       # Resolve all variable references defined statically in the code section
       def resolve_static_variables!
         variables = @code_section.variables
@@ -84,12 +96,25 @@ module CSVPlusPlus
         #
       end
 
-      # Make a copy of the AST represented by +node+ and replace +var_id+ with +replacement+ as we go
-      def copy_tree_with_replacement(node, var_id, replacement)
-        if node.type == :function_call
-          arguments = node.arguments.map { |n| copy_tree_with_replacement(n, var_id, replacement) }
+      # Make a copy of the AST represented by +node+ and replace +fn_id+ with +replacement+ throughout
+      def function_replace(node, fn_id, replacement)
+        if node.function_call? && node.name == fn_id
+          # TODO
+          node.id
+        elsif node.function_call?
+          arguments = node.arguments.map { |n| function_replace(n, fn_id, replacement) }
           ::CSVPlusPlus::Language::FunctionCall.new(node.id, arguments)
-        elsif node.type == :variable && node.id == var_id
+        else
+          node
+        end
+      end
+
+      # Make a copy of the AST represented by +node+ and replace +var_id+ with +replacement+ throughout
+      def variable_replace(node, var_id, replacement)
+        if node.function_call?
+          arguments = node.arguments.map { |n| variable_replace(n, var_id, replacement) }
+          ::CSVPlusPlus::Language::FunctionCall.new(node.id, arguments)
+        elsif node.variable? && node.id == var_id
           replacement
         else
           node
@@ -97,7 +122,7 @@ module CSVPlusPlus
       end
 
       def resolve(var_id)
-        return @code_section.variables[var_id] if @code_section.variables.key?(var_id)
+        return @code_section.variables[var_id.to_sym] if @code_section.variables.key?(var_id.to_sym)
 
         # this will throw a syntax error if it doesn't exist (which is what we want)
         @runtime.runtime_value(var_id)
@@ -132,7 +157,7 @@ module CSVPlusPlus
           resolved_vars[var] = variables[var].dup
 
           var_dependencies[var].each do |dependency|
-            resolved_vars[var] = copy_tree_with_replacement(resolved_vars[var], dependency, variables[dependency])
+            resolved_vars[var] = variable_replace(resolved_vars[var], dependency, variables[dependency])
           end
         end
 

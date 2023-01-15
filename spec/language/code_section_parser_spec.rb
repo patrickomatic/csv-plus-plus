@@ -145,6 +145,7 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
       end
 
       context 'with a single function that takes multiple args' do
+        let(:fn_add) { build(:fn_add) }
         let(:input) do
           "
   def foo(a, b) ADD($$a, $$b)
@@ -153,7 +154,7 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
   "
         end
 
-        it { is_expected.to(eq({ foo: build(:fn_add) })) }
+        it { is_expected.to(eq({ foo: build(:fn, name: :foo, arguments: fn_add.arguments, body: fn_add.body) })) }
       end
     end
   end

@@ -66,35 +66,6 @@ describe ::CSVPlusPlus::Language::Scope do
     end
   end
 
-  #   describe '#resolve_variable' do
-  #     let(:ast) do
-  #       build(:fn_call, name: :multiply, a: build(:variable, id: :rownum), b: build(:variable, id: :foo))
-  #     end
-  #
-  #     subject { scope.resolve_variable(ast, :rownum, build(:number_one)) }
-  #
-  #     it {
-  #       is_expected.to(eq(build(:fn_call, name: :multiply, a: build(:number_one), b: build(:variable, id: :foo))))
-  #     }
-  #   end
-  #
-  #   describe '#copy_tree_with_replacement' do
-  #     let(:ast) do
-  #       build(
-  #         :fn_call,
-  #         a: build(:fn_call, a: build(:fn_call, a: build(:variable_foo),
-  #           b: build(:number_one)), b: build(:number_two)),
-  #         b: build(:variable_bar)
-  #       )
-  #     end
-  #
-  #     subject { scope.copy_tree_with_replacement(ast, :fooz, :bar) }
-  #
-  #     it { is_expected.to(eq(ast)) }
-  #
-  #     it { is_expected.not_to(be(ast)) }
-  #   end
-
   describe 'to_s' do
     subject { scope.to_s }
 

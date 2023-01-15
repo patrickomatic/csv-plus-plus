@@ -2,32 +2,30 @@
 
 require_relative '../../lib/language/entities'
 
-ns = ::CSVPlusPlus::Language
-
 ::FactoryBot.define do
-  factory :fn_bar, class: ns::Function do
-    initialize_with do
-      new(:bar, %i[], build(:fn_call, name: :indirect, arguments: [build(:string, s: 'bar')]))
+  factory :fn, class: ::CSVPlusPlus::Language::Function do
+    transient do
+      arguments { [] }
+      body { nil }
+      name { [] }
     end
-  end
 
-  factory :fn_foo, class: ns::Function do
-    initialize_with do
-      new(:foo, %i[], build(:fn_call, name: :indirect, arguments: [build(:string, s: 'foo')]))
+    initialize_with { new(name, arguments, body) }
+
+    factory :fn_bar do
+      name { :bar }
+      body { build(:fn_call, name: :indirect, arguments: [build(:string, s: 'bar')]) }
     end
-  end
 
-  factory :fn_add, class: ns::Function do
-    initialize_with do
-      new(
-        :add,
-        %i[a b],
-        build(
-          :fn_call,
-          name: :add,
-          arguments: [build(:variable, id: :a), build(:variable, id: :b)]
-        )
-      )
+    factory :fn_foo do
+      name { :foo }
+      body { build(:fn_call, name: :indirect, arguments: [build(:string, s: 'foo')]) }
+    end
+
+    factory :fn_add do
+      name { :add }
+      arguments { %i[a b] }
+      body { build(:fn_call, name: :add, arguments: [build(:variable, id: :a), build(:variable, id: :b)]) }
     end
   end
 end

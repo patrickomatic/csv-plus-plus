@@ -26,13 +26,13 @@ rule
 
   def: fn_def | var_def
 
-  fn_def: FN_DEF ID '(' fn_def_args ')' exp   { @code_section.def_function(val[1], val[3], val[5])    }
-  fn_def: FN_DEF ID '(' ')' exp               { @code_section.def_function(val[1], [], val[4])        }
+  fn_def: FN_DEF ID '(' fn_def_args ')' exp   { def_function(val[1], val[3], val[5])                  }
+  fn_def: FN_DEF ID '(' ')' exp               { def_function(val[1], [], val[4])                      }
 
   fn_def_args: fn_def_args ',' ID             { result = [val[0], val[2]]                             }
              | ID                             { result = val[0]                                       }
 
-  var_def: ID ASSIGN exp                      { @code_section.def_variable(val[0], val[2])            }
+  var_def: ID ASSIGN exp                      { def_variable(val[0], val[2])                          }
 
   exp: ID '(' fn_call_args ')'                { result = Language::FunctionCall.new(val[0], val[2])   }
      | ID '(' ')'                             { result = Language::FunctionCall.new(val[0], [])       }
@@ -55,6 +55,15 @@ require_relative '../code_section'
 require_relative 'entities'
 
 ---- inner
+  def def_function(id, arguments, body)
+    fn_call = ::CSVPlusPlus::Language::Function.new(id, arguments, body)
+    @code_section.def_function(fn_call.id, fn_call)
+  end
+
+  def def_variable(id, ast)
+    @code_section.def_variable(id, ast)
+  end
+
   def parse(input, runtime)
     text = input.read.strip
     @code_section = CodeSection.new

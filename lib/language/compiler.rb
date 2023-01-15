@@ -16,7 +16,6 @@ module CSVPlusPlus
     ##
     # Encapsulates the parsing and building of objects (+Template+ -> +Row+ -> +Cell+).
     # Variable resolution is delegated to the +Scope+
-    # rubocop:disable Metrics/ClassLength
     class Compiler
       attr_reader :scope, :options, :runtime
 
@@ -40,13 +39,10 @@ module CSVPlusPlus
         parse_code_section!
         rows = parse_csv_section!
 
-        # TODO: should probably just flip this so it goes Template -> Scope -> CodeSection
         ::CSVPlusPlus::Template.new(rows:, scope: @scope).tap do |t|
           t.validate_infinite_expands(@runtime)
           expanding { t.expand_rows! }
-          # TODO: wrap these in a workflow (I guess?)
           resolve_all_cells!(t)
-          apply_all_functions!(t)
         end
       end
 
@@ -69,18 +65,14 @@ module CSVPlusPlus
 
       # workflow when parsing csv
       def parse_csv_section!
-        rows = nil
         workflow(log_subject: 'parsing CSV section') do
-          rows =
-            @runtime.map_rows(::CSV.new(runtime.input)) do |csv_row|
-              parse_row(csv_row)
-            end
+          @runtime.map_rows(::CSV.new(runtime.input)) do |csv_row|
+            parse_row(csv_row)
+          end
         end
-
+      ensure
         # we're done with the file and everything is in memory
         @runtime.cleanup!
-
-        rows
       end
 
       # Using the current +@runtime+ and the given +csv_row+ parse it into a +Row+ of +Cell+s
@@ -101,24 +93,12 @@ module CSVPlusPlus
         ::CSVPlusPlus::Row.new(@runtime.row_index, cells, row_modifier)
       end
 
-      # workflow when resolving static variable definitions
-      def resolve_static_variables!(code_section)
-        @scope.resolve_static_variables(code_section.variables, @runtime)
-      end
-
       # workflow when resolving the values of all cells
       def resolve_all_cells!(template)
         workflow(log_subject: 'resolving all cell value variable references') do
           @runtime.map_rows(template.rows, cells_too: true) do |cell|
             cell.ast = @scope.resolve_cell_value if cell.ast
           end
-        end
-      end
-
-      # workflow when resolving functions
-      def apply_all_functions!(_template)
-        workflow(log_subject: 'applying functions') do
-          # XXX
         end
       end
 
@@ -179,6 +159,5 @@ module CSVPlusPlus
         yield.tap { after_workflow!(log_subject) }
       end
     end
-    # rubocop:enable Metrics/ClassLength
   end
 end

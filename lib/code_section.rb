@@ -26,8 +26,18 @@ module CSVPlusPlus
     end
 
     # Define a (or re-define an existing) function
-    def def_function(id, arguments, body)
-      @functions[id.to_sym] = ::CSVPlusPlus::Language::Function.new(id, arguments, body)
+    def def_function(id, entity)
+      @functions[id.to_sym] = entity
+    end
+
+    # Is the variable defined?
+    def defined_variable?(var_id)
+      @variables.key?(var_id.to_sym)
+    end
+
+    # Is the function defined?
+    def defined_function?(fn_id)
+      @functions.key?(fn_id.to_sym)
     end
 
     # to_s

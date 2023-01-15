@@ -34,6 +34,7 @@
 
 # Other
 
+- [ ] Simplecov
 - [ ] Benchmarks in verbose mode
 - [ ] Revise the "how to use" docs
 - [ ] Charts

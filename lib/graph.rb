@@ -9,7 +9,7 @@ module CSVPlusPlus
     # Get a list of all variables references in a given +ast+
     def self.variable_references(ast, runtime, include_runtime_variables: false)
       depth_first_search(ast) do |node|
-        next unless node.type == :variable
+        next unless node.variable?
 
         node.id if !runtime.runtime_variable?(node.id) || include_runtime_variables
       end
@@ -42,7 +42,7 @@ module CSVPlusPlus
       ret = yield(node)
       accum << ret unless ret.nil?
 
-      return accum unless node.function?
+      return accum unless node.function_call?
 
       node.arguments.each { |n| depth_first_search(n, accum, &) }
       accum

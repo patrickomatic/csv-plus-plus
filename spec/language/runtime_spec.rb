@@ -4,7 +4,8 @@ require 'runtime'
 
 describe ::CSVPlusPlus::Language::Runtime do
   let(:row_index) { 0 }
-  let(:runtime) { build(:runtime, row_index:) }
+  let(:cell_index) { 0 }
+  let(:runtime) { build(:runtime, cell_index:, row_index:) }
 
   describe '#initialize' do
     let(:filename) { 'foo.csvpp' }
@@ -138,11 +139,17 @@ foo1,bar1,baz1
   end
 
   describe '#runtime_value' do
-    let(:var) { :rownum }
-
     subject { runtime.runtime_value(var) }
 
-    it { is_expected.to(eq(build(:number_zero))) }
+    describe '$$cellnum' do
+      let(:var) { :cellnum }
+      it { is_expected.to(eq(build(:number_one))) }
+    end
+
+    describe '$$rownum' do
+      let(:var) { :rownum }
+      it { is_expected.to(eq(build(:number_one))) }
+    end
   end
 
   describe '#runtime_variable?' do
@@ -162,6 +169,6 @@ foo1,bar1,baz1
   describe '#to_s' do
     subject { runtime.to_s }
 
-    it { is_expected.to(eq('Runtime(cell: , row_index: 0, cell_index: )')) }
+    it { is_expected.to(eq('Runtime(cell: , row_index: 0, cell_index: 0)')) }
   end
 end

@@ -4,7 +4,9 @@ require 'code_section'
 require 'tempfile'
 
 describe ::CSVPlusPlus::CodeSection do
-  let(:code_section) { build(:code_section) }
+  let(:functions) { {} }
+  let(:variables) { {} }
+  let(:code_section) { build(:code_section, variables:, functions:) }
 
   describe '#def_variable' do
     let(:id) { 'foo' }
@@ -27,7 +29,7 @@ describe ::CSVPlusPlus::CodeSection do
     let(:fn_foo) { build(:fn_foo) }
     let(:id) { 'foo' }
 
-    before { code_section.def_function(id, fn_foo.arguments, fn_foo.body) }
+    before { code_section.def_function(id, fn_foo) }
 
     it 'sets the function in @functions' do
       expect(code_section.functions).to(eq({ foo: build(:fn_foo) }))
@@ -35,9 +37,33 @@ describe ::CSVPlusPlus::CodeSection do
 
     it 'overwrites previous definitions' do
       fn_bar = build(:fn_bar)
-      code_section.def_function(:foo, fn_bar.arguments, fn_bar.body)
+      code_section.def_function(:foo, fn_bar)
       expect(code_section.functions).to(eq({ foo: build(:fn_bar) }))
     end
+  end
+
+  describe '#defined_variable?' do
+    let(:var_id) { :foo }
+    let(:variables) { { foo: build(:number_one) } }
+
+    subject { code_section }
+
+    it { is_expected.to(be_defined_variable(var_id)) }
+
+    context 'with an undefined variable' do
+      let(:var_id) { :bar }
+
+      it { is_expected.not_to(be_defined_variable(var_id)) }
+    end
+  end
+
+  describe '#defined_function?' do
+    let(:fn_id) { :foo }
+    let(:functions) { { foo: build(:fn_foo) } }
+
+    subject { code_section }
+
+    it { is_expected.to(be_defined_function(fn_id)) }
   end
 
   describe '#to_s' do
