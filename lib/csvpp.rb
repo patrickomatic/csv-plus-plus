@@ -12,7 +12,7 @@ module CSVPlusPlus
       template = c.parse_template
 
       spreadsheet = ::CSVPlusPlus::GoogleSheet.new(options)
-      spreadsheet.push!(template)
+      c.outputting! { spreadsheet.push!(template) }
     end
   rescue ::Google::Apis::ClientError => e
     handle_google_error(e, options)

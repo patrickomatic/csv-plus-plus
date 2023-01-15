@@ -223,8 +223,6 @@ module CSVPlusPlus
           end
         end
 
-      puts("Calling batch_update_spreadsheet on #{@sheet_id}/#{@sheet_name} with", batch_request) if @options.verbose
-
       @gs.batch_update_spreadsheet(@sheet_id, batch_request)
     end
     # rubocop:enable Metrics/AbcSize, Metrics/MethodLength

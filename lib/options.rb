@@ -28,7 +28,8 @@ module CSVPlusPlus
 
     # to_s
     def to_s
-      "Options(sheet_id: #{sheet_id})"
+      "Options(create_if_not_exists: #{@create_if_not_exists}, google: #{@google}, key_values: #{@key_values}, " \
+        "offset: #{@offset}, verbose: #{@verbose})"
     end
   end
 end

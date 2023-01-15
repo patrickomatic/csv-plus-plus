@@ -12,7 +12,7 @@ describe ::CSVPlusPlus::Cell do
     let(:value) { 'foo' }
     subject { cell.to_s }
 
-    it { is_expected.to(match(/Cell\(index: 1 row_index: 0 value: foo modifier.+\)/)) }
+    it { is_expected.to(match(/Cell\(index: 1, row_index: 0, value: foo, modifier: Modifier\(.+\)/)) }
   end
 
   describe '#value' do
@@ -33,39 +33,6 @@ describe ::CSVPlusPlus::Cell do
       it { is_expected.to(be_nil) }
     end
   end
-
-  #   describe "#interpolate_variables!" do
-  #     let(:variables) { {rownum: build(:number_one)} }
-  #     before(:each) do
-  #       cell.parse! ec
-  #       cell.interpolate_variables!(variables, ec)
-  #     end
-  #
-  #     subject { cell.ast }
-  #
-  #     context "with variables to interpolate" do
-  #       let(:value) { "=ADD(2, $$rownum)" }
-  #
-  #       it do
-  #         is_expected.to eq(build(:fn_call,
-  #                                 name: "ADD",
-  #                                 arguments: [
-  #                                   build(:number_two),
-  #                                   build(:number_one)]))
-  #       end
-  #
-  #       context "when the same value needs to be interpolated multiple times" do
-  #         let(:value) { "=MINUS($$rownum, $$rownum)" }
-  #
-  #         it do
-  #           is_expected.to eq(
-  #             build(:fn_call,
-  #                   name: "MINUS",
-  #                   arguments: [build(:number_one), build(:number_one)]))
-  #         end
-  #       end
-  #     end
-  #   end
 
   describe '#to_csv' do
     let(:ast) { nil }

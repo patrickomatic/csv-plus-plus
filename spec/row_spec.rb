@@ -50,4 +50,20 @@ describe ::CSVPlusPlus::Row do
       expect(row.cells[2].row_index).to(eq(10))
     end
   end
+
+  describe '#to_s' do
+    let(:modifier) { build(:modifier_with_expand, repetitions: 2) }
+    let(:row) { build(:row, modifier:, index: 0, cells:) }
+    let(:cells) do
+      [
+        build(:cell, row_index: 0, index: 0, value: 'foo'),
+        build(:cell, row_index: 0, index: 1, value: 'bar'),
+        build(:cell, row_index: 0, index: 2, value: 'baz')
+      ]
+    end
+
+    subject { row.to_s }
+
+    it { is_expected.to(match(/Row\(index: 0, modifier: Modifier\(.+\), cells: .*\)/)) }
+  end
 end

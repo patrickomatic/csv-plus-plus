@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'benchmark'
 require 'csv'
 require_relative '../cell'
 require_relative '../modifier'
@@ -16,22 +17,30 @@ module CSVPlusPlus
     ##
     # Encapsulates the parsing and building of objects (+Template+ -> +Row+ -> +Cell+).
     # Variable resolution is delegated to the +Scope+
+    # rubocop:disable Metrics/ClassLength
     class Compiler
-      attr_reader :scope, :options, :runtime
+      attr_reader :benchmark, :options, :runtime, :scope
 
       # Create a compiler and make sure it gets cleaned up
       def self.with_compiler(input:, filename:, options:)
         runtime = ::CSVPlusPlus::Language::Runtime.new(filename:, input:)
-        yield(new(runtime:, options:))
+        if options.verbose
+          ::Benchmark.bm(25) do |x|
+            yield(new(runtime:, options:, benchmark: x))
+          end
+        else
+          yield(new(runtime:, options:))
+        end
       ensure
         runtime.cleanup!
       end
 
       # initialize
-      def initialize(runtime:, options:, scope: nil)
+      def initialize(runtime:, options:, scope: nil, benchmark: nil)
         @options = options
         @runtime = runtime
         @scope = scope || ::CSVPlusPlus::Language::Scope.new(runtime:)
+        @benchmark = benchmark
       end
 
       # Parse an entire template and return a +::CSVPlusPlus::Template+ instance
@@ -65,7 +74,7 @@ module CSVPlusPlus
 
       # workflow when parsing csv
       def parse_csv_section!
-        workflow(log_subject: 'parsing CSV section') do
+        workflow(stage: 'Parsing CSV section') do
           @runtime.map_rows(::CSV.new(runtime.input)) do |csv_row|
             parse_row(csv_row)
           end
@@ -95,7 +104,7 @@ module CSVPlusPlus
 
       # workflow when resolving the values of all cells
       def resolve_all_cells!(template)
-        workflow(log_subject: 'resolving all cell value variable references') do
+        workflow(stage: 'Resolving each cell') do
           @runtime.map_rows(template.rows, cells_too: true) do |cell|
             cell.ast = @scope.resolve_cell_value if cell.ast
           end
@@ -104,7 +113,7 @@ module CSVPlusPlus
 
       # workflow when writing results
       def outputting!(&block)
-        workflow(log_subject: 'writing the spreadsheet') do
+        workflow(stage: 'Writing the spreadsheet') do
           block.call
         end
       end
@@ -114,20 +123,12 @@ module CSVPlusPlus
         "Compiler(options: #{@options}, runtime: #{@runtime}, scope: #{@scope})"
       end
 
-      # Log a message when in verbose mode
-      def log(message)
-        return unless @options.verbose
-
-        # TODO: include line_number and other info if we have it
-        warn("csv++: #{message}")
-      end
-
       private
 
       # workflow when parsing the code section
       def parsing_code_section(&block)
         workflow(
-          log_subject: 'parsing code section',
+          stage: 'Parsing code section',
           processing_code_section: true
         ) do
           csv_section = block.call(@runtime.input)
@@ -137,27 +138,26 @@ module CSVPlusPlus
 
       # workflow when expanding rows
       def expanding(&block)
-        workflow(log_subject: 'expanding rows') do
+        workflow(stage: 'Expanding rows') do
           block.call
         end
       end
 
-      def before_workflow!(log_subject, processing_code_section)
-        log("Started #{log_subject}")
+      def workflow(stage:, processing_code_section: false, &block)
         @runtime.init!(processing_code_section ? 1 : (@runtime.length_of_code_section || 1))
-      end
 
-      def after_workflow!(log_subject)
+        ret = nil
+        if @benchmark
+          @benchmark.report(stage) { ret = block.call }
+        else
+          ret = block.call
+        end
+
         @runtime.unset!
-        log("Finished #{log_subject}")
-      end
 
-      # TODO: we could add a progress loader here... but hopefully it never gets so slow
-      # to warrant that
-      def workflow(log_subject:, processing_code_section: false)
-        before_workflow!(log_subject, processing_code_section)
-        yield.tap { after_workflow!(log_subject) }
+        ret
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end

@@ -35,7 +35,7 @@ module CSVPlusPlus
 
     # to_s
     def to_s
-      "Cell(index: #{index} row_index: #{row_index} value: #{value} modifier: #{modifier})"
+      "Cell(index: #{@index}, row_index: #{@row_index}, value: #{@value}, modifier: #{@modifier})"
     end
 
     # A compiled final representation of the cell.  This includes all variables and functions
@@ -48,22 +48,17 @@ module CSVPlusPlus
 
     private
 
-    # rubocop:disable Metrics/MethodLength
     def to_csv_dfs(node, output: ['='], add_comma: false)
       output << node.to_s
       output << ', ' if add_comma
 
-      if node.function_call?
-        output << '('
-        arg_length = node.arguments.length
-        node.arguments.each_with_index do |n, i|
-          to_csv_dfs(n, output:, add_comma: i < arg_length - 1)
-        end
-        output << ')'
-      else
-        output
+      return output unless node.function_call?
+
+      output << '('
+      node.arguments.each_with_index do |n, i|
+        to_csv_dfs(n, output:, add_comma: i < node.arguments.length - 1)
       end
+      output << ')'
     end
-    # rubocop:enable Metrics/MethodLength
   end
 end
