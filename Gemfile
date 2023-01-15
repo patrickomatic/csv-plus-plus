@@ -23,4 +23,6 @@ group :test do
   gem 'factory_bot', '~> 6'
   # the chosen testing framework
   gem 'rspec', '~> 3'
+  # code coverage
+  gem 'simplecov', '~> 0.2', require: false
 end
