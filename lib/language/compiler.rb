@@ -17,7 +17,6 @@ module CSVPlusPlus
     ##
     # Encapsulates the parsing and building of objects (+Template+ -> +Row+ -> +Cell+).
     # Variable resolution is delegated to the +Scope+
-    # rubocop:disable Metrics/ClassLength
     class Compiler
       attr_reader :benchmark, :options, :runtime, :scope
 
@@ -153,11 +152,8 @@ module CSVPlusPlus
           ret = block.call
         end
 
-        @runtime.unset!
-
         ret
       end
     end
-    # rubocop:enable Metrics/ClassLength
   end
 end

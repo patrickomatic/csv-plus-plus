@@ -32,6 +32,7 @@ module CSVPlusPlus
   module Language
     ##
     # A class representing the scope of the current Template and responsible for resolving variables
+    # rubocop:disable Metrics/ClassLength
     class Scope
       attr_reader :code_section, :runtime
 
@@ -42,24 +43,17 @@ module CSVPlusPlus
       end
 
       # Resolve all values in the ast of the current cell being processed
-      # rubocop:disable Metrics/CyclomaticComplexity
       def resolve_cell_value
         return unless (ast = @runtime.cell&.ast)
 
-        references_to_resolve = cell_references_to_resolve(ast)
-        var_references_to_resolve = references_to_resolve.filter(&:variable?)
-        fn_references_to_resolve = references_to_resolve.filter(&:function_call?)
+        refs = references_to_resolve(ast)
+        var_refs = refs.filter(&:variable?)
+        fn_refs = refs.filter(&:function_call?)
 
-        ast =
-          var_references_to_resolve.reduce(ast.dup) do |resolved_ast, var|
-            variable_replace(resolved_ast, var.id, resolve(var.id))
-          end
-
-        fn_references_to_resolve.reduce(ast) { |acc, elem| acc if elem }
+        resolve_and_replace_functions(resolve_and_replace_variables(ast, var_refs), fn_refs)
       end
-      # rubocop:enable Metrics/CyclomaticComplexity
 
-      # Set the +code_section+ and resolve all inner dependencies in it's @variables and @functions.
+      # Set the +code_section+ and resolve all inner dependencies in it's variables and functions.
       def code_section=(code_section)
         @code_section = code_section
 
@@ -74,10 +68,10 @@ module CSVPlusPlus
 
       private
 
-      def cell_references_to_resolve(ast)
+      def references_to_resolve(ast)
         ::CSVPlusPlus::Graph.depth_first_search(ast) do |node|
           # functions that are defined and variablesj
-          next node if node.variable? || (node.function_call? && @code_section.function_defined?(node.name))
+          next node if node.variable? || (node.function_call? && @code_section.defined_function?(node.id))
         end
       end
 
@@ -90,22 +84,49 @@ module CSVPlusPlus
 
       # Resolve all functions defined statically in the code section
       def resolve_static_functions!
-        # functions = @code_section.functions
-        # resolution_order = variable_resolution_order(variables, runtime)
-        # TODO
-        #
+        # TODO: I'm still torn if it's worth replacing function reference
+      end
+
+      def resolve_and_replace_functions(ast, refs)
+        refs.reduce(ast.dup) do |resolved_ast, fn|
+          function_replace(resolved_ast, fn.id, resolve_function(fn.id))
+        end
       end
 
       # Make a copy of the AST represented by +node+ and replace +fn_id+ with +replacement+ throughout
       def function_replace(node, fn_id, replacement)
-        if node.function_call? && node.name == fn_id
-          # TODO
-          node.id
+        if node.function_call? && node.id == fn_id
+          apply_arguments(replacement, node)
         elsif node.function_call?
           arguments = node.arguments.map { |n| function_replace(n, fn_id, replacement) }
           ::CSVPlusPlus::Language::FunctionCall.new(node.id, arguments)
         else
           node
+        end
+      end
+
+      def resolve_function(fn_id)
+        id = fn_id.to_sym
+        return @code_section.functions[id] if @code_section.defined_function?(id)
+
+        # this will throw a syntax error if it doesn't exist (which is what we want)
+        return ::BUILTIN_FUNCTIONS[id] if ::BUILTIN_FUNCTIONS.key?(id)
+
+        @runtime.raise_syntax_error('Unknown function', fn_id)
+      end
+
+      def resolve_and_replace_variables(ast, refs)
+        refs.reduce(ast.dup) do |resolved_ast, var|
+          variable_replace(resolved_ast, var.id, resolve_variable(var.id))
+        end
+      end
+
+      def apply_arguments(function, function_call)
+        i = 0
+        function.arguments.reduce(function.body.dup) do |ast, argument|
+          variable_replace(ast, argument, function_call.arguments[i]).tap do
+            i += 1
+          end
         end
       end
 
@@ -121,11 +142,12 @@ module CSVPlusPlus
         end
       end
 
-      def resolve(var_id)
-        return @code_section.variables[var_id.to_sym] if @code_section.variables.key?(var_id.to_sym)
+      def resolve_variable(var_id)
+        id = var_id.to_sym
+        return @code_section.variables[id] if @code_section.defined_variable?(id)
 
         # this will throw a syntax error if it doesn't exist (which is what we want)
-        @runtime.runtime_value(var_id)
+        @runtime.runtime_value(id)
       end
 
       def check_unbound_vars(dependencies, variables)
@@ -164,5 +186,6 @@ module CSVPlusPlus
         resolved_vars
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end

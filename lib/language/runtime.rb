@@ -77,11 +77,6 @@ module CSVPlusPlus
         @line_number = start_line_number_at
       end
 
-      # Reset back to neutral state
-      def unset!
-        @cell = @cell_index = @row_index = @line_number = nil
-      end
-
       # to_s
       def to_s
         "Runtime(cell: #{@cell}, row_index: #{@row_index}, cell_index: #{@cell_index})"

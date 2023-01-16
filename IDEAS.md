@@ -21,9 +21,10 @@
 
 # Variables and functions
 
+- [ ] a way to not show a function if it's dependent cells are blank (make it less ugly when expanded out)
 - [ ] CELLREF()
 - [ ] SHEETREF()
-- [ ] user defined functions at the top
+- [x] user defined functions at the top
 - [x] `$$row` current row
 
 # Performance
@@ -34,12 +35,12 @@
 
 # Other
 
-- [ ] Simplecov
-- [ ] Benchmarks in verbose mode
 - [ ] Revise the "how to use" docs
 - [ ] Charts
 - [ ] Pivot table support - not sure what this would even look like
 - [ ] backups before each write?
+- [x] Benchmarks in verbose mode
+- [x] Simplecov
 - [X] Rubocop
 - [x] create the spreadsheet if it doesn't exist
 - [x] verbose mode

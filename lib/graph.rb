@@ -7,6 +7,7 @@ module CSVPlusPlus
   # Graph ordering and searching functions
   module Graph
     # Get a list of all variables references in a given +ast+
+    # TODO: this is only used in one place - refactor it
     def self.variable_references(ast, runtime, include_runtime_variables: false)
       depth_first_search(ast) do |node|
         next unless node.variable?

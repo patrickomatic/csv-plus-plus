@@ -62,11 +62,65 @@ describe ::CSVPlusPlus::Language::Scope do
 
     describe '@functions' do
       subject { code_section.functions }
-      # TODO
+
+      it 'resolves function dependencies' do
+        # TODO: not implemented yet
+      end
+
+      context 'with builtin functions' do
+        # TODO
+      end
     end
   end
 
-  describe 'to_s' do
+  describe '#resolve_cell_value' do
+    let(:code_section) { build(:code_section, functions:, variables: { foo: build(:number_one) }) }
+    let(:functions) { {} }
+    let(:scope) { build(:scope, code_section:, runtime:) }
+    let(:runtime) { build(:runtime, cell:) }
+
+    subject { scope.resolve_cell_value }
+
+    context 'with a nil cell.ast' do
+      let(:cell) { build(:cell) }
+
+      it 'should return early' do
+        expect { subject }
+          .not_to(raise_error)
+      end
+    end
+
+    context 'with a variable reference' do
+      let(:cell) { build(:cell, value: '=$$foo', ast: build(:variable, id: :foo)) }
+
+      it 'returns a copy of the ast with the value inserted' do
+        expect(subject).to(eq(build(:number_one)))
+      end
+    end
+
+    context 'with an undefined variable' do
+      let(:cell) { build(:cell, value: '=$$itdoesnotexist', ast: build(:variable, id: :itdoesnotexist)) }
+
+      it 'should raise a SyntaxError' do
+        expect { subject }
+          .to(raise_error(::CSVPlusPlus::Language::SyntaxError))
+      end
+    end
+
+    context 'with a function reference' do
+      let(:fn_body) { build(:fn_call, name: :add, arguments: [build(:variable, id: :a), build(:variable, id: :b)]) }
+      let(:functions) { { foo: build(:fn, name: :foo, arguments: %i[a b], body: fn_body) } }
+
+      let(:ast) { build(:fn_call, name: :foo, arguments: [build(:number_one), build(:number_two)]) }
+      let(:cell) { build(:cell, value: '=$$foo', ast:) }
+
+      it 'replaces the function and resolves the arguments' do
+        expect(subject).to(eq(build(:fn_call, name: :add, arguments: [build(:number_one), build(:number_two)])))
+      end
+    end
+  end
+
+  describe '#to_s' do
     subject { scope.to_s }
 
     it do
