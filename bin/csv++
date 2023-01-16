@@ -20,7 +20,7 @@ option_parser =
       'The id of the sheet - you can extract this from the URL: ' \
       'https://docs.google.com/spreadsheets/d/< ... SHEET_ID ... >/edit#gid=0'
     ) do |v|
-      options.google.sheet_id = v
+      options.google_sheet_id = v
     end
 
     parser.on('-c', '--create', "Create the sheet if it doesn't exist.  It will use --sheet-name if specified") do
@@ -44,6 +44,10 @@ option_parser =
       options.sheet_name = v
     end
 
+    parser.on('-o OUTPUT_FILE', '--output OUTPUT_FILE', 'The file to write to (must be .csv, .ods, .xls)') do |v|
+      options.output_filename = v
+    end
+
     parser.on('-v', '--verbose', 'Enable verbose output') do
       options.verbose = true
     end
@@ -65,9 +69,10 @@ option_parser =
 
 option_parser.parse!
 
-unless options.google.sheet_id
-  warn 'You must specify a --google-sheet-id/-g param for the sheet to write to.'
-  exit 1
+error_message = options.validate
+unless error_message.nil?
+  warn(error_message)
+  exit(1)
 end
 
 begin

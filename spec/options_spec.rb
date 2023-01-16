@@ -11,6 +11,12 @@ describe ::CSVPlusPlus::GoogleOptions do
 
     it { is_expected.to(eq('GoogleOptions(sheet_id: #id)')) }
   end
+
+  describe '#verbose_summary' do
+    subject { google_options.verbose_summary }
+
+    it { is_expected.to(match(/Sheet ID.*\#id/m)) }
+  end
 end
 
 describe ::CSVPlusPlus::Options do
@@ -31,8 +37,7 @@ describe ::CSVPlusPlus::Options do
     it do
       is_expected.to(
         eq(
-          'Options(create_if_not_exists: false, google: GoogleOptions(sheet_id: ), key_values: {}, ' \
-          'offset: [0, 0], verbose: false)'
+          'Options(create_if_not_exists: false, google: , key_values: {}, offset: [0, 0], sheet_name: , verbose: false)'
         )
       )
     end
