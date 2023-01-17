@@ -43,21 +43,19 @@ module CSVPlusPlus
         end
       end
 
-      # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity
       def build_text_format(mod)
-        sheets_ns::TextFormat.new.tap do |tf|
-          tf.bold = true if mod.formatted?('bold')
-          tf.italic = true if mod.formatted?('italic')
-          tf.strikethrough = true if mod.formatted?('strikethrough')
-          tf.underline = true if mod.formatted?('underline')
+        sheets_ns::TextFormat.new(
+          bold: mod.formatted?('bold') || nil,
+          italic: mod.formatted?('italic') || nil,
+          strikethrough: mod.formatted?('strikethrough') || nil,
+          underline: mod.formatted?('underline') || nil,
 
-          tf.font_family = mod.fontfamily if mod.fontfamily
-          tf.font_size = mod.fontsize if mod.fontsize
+          font_family: mod.fontfamily,
+          font_size: mod.fontsize,
 
-          tf.foreground_color = sheets_color(mod.fontcolor) if mod.fontcolor
-        end
+          foreground_color: mod.fontcolor ? sheets_color(mod.fontcolor) : nil
+        )
       end
-      # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity
 
       # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity
       def build_cell_format(mod)
@@ -135,24 +133,22 @@ module CSVPlusPlus
         )
       end
 
-      # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-      def build_update_borders_request(cell)
+      def build_border(cell)
         mod = cell.modifier
-        sheets_ns::Request.new(
-          update_borders:
-            sheets_ns::UpdateBordersRequest.new.tap do |br|
-              # TODO: allow different border styles per side
-              border = sheets_ns::Border.new(color: mod.bordercolor || '#000000', style: mod.borderstyle || 'solid')
-              br.top = border if mod.border_along?('top')
-              br.right = border if mod.border_along?('right')
-              br.left = border if mod.border_along?('left')
-              br.bottom = border if mod.border_along?('bottom')
-
-              br.range = grid_range_for_cell(cell)
-            end
+        # TODO: allow different border styles per side
+        border = sheets_ns::Border.new(color: mod.bordercolor || '#000000', style: mod.borderstyle || 'solid')
+        sheets_ns::UpdateBordersRequest.new(
+          top: mod.border_along?('top') ? border : nil,
+          right: mod.border_along?('right') ? border : nil,
+          left: mod.border_along?('left') ? border : nil,
+          bottom: mod.border_along?('bottom') ? border : nil,
+          range: grid_range_for_cell(cell)
         )
       end
-      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+
+      def build_update_borders_request(cell)
+        sheets_ns::Request.new(update_borders: build_border(cell))
+      end
 
       # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       def build_batch_request(rows)
