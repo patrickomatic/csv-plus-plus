@@ -17,17 +17,17 @@ module CSVPlusPlus
     ##
     # Encapsulates the parsing and building of objects (+Template+ -> +Row+ -> +Cell+).
     # Variable resolution is delegated to the +Scope+
+    # rubocop:disable Metrics/ClassLength
     class Compiler
-      attr_reader :benchmark, :options, :runtime, :scope
+      attr_reader :timings, :benchmark, :options, :runtime, :scope
 
       # Create a compiler and make sure it gets cleaned up
-      def self.with_compiler(input:, filename:, options:)
+      def self.with_compiler(input:, filename:, options:, &block)
         runtime = ::CSVPlusPlus::Language::Runtime.new(filename:, input:)
 
-        # TODO: get a total time
         if options.verbose
-          ::Benchmark.bm(25) do |x|
-            yield(new(runtime:, options:, benchmark: x))
+          compiler_with_timings(runtime:, options:) do |c|
+            block.call(c)
           end
         else
           yield(new(runtime:, options:))
@@ -36,12 +36,22 @@ module CSVPlusPlus
         runtime.cleanup!
       end
 
+      # Create a compiler that can time each of it's stages
+      def self.compiler_with_timings(options:, runtime:, &block)
+        ::Benchmark.benchmark(::Benchmark::CAPTION, 25, ::Benchmark::FORMAT, '> Total') do |x|
+          compiler = new(options:, runtime:, benchmark: x)
+          block.call(compiler)
+          [compiler.timings.reduce(:+)]
+        end
+      end
+
       # initialize
       def initialize(runtime:, options:, scope: nil, benchmark: nil)
         @options = options
         @runtime = runtime
         @scope = scope || ::CSVPlusPlus::Language::Scope.new(runtime:)
         @benchmark = benchmark
+        @timings = [] if benchmark
       end
 
       # Parse an entire template and return a +::CSVPlusPlus::Template+ instance
@@ -149,7 +159,7 @@ module CSVPlusPlus
 
         ret = nil
         if @benchmark
-          @benchmark.report(stage) { ret = block.call }
+          @timings << @benchmark.report(stage) { ret = block.call }
         else
           ret = block.call
         end
@@ -157,5 +167,6 @@ module CSVPlusPlus
         ret
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end
