@@ -23,6 +23,8 @@ module CSVPlusPlus
       # Create a compiler and make sure it gets cleaned up
       def self.with_compiler(input:, filename:, options:)
         runtime = ::CSVPlusPlus::Language::Runtime.new(filename:, input:)
+
+        # TODO: get a total time
         if options.verbose
           ::Benchmark.bm(25) do |x|
             yield(new(runtime:, options:, benchmark: x))

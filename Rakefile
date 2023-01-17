@@ -13,8 +13,9 @@ RACC_FILES = {
 task default: ::RACC_FILES.keys.map(&:to_sym) + %i[
   rubocop:autocorrect_all
   spec
-  test:integration:stocks
-  test:integration:all_features
+  test:csv:all_features
+  test:google_sheets:stocks
+  test:google_sheets:all_features
 ]
 
 ::RSpec::Core::RakeTask.new(:spec)
@@ -34,15 +35,24 @@ task :clean do
 end
 
 namespace :test do
-  namespace :integration do
+  namespace :google_sheets do
+    google_sheet_id = ::ENV.fetch('GOOGLE_SHEET_ID', nil)
+
     desc 'Test with the examples/stocks.csvpp template'
     task :stocks do
-      sh %(./bin/csv++ -v -n "Sheet1" -g #{::ENV.fetch('GOOGLE_SHEET_ID', nil)} examples/stocks.csvpp)
+      sh %(./bin/csv++ -v -n "Sheet1" -g #{google_sheet_id} examples/stocks.csvpp)
     end
 
-    desc 'Test with the examples/all_features.csvpp template'
+    desc 'Test with the examples/all_features.csvpp template outputting to Google Sheets'
     task :all_features do
-      sh %(./bin/csv++ --verbose -n "Sheet2" -g #{::ENV.fetch('GOOGLE_SHEET_ID', nil)} examples/all_features.csvpp)
+      sh %(./bin/csv++ --verbose -n "Sheet2" -g #{google_sheet_id} examples/all_features.csvpp)
+    end
+  end
+
+  namespace :csv do
+    desc 'Test with the examples/all_features.csvpp template outputting to CSV'
+    task :all_features do
+      sh %(./bin/csv++ --verbose -n "Sheet2" --output examples/all_features.csv examples/all_features.csvpp)
     end
   end
 end
