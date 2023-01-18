@@ -20,8 +20,19 @@ describe ::CSVPlusPlus::CodeSection do
   end
 
   describe '#def_variables' do
-    it 'sets the values in @variables, overwriting existing variables' do
-      # TODO
+    let(:var_foo) { build(:variable_foo) }
+    let(:id) { 'foo' }
+
+    before { code_section.def_variable(id, var_foo) }
+
+    it 'sets the function in @variables' do
+      expect(code_section.variables).to(eq({ foo: build(:variable_foo) }))
+    end
+
+    it 'overwrites previous definitions' do
+      var_bar = build(:variable_bar)
+      code_section.def_variable(:foo, var_bar)
+      expect(code_section.variables).to(eq({ foo: build(:variable_bar) }))
     end
   end
 

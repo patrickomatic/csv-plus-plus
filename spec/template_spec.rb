@@ -48,7 +48,7 @@ describe ::CSVPlusPlus::Template do
       let(:rows) do
         [
           build(:row, index: 0, cells: cells_row1),
-          build(:row, index: 1, cells: cells_row0, modifier: build(:modifier_with_expand))
+          build(:row, index: 1, cells: cells_row0, modifier: build(:modifier_with_infinite_expand))
         ]
       end
 
@@ -56,18 +56,84 @@ describe ::CSVPlusPlus::Template do
         expect(template.rows.length).to(eq(1000))
       end
     end
+  end
 
-    context 'with an infinite expand that expands over top of rows after it' do
+  describe '#validate_infinite_expands' do
+    let(:template) { build(:template, rows:) }
+    let(:rows) { [build(:row, index: 0, cells:)] }
+    let(:cells) do
+      [
+        build(:cell, row_index: 0, index: 0, value: 'foo'),
+        build(:cell, row_index: 0, index: 1, value: 'foo'),
+        build(:cell, row_index: 0, index: 2, value: 'foo')
+      ]
+    end
+    let(:runtime) { build(:runtime) }
+
+    subject { template.validate_infinite_expands(runtime) }
+
+    it 'does not raise an exception' do
+      expect { subject }
+        .not_to(raise_error)
+    end
+
+    context 'with a single bounded expand' do
       let(:rows) do
         [
-          build(:row, index: 0, cells: cells_row0, modifier: build(:modifier_with_expand)),
-          build(:row, index: 1, cells: cells_row1),
-          build(:row, index: 2, cells: cells_row1)
+          build(:row, index: 0, cells:, modifier: build(:modifier_with_expand)),
+          build(:row, index: 1, cells:),
+          build(:row, index: 2, cells:)
         ]
       end
 
-      xit 'expands the rows to SPREADSHEET_INFINITY' do
-        expect(template.rows.length).to(eq(1000))
+      it 'does not raise an exception' do
+        expect { subject }
+          .not_to(raise_error)
+      end
+    end
+
+    context 'with multiple bounded expands' do
+      let(:rows) do
+        [
+          build(:row, index: 0, cells:, modifier: build(:modifier_with_expand)),
+          build(:row, index: 1, cells:, modifier: build(:modifier_with_expand)),
+          build(:row, index: 2, cells:)
+        ]
+      end
+
+      it 'does not raise an exception' do
+        expect { subject }
+          .not_to(raise_error)
+      end
+    end
+
+    context 'with one infinite expand' do
+      let(:rows) do
+        [
+          build(:row, index: 0, cells:, modifier: build(:modifier_with_infinite_expand)),
+          build(:row, index: 1, cells:),
+          build(:row, index: 2, cells:)
+        ]
+      end
+
+      it 'does not raise an exception' do
+        expect { subject }
+          .not_to(raise_error)
+      end
+    end
+
+    context 'with multiple infinite expands' do
+      let(:rows) do
+        [
+          build(:row, index: 0, cells:, modifier: build(:modifier_with_infinite_expand)),
+          build(:row, index: 1, cells:, modifier: build(:modifier_with_infinite_expand)),
+          build(:row, index: 2, cells:)
+        ]
+      end
+
+      it 'does not raise an exception' do
+        expect { subject }
+          .to(raise_error(::CSVPlusPlus::Language::SyntaxError))
       end
     end
   end

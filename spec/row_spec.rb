@@ -5,8 +5,7 @@ require 'row'
 describe ::CSVPlusPlus::Row do
   describe '#expand_amount' do
     let(:index) { 0 }
-    let(:expand_amount) { 2 }
-    let(:modifier) { build(:modifier_with_expand, repetitions: expand_amount) }
+    let(:modifier) { build(:modifier_with_expand) }
     let(:row) { build(:row, modifier:, index:) }
 
     subject { row.expand_amount }
@@ -14,7 +13,7 @@ describe ::CSVPlusPlus::Row do
     it { is_expected.to(eq(2)) }
 
     context 'when no amount is set' do
-      let(:expand_amount) { nil }
+      let(:modifier) { build(:modifier_with_infinite_expand) }
 
       it { is_expected.to(eq(1000)) }
 
@@ -26,7 +25,6 @@ describe ::CSVPlusPlus::Row do
   end
 
   describe '#index=' do
-    let(:expand_amount) { 2 }
     let(:row_index) { 0 }
     let(:cells) do
       [
@@ -52,7 +50,7 @@ describe ::CSVPlusPlus::Row do
   end
 
   describe '#to_s' do
-    let(:modifier) { build(:modifier_with_expand, repetitions: 2) }
+    let(:modifier) { build(:modifier_with_expand) }
     let(:row) { build(:row, modifier:, index: 0, cells:) }
     let(:cells) do
       [

@@ -70,9 +70,13 @@ describe ::CSVPlusPlus::Language::Compiler do
     end
 
     context 'with comments' do
-      let(:input) { "# this is a comment\n---\nfoo,bar,bar" }
-
-      it { is_expected.not_to(be_nil) }
+      let(:input) do
+        <<~INPUT
+          # this is a comment
+          ---
+          foo,bar,bar
+        INPUT
+      end
 
       it 'has empty variables' do
         expect(subject.variables).to(be_empty)
@@ -84,26 +88,91 @@ describe ::CSVPlusPlus::Language::Compiler do
     end
 
     context 'with variable definitions' do
-      let(:input) { "foo := 1\n---\nfoo,bar,baz" }
-
-      it { is_expected.not_to(be_nil) }
+      let(:input) do
+        <<~INPUT
+          foo := 1
+          ---
+          foo,bar,baz
+        INPUT
+      end
 
       it 'sets a variable' do
         expect(subject.variables).to(eq({ foo: build(:number_one) }))
       end
-
-      it 'has empty functions' do
-        expect(subject.functions).to(be_empty)
-      end
     end
 
     context 'with function definitions' do
-      # TODO
+      context 'a function with no arguments' do
+        let(:input) do
+          <<~INPUT
+            def foo() indirect("c1")
+            ---
+            foo,bar,baz
+          INPUT
+        end
+
+        it 'sets the function on functions' do
+          expect(subject.functions).to(
+            eq(
+              {
+                foo: build(
+                  :fn,
+                  name: :foo,
+                  arguments: [],
+                  body: build(:fn_call, name: :indirect, arguments: [build(:string, s: 'c1')])
+                )
+              }
+            )
+          )
+        end
+      end
+
+      context 'a function with arguments' do
+        let(:input) do
+          <<~INPUT
+            def foo(a, b) add(a, b)
+            ---
+            foo,bar,baz
+          INPUT
+        end
+
+        it 'sets the function on functions' do
+          expect(subject.functions).to(
+            eq(
+              {
+                foo: build(
+                  :fn,
+                  name: :foo,
+                  arguments: %i[a b],
+                  body: build(:fn_call, name: :add, arguments: [build(:variable, id: 'a'), build(:variable, id: 'b')])
+                )
+              }
+            )
+          )
+        end
+      end
     end
 
     context 'with key_values' do
-      it 'they should overwrite any defined variables' do
-        # TODO
+      let(:input) do
+        <<~INPUT
+          foo := 1
+          ---
+          foo,bar,baz
+        INPUT
+      end
+      let(:key_values) { { fooz: 'bar' } }
+
+      it 'sets the variable, inferring the type as a string' do
+        expect(subject.variables).to(eq({ foo: build(:number_one), fooz: build(:string, s: 'bar') }))
+      end
+
+      context 'with the same name as a variable' do
+        let(:key_values) { { foo: 'bar' } }
+
+        it 'they should overwrite any defined variables' do
+          expect(subject.variables).to(eq({ foo: build(:string, s: 'bar') }))
+        end
       end
     end
   end
@@ -117,13 +186,11 @@ describe ::CSVPlusPlus::Language::Compiler do
       expect(subject.length).to(eq(3))
     end
 
-    context 'with multiple infinite expands' do
-      let(:input) { "![[expand]]foo,bar,baz\n![[expand]]foo1,bar1,baz1\nfoo2,bar2,baz2\n" }
+    context 'with modifiers' do
+      let(:input) { "[[align=right]]foo,bar,baz\n[[note='test']]foo1,bar1,baz1\n[[format=bold]]foo2,bar2,baz2\n" }
 
-      # TODO: move this into row_sepc
-      xit 'throws a SyntaxError' do
-        expect { subject }
-          .to(raise_error(::CSVPlusPlus::Language::SyntaxError))
+      it 'parses the CSV rows' do
+        expect(subject.length).to(eq(3))
       end
     end
   end
@@ -205,14 +272,6 @@ describe ::CSVPlusPlus::Language::Compiler do
 
     it 'resolves runtime variables' do
       expect(template.rows[0].cells[3].to_csv).to(eq('=1'))
-    end
-
-    context 'with key_values' do
-      let(:key_values) { { rownum: '1111' } }
-
-      xit 'resolves and overrides $$rownum' do
-        expect(template.rows[0].cells[3].to_csv).to(eq('=1111'))
-      end
     end
   end
 end
