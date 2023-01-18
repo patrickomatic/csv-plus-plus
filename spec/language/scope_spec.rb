@@ -31,10 +31,6 @@ describe ::CSVPlusPlus::Language::Scope do
       end
 
       context 'with runtime variables' do
-        let(:ast) do
-          build(:fn_call, name: :multiply, a: build(:variable, id: :rownum), b: build(:variable, id: :foo))
-        end
-
         it 'resolves just the static variables in dep' do
           expect(subject[:dep]).to(
             eq(

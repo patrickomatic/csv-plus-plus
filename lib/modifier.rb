@@ -114,27 +114,11 @@ module CSVPlusPlus
     end
 
     # Create a new modifier instance, with all values defaulted from +other+
-    # rubocop:disable Metrics/MethodLength
     def take_defaults_from!(other)
-      # TODO: can I just infer the instance vars?
-      %i[
-        @align
-        @bordercolor
-        @borders
-        @borderstyle
-        @color
-        @formats
-        @fontcolor
-        @fontfamily
-        @fontsize
-        @note
-        @numberformat
-        @validation
-      ].each do |property|
+      instance_variables.each do |property|
         value = other.instance_variable_get(property)
         instance_variable_set(property, value.clone)
       end
     end
-    # rubocop:enable Metrics/MethodLength
   end
 end

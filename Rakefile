@@ -40,12 +40,20 @@ namespace :test do
 
     desc 'Test with the examples/stocks.csvpp template'
     task :stocks do
-      sh %(./bin/csv++ -v -n "Sheet1" -g #{google_sheet_id} examples/stocks.csvpp)
+      if google_sheet_id
+        sh %(./bin/csv++ -v -n "Sheet1" -g #{google_sheet_id} examples/stocks.csvpp)
+      else
+        warn('GOOGLE_SHEET_ID is not defined')
+      end
     end
 
     desc 'Test with the examples/all_features.csvpp template outputting to Google Sheets'
     task :all_features do
-      sh %(./bin/csv++ --verbose -n "Sheet2" -g #{google_sheet_id} examples/all_features.csvpp)
+      if google_sheet_id
+        sh %(./bin/csv++ --verbose -n "Sheet2" -g #{google_sheet_id} examples/all_features.csvpp)
+      else
+        warn('GOOGLE_SHEET_ID is not defined')
+      end
     end
   end
 

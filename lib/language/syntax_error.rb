@@ -23,6 +23,7 @@ module CSVPlusPlus
       # Output a verbose user-helpful string that references the current runtime
       def to_verbose_trace
         warn(@wrapped_error.full_message)
+        warn(@wrapped_error.backtrace)
         to_trace
       end
 

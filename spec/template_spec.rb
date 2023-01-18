@@ -58,6 +58,19 @@ describe ::CSVPlusPlus::Template do
     end
   end
 
+  describe '#to_s' do
+    subject { build(:template).to_s }
+
+    it do
+      is_expected.to(
+        eq(
+          'Template(rows: [], scope: Scope(code_section: CodeSection(functions: {}, variables: {}), ' \
+          'runtime: Runtime(cell: , row_index: 0, cell_index: )))'
+        )
+      )
+    end
+  end
+
   describe '#validate_infinite_expands' do
     let(:template) { build(:template, rows:) }
     let(:rows) { [build(:row, index: 0, cells:)] }

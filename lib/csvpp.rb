@@ -5,8 +5,10 @@ require_relative 'writer/writer'
 
 # A language for writing rich CSV data
 module CSVPlusPlus
-  # Create a template and output it using a GoogleSheet
+  # Parse the input into a +Template+ and write it to the desired format
   def self.apply_template_to_sheet!(input, filename, options)
+    warn(options.verbose_summary) if options.verbose
+
     ::CSVPlusPlus::Language::Compiler.with_compiler(input:, filename:, options:) do |c|
       template = c.parse_template
 

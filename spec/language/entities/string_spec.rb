@@ -3,7 +3,7 @@
 require 'entities'
 
 describe ::CSVPlusPlus::Language::Entities::String do
-  subject { described_class.new('foo') }
+  subject(:string) { described_class.new('foo') }
 
   describe '#initialize' do
     it 'has a nil id' do
@@ -13,6 +13,12 @@ describe ::CSVPlusPlus::Language::Entities::String do
 
   describe '#string?' do
     it { is_expected.to(be_string) }
+  end
+
+  describe '#to_s' do
+    subject { string.to_s }
+
+    it { is_expected.to(eq('"foo"')) }
   end
 
   describe '#==' do

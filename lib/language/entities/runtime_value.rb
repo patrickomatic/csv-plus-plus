@@ -19,7 +19,7 @@ module CSVPlusPlus
 
         # to_s
         def to_s
-          @resolve_fn
+          '(runtime_value)'
         end
       end
     end

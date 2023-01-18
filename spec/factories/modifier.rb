@@ -6,26 +6,24 @@ require_relative '../../lib/modifier'
   factory :modifier, class: ::CSVPlusPlus::Modifier do
     transient do
       repetitions { nil }
+      row_level { false }
     end
 
-    after(:build) do |m, e|
-      m.expand = build(:expand, repetitions: e.repetitions) if e.repetitions
-    end
+    initialize_with { new(row_level:) }
 
     factory :row_modifier do
       row_level { true }
-    end
 
-    factory :modifier_with_expand do
-      row_level { true }
-      repetitions { 2 }
-    end
+      factory :modifier_with_expand do
+        after(:build) do |m|
+          m.expand = build(:expand, repetitions: 2)
+        end
+      end
 
-    factory :modifier_with_infinite_expand do
-      row_level { true }
-
-      after(:build) do |m|
-        m.expand = build(:expand)
+      factory :modifier_with_infinite_expand do
+        after(:build) do |m|
+          m.expand = build(:expand)
+        end
       end
     end
   end

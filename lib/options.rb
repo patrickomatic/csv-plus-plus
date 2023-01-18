@@ -1,26 +1,8 @@
 # frozen_string_literal: true
 
+require_relative './google_options'
+
 module CSVPlusPlus
-  # The Google-specific options a user can supply
-  GoogleOptions =
-    ::Struct.new(:sheet_id) do
-      # Return a string with a verbose description of what we're doing with the options
-      def verbose_summary
-        <<~SUMMARY
-          ## Google Sheets Options
-
-          > Sheet ID | #{sheet_id}
-        SUMMARY
-      end
-
-      # to_s
-      def to_s
-        "GoogleOptions(sheet_id: #{sheet_id})"
-      end
-    end
-
-  public_constant :GoogleOptions
-
   # The options a user can supply
   class Options
     attr_accessor :backup, :create_if_not_exists, :key_values, :offset, :output_filename, :sheet_name, :verbose
@@ -32,6 +14,8 @@ module CSVPlusPlus
       @create_if_not_exists = false
       @key_values = {}
       @verbose = false
+      # TODO: switch to true? probably a safer choice
+      @backup = false
     end
 
     # Set the Google Sheet ID
@@ -49,7 +33,7 @@ module CSVPlusPlus
     # Return a string with a verbose description of what we're doing with the options
     def verbose_summary
       <<~SUMMARY
-        ===================================================
+        #{summary_divider}
         # Options
 
         > Input filename           | #{@filename}
@@ -59,13 +43,15 @@ module CSVPlusPlus
         > Spreadsheet cell-offset  | #{@offset[1]}
         > Spreadsheet row-offset   | #{@offset[0]}
         > User-supplied key-values | #{@key_values}
+        > Verbose                  | #{@verbose}
 
         ## Output
 
         > Backup                   | #{@backup}
         > Output filename          | #{@output_filename}
+
         #{@google&.verbose_summary || ''}
-        ===================================================
+        #{summary_divider}
       SUMMARY
     end
 
@@ -73,6 +59,12 @@ module CSVPlusPlus
     def to_s
       "Options(create_if_not_exists: #{@create_if_not_exists}, google: #{@google}, key_values: #{@key_values}, " \
         "offset: #{@offset}, sheet_name: #{@sheet_name}, verbose: #{@verbose})"
+    end
+
+    private
+
+    def summary_divider
+      '========================================================================='
     end
   end
 end

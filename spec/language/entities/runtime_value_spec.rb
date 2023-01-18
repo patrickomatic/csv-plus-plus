@@ -5,7 +5,7 @@ require 'entities'
 describe ::CSVPlusPlus::Language::Entities::RuntimeValue do
   let(:resolve_fn) { -> { build(:number_zero) } }
 
-  subject { described_class.new(resolve_fn) }
+  subject(:runtime_value) { described_class.new(resolve_fn) }
 
   describe '#initialize' do
     it 'has a nil id' do
@@ -22,5 +22,11 @@ describe ::CSVPlusPlus::Language::Entities::RuntimeValue do
 
     it { is_expected.not_to(eq(build(:fn_foo))) }
     it { is_expected.not_to(eq(build(:variable_foo))) }
+  end
+
+  describe '#to_s' do
+    subject { runtime_value.to_s }
+
+    it { is_expected.to(eq('(runtime_value)')) }
   end
 end

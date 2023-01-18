@@ -3,7 +3,7 @@
 require 'entities'
 
 describe ::CSVPlusPlus::Language::Entities::Function do
-  subject { described_class.new('FOO', %w[a b], build(:number_one)) }
+  subject(:function) { described_class.new('FOO', %w[a b], build(:number_one)) }
 
   describe '#initialize' do
     it 'lowercases and converts the id to a symbol' do
@@ -21,5 +21,11 @@ describe ::CSVPlusPlus::Language::Entities::Function do
     it { is_expected.not_to(eq(build(:fn_foo))) }
     it { is_expected.not_to(eq(build(:number_one))) }
     it { is_expected.not_to(eq(build(:variable_foo))) }
+  end
+
+  describe '#to_s' do
+    subject { function.to_s }
+
+    it { is_expected.to(eq('FOO')) }
   end
 end
