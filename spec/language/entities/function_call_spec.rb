@@ -2,7 +2,7 @@
 
 require 'entities'
 
-describe ::CSVPlusPlus::Language::FunctionCall do
+describe ::CSVPlusPlus::Language::Entities::FunctionCall do
   subject { described_class.new('MINUS', %w[a b]) }
 
   describe '#initialize' do

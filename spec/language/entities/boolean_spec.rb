@@ -2,7 +2,7 @@
 
 require 'entities'
 
-describe ::CSVPlusPlus::Language::Boolean do
+describe ::CSVPlusPlus::Language::Entities::Boolean do
   subject { described_class.new('true') }
 
   describe '#initialize' do

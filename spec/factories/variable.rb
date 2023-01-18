@@ -3,7 +3,7 @@
 require_relative '../../lib/language/entities'
 
 ::FactoryBot.define do
-  factory :variable, class: ::CSVPlusPlus::Language::Variable do
+  factory :variable, class: ::CSVPlusPlus::Language::Entities::Variable do
     transient do
       id { nil }
     end

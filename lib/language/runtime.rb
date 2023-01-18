@@ -4,11 +4,11 @@ require_relative 'entities'
 require_relative 'syntax_error'
 require 'tempfile'
 
-LANG = ::CSVPlusPlus::Language
+ENTITIES = ::CSVPlusPlus::Language::Entities
 
 RUNTIME_VARIABLES = {
-  rownum: ::LANG::RuntimeValue.new(->(r) { ::LANG::Number.new(r.row_index + 1) }),
-  cellnum: ::LANG::RuntimeValue.new(->(r) { ::LANG::Number.new(r.cell_index + 1) })
+  rownum: ::ENTITIES::RuntimeValue.new(->(r) { ::ENTITIES::Number.new(r.row_index + 1) }),
+  cellnum: ::ENTITIES::RuntimeValue.new(->(r) { ::ENTITIES::Number.new(r.cell_index + 1) })
 }.freeze
 
 module CSVPlusPlus

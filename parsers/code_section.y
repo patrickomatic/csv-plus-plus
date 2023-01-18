@@ -26,26 +26,26 @@ rule
 
   def: fn_def | var_def
 
-  fn_def: FN_DEF ID '(' fn_def_args ')' exp   { def_function(val[1], val[3], val[5])                  }
-  fn_def: FN_DEF ID '(' ')' exp               { def_function(val[1], [], val[4])                      }
+  fn_def: FN_DEF ID '(' fn_def_args ')' exp   { def_function(val[1], val[3], val[5])                      }
+  fn_def: FN_DEF ID '(' ')' exp               { def_function(val[1], [], val[4])                          }
 
-  fn_def_args: fn_def_args ',' ID             { result = [val[0], val[2]]                             }
-             | ID                             { result = val[0]                                       }
+  fn_def_args: fn_def_args ',' ID             { result = [val[0], val[2]]                                 }
+             | ID                             { result = val[0]                                           }
 
-  var_def: ID ASSIGN exp                      { def_variable(val[0], val[2])                          }
+  var_def: ID ASSIGN exp                      { def_variable(val[0], val[2])                              }
 
-  exp: ID '(' fn_call_args ')'                { result = Language::FunctionCall.new(val[0], val[2])   }
-     | ID '(' ')'                             { result = Language::FunctionCall.new(val[0], [])       }
-     | ID '(' exp ')'                         { result = Language::FunctionCall.new(val[0], [val[2]]) }
-     | VAR_REF ID                             { result = Language::Variable.new(val[1])               }
-     | STRING                                 { result = Language::String.new(val[0])                 }
-     | NUMBER                                 { result = Language::Number.new(val[0])                 }
-     | TRUE                                   { result = Language::Boolean.new(true)                  }
-     | FALSE                                  { result = Language::Boolean.new(false)                 }
-     | ID                                     { result = val[0]                                       }
+  exp: ID '(' fn_call_args ')'                { result = entities_ns::FunctionCall.new(val[0], val[2])    }
+     | ID '(' ')'                             { result = entities_ns::FunctionCall.new(val[0], [])        }
+     | ID '(' exp ')'                         { result = entities_ns::FunctionCall.new(val[0], [val[2]])  }
+     | VAR_REF ID                             { result = entities_ns::Variable.new(val[1])                }
+     | STRING                                 { result = entities_ns::String.new(val[0])                  }
+     | NUMBER                                 { result = entities_ns::Number.new(val[0])                  }
+     | TRUE                                   { result = entities_ns::Boolean.new(true)                   }
+     | FALSE                                  { result = entities_ns::Boolean.new(false)                  }
+     | ID                                     { result = val[0]                                           }
 
-  fn_call_args: fn_call_args ',' exp          { result = [val[0], val[2]]                             }
-              | exp                           { result = val[0]                                       }
+  fn_call_args: fn_call_args ',' exp          { result = [val[0], val[2]]                                 }
+              | exp                           { result = val[0]                                           }
 
 end
 
@@ -55,8 +55,12 @@ require_relative '../code_section'
 require_relative 'entities'
 
 ---- inner
+  def entities_ns
+    ::CSVPlusPlus::Language::Entities
+  end
+
   def def_function(id, arguments, body)
-    fn_call = ::CSVPlusPlus::Language::Function.new(id, arguments, body)
+    fn_call = ::CSVPlusPlus::Language::Entities::Function.new(id, arguments, body)
     @code_section.def_function(fn_call.id, fn_call)
   end
 

@@ -3,7 +3,7 @@
 require_relative '../../lib/language/entities'
 
 ::FactoryBot.define do
-  factory :fn_call, class: ::CSVPlusPlus::Language::FunctionCall do
+  factory :fn_call, class: ::CSVPlusPlus::Language::Entities::FunctionCall do
     transient do
       name { :foo }
       a { build(:string_foo) }

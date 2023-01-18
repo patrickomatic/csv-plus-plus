@@ -2,7 +2,7 @@
 
 require 'entities'
 
-describe ::CSVPlusPlus::Language::CellReference do
+describe ::CSVPlusPlus::Language::Entities::CellReference do
   subject { described_class.new('A1') }
 
   describe '#initialize' do

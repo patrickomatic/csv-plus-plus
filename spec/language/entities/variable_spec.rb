@@ -2,7 +2,7 @@
 
 require 'entities'
 
-describe ::CSVPlusPlus::Language::Variable do
+describe ::CSVPlusPlus::Language::Entities::Variable do
   subject { described_class.new('RowNUM') }
 
   describe '#initialize' do

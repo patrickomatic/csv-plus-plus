@@ -3,7 +3,7 @@
 require_relative '../../lib/language/entities'
 
 ::FactoryBot.define do
-  factory :number, class: ::CSVPlusPlus::Language::Number do
+  factory :number, class: ::CSVPlusPlus::Language::Entities::Number do
     transient do
       n { 0 }
     end

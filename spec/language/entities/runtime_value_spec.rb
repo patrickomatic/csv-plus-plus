@@ -2,7 +2,7 @@
 
 require 'entities'
 
-describe ::CSVPlusPlus::Language::RuntimeValue do
+describe ::CSVPlusPlus::Language::Entities::RuntimeValue do
   let(:resolve_fn) { -> { build(:number_zero) } }
 
   subject { described_class.new(resolve_fn) }

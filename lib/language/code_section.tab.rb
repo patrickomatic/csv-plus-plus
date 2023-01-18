@@ -15,8 +15,12 @@ module CSVPlusPlus
     class CodeSectionParser < Racc::Parser
 
 module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 58)
+  def entities_ns
+    ::CSVPlusPlus::Language::Entities
+  end
+
   def def_function(id, arguments, body)
-    fn_call = ::CSVPlusPlus::Language::Function.new(id, arguments, body)
+    fn_call = ::CSVPlusPlus::Language::Entities::Function.new(id, arguments, body)
     @code_section.def_function(fn_call.id, fn_call)
   end
 
@@ -274,56 +278,56 @@ module_eval(<<'.,.,', 'code_section.y', 34)
 
 module_eval(<<'.,.,', 'code_section.y', 36)
   def _reduce_12(val, _values, result)
-     result = Language::FunctionCall.new(val[0], val[2])
+     result = entities_ns::FunctionCall.new(val[0], val[2])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 37)
   def _reduce_13(val, _values, result)
-     result = Language::FunctionCall.new(val[0], [])
+     result = entities_ns::FunctionCall.new(val[0], [])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 38)
   def _reduce_14(val, _values, result)
-     result = Language::FunctionCall.new(val[0], [val[2]])
+     result = entities_ns::FunctionCall.new(val[0], [val[2]])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 39)
   def _reduce_15(val, _values, result)
-     result = Language::Variable.new(val[1])
+     result = entities_ns::Variable.new(val[1])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 40)
   def _reduce_16(val, _values, result)
-     result = Language::String.new(val[0])
+     result = entities_ns::String.new(val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 41)
   def _reduce_17(val, _values, result)
-     result = Language::Number.new(val[0])
+     result = entities_ns::Number.new(val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 42)
   def _reduce_18(val, _values, result)
-     result = Language::Boolean.new(true)
+     result = entities_ns::Boolean.new(true)
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 43)
   def _reduce_19(val, _values, result)
-     result = Language::Boolean.new(false)
+     result = entities_ns::Boolean.new(false)
     result
   end
 .,.,

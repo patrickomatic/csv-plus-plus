@@ -73,7 +73,7 @@ module CSVPlusPlus
           # TODO: infer a type
           # allow user-supplied key/values to override anything global or from the code section
           code_section.def_variables(
-            options.key_values.transform_values { |v| ::CSVPlusPlus::Language::String.new(v.to_s) }
+            options.key_values.transform_values { |v| ::CSVPlusPlus::Language::Entities::String.new(v.to_s) }
           )
           @scope.code_section = code_section
 

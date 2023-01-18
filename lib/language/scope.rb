@@ -99,7 +99,7 @@ module CSVPlusPlus
           apply_arguments(replacement, node)
         elsif node.function_call?
           arguments = node.arguments.map { |n| function_replace(n, fn_id, replacement) }
-          ::CSVPlusPlus::Language::FunctionCall.new(node.id, arguments)
+          ::CSVPlusPlus::Language::Entities::FunctionCall.new(node.id, arguments)
         else
           node
         end
@@ -134,7 +134,7 @@ module CSVPlusPlus
       def variable_replace(node, var_id, replacement)
         if node.function_call?
           arguments = node.arguments.map { |n| variable_replace(n, var_id, replacement) }
-          ::CSVPlusPlus::Language::FunctionCall.new(node.id, arguments)
+          ::CSVPlusPlus::Language::Entities::FunctionCall.new(node.id, arguments)
         elsif node.variable? && node.id == var_id
           replacement
         else

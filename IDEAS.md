@@ -1,7 +1,8 @@
 # Formats
-- [ ] make it output to CSV (loses formatting, but keeps formulas, variables and expansions)
 - [ ] Excel - look into Apache POI or openxml
 - [ ] OpenOffice - whatever it's equivalent format is
+- [ ] Apple Numbers
+- [x] make it output to CSV (loses formatting, but keeps formulas, variables and expansions)
 
 # Modifiers to rows & cells
 
@@ -30,8 +31,7 @@
 # Performance
 
 - [ ] concurrently process each cell?
-- [ ] memoization and lazy evaluation as much as possible
-- [ ] matrix libs?
+- [x] memoization and lazy evaluation as much as possible
 
 # Other
 

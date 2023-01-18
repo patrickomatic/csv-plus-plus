@@ -16,6 +16,10 @@ module CSVPlusPlus
 module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 39)
   attr_accessor :ast
 
+  def entities_ns
+    ::CSVPlusPlus::Language::Entities
+  end
+
   def parse(text, runtime)
     return nil unless text.strip.start_with?('=')
     tokens = []
@@ -189,56 +193,56 @@ module_eval(<<'.,.,', 'cell_value.y', 16)
 
 module_eval(<<'.,.,', 'cell_value.y', 18)
   def _reduce_2(val, _values, result)
-     result = Language::FunctionCall.new(val[0], val[2])
+     result = entities_ns::FunctionCall.new(val[0], val[2])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 19)
   def _reduce_3(val, _values, result)
-     result = Language::FunctionCall.new(val[0], [])
+     result = entities_ns::FunctionCall.new(val[0], [])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 20)
   def _reduce_4(val, _values, result)
-     result = Language::FunctionCall.new(val[0], [val[2]])
+     result = entities_ns::FunctionCall.new(val[0], [val[2]])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 21)
   def _reduce_5(val, _values, result)
-     result = Language::Variable.new(val[1])
+     result = entities_ns::Variable.new(val[1])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 22)
   def _reduce_6(val, _values, result)
-     result = Language::String.new(val[0].gsub('"', ''))
+     result = entities_ns::String.new(val[0].gsub('"', ''))
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 23)
   def _reduce_7(val, _values, result)
-     result = Language::Number.new(val[0])
+     result = entities_ns::Number.new(val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 24)
   def _reduce_8(val, _values, result)
-     result = Language::Boolean.new(true)
+     result = entities_ns::Boolean.new(true)
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 25)
   def _reduce_9(val, _values, result)
-     result = Language::Boolean.new(false)
+     result = entities_ns::Boolean.new(false)
     result
   end
 .,.,

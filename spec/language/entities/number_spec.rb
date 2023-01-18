@@ -2,7 +2,7 @@
 
 require 'entities'
 
-describe ::CSVPlusPlus::Language::Number do
+describe ::CSVPlusPlus::Language::Entities::Number do
   let(:value) { '55' }
 
   subject { described_class.new(value) }
