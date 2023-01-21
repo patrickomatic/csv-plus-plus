@@ -1,0 +1,112 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://www.googleapis.com/oauth2/v4/token
+    body:
+      encoding: ASCII-8BIT
+      string: grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJncHVzaC13cml0ZUBnc3B1c2guaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJhdWQiOiJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9vYXV0aDIvdjQvdG9rZW4iLCJleHAiOjE2NzQzMTI3NDQsImlhdCI6MTY3NDMxMjYyNCwic2NvcGUiOiJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9hdXRoL3NwcmVhZHNoZWV0cyJ9.H2j8BnDxqZdzRJc0lYnYYKOEU4WzMkwhFE-TsNME16e5g_NZrAnYZ28O6cwF8y8MlRRxNbx_Fd7LI3XTrTWnZqgQH2NuByd85xdUDNonEq0RnWby9v6HN4O8QNykMzLyiPNN68ey5Ksy5Bd-45iJUxThmEUt386Vrk9-yE8_X0xclsFDBxUOe_KRrz2b7lo_iMVllNAIhPRkOGya6I3J-3rIgAejXsf7OiIRWAg7fIHDE4GebvX2RJ0-GiuyGcNydUtTeY3cnw98IZOT2qW5_5gh7b0-ikFFuzpHlsLTbTW-VQqdpKIwuJksIAlGF3iTVeQpbr_dZCdKQqB4GcG5og
+    headers:
+      User-Agent:
+      - Faraday v2.7.2
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+      Vary:
+      - Origin
+      - Referer
+      - X-Origin
+      Date:
+      - Sat, 21 Jan 2023 14:51:24 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Cache-Control:
+      - private
+      X-Xss-Protection:
+      - '0'
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Content-Type-Options:
+      - nosniff
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443";
+        ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
+      Transfer-Encoding:
+      - chunked
+    body:
+      encoding: ASCII-8BIT
+      string: '{"access_token":"ya29.c.b0AT7lpjAA_4SBggvgWAG0KW4vX1qecsNlrRoalgAHfUkm-HyeDBQOqlzSKsRHfBjdPzOIa7mfKP0Vq34Re38ztlJ5GwcsvLUoWc4BreiYCpiBkDQQWpfAc-N_Ujfff9OHyOG7QGC9zmJoIKkntET4au44iHn8lZ-8uWQBOD1zX0wPLyEIITMOkj-hOSYHw6rw5-CrmOpNcK7ONi1ez5kirmR_EnCBvz8L232Dljpgqj-Itl19amBmxXoXF7UIiisirmVBvFqwmJ4842vheipdIYZiXBs3Bclna28RYZpantte09jd8RheuMpSmfWqkMkoSZ2-Oi7WbvoYM-npehRzRBX6b40sUx9rbpxaxryac3R6Z8IVo7n-dyq4hQVOMo4xyxgMJ8kaMWpqmcBo0VlvIRFxqm1oigX0X4kvmhc8l9iufbJkj1UQ6qUfIVQuUeUcXBdpYtY-eq9Om6RJO8lzMMJdOWjkZ3W0eUnxixU1MOJa48MFQBRrtnrpYsc3hqjI_vj-pvIlZSuYef649M2nmX32k_ex4Ot4qOpowgqy26x3wpfBtJMIu3ZQuc5zU5-9ctxcogbQYUq-h7SRo2ty0YW5athZ3Bo92F0uWlY-lMJauOuplYBBcn94VhcSqbIqdUmwarRrat6iOtl7rkv_5ekc8ZUJJVtYvWoQk2gu8SIpkWYg06jnuatVz8j-OJrB7hScoVuXFu7ytm08z6ch4g7M3mVhM8be6vXa5tc451Wnctx4_gYlR1WB10-oIFRSsIkJk9-Jbo8ljtcnYUrOWa02nmxOFVSYJmjgvpJpO-Vociuqnfpxy49-gJYtR45MJMRihUxgZ8ml2RSSiXeo0mkI1e00SoxW6FdXadW1Z0Q-cg58QJuU5Ocas-wlVciXn9n2moys2roQnYjUy8Y3b42oig0W3FcyXej9y-6RazUUjazIoZoIoRQx9zqxX53vl830gZ6zkgui6b_conB92pO46QQa6_q3q2YmMXVfsRxYx1XMojjp8Wv","expires_in":3599,"token_type":"Bearer"}'
+  recorded_at: Sat, 21 Jan 2023 14:51:24 GMT
+- request:
+    method: get
+    uri: https://sheets.googleapis.com/v4/spreadsheets/this-does-not-exist
+    body:
+      encoding: UTF-8
+      string: ''
+    headers:
+      User-Agent:
+      - unknown/0.0.0 google-apis-sheets_v4/0.20.0 Mac OS X/13.1 (gzip)
+      Accept:
+      - "*/*"
+      Accept-Encoding:
+      - gzip,deflate
+      Date:
+      - Sat, 21 Jan 2023 14:51:24 GMT
+      X-Goog-Api-Client:
+      - gl-ruby/3.1.3 gdcl/1.20.0
+      Authorization:
+      - "<AUTH>"
+      Content-Type:
+      - application/x-www-form-urlencoded
+  response:
+    status:
+      code: 404
+      message: Not Found
+    headers:
+      Vary:
+      - Origin
+      - Referer
+      - X-Origin
+      Content-Type:
+      - application/json; charset=UTF-8
+      Content-Encoding:
+      - gzip
+      Date:
+      - Sat, 21 Jan 2023 14:51:25 GMT
+      Server:
+      - ESF
+      Cache-Control:
+      - private
+      X-Xss-Protection:
+      - '0'
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Content-Type-Options:
+      - nosniff
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443";
+        ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
+      Transfer-Encoding:
+      - chunked
+    body:
+      encoding: UTF-8
+      string: |
+        {
+          "error": {
+            "code": 404,
+            "message": "Requested entity was not found.",
+            "status": "NOT_FOUND"
+          }
+        }
+  recorded_at: Sat, 21 Jan 2023 14:51:25 GMT
+recorded_with: VCR 6.1.0

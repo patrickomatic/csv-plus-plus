@@ -6,10 +6,12 @@ require_relative '../../lib/options'
   factory :options, class: ::CSVPlusPlus::Options do
     transient do
       create_if_not_exists { false }
+      google_sheet_id { nil }
     end
 
     after(:build) do |i, e|
       i.create_if_not_exists = e.create_if_not_exists
+      i.google_sheet_id = e.google_sheet_id if e.google_sheet_id
     end
   end
 end

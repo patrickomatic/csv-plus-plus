@@ -59,26 +59,35 @@ module CSVPlusPlus
         @gs.authorization = ::Google::Auth.get_application_default(::AUTH_SCOPES)
       end
 
-      # rubocop:disable Metrics/AbcSize, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity, Metrics/MethodLength
       def save_spreadsheet_values!
-        formatted_values = @gs.get_spreadsheet_values(@sheet_id, full_range, value_render_option: 'FORMATTED_VALUE')
-        formula_values = @gs.get_spreadsheet_values(@sheet_id, full_range, value_render_option: 'FORMULA')
+        formatted_values = get_all_spreadsheet_values('FORMATTED_VALUE')
+        formula_values = get_all_spreadsheet_values('FORMULA')
+
         return if formula_values.values.nil? || formatted_values.values.nil?
 
-        @current_values =
-          formatted_values.values.map.each_with_index do |row, x|
-            row.map.each_with_index do |_cell, y|
-              formula_value = formula_values.values[x][y]
-              if formula_value.is_a?(::String) && formula_value.start_with?('=')
-                formula_value
-              else
-                formatted_value = formatted_values.values[x][y]
-                formatted_value.strip.empty? ? nil : formatted_value
-              end
+        @current_values = extract_current_values(formatted_values, formula_values)
+      end
+
+      def extract_current_values(formatted_values, formula_values)
+        formatted_values.values.map.each_with_index do |row, x|
+          row.map.each_with_index do |_cell, y|
+            formula_value = formula_values.values[x][y]
+            if formula_value.is_a?(::String) && formula_value.start_with?('=')
+              formula_value
+            else
+              strip_to_nil(formatted_values.values[x][y])
             end
           end
+        end
       end
-      # rubocop:enable Metrics/AbcSize, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity, Metrics/MethodLength
+
+      def strip_to_nil(str)
+        str.strip.empty? ? nil : str
+      end
+
+      def get_all_spreadsheet_values(render_option)
+        @gs.get_spreadsheet_values(@sheet_id, full_range, value_render_option: render_option)
+      end
 
       def sheet
         return unless @sheet_name
@@ -125,7 +134,6 @@ module CSVPlusPlus
         else
           warn("Error making Google Sheets API request: #{error.message}")
         end
-        exit(1)
       end
     end
   end

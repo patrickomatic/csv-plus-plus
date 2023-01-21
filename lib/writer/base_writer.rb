@@ -7,13 +7,13 @@ module CSVPlusPlus
     class BaseWriter
       attr_accessor :options
 
+      protected
+
       # Open a CSV outputter to +filename+
       def initialize(options)
         @options = options
         load_requires
       end
-
-      protected
 
       def load_requires; end
     end
