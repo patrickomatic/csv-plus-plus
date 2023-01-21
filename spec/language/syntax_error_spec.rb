@@ -13,7 +13,7 @@ describe ::CSVPlusPlus::Language::SyntaxError do
   describe '#to_s' do
     let(:syntax_error) { described_class.new('Invalid token', 'this$![ is bad input', runtime) }
 
-    subject { syntax_error.to_trace }
+    subject { syntax_error.to_s }
 
     it { is_expected.to(eq('csv++ foo.csvpp:1 Invalid token: "this$![ is bad input"')) }
   end

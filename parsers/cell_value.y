@@ -43,7 +43,7 @@ require_relative 'syntax_error'
   end
 
   def parse(text, runtime)
-    return nil unless text.strip.start_with?('=')
+    return nil unless (text || '').strip.start_with?('=')
     tokens = []
 
     s = ::StringScanner.new text

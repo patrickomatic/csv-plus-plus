@@ -5,7 +5,7 @@ require 'modifier'
 
 describe ::CSVPlusPlus::Cell do
   let(:modifier) { build(:modifier) }
-  let(:cell) { described_class.new(0, 1, value, modifier) }
+  let(:cell) { described_class.new(row_index: 0, index: 1, value:, modifier:) }
   let(:compiler) { build(:compiler) }
 
   describe '#to_s' do

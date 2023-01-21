@@ -35,15 +35,6 @@ describe ::CSVPlusPlus::Writer::GoogleSheets do
       end
     end
 
-    # describe 'variables' do
-    # end
-
-    # describe 'functions' do
-    # end
-
-    # describe 'expanding rows' do
-    # end
-
     describe 'an API error from Google Sheets API', :vcr do
       let(:google_sheet_id) { 'this-does-not-exist' }
       let(:rows) { [row] }

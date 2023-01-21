@@ -101,13 +101,13 @@ module CSVPlusPlus
         row_modifier = ::CSVPlusPlus::Modifier.new(row_level: true)
 
         cells =
-          @runtime.map_row(csv_row) do |value, cell_index|
+          @runtime.map_row(csv_row) do |value, _cell_index|
             cell_modifier = ::CSVPlusPlus::Modifier.new
             parsed_value = ::CSVPlusPlus::ModifierParser.new.parse(
               value, runtime: @runtime, row_modifier:, cell_modifier:
             )
 
-            ::CSVPlusPlus::Cell.new(@runtime.row_index, cell_index, parsed_value, cell_modifier)
+            ::CSVPlusPlus::Cell.parse(parsed_value, runtime:, modifier: cell_modifier)
           end
 
         ::CSVPlusPlus::Row.new(@runtime.row_index, cells, row_modifier)

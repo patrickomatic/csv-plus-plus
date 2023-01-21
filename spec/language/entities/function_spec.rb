@@ -15,6 +15,13 @@ describe ::CSVPlusPlus::Language::Entities::Function do
     it { is_expected.to(be_function) }
   end
 
+  describe '#missingmethod' do
+    it 'raises an error when called with a missing method' do
+      expect { subject.missingmethod }
+        .to(raise_error(::NoMethodError))
+    end
+  end
+
   describe '#==' do
     it { is_expected.to(eq(build(:fn, name: 'FOO', arguments: %w[a b], body: build(:number_one)))) }
 

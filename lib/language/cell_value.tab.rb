@@ -21,7 +21,7 @@ module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 39)
   end
 
   def parse(text, runtime)
-    return nil unless text.strip.start_with?('=')
+    return nil unless (text || '').strip.start_with?('=')
     tokens = []
 
     s = ::StringScanner.new text

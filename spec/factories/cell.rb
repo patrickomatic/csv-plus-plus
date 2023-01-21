@@ -13,6 +13,6 @@ require_relative '../../lib/cell'
 
     ast { nil }
 
-    initialize_with { new(row_index, index, value, modifier) }
+    initialize_with { new(row_index:, index:, value:, modifier:) }
   end
 end

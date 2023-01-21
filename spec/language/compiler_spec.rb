@@ -10,6 +10,32 @@ describe ::CSVPlusPlus::Language::Compiler do
   let(:options) { build(:options, key_values:) }
   let(:compiler) { build(:compiler, runtime:, options:, scope:) }
 
+  describe '.with_compiler' do
+    let(:filename) { 'foo.csvpp' }
+
+    it 'yields a Compiler' do
+      expect { |b| described_class.with_compiler(input:, filename:, options:, &b) }
+        .to(yield_with_args(described_class))
+    end
+
+    context 'with Options.verbose = true' do
+      let(:options) { build(:options, verbose: true) }
+
+      it 'yields a Compiler with #benchmark set' do
+        described_class.with_compiler(input:, filename:, options:) do |compiler|
+          expect(compiler.benchmark).not_to(be_nil)
+        end
+      end
+    end
+  end
+
+  describe '#outputting!' do
+    it 'yields control' do
+      expect { |b| compiler.outputting!(&b) }
+        .to(yield_control)
+    end
+  end
+
   describe '#parse_template' do
     let(:template) { compiler.parse_template }
     let(:input) { "foo0,bar0,baz0\nfoo1,bar1,baz1\nfoo2,bar2,baz2\n" }
@@ -196,7 +222,7 @@ describe ::CSVPlusPlus::Language::Compiler do
   end
 
   describe '#parse_row' do
-    let(:values) { %w[foo bar baz] }
+    let(:values) { ['foo', '=ADD(1 ,2)', '=$$var'] }
 
     subject(:row) { compiler.parse_row(values) }
 
@@ -216,6 +242,12 @@ describe ::CSVPlusPlus::Language::Compiler do
       expect(row.cells[0].row_index).to(eq(row.index))
       expect(row.cells[1].row_index).to(eq(row.index))
       expect(row.cells[2].row_index).to(eq(row.index))
+    end
+
+    it 'sets cell.ast' do
+      expect(row.cells[0].ast).to(be_nil)
+      expect(row.cells[1].ast).to(eq(build(:fn_call_add)))
+      expect(row.cells[2].ast).to(eq(build(:variable, id: :var)))
     end
 
     context 'with a cell modifier' do
@@ -273,5 +305,11 @@ describe ::CSVPlusPlus::Language::Compiler do
     it 'resolves runtime variables' do
       expect(template.rows[0].cells[3].to_csv).to(eq('=1'))
     end
+  end
+
+  describe '#to_s' do
+    subject { compiler.to_s }
+
+    it { is_expected.to(match(/Compiler\(options: Options\(.*\), runtime: Runtime\(.*\), scope: Scope\(.*\)/)) }
   end
 end

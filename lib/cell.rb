@@ -12,14 +12,14 @@ module CSVPlusPlus
 
     # Parse a +value+ into a Cell object.  The +value+ should already have been through
     # a CSV parser
-    def self.parse(value, runtime:, index:, modifier:, row_index:)
-      new(value, row_index, index, modifier).tap do |c|
-        c.ast = ::CSVPlusPlus::CellValueParser.new.parse(value, runtime)
+    def self.parse(value, runtime:, modifier:)
+      new(value:, row_index: runtime.row_index, index: runtime.cell_index, modifier:).tap do |c|
+        c.ast = ::CSVPlusPlus::Language::CellValueParser.new.parse(value, runtime)
       end
     end
 
     # initialize
-    def initialize(row_index, index, value, modifier)
+    def initialize(row_index:, index:, value:, modifier:)
       @value = value
       @modifier = modifier
       @index = index

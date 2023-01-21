@@ -1,5 +1,5 @@
 Header1,Header2,Header3,Header4,Header5
-=$$depends_on_another,=$$simple_var,These are variables,
+"=ADD($$simple_var, 2)",=1,These are variables,
 A note,
 The font is red,
 The font is 'Comic Sans MS',
