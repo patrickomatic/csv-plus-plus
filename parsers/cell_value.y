@@ -5,6 +5,7 @@ prechigh
   left '*' '/'
   left '+' '-'
 preclow
+
 token EOL
       FALSE
       ID
@@ -24,7 +25,7 @@ rule
      | NUMBER                               { result = entities_ns::Number.new(val[0])                  }
      | TRUE                                 { result = entities_ns::Boolean.new(true)                   }
      | FALSE                                { result = entities_ns::Boolean.new(false)                  }
-     | ID                                   { result = val[0]                                           }
+     | ID                                   { result = entities_ns::CellReference.new(val[0])           }
 
   fn_call_args: fn_call_args ',' exp        { result = [val[0], val[2]]                                 }
               | exp                         { result = val[0]                                           }
@@ -32,51 +33,37 @@ rule
 end
 
 ---- header
-require 'strscan'
-require_relative 'syntax_error'
+  require_relative '../lexer'
 
 ---- inner
+  include ::CSVPlusPlus::Lexer
+
   attr_accessor :ast
 
   def entities_ns
     ::CSVPlusPlus::Language::Entities
   end
 
-  def parse(text, runtime)
-    return nil unless (text || '').strip.start_with?('=')
-    tokens = []
+  def tokenizer(scanner)
+    ::CSVPlusPlus::Lexer::Tokenizer.new(
+      catchall: /[\(\)\/\*\+\-,=&]/,
+      ignore: /\s+/,
+      scanner:,
+      tokens: [
+        [/true/i, :TRUE],
+        [/false/i, :FALSE],
+        [/"(?:[^"\\]|\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/, :STRING],
+        [/-?[\d.]+/, :NUMBER],
+        [/\$\$/, :VAR_REF],
+        [/[\$\w_]+/, :ID]
+      ]
+    )
+  end
 
-    s = ::StringScanner.new text
-    until s.empty?
-      case
-      when s.scan(/\s+/)
-      when s.scan(/TRUE/)
-        tokens << [:TRUE, s.matched]
-      when s.scan(/FALSE/)
-        tokens << [:FALSE, s.matched]
-      when s.scan(/"(?:[^"\\]|\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/)
-        tokens << [:STRING, s.matched]
-      when s.scan(/-?[\d.]+/)
-        tokens << [:NUMBER, s.matched]
-      when s.scan(/\$\$/)
-        tokens << [:VAR_REF, s.matched]
-      when s.scan(/[\$\w_]+/)
-        tokens << [:ID, s.matched]
-      when s.scan(/[\(\)\/\*\+\-,=&]/)
-        tokens << [s.matched, s.matched]
-      else
-        runtime.raise_syntax_error("Unable to parse cell value starting at", s.peek(100))
-      end 
-    end
-    tokens << [:EOL, :EOL]
+  def anything_to_parse?(input)
+    input.strip.start_with?('=')
+  end
 
-    define_singleton_method(:next_token) { tokens.shift }
-
-    begin
-      do_parse
-    rescue ::Racc::ParseError => e
-      runtime.raise_syntax_error("Error parsing cell value", e.message, wrapped_error: e)
-    end
-
+  def return_value
     @ast
   end

@@ -6,56 +6,42 @@
 
 require 'racc/parser.rb'
 
-require 'strscan'
-require_relative 'syntax_error'
+  require_relative '../lexer'
 
 module CSVPlusPlus
   module Language
     class CellValueParser < Racc::Parser
 
 module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 39)
+  include ::CSVPlusPlus::Lexer
+
   attr_accessor :ast
 
   def entities_ns
     ::CSVPlusPlus::Language::Entities
   end
 
-  def parse(text, runtime)
-    return nil unless (text || '').strip.start_with?('=')
-    tokens = []
+  def tokenizer(scanner)
+    ::CSVPlusPlus::Lexer::Tokenizer.new(
+      catchall: /[\(\)\/\*\+\-,=&]/,
+      ignore: /\s+/,
+      scanner:,
+      tokens: [
+        [/true/i, :TRUE],
+        [/false/i, :FALSE],
+        [/"(?:[^"\\]|\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/, :STRING],
+        [/-?[\d.]+/, :NUMBER],
+        [/\$\$/, :VAR_REF],
+        [/[\$\w_]+/, :ID]
+      ]
+    )
+  end
 
-    s = ::StringScanner.new text
-    until s.empty?
-      case
-      when s.scan(/\s+/)
-      when s.scan(/TRUE/)
-        tokens << [:TRUE, s.matched]
-      when s.scan(/FALSE/)
-        tokens << [:FALSE, s.matched]
-      when s.scan(/"(?:[^"\\]|\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/)
-        tokens << [:STRING, s.matched]
-      when s.scan(/-?[\d.]+/)
-        tokens << [:NUMBER, s.matched]
-      when s.scan(/\$\$/)
-        tokens << [:VAR_REF, s.matched]
-      when s.scan(/[\$\w_]+/)
-        tokens << [:ID, s.matched]
-      when s.scan(/[\(\)\/\*\+\-,=&]/)
-        tokens << [s.matched, s.matched]
-      else
-        runtime.raise_syntax_error("Unable to parse cell value starting at", s.peek(100))
-      end 
-    end
-    tokens << [:EOL, :EOL]
+  def anything_to_parse?(input)
+    input.strip.start_with?('=')
+  end
 
-    define_singleton_method(:next_token) { tokens.shift }
-
-    begin
-      do_parse
-    rescue ::Racc::ParseError => e
-      runtime.raise_syntax_error("Error parsing cell value", e.message, wrapped_error: e)
-    end
-
+  def return_value
     @ast
   end
 ...end cell_value.y/module_eval...
@@ -184,84 +170,84 @@ Racc_debug_parser = false
 
 # reduce 0 omitted
 
-module_eval(<<'.,.,', 'cell_value.y', 16)
+module_eval(<<'.,.,', 'cell_value.y', 17)
   def _reduce_1(val, _values, result)
      @ast = val[1]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 18)
+module_eval(<<'.,.,', 'cell_value.y', 19)
   def _reduce_2(val, _values, result)
      result = entities_ns::FunctionCall.new(val[0], val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 19)
+module_eval(<<'.,.,', 'cell_value.y', 20)
   def _reduce_3(val, _values, result)
      result = entities_ns::FunctionCall.new(val[0], [])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 20)
+module_eval(<<'.,.,', 'cell_value.y', 21)
   def _reduce_4(val, _values, result)
      result = entities_ns::FunctionCall.new(val[0], [val[2]])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 21)
+module_eval(<<'.,.,', 'cell_value.y', 22)
   def _reduce_5(val, _values, result)
      result = entities_ns::Variable.new(val[1])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 22)
+module_eval(<<'.,.,', 'cell_value.y', 23)
   def _reduce_6(val, _values, result)
      result = entities_ns::String.new(val[0].gsub('"', ''))
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 23)
+module_eval(<<'.,.,', 'cell_value.y', 24)
   def _reduce_7(val, _values, result)
      result = entities_ns::Number.new(val[0])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 24)
+module_eval(<<'.,.,', 'cell_value.y', 25)
   def _reduce_8(val, _values, result)
      result = entities_ns::Boolean.new(true)
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 25)
+module_eval(<<'.,.,', 'cell_value.y', 26)
   def _reduce_9(val, _values, result)
      result = entities_ns::Boolean.new(false)
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 26)
+module_eval(<<'.,.,', 'cell_value.y', 27)
   def _reduce_10(val, _values, result)
-     result = val[0]
+     result = entities_ns::CellReference.new(val[0])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 28)
+module_eval(<<'.,.,', 'cell_value.y', 29)
   def _reduce_11(val, _values, result)
      result = [val[0], val[2]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 29)
+module_eval(<<'.,.,', 'cell_value.y', 30)
   def _reduce_12(val, _values, result)
      result = val[0]
     result

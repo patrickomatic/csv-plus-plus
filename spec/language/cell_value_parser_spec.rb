@@ -3,10 +3,10 @@
 require 'cell_value.tab'
 
 describe ::CSVPlusPlus::Language::CellValueParser do
-  let(:compiler) { build(:compiler) }
+  let(:runtime) { build(:runtime) }
 
   describe '#parse' do
-    subject { described_class.new.parse(cell_value, compiler) }
+    subject { described_class.new.parse(cell_value, runtime) }
 
     describe 'without a formula' do
       let(:cell_value) { 'just a value' }
@@ -43,6 +43,12 @@ describe ::CSVPlusPlus::Language::CellValueParser do
       let(:cell_value) { '="test"' }
 
       it { is_expected.to(eq(build(:string, s: 'test'))) }
+    end
+
+    describe 'a cell reference' do
+      let(:cell_value) { '=A1' }
+
+      it { is_expected.to(eq(build(:cell_reference, ref: 'A1'))) }
     end
   end
 end
