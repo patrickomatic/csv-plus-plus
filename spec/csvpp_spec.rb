@@ -7,8 +7,10 @@ describe ::CSVPlusPlus do
   let(:input) do
     <<~INPUT
       var := 42
+      def added(a, b, c) ADD(CELLREF(a), CELLREF(b), CELLREF(c))
       ---
       [[format=bold]]foo,"=ADD($$var, 22)",baz
+      1,2,3,=ADDED(A, B, C)
     INPUT
   end
 

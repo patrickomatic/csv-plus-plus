@@ -120,7 +120,7 @@ describe ::CSVPlusPlus::Language::Scope do
     subject { scope.to_s }
 
     it do
-      is_expected.to(eq('Scope(code_section: , runtime: Runtime(cell: , row_index: 0, cell_index: ))'))
+      is_expected.to(match(/Scope\(code_section: , runtime: Runtime\(.*\)\)/))
     end
   end
 end

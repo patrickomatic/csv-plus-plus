@@ -5,12 +5,14 @@ require_relative './entity'
 module CSVPlusPlus
   module Language
     module Entities
-      ##
-      # A static function definition
+      # A function definition
       class Function < EntityWithArguments
         attr_reader :body
 
-        # initialize
+        # Create a function
+        # @param id [Symbool, String] the name of the function - what it will be callable by
+        # @param arguments [Array(Symbol)]
+        # @param body [Entity]
         def initialize(id, arguments, body)
           super(:function, id:, arguments: arguments.map(&:to_sym))
           @body = body

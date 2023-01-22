@@ -9,6 +9,7 @@ prechigh
 preclow
 
 token ASSIGN
+      CELL_REF
       END_OF_CODE
       EOL
       FALSE
@@ -42,7 +43,7 @@ rule
      | NUMBER                                 { result = entities_ns::Number.new(val[0])                  }
      | TRUE                                   { result = entities_ns::Boolean.new(true)                   }
      | FALSE                                  { result = entities_ns::Boolean.new(false)                  }
-     | ID                                     { result = val[0]                                           }
+     | ID                                     { result = entities_ns::CellReference.new(val[0])           }
 
   fn_call_args: fn_call_args ',' exp          { result = [val[0], val[2]]                                 }
               | exp                           { result = val[0]                                           }
@@ -103,9 +104,9 @@ require_relative 'entities'
         tokens << [:NUMBER, s.matched]
       when s.scan(/\$\$/)
         tokens << [:VAR_REF, s.matched]
-      when s.scan(/[\w_]+/)
+      when s.scan(/[!:\w_]+/)
         tokens << [:ID, s.matched]
-      when s.scan(/[\(\)\{\}\/\*\+\-,=&]/)
+      when s.scan(/[\(\)\{\}\/\*\+\-,=&]/) # XXX I don't think this is used, get rid of this
         tokens << [s.matched, s.matched]
       else
         runtime.raise_syntax_error('Unable to parse code section starting at', s.peek(100))

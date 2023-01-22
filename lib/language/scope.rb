@@ -6,26 +6,18 @@ require_relative './entities'
 require_relative './syntax_error'
 
 BUILTIN_FUNCTIONS = {
-  # TODO: not sure we need this...
-  # =REF(C) === =INDIRECT($$C)
-  #       ref: -> (args, runtime) {
-  #         Function.new(:ref,
-  #                      [Variable.new(:cell)],
-  #                      FunctionCall.new(:indirect,
-  #                                       [Variable.new(:cell)]))
-  #       }
-  #
-  #       # =CELLREF(C) === =INDIRECT(CONCAT($$C, $$rownum))
-  #       cellref: -> (args, runtime) {
-  #         Function.new(:cellref,
-  #                      [Variable.new(:cell)],
-  #                      FunctionCall.new(:indirect,
-  #                                       [FunctionCall.new(:concat,
-  #                                       [Variable.new(:cell), Variable.new(:rownum)])]))
-  #       }
-
-  # sheetref: lambda { |args, runtime|
-  # }
+  # =CELLREF(C) === =INDIRECT(CONCAT($$C, $$rownum))
+  cellref: ::CSVPlusPlus::Language::Entities::Function.new(
+    :cellref,
+    [:cell],
+    ::CSVPlusPlus::Language::Entities::FunctionCall.new(
+      :indirect,
+      [
+        ::CSVPlusPlus::Language::Entities::Variable.new(:cell),
+        ::CSVPlusPlus::Language::Entities::Variable.new(:rownum)
+      ]
+    )
+  )
 }.freeze
 
 module CSVPlusPlus

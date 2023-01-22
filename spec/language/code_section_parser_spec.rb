@@ -4,8 +4,8 @@ require 'code_section.tab'
 
 describe ::CSVPlusPlus::Language::CodeSectionParser do
   describe '#parse' do
-    let(:compiler) { build(:compiler) }
-    let(:sections) { described_class.new.parse(::StringIO.new(input), compiler) }
+    let(:runtime) { build(:runtime) }
+    let(:sections) { described_class.new.parse(::StringIO.new(input), runtime) }
     let(:code_section) { sections[0] }
     let(:csv_section) { sections[1] }
 
@@ -14,11 +14,11 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
 
       context 'with comments' do
         let(:input) do
-          "
-  # this is a comment
-  ---
-  foo,bar,baz
-  "
+          <<~INPUT
+            # this is a comment
+            ---
+            foo,bar,baz
+          INPUT
         end
 
         it { is_expected.to(eq({})) }
@@ -30,12 +30,12 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
 
       context 'with a bunch of spacing' do
         let(:input) do
-          "
+          <<~INPUT
 
 
-  ---
-  foo,bar,baz
-  "
+            ---
+            foo,bar,baz
+          INPUT
         end
 
         it { is_expected.to(eq({})) }
@@ -45,13 +45,30 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
         end
       end
 
+      context 'with a syntax error' do
+        let(:input) do
+          <<~INPUT
+            foo cks,C<>c.
+            .ccj
+            kj:= 1
+            ---
+            =$$foo,bar,baz
+          INPUT
+        end
+
+        it 'raises an error' do
+          expect { subject }
+            .to(raise_error(::CSVPlusPlus::Language::SyntaxError))
+        end
+      end
+
       context 'with a simple variable definition' do
         let(:input) do
-          "
-  foo := 1
-  ---
-  =$$foo,bar,baz
-  "
+          <<~INPUT
+            foo := 1
+            ---
+            =$$foo,bar,baz
+          INPUT
         end
 
         it { is_expected.to(eq({ foo: build(:number_one) })) }
@@ -61,13 +78,42 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
         end
       end
 
+      context 'with cell references' do
+        let(:input) do
+          <<~INPUT
+            foo := A1
+            bar := A1:Z1
+            baz := OtherSheet!A1:Z1
+            c := A
+            ---
+            =SUM($$foo),bar,baz
+          INPUT
+        end
+
+        it 'parses a cell reference' do
+          expect(subject[:foo]).to(eq(build(:cell_reference, ref: 'A1')))
+        end
+
+        it 'parses a column reference' do
+          expect(subject[:c]).to(eq(build(:cell_reference, ref: 'A')))
+        end
+
+        it 'parses a range reference' do
+          expect(subject[:bar]).to(eq(build(:cell_reference, ref: 'A1:Z1')))
+        end
+
+        it 'parses a sheet reference' do
+          expect(subject[:baz]).to(eq(build(:cell_reference, ref: 'OtherSheet!A1:Z1')))
+        end
+      end
+
       context 'with a variable definition with function calls' do
         let(:input) do
-          "
-  foo := ADD(MULTIPLY(C1, 8), $$var)
-  ---
-  =$$foo,bar,baz
-  "
+          <<~INPUT
+            foo := ADD(MULTIPLY(C1, 8), $$var)
+            ---
+            =$$foo,bar,baz
+          INPUT
         end
 
         it do
@@ -90,12 +136,12 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
 
       context 'with a variable referencing other variables' do
         let(:input) do
-          "
-  foo := 1
-  bar := ADD($$foo, 2)
-  ---
-  =$$foo,=$$bar,baz
-  "
+          <<~INPUT
+            foo := 1
+            bar := ADD($$foo, 2)
+            ---
+            =$$foo,=$$bar,baz
+          INPUT
         end
 
         it do
@@ -116,11 +162,11 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
 
       context 'with an function with a single arg' do
         let(:input) do
-          "
-  foo := BAR(1)
-  ---
-  =$$foo,bar,baz
-  "
+          <<~INPUT
+            foo := BAR(1)
+            ---
+            =$$foo,bar,baz
+          INPUT
         end
 
         it do
@@ -134,11 +180,11 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
 
       context 'with a single function that takes no args' do
         let(:input) do
-          "
-  def foo() INDIRECT(\"BAR\")
-  ---
-  =$$foo(A1, B1),bar,baz
-  "
+          <<~INPUT
+            def foo() INDIRECT("BAR")
+            ---
+            =$$foo(A1, B1),bar,baz
+          INPUT
         end
 
         it { is_expected.to(eq({ foo: build(:fn_foo) })) }
@@ -147,11 +193,11 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
       context 'with a single function that takes multiple args' do
         let(:fn_add) { build(:fn_add) }
         let(:input) do
-          "
-  def foo(a, b) ADD($$a, $$b)
-  ---
-  =$$foo(A1, B1),bar,baz
-  "
+          <<~INPUT
+            def foo(a, b) ADD($$a, $$b)
+            ---
+            =$$foo(A1, B1),bar,baz
+          INPUT
         end
 
         it { is_expected.to(eq({ foo: build(:fn, name: :foo, arguments: fn_add.arguments, body: fn_add.body) })) }

@@ -14,7 +14,7 @@ module CSVPlusPlus
   module Language
     class CodeSectionParser < Racc::Parser
 
-module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 58)
+module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 59)
   def entities_ns
     ::CSVPlusPlus::Language::Entities
   end
@@ -63,9 +63,9 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 58)
         tokens << [:NUMBER, s.matched]
       when s.scan(/\$\$/)
         tokens << [:VAR_REF, s.matched]
-      when s.scan(/[\w_]+/)
+      when s.scan(/[!:\w_]+/)
         tokens << [:ID, s.matched]
-      when s.scan(/[\(\)\{\}\/\*\+\-,=&]/)
+      when s.scan(/[\(\)\{\}\/\*\+\-,=&]/) # XXX I don't think this is used, get rid of this
         tokens << [s.matched, s.matched]
       else
         runtime.raise_syntax_error('Unable to parse code section starting at', s.peek(100))
@@ -88,26 +88,26 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 58)
 ##### State transition tables begin ###
 
 racc_action_table = [
-    32,    28,    29,     9,    22,    17,    20,    19,    21,    18,
-     7,     7,    24,    36,    37,     3,    10,    25,     8,     8,
-    22,    17,    20,    19,    21,    18,    22,    17,    20,    19,
-    21,    18,    22,    17,    20,    19,    21,    18,    22,    17,
-    20,    19,    21,    18,    12,    13,    14,    15,    26,    27,
+    32,    28,    29,    36,    37,    22,    17,    20,    19,    21,
+    18,     7,     7,    24,     9,    12,     3,    10,    13,    25,
+     8,     8,    22,    17,    20,    19,    21,    18,    22,    17,
+    20,    19,    21,    18,    22,    17,    20,    19,    21,    18,
+    22,    17,    20,    19,    21,    18,    14,    15,    26,    27,
     35,    38 ]
 
 racc_action_check = [
-    26,    23,    23,     1,    26,    26,    26,    26,    26,    26,
-     0,     2,    15,    31,    31,     0,     2,    15,     0,     2,
-    13,    13,    13,    13,    13,    13,    24,    24,    24,    24,
-    24,    24,    28,    28,    28,    28,    28,    28,    37,    37,
-    37,    37,    37,    37,     7,     8,     9,    12,    17,    18,
+    26,    23,    23,    31,    31,    26,    26,    26,    26,    26,
+    26,     0,     2,    15,     1,     7,     0,     2,     8,    15,
+     0,     2,    13,    13,    13,    13,    13,    13,    24,    24,
+    24,    24,    24,    24,    28,    28,    28,    28,    28,    28,
+    37,    37,    37,    37,    37,    37,     9,    12,    17,    18,
     29,    33 ]
 
 racc_action_pointer = [
-     8,     3,     9,   nil,   nil,   nil,   nil,    34,    42,    46,
-   nil,   nil,    43,    11,   nil,     7,   nil,    44,    39,   nil,
-   nil,   nil,   nil,    -4,    17,   nil,    -5,   nil,    23,    40,
-   nil,     8,   nil,    46,   nil,   nil,   nil,    29,   nil,   nil ]
+     9,    14,    10,   nil,   nil,   nil,   nil,     4,    15,    46,
+   nil,   nil,    43,    12,   nil,     8,   nil,    44,    38,   nil,
+   nil,   nil,   nil,    -4,    18,   nil,    -5,   nil,    24,    39,
+   nil,    -2,   nil,    46,   nil,   nil,   nil,    30,   nil,   nil ]
 
 racc_action_default = [
    -23,   -23,   -23,    -2,    -4,    -5,    -6,   -23,   -23,   -23,
@@ -133,28 +133,28 @@ racc_goto_default = [
 
 racc_reduce_table = [
   0, 0, :racc_error,
-  2, 16, :_reduce_none,
-  1, 16, :_reduce_none,
   2, 17, :_reduce_none,
   1, 17, :_reduce_none,
+  2, 18, :_reduce_none,
   1, 18, :_reduce_none,
-  1, 18, :_reduce_none,
-  6, 19, :_reduce_7,
-  5, 19, :_reduce_8,
-  3, 21, :_reduce_9,
-  1, 21, :_reduce_10,
-  3, 20, :_reduce_11,
-  4, 22, :_reduce_12,
-  3, 22, :_reduce_13,
-  4, 22, :_reduce_14,
-  2, 22, :_reduce_15,
-  1, 22, :_reduce_16,
-  1, 22, :_reduce_17,
-  1, 22, :_reduce_18,
-  1, 22, :_reduce_19,
-  1, 22, :_reduce_20,
-  3, 23, :_reduce_21,
-  1, 23, :_reduce_22 ]
+  1, 19, :_reduce_none,
+  1, 19, :_reduce_none,
+  6, 20, :_reduce_7,
+  5, 20, :_reduce_8,
+  3, 22, :_reduce_9,
+  1, 22, :_reduce_10,
+  3, 21, :_reduce_11,
+  4, 23, :_reduce_12,
+  3, 23, :_reduce_13,
+  4, 23, :_reduce_14,
+  2, 23, :_reduce_15,
+  1, 23, :_reduce_16,
+  1, 23, :_reduce_17,
+  1, 23, :_reduce_18,
+  1, 23, :_reduce_19,
+  1, 23, :_reduce_20,
+  3, 24, :_reduce_21,
+  1, 24, :_reduce_22 ]
 
 racc_reduce_n = 23
 
@@ -169,15 +169,16 @@ racc_token_table = {
   ")" => 5,
   "," => 6,
   :END_OF_CODE => 7,
-  :EOL => 8,
-  :FALSE => 9,
-  :ID => 10,
-  :NUMBER => 11,
-  :STRING => 12,
-  :TRUE => 13,
-  :VAR_REF => 14 }
+  :CELL_REF => 8,
+  :EOL => 9,
+  :FALSE => 10,
+  :ID => 11,
+  :NUMBER => 12,
+  :STRING => 13,
+  :TRUE => 14,
+  :VAR_REF => 15 }
 
-racc_nt_base = 15
+racc_nt_base = 16
 
 racc_use_result_var = true
 
@@ -206,6 +207,7 @@ Racc_token_to_s_table = [
   "\")\"",
   "\",\"",
   "END_OF_CODE",
+  "CELL_REF",
   "EOL",
   "FALSE",
   "ID",
@@ -241,112 +243,112 @@ Racc_debug_parser = false
 
 # reduce 6 omitted
 
-module_eval(<<'.,.,', 'code_section.y', 28)
+module_eval(<<'.,.,', 'code_section.y', 29)
   def _reduce_7(val, _values, result)
      def_function(val[1], val[3], val[5])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 29)
+module_eval(<<'.,.,', 'code_section.y', 30)
   def _reduce_8(val, _values, result)
      def_function(val[1], [], val[4])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 31)
+module_eval(<<'.,.,', 'code_section.y', 32)
   def _reduce_9(val, _values, result)
      result = [val[0], val[2]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 32)
+module_eval(<<'.,.,', 'code_section.y', 33)
   def _reduce_10(val, _values, result)
      result = val[0]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 34)
+module_eval(<<'.,.,', 'code_section.y', 35)
   def _reduce_11(val, _values, result)
      def_variable(val[0], val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 36)
+module_eval(<<'.,.,', 'code_section.y', 37)
   def _reduce_12(val, _values, result)
      result = entities_ns::FunctionCall.new(val[0], val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 37)
+module_eval(<<'.,.,', 'code_section.y', 38)
   def _reduce_13(val, _values, result)
      result = entities_ns::FunctionCall.new(val[0], [])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 38)
+module_eval(<<'.,.,', 'code_section.y', 39)
   def _reduce_14(val, _values, result)
      result = entities_ns::FunctionCall.new(val[0], [val[2]])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 39)
+module_eval(<<'.,.,', 'code_section.y', 40)
   def _reduce_15(val, _values, result)
      result = entities_ns::Variable.new(val[1])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 40)
+module_eval(<<'.,.,', 'code_section.y', 41)
   def _reduce_16(val, _values, result)
      result = entities_ns::String.new(val[0])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 41)
+module_eval(<<'.,.,', 'code_section.y', 42)
   def _reduce_17(val, _values, result)
      result = entities_ns::Number.new(val[0])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 42)
+module_eval(<<'.,.,', 'code_section.y', 43)
   def _reduce_18(val, _values, result)
      result = entities_ns::Boolean.new(true)
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 43)
+module_eval(<<'.,.,', 'code_section.y', 44)
   def _reduce_19(val, _values, result)
      result = entities_ns::Boolean.new(false)
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 44)
+module_eval(<<'.,.,', 'code_section.y', 45)
   def _reduce_20(val, _values, result)
-     result = val[0]
+     result = entities_ns::CellReference.new(val[0])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 46)
+module_eval(<<'.,.,', 'code_section.y', 47)
   def _reduce_21(val, _values, result)
      result = [val[0], val[2]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'code_section.y', 47)
+module_eval(<<'.,.,', 'code_section.y', 48)
   def _reduce_22(val, _values, result)
      result = val[0]
     result

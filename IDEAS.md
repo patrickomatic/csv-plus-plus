@@ -1,5 +1,5 @@
 # Formats
-- [ ] Excel - look into Apache POI or openxml
+- [ ] Excel - look into caxlsx, Apache POI or openxml
 - [ ] OpenOffice - whatever it's equivalent format is
 - [ ] Apple Numbers
 - [x] make it output to CSV (loses formatting, but keeps formulas, variables and expansions)
