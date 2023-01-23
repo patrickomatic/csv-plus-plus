@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
+require_relative '../entities'
+
 module CSVPlusPlus
   module Language
     module Entities
-      ##
       # A basic building block of the abstract syntax tree (AST)
       class Entity
         attr_reader :id, :type
@@ -37,11 +38,10 @@ module CSVPlusPlus
         private
 
         def a_type?(str)
-          ::TYPES.include?(str.to_sym)
+          ::CSVPlusPlus::Language::TYPES.include?(str.to_sym)
         end
       end
 
-      ##
       # An entity that can take arguments
       class EntityWithArguments < Entity
         attr_reader :arguments

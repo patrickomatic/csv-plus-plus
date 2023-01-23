@@ -10,15 +10,19 @@ require_relative 'entities/runtime_value'
 require_relative 'entities/string'
 require_relative 'entities/variable'
 
-TYPES = %i[function function_call cell_reference boolean number string variable runtime_value].freeze
-
 module CSVPlusPlus
   module Language
-    # TODO: move this into a lexer class eventually
-    END_OF_CODE_SECTION = '---'
-    public_constant :END_OF_CODE_SECTION
+    TYPES = {
+      boolean: ::CSVPlusPlus::Language::Entities::Boolean,
+      cell_reference: ::CSVPlusPlus::Language::Entities::CellReference,
+      function: ::CSVPlusPlus::Language::Entities::Function,
+      function_call: ::CSVPlusPlus::Language::Entities::FunctionCall,
+      number: ::CSVPlusPlus::Language::Entities::Number,
+      runtime_value: ::CSVPlusPlus::Language::Entities::RuntimeValue,
+      string: ::CSVPlusPlus::Language::Entities::String,
+      variable: ::CSVPlusPlus::Language::Entities::Variable
+    }.freeze
 
-    VARIABLE_REF = '$$'
-    public_constant :VARIABLE_REF
+    public_constant :TYPES
   end
 end

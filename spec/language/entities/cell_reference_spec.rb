@@ -21,6 +21,10 @@ describe ::CSVPlusPlus::Language::Entities::CellReference do
     it { is_expected.to(be_cell_reference) }
   end
 
+  describe '#variable?' do
+    it { is_expected.not_to(be_variable) }
+  end
+
   describe '#==' do
     it { is_expected.to(eq(build(:cell_reference, ref: 'A1'))) }
 

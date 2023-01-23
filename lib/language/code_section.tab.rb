@@ -15,13 +15,13 @@ module CSVPlusPlus
     class CodeSectionParser < Racc::Parser
 
 module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 59)
-  def entities_ns
-    ::CSVPlusPlus::Language::Entities
+  def e(type, *entity_args)
+    ::CSVPlusPlus::Language::TYPES[type].new(*entity_args)
   end
 
   def def_function(id, arguments, body)
-    fn_call = ::CSVPlusPlus::Language::Entities::Function.new(id, arguments, body)
-    @code_section.def_function(fn_call.id, fn_call)
+    fn_def = ::CSVPlusPlus::Language::Entities::Function.new(id, arguments, body)
+    @code_section.def_function(fn_def.id, fn_def)
   end
 
   def def_variable(id, ast)
@@ -32,7 +32,7 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 59)
     text = input.read.strip
     @code_section = CodeSection.new
 
-    eoc = ::CSVPlusPlus::Language::END_OF_CODE_SECTION
+    eoc = ::CSVPlusPlus::Lexer::END_OF_CODE_SECTION
     eoc_index = text.index(eoc)
     return @code_section, text if eoc_index.nil?
 
@@ -259,14 +259,14 @@ module_eval(<<'.,.,', 'code_section.y', 30)
 
 module_eval(<<'.,.,', 'code_section.y', 32)
   def _reduce_9(val, _values, result)
-     result = [val[0], val[2]]
+     result = val[0] << val[2]
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 33)
   def _reduce_10(val, _values, result)
-     result = val[0]
+     result = [val[0]]
     result
   end
 .,.,
@@ -280,77 +280,77 @@ module_eval(<<'.,.,', 'code_section.y', 35)
 
 module_eval(<<'.,.,', 'code_section.y', 37)
   def _reduce_12(val, _values, result)
-     result = entities_ns::FunctionCall.new(val[0], val[2])
+     result = e(:function_call, val[0], val[2])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 38)
   def _reduce_13(val, _values, result)
-     result = entities_ns::FunctionCall.new(val[0], [])
+     result = e(:function_call, val[0], [])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 39)
   def _reduce_14(val, _values, result)
-     result = entities_ns::FunctionCall.new(val[0], [val[2]])
+     result = e(:function_call, val[0], [val[2]])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 40)
   def _reduce_15(val, _values, result)
-     result = entities_ns::Variable.new(val[1])
+     result = e(:variable, val[1])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 41)
   def _reduce_16(val, _values, result)
-     result = entities_ns::String.new(val[0])
+     result = e(:string, val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 42)
   def _reduce_17(val, _values, result)
-     result = entities_ns::Number.new(val[0])
+     result = e(:number, val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 43)
   def _reduce_18(val, _values, result)
-     result = entities_ns::Boolean.new(true)
+     result = e(:boolean, true)
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 44)
   def _reduce_19(val, _values, result)
-     result = entities_ns::Boolean.new(false)
+     result = e(:boolean, false)
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 45)
   def _reduce_20(val, _values, result)
-     result = entities_ns::CellReference.new(val[0])
+     result = e(:cell_reference, val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 47)
   def _reduce_21(val, _values, result)
-     result = [val[0], val[2]]
+     result = val[0] << val[2]
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 48)
   def _reduce_22(val, _values, result)
-     result = val[0]
+     result = [val[0]]
     result
   end
 .,.,

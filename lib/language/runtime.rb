@@ -127,7 +127,7 @@ module CSVPlusPlus
       private
 
       def count_code_section_lines(lines)
-        eoc = ::CSVPlusPlus::Language::END_OF_CODE_SECTION
+        eoc = ::CSVPlusPlus::Lexer::END_OF_CODE_SECTION
         lines.include?(eoc) ? (lines.take_while { |l| l != eoc }).length + 1 : 0
       end
 

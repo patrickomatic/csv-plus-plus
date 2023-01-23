@@ -34,21 +34,21 @@ module CSVPlusPlus
     def verbose_summary
       <<~SUMMARY
         #{summary_divider}
-        # Options
 
-        > Input filename           | #{@filename}
-        > Sheet name               | #{@sheet_name}
-        > Create sheet if it does  | #{@create_if_not_exists}
-          not exist?
-        > Spreadsheet cell-offset  | #{@offset[1]}
-        > Spreadsheet row-offset   | #{@offset[0]}
-        > User-supplied key-values | #{@key_values}
-        > Verbose                  | #{@verbose}
+        # csv++ Command Options
 
-        ## Output
+        > Input filename                      | #{@filename}
+        > Sheet name                          | #{@sheet_name}
+        > Create sheet if it does not exist?  | #{@create_if_not_exists}
+        > Spreadsheet row-offset              | #{@offset[0]}
+        > Spreadsheet cell-offset             | #{@offset[1]}
+        > User-supplied key-values            | #{@key_values}
+        > Verbose                             | #{@verbose}
 
-        > Backup                   | #{@backup}
-        > Output filename          | #{@output_filename}
+        ## Output Options
+
+        > Backup                              | #{@backup}
+        > Output filename                     | #{@output_filename}
 
         #{@google&.verbose_summary || ''}
         #{summary_divider}

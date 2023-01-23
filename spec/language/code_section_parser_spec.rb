@@ -190,7 +190,7 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
         it { is_expected.to(eq({ foo: build(:fn_foo) })) }
       end
 
-      context 'with a single function that takes multiple args' do
+      context 'with a function that takes two args' do
         let(:fn_add) { build(:fn_add) }
         let(:input) do
           <<~INPUT
@@ -201,6 +201,45 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
         end
 
         it { is_expected.to(eq({ foo: build(:fn, name: :foo, arguments: fn_add.arguments, body: fn_add.body) })) }
+      end
+
+      context 'with a function that takes three args' do
+        let(:fn_add) { build(:fn_add) }
+        let(:input) do
+          <<~INPUT
+            def foo(a, b, c) SUM($$a, $$b, $$c)
+            ---
+            =$$foo(A2, B2, C2),bar,baz
+            10,20,30
+          INPUT
+        end
+
+        it {
+          is_expected.to(
+            eq(
+              {
+                foo: build(
+                  :fn,
+                  name: :foo,
+                  arguments: %i[a b c],
+                  body: build(
+                    :fn_call,
+                    name: :sum,
+                    arguments: [
+                      build(:variable, id: :a),
+                      build(:variable, id: :b),
+                      build(:variable, id: :c)
+                    ]
+                  )
+                )
+              }
+            )
+          )
+        }
+      end
+
+      context 'with functions that depend on each other' do
+        # TODO
       end
     end
   end

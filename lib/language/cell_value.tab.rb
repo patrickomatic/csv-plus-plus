@@ -12,14 +12,8 @@ module CSVPlusPlus
   module Language
     class CellValueParser < Racc::Parser
 
-module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 39)
+module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 38)
   include ::CSVPlusPlus::Lexer
-
-  attr_accessor :ast
-
-  def entities_ns
-    ::CSVPlusPlus::Language::Entities
-  end
 
   def tokenizer(scanner)
     ::CSVPlusPlus::Lexer::Tokenizer.new(
@@ -50,26 +44,26 @@ module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 39)
 racc_action_table = [
     18,    16,    10,     5,     8,     7,     9,     6,    10,     5,
      8,     7,     9,     6,    19,    10,     5,     8,     7,     9,
-     6,     2,     3,    11,    12,    13,    14,    20 ]
+     6,     2,     3,    11,    12,    13,    14 ]
 
 racc_action_check = [
     15,    13,     2,     2,     2,     2,     2,     2,    13,    13,
     13,    13,    13,    13,    15,    19,    19,    19,    19,    19,
-    19,     0,     1,     3,     4,     5,     6,    17 ]
+    19,     0,     1,     3,     4,     5,     6 ]
 
 racc_action_pointer = [
      5,    22,    -8,    23,    15,    23,    15,   nil,   nil,   nil,
-   nil,   nil,   nil,    -2,   nil,    -3,   nil,    24,   nil,     5,
-   nil,   nil ]
+   nil,   nil,   nil,    -2,   nil,    -3,   nil,   nil,   nil,     5,
+   nil ]
 
 racc_action_default = [
-   -13,   -13,   -13,   -13,   -13,   -10,   -13,    -6,    -7,    -8,
-    -9,    22,    -1,   -13,    -5,   -13,    -3,   -12,    -2,   -13,
-    -4,   -11 ]
+   -12,   -12,   -12,   -12,   -12,    -9,   -12,    -5,    -6,    -7,
+    -8,    21,    -1,   -12,    -4,   -12,    -3,   -11,    -2,   -12,
+   -10 ]
 
 racc_goto_table = [
      4,     1,    15,   nil,   nil,   nil,   nil,   nil,   nil,   nil,
-   nil,    17,   nil,   nil,   nil,   nil,   nil,    21 ]
+   nil,    17,   nil,   nil,   nil,   nil,   nil,    20 ]
 
 racc_goto_check = [
      2,     1,     3,   nil,   nil,   nil,   nil,   nil,   nil,   nil,
@@ -86,19 +80,18 @@ racc_reduce_table = [
   3, 19, :_reduce_1,
   4, 20, :_reduce_2,
   3, 20, :_reduce_3,
-  4, 20, :_reduce_4,
-  2, 20, :_reduce_5,
+  2, 20, :_reduce_4,
+  1, 20, :_reduce_5,
   1, 20, :_reduce_6,
   1, 20, :_reduce_7,
   1, 20, :_reduce_8,
   1, 20, :_reduce_9,
-  1, 20, :_reduce_10,
-  3, 21, :_reduce_11,
-  1, 21, :_reduce_12 ]
+  3, 21, :_reduce_10,
+  1, 21, :_reduce_11 ]
 
-racc_reduce_n = 13
+racc_reduce_n = 12
 
-racc_shift_n = 22
+racc_shift_n = 21
 
 racc_token_table = {
   false => 0,
@@ -179,77 +172,70 @@ module_eval(<<'.,.,', 'cell_value.y', 17)
 
 module_eval(<<'.,.,', 'cell_value.y', 19)
   def _reduce_2(val, _values, result)
-     result = entities_ns::FunctionCall.new(val[0], val[2])
+     result = e(:function_call, val[0], val[2])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 20)
   def _reduce_3(val, _values, result)
-     result = entities_ns::FunctionCall.new(val[0], [])
+     result = e(:function_call, val[0], [])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 21)
   def _reduce_4(val, _values, result)
-     result = entities_ns::FunctionCall.new(val[0], [val[2]])
+     result = e(:variable, val[1])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 22)
   def _reduce_5(val, _values, result)
-     result = entities_ns::Variable.new(val[1])
+     result = e(:string, val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 23)
   def _reduce_6(val, _values, result)
-     result = entities_ns::String.new(val[0].gsub('"', ''))
+     result = e(:number, val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 24)
   def _reduce_7(val, _values, result)
-     result = entities_ns::Number.new(val[0])
+     result = e(:boolean, true)
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 25)
   def _reduce_8(val, _values, result)
-     result = entities_ns::Boolean.new(true)
+     result = e(:boolean, false)
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 26)
   def _reduce_9(val, _values, result)
-     result = entities_ns::Boolean.new(false)
+     result = e(:cell_reference, val[0])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 27)
+module_eval(<<'.,.,', 'cell_value.y', 28)
   def _reduce_10(val, _values, result)
-     result = entities_ns::CellReference.new(val[0])
+     result = val[0] << val[2]
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 29)
   def _reduce_11(val, _values, result)
-     result = [val[0], val[2]]
-    result
-  end
-.,.,
-
-module_eval(<<'.,.,', 'cell_value.y', 30)
-  def _reduce_12(val, _values, result)
-     result = val[0]
+     result = [val[0]]
     result
   end
 .,.,

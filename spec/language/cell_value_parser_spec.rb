@@ -33,6 +33,26 @@ describe ::CSVPlusPlus::Language::CellValueParser do
       end
     end
 
+    describe 'a function call with 3 arguments' do
+      let(:cell_value) { '=SUM(A1, A2, A3)' }
+
+      it do
+        is_expected.to(
+          eq(
+            build(
+              :fn_call,
+              name: 'SUM',
+              arguments: [
+                build(:cell_reference, ref: 'A1'),
+                build(:cell_reference, ref: 'A2'),
+                build(:cell_reference, ref: 'A3')
+              ]
+            )
+          )
+        )
+      end
+    end
+
     describe 'a variable' do
       let(:cell_value) { '=$$foo' }
 

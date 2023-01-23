@@ -1,3 +1,6 @@
+# Language
+- [ ] Get infix operators working
+
 # Formats
 - [ ] Excel - look into caxlsx, Apache POI or openxml
 - [ ] OpenOffice - whatever it's equivalent format is
@@ -8,17 +11,17 @@
 
 - [ ] conditional formatting
 - [ ] data validation
+- [ ] freeze
 - [x] make cell-level modifiers override row-level
 - [x] data validation
 - [x] fonts
-- [x] freeze
 - [x] vertical alignment
 - [x] hyperlinks
 - [x] note
 - [x] border options
 - [x] ranges that rows can apply expand to
 - [x] horizontal alignment
-- [x] formatting: bold, italic, underlinen
+- [x] formatting: bold, italic, underline
 
 # Variables and functions
 
@@ -38,7 +41,7 @@
 - [ ] Revise the "how to use" docs
 - [ ] Charts
 - [ ] Pivot table support - not sure what this would even look like
-- [ ] backups before each write?
+- [ ] backups before each write
 - [x] Benchmarks in verbose mode
 - [x] Simplecov
 - [X] Rubocop

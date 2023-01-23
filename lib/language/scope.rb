@@ -22,7 +22,6 @@ BUILTIN_FUNCTIONS = {
 
 module CSVPlusPlus
   module Language
-    ##
     # A class representing the scope of the current Template and responsible for resolving variables
     # rubocop:disable Metrics/ClassLength
     class Scope
