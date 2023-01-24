@@ -20,7 +20,7 @@ module CSVPlusPlus
 
         # to_s
         def to_s
-          @id.to_s.upcase
+          "def #{@id.to_s.upcase}(#{arguments_to_s}) #{@body}"
         end
 
         # ==

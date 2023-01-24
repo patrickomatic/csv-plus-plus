@@ -3,7 +3,6 @@
 module CSVPlusPlus
   module Language
     module Entities
-      ##
       # A function call
       class FunctionCall < EntityWithArguments
         # initialize
@@ -13,7 +12,7 @@ module CSVPlusPlus
 
         # to_s
         def to_s
-          @id.to_s.upcase
+          "#{@id.to_s.upcase}(#{arguments_to_s})"
         end
 
         # ==

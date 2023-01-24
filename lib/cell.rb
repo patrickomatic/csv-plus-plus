@@ -38,27 +38,14 @@ module CSVPlusPlus
       "Cell(index: #{@index}, row_index: #{@row_index}, value: #{@value}, modifier: #{@modifier})"
     end
 
-    # A compiled final representation of the cell.  This includes all variables and functions
-    # resolved and ready to be output
+    # A compiled final representation of the cell.  This can only happen after all cell have had
+    # variables and functions resolved.
     def to_csv
-      return @value if @ast.nil?
+      return value if @ast.nil?
 
-      to_csv_dfs(@ast).join
-    end
-
-    private
-
-    def to_csv_dfs(node, output: ['='], add_comma: false)
-      output << node.to_s
-      output << ', ' if add_comma
-
-      return output unless node.function_call?
-
-      output << '('
-      node.arguments.each_with_index do |n, i|
-        to_csv_dfs(n, output:, add_comma: i < node.arguments.length - 1)
-      end
-      output << ')'
+      # This looks really simple but we're relying on each node of the AST to define #to_s and calling
+      # this at the top will recursively print the tree
+      "=#{@ast}"
     end
   end
 end

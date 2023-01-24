@@ -33,6 +33,6 @@ describe ::CSVPlusPlus::Language::Entities::Function do
   describe '#to_s' do
     subject { function.to_s }
 
-    it { is_expected.to(eq('FOO')) }
+    it { is_expected.to(eq('def FOO(a, b) 1')) }
   end
 end

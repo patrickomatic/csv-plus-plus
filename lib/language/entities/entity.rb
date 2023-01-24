@@ -60,6 +60,10 @@ module CSVPlusPlus
         protected
 
         attr_writer :arguments
+
+        def arguments_to_s
+          @arguments.join(', ')
+        end
       end
     end
   end

@@ -61,7 +61,7 @@ require_relative 'entities'
   end
 
   def def_function(id, arguments, body)
-    fn_def = ::CSVPlusPlus::Language::Entities::Function.new(id, arguments, body)
+    fn_def = e(:function, id, arguments, body)
     @code_section.def_function(fn_def.id, fn_def)
   end
 
@@ -119,7 +119,7 @@ require_relative 'entities'
 
     begin
       do_parse
-    rescue Racc::ParseError => e
+    rescue ::Racc::ParseError => e
       runtime.raise_syntax_error('Error parsing code section', e.message, wrapped_error: e)
     end
 

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'lexer/lexer'
-require 'lexer/tokenizer'
+require_relative './lexer/lexer'
+require_relative './lexer/tokenizer'
 
 module CSVPlusPlus
   module Lexer

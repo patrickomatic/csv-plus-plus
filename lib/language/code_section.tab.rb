@@ -20,7 +20,7 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 59)
   end
 
   def def_function(id, arguments, body)
-    fn_def = ::CSVPlusPlus::Language::Entities::Function.new(id, arguments, body)
+    fn_def = e(:function, id, arguments, body)
     @code_section.def_function(fn_def.id, fn_def)
   end
 
@@ -78,7 +78,7 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 59)
 
     begin
       do_parse
-    rescue Racc::ParseError => e
+    rescue ::Racc::ParseError => e
       runtime.raise_syntax_error('Error parsing code section', e.message, wrapped_error: e)
     end
 
