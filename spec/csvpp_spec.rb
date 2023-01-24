@@ -41,8 +41,7 @@ describe ::CSVPlusPlus do
 
     context 'to Google Sheets', :vcr do
       # TODO
-      # let(:google_sheet_id) { ::ENV.fetch('GOOGLE_SHEET_ID') }
-      # let(:options) { build(:options, google_sheet_id:) }
+      # let(:options) { build(:options, :with_google_sheet_id) }
     end
 
     context 'to OpenDocument' do

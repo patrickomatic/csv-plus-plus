@@ -41,7 +41,7 @@ module CSVPlusPlus
     # A compiled final representation of the cell.  This can only happen after all cell have had
     # variables and functions resolved.
     def to_csv
-      return value if @ast.nil?
+      return value unless @ast
 
       # This looks really simple but we're relying on each node of the AST to define #to_s and calling
       # this at the top will recursively print the tree

@@ -10,6 +10,10 @@ require_relative '../../lib/options'
       output_filename { nil }
     end
 
+    trait :with_google_sheet_id do
+      google_sheet_id { ::ENV.fetch('GOOGLE_SHEET_ID', 'skcksk1lw1ocks01xkskcls10paxl1cpslskdk20alxw') }
+    end
+
     after(:build) do |i, e|
       i.create_if_not_exists = e.create_if_not_exists
       i.google_sheet_id = e.google_sheet_id if e.google_sheet_id
