@@ -3,6 +3,7 @@
 require_relative '../code_section'
 require_relative '../graph'
 require_relative './entities'
+require_relative './references'
 require_relative './syntax_error'
 
 BUILTIN_FUNCTIONS = {
@@ -42,13 +43,15 @@ module CSVPlusPlus
       def resolve_cell_value
         return unless (ast = @runtime.cell&.ast)
 
-        refs = any_references(ast)
+        last_round = nil
         loop do
-          return ast if any_references(ast).empty?
+          refs = ::CSVPlusPlus::Language::References.extract(ast, @code_section)
+          return ast if refs.empty?
 
-          ast = resolve_functions(resolve_variables(ast))
+          # TODO: throw an error here instead I think - basically we did a round and didn't make progress
+          return ast if last_round == refs
 
-          return ast if refs == any_references(ast)
+          ast = resolve_functions(resolve_variables(ast, refs.variables), refs.functions)
         end
       end
 
@@ -67,24 +70,6 @@ module CSVPlusPlus
 
       private
 
-      def any_references(ast)
-        function_references(ast) + variable_references(ast)
-      end
-
-      def function_references(ast)
-        ::CSVPlusPlus::Graph.depth_first_search(ast) do |node|
-          next unless node.function_call?
-
-          node if @code_section.defined_function?(node.id) || ::BUILTIN_FUNCTIONS.key?(node.id)
-        end
-      end
-
-      def variable_references(ast)
-        ::CSVPlusPlus::Graph.depth_first_search(ast) do |node|
-          node if node.variable?
-        end
-      end
-
       # Resolve all variable references defined statically in the code section
       def resolve_static_variables!
         variables = @code_section.variables
@@ -95,31 +80,20 @@ module CSVPlusPlus
       # Resolve all functions defined statically in the code section
       def resolve_static_functions!
         # TODO: I'm still torn if it's worth replacing function references
+        #
+        # my current theory is that if we resolve static functions befor processing each cell,
+        # overall compile time will be improved because there will be less to do for each cell
       end
 
-      def resolve_functions(ast)
-        resolved_ast = ast.dup
-        loop do
-          refs = function_references(resolved_ast)
-          return resolved_ast if refs.empty?
-
-          resolved_ast =
-            refs.reduce(resolved_ast) do |acc, elem|
-              function_replace(acc, elem.id, resolve_function(elem.id))
-            end
+      def resolve_functions(ast, refs)
+        refs.reduce(ast.dup) do |acc, elem|
+          function_replace(acc, elem.id, resolve_function(elem.id))
         end
       end
 
-      def resolve_variables(ast)
-        resolved_ast = ast.dup
-        loop do
-          refs = variable_references(resolved_ast)
-          return resolved_ast if refs.empty?
-
-          resolved_ast =
-            refs.reduce(resolved_ast) do |acc, elem|
-              variable_replace(acc, elem.id, resolve_variable(elem.id))
-            end
+      def resolve_variables(ast, refs)
+        refs.reduce(ast.dup) do |acc, elem|
+          variable_replace(acc, elem.id, resolve_variable(elem.id))
         end
       end
 
