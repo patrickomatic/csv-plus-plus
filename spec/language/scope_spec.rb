@@ -9,7 +9,7 @@ describe ::CSVPlusPlus::Language::Scope do
 
   describe 'code_section=' do
     let(:complicated_ast) do
-      build(:fn_call, name: :multiply, a: build(:variable, id: :bar), b: build(:variable, id: :foo))
+      build(:fn_call, name: :multiply, arguments: [build(:variable, id: :bar), build(:variable, id: :foo)])
     end
     let(:variables) do
       {
@@ -27,7 +27,7 @@ describe ::CSVPlusPlus::Language::Scope do
       subject { code_section.variables }
 
       it 'resolves the variables in dep' do
-        expect(subject[:dep]).to(eq(build(:fn_call, name: :multiply, a: variables[:bar], b: variables[:foo])))
+        expect(subject[:dep]).to(eq(build(:fn_call, name: :multiply, arguments: [variables[:bar], variables[:foo]])))
       end
 
       context 'with runtime variables' do
@@ -37,8 +37,10 @@ describe ::CSVPlusPlus::Language::Scope do
               build(
                 :fn_call,
                 name: :multiply,
-                a: build(:variable, id: :rownum),
-                b: variables[:foo]
+                arguments: [
+                  build(:variable, id: :rownum),
+                  variables[:foo]
+                ]
               )
             )
           )
@@ -74,6 +76,8 @@ describe ::CSVPlusPlus::Language::Scope do
     let(:functions) { {} }
     let(:scope) { build(:scope, code_section:, runtime:) }
     let(:runtime) { build(:runtime, cell:) }
+
+    let(:fn_call_cellref) { build(:fn_call, name: :cellref, arguments: [build(:cell_reference, ref: 'A')]) }
 
     subject { scope.resolve_cell_value }
 
@@ -112,6 +116,46 @@ describe ::CSVPlusPlus::Language::Scope do
 
       it 'replaces the function and resolves the arguments' do
         expect(subject).to(eq(build(:fn_call, name: :add, arguments: [build(:number_one), build(:number_two)])))
+      end
+    end
+
+    context 'with a builtin function reference (cellref)' do
+      let(:ast) { fn_call_cellref }
+      let(:cell) { build(:cell, value: '=CELLREF(A)', ast:) }
+
+      it 'replaces the function call with the builtin function' do
+        expect(subject).to(
+          eq(
+            build(
+              :fn_call,
+              name: :indirect,
+              arguments: [
+                build(:fn_call, name: :concat, arguments: [build(:cell_reference, ref: 'A'), build(:number_one)])
+              ]
+            )
+          )
+        )
+      end
+    end
+
+    context 'with a defined function that references a builtin' do
+      let(:functions) { { foo: build(:fn, name: :foo, arguments: %i[], body: fn_call_cellref) } }
+
+      let(:ast) { build(:fn_call, name: :foo, arguments: []) }
+      let(:cell) { build(:cell, value: '=FOO()', ast:) }
+
+      it 'resolves all the way down' do
+        expect(subject).to(
+          eq(
+            build(
+              :fn_call,
+              name: :indirect,
+              arguments: [
+                build(:fn_call, name: :concat, arguments: [build(:cell_reference, ref: 'A'), build(:number_one)])
+              ]
+            )
+          )
+        )
       end
     end
   end

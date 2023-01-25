@@ -1,5 +1,5 @@
 Header1,Header2,Header3,Header4,Header5
-"=ADD($$simple_var, 2)",=1,These are variables,
+"=ADD(1, 2)",=1,These are variables,
 A note,
 The font is red,
 The font is 'Comic Sans MS',

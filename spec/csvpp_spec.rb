@@ -7,7 +7,7 @@ describe ::CSVPlusPlus do
   let(:input) do
     <<~INPUT
       var := 42
-      def added(a, b, c) ADD(CELLREF($$a), CELLREF($$b), CELLREF($$c))
+      def added(a, b, c) SUM(CELLREF($$a), CELLREF($$b), CELLREF($$c))
       ---
       [[format=bold]]foo,"=ADD($$var, 22)",baz
       1,2,3,"=ADDED(A, B, C)"
@@ -29,19 +29,18 @@ describe ::CSVPlusPlus do
         expect(::File).to(exist(output_filename))
       end
 
-      xit 'parses the input and generates CSV' do
+      it 'parses the input and generates CSV' do
         expect(::File.read(output_filename)).to(
           eq(
             <<~OUTPUT))
               foo,"=ADD(42, 22)",baz
-              1,2,3,"=ADD(INDIRECT(CONCAT("A", 2)), INDIRECT(CONCAT("B", 2)), INDIRECT(CONCAT("C", 2)))"
+              1,2,3,"=SUM(INDIRECT(CONCAT(A, 2)), INDIRECT(CONCAT(B, 2)), INDIRECT(CONCAT(C, 2)))"
             OUTPUT
       end
     end
 
     context 'to Google Sheets', :vcr do
       # TODO
-      # let(:options) { build(:options, :with_google_sheet_id) }
     end
 
     context 'to OpenDocument' do

@@ -13,8 +13,13 @@ BUILTIN_FUNCTIONS = {
     ::CSVPlusPlus::Language::Entities::FunctionCall.new(
       :indirect,
       [
-        ::CSVPlusPlus::Language::Entities::Variable.new(:cell),
-        ::CSVPlusPlus::Language::Entities::Variable.new(:rownum)
+        ::CSVPlusPlus::Language::Entities::FunctionCall.new(
+          :concat,
+          [
+            ::CSVPlusPlus::Language::Entities::Variable.new(:cell),
+            ::CSVPlusPlus::Language::Entities::Variable.new(:rownum)
+          ]
+        )
       ]
     )
   )
@@ -37,11 +42,14 @@ module CSVPlusPlus
       def resolve_cell_value
         return unless (ast = @runtime.cell&.ast)
 
-        refs = references_to_resolve(ast)
-        var_refs = refs.filter(&:variable?)
-        fn_refs = refs.filter(&:function_call?)
+        refs = any_references(ast)
+        loop do
+          return ast if any_references(ast).empty?
 
-        resolve_and_replace_functions(resolve_and_replace_variables(ast, var_refs), fn_refs)
+          ast = resolve_functions(resolve_variables(ast))
+
+          return ast if refs == any_references(ast)
+        end
       end
 
       # Set the +code_section+ and resolve all inner dependencies in it's variables and functions.
@@ -59,10 +67,21 @@ module CSVPlusPlus
 
       private
 
-      def references_to_resolve(ast)
+      def any_references(ast)
+        function_references(ast) + variable_references(ast)
+      end
+
+      def function_references(ast)
         ::CSVPlusPlus::Graph.depth_first_search(ast) do |node|
-          # functions that are defined and variablesj
-          next node if node.variable? || (node.function_call? && @code_section.defined_function?(node.id))
+          next unless node.function_call?
+
+          node if @code_section.defined_function?(node.id) || ::BUILTIN_FUNCTIONS.key?(node.id)
+        end
+      end
+
+      def variable_references(ast)
+        ::CSVPlusPlus::Graph.depth_first_search(ast) do |node|
+          node if node.variable?
         end
       end
 
@@ -75,12 +94,32 @@ module CSVPlusPlus
 
       # Resolve all functions defined statically in the code section
       def resolve_static_functions!
-        # TODO: I'm still torn if it's worth replacing function reference
+        # TODO: I'm still torn if it's worth replacing function references
       end
 
-      def resolve_and_replace_functions(ast, refs)
-        refs.reduce(ast.dup) do |resolved_ast, fn|
-          function_replace(resolved_ast, fn.id, resolve_function(fn.id))
+      def resolve_functions(ast)
+        resolved_ast = ast.dup
+        loop do
+          refs = function_references(resolved_ast)
+          return resolved_ast if refs.empty?
+
+          resolved_ast =
+            refs.reduce(resolved_ast) do |acc, elem|
+              function_replace(acc, elem.id, resolve_function(elem.id))
+            end
+        end
+      end
+
+      def resolve_variables(ast)
+        resolved_ast = ast.dup
+        loop do
+          refs = variable_references(resolved_ast)
+          return resolved_ast if refs.empty?
+
+          resolved_ast =
+            refs.reduce(resolved_ast) do |acc, elem|
+              variable_replace(acc, elem.id, resolve_variable(elem.id))
+            end
         end
       end
 
@@ -104,12 +143,6 @@ module CSVPlusPlus
         return ::BUILTIN_FUNCTIONS[id] if ::BUILTIN_FUNCTIONS.key?(id)
 
         @runtime.raise_syntax_error('Unknown function', fn_id)
-      end
-
-      def resolve_and_replace_variables(ast, refs)
-        refs.reduce(ast.dup) do |resolved_ast, var|
-          variable_replace(resolved_ast, var.id, resolve_variable(var.id))
-        end
       end
 
       def apply_arguments(function, function_call)

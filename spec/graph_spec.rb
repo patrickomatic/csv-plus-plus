@@ -7,7 +7,7 @@ describe ::CSVPlusPlus::Graph do
 
   describe '#depth_first_search' do
     let(:number5) { build(:number, n: 5) }
-    let(:ast) { build(:fn_call, name: :multiply, a: number5, b: number5) }
+    let(:ast) { build(:fn_call, name: :multiply, arguments: [number5, number5]) }
 
     it 'accumulates each value returned by the block' do
       expect(described_class.depth_first_search(ast) { |_n| 1 }).to(eq([1, 1, 1]))
@@ -32,7 +32,7 @@ describe ::CSVPlusPlus::Graph do
 
   describe '#dependency_graph' do
     let(:ast) do
-      build(:fn_call, name: :multiply, a: build(:variable, id: :bar), b: build(:variable, id: :foo))
+      build(:fn_call, name: :multiply, arguments: [build(:variable, id: :bar), build(:variable, id: :foo)])
     end
     let(:variables) do
       {
@@ -73,7 +73,13 @@ describe ::CSVPlusPlus::Graph do
       build(
         :fn_call,
         arguments: [
-          build(:fn_call, a: build(:fn_call, a: build(:variable_foo), b: build(:number_one)), b: build(:number_two)),
+          build(
+            :fn_call,
+            arguments: [
+              build(:fn_call, arguments: [build(:variable_foo), build(:number_one)]),
+              build(:number_two)
+            ]
+          ),
           build(:variable_bar),
           build(:variable, id: 'rownum')
         ]

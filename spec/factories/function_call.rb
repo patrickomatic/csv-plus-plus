@@ -6,12 +6,10 @@ require_relative '../../lib/language/entities'
   factory :fn_call, class: ::CSVPlusPlus::Language::Entities::FunctionCall do
     transient do
       name { :foo }
-      a { build(:string_foo) }
-      b { build(:string_bar) }
       arguments { [] }
     end
 
-    initialize_with { new(name, arguments.empty? ? [a, b] : arguments) }
+    initialize_with { new(name, arguments) }
 
     factory :fn_call_add do
       name { :add }
