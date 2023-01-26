@@ -103,9 +103,7 @@ module CSVPlusPlus
         cells =
           @runtime.map_row(csv_row) do |value, _cell_index|
             cell_modifier = ::CSVPlusPlus::Modifier.new
-            parsed_value = ::CSVPlusPlus::ModifierParser.new.parse(
-              value, runtime: @runtime, row_modifier:, cell_modifier:
-            )
+            parsed_value = ::CSVPlusPlus::ModifierParser.new(row_modifier:, cell_modifier:).parse(value, @runtime)
 
             ::CSVPlusPlus::Cell.parse(parsed_value, runtime:, modifier: cell_modifier)
           end

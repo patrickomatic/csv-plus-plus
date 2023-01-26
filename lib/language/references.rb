@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require_relative '../graph'
+require_relative './scope'
+
 module CSVPlusPlus
   module Language
     # References in an AST that need to be resolved
@@ -36,9 +39,14 @@ module CSVPlusPlus
         @functions.empty? && @variables.empty?
       end
 
+      # to_s
+      def to_s
+        "References(functions: #{@functions}, variables: #{@variables})"
+      end
+
       # ==
       def ==(other)
-        super && @functions == other.functions && @variables == other.variables
+        @functions == other.functions && @variables == other.variables
       end
     end
   end

@@ -37,11 +37,25 @@ end
 ---- inner
   include ::CSVPlusPlus::Lexer
 
-  def tokenizer(scanner)
+  protected
+
+  def anything_to_parse?(input)
+    input.strip.start_with?('=')
+  end
+
+  def parse_subject
+    'cell value'
+  end
+
+  def return_value
+    @ast
+  end
+
+  def tokenizer(input)
     ::CSVPlusPlus::Lexer::Tokenizer.new(
       catchall: /[\(\)\/\*\+\-,=&]/,
       ignore: /\s+/,
-      scanner:,
+      input:,
       tokens: [
         [/true/i, :TRUE],
         [/false/i, :FALSE],
@@ -51,12 +65,4 @@ end
         [/[\$\w_]+/, :ID]
       ]
     )
-  end
-
-  def anything_to_parse?(input)
-    input.strip.start_with?('=')
-  end
-
-  def return_value
-    @ast
   end

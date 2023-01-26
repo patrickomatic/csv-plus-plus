@@ -15,11 +15,25 @@ module CSVPlusPlus
 module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 38)
   include ::CSVPlusPlus::Lexer
 
-  def tokenizer(scanner)
+  protected
+
+  def anything_to_parse?(input)
+    input.strip.start_with?('=')
+  end
+
+  def parse_subject
+    'cell value'
+  end
+
+  def return_value
+    @ast
+  end
+
+  def tokenizer(input)
     ::CSVPlusPlus::Lexer::Tokenizer.new(
       catchall: /[\(\)\/\*\+\-,=&]/,
       ignore: /\s+/,
-      scanner:,
+      input:,
       tokens: [
         [/true/i, :TRUE],
         [/false/i, :FALSE],
@@ -29,14 +43,6 @@ module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 38)
         [/[\$\w_]+/, :ID]
       ]
     )
-  end
-
-  def anything_to_parse?(input)
-    input.strip.start_with?('=')
-  end
-
-  def return_value
-    @ast
   end
 ...end cell_value.y/module_eval...
 ##### State transition tables begin ###

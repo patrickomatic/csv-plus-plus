@@ -10,7 +10,7 @@ describe ::CSVPlusPlus::ModifierParser do
     let(:cell_modifier) { build(:modifier) }
 
     before(:each) { subject }
-    subject { described_class.new.parse(value, runtime:, cell_modifier:, row_modifier:) }
+    subject { described_class.new(cell_modifier:, row_modifier:).parse(value, runtime) }
 
     context 'without a modifier' do
       let(:value) { 'foo' }
