@@ -53,6 +53,44 @@ describe ::CSVPlusPlus::Language::CellValueParser do
       end
     end
 
+    describe 'a function call in infix notation' do
+      let(:cell_value) { '=3 - 2' }
+
+      it do
+        is_expected.to(
+          eq(
+            build(
+              :fn_call,
+              name: 'MINUS',
+              arguments: [
+                build(:number, n: 3),
+                build(:number, n: 2)
+              ]
+            )
+          )
+        )
+      end
+    end
+
+    describe 'infix function calls with parenthesis for precedence' do
+      let(:cell_value) { '=1 * (3 - 2)' }
+
+      it do
+        is_expected.to(
+          eq(
+            build(
+              :fn_call,
+              name: 'MULTIPLY',
+              arguments: [
+                build(:number, n: 1),
+                build(:fn_call, name: 'MINUS', arguments: [build(:number, n: 3), build(:number, n: 2)])
+              ]
+            )
+          )
+        )
+      end
+    end
+
     describe 'a variable' do
       let(:cell_value) { '=$$foo' }
 

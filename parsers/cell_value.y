@@ -17,8 +17,9 @@ token EOL
 rule
   cell_value: '=' exp EOL             { @ast = val[1]                               }
 
-  exp: ID '(' fn_call_args ')'        { result = e(:function_call, val[0], val[2])  }
-     | ID '(' ')'                     { result = e(:function_call, val[0], [])      }
+  exp: fn_call
+     | infix_fn_call
+     | '(' exp ')'                    
      | VAR_REF ID                     { result = e(:variable, val[1])               }
      | STRING                         { result = e(:string, val[0])                 }
      | NUMBER                         { result = e(:number, val[0])                 }
@@ -26,8 +27,17 @@ rule
      | FALSE                          { result = e(:boolean, false)                 }
      | ID                             { result = e(:cell_reference, val[0])         }
 
+  fn_call: ID '(' fn_call_args ')'    { result = e(:function_call, val[0], val[2])  }
+         | ID '(' ')'                 { result = e(:function_call, val[0], [])      }
+
   fn_call_args: fn_call_args ',' exp  { result = val[0] << val[2]                   }
               | exp                   { result = [val[0]]                           }
+
+  infix_fn_call: exp '&' exp          { result = e(:function_call, :concat, [val[0], val[2]])   }
+               | exp '*' exp          { result = e(:function_call, :multiply, [val[0], val[2]]) }
+               | exp '+' exp          { result = e(:function_call, :add, [val[0], val[2]])      }
+               | exp '-' exp          { result = e(:function_call, :minus, [val[0], val[2]])    }
+               | exp '/' exp          { result = e(:function_call, :divide, [val[0], val[2]])   }
 
 end
 
