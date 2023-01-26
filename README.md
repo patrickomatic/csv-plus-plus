@@ -2,27 +2,36 @@
 
 # csv++
 
-A tool that allows you to programatically author spreadsheets in your favorite text editor and write their results to existing Google Sheets (in the future it can probably support Excel).  This allows you to write a spreadsheet template, check it into git and push changes out to spreadsheets using typical dev tools.
-
-## Setup
-
-* [Install asdf](https://asdf-vm.com/guide/getting-started.html) and the current ruby version in `.tool-versions`
-* Go to the [GCP developers console](https://console.cloud.google.com/projectselector2/apis/credentials?pli=1&supportedpurview=project), create a service account and export keys for it to `~/.config/gcloud/application_default_credentials.json`
-* "Share" the spreadsheet with the email associated with the service account
-
-## Usage
-
-```
-# apply my_taxes_template.csvpp to an existing Google Sheet with name "Taxes 2022"
-$ csv++ --sheet-name "Taxes 2022" --sheet-id "[...]" my_taxes_template.csvpp
-
-# take input from stdin, supply a variable ($$rate = 1) and apply to the "Stocks" spreadsheet
-$ cat stocks.csvpp | csv++ -k "rate=1" -n "Stocks" -i "[...]"
-```
+A tool that allows you to programatically author spreadsheets in your favorite text editor and write their results to CSV, Google Sheets, Excel and other spreadsheet formats.  This allows you to write a spreadsheet template, check it into git and push changes out to spreadsheets using typical dev tools.
 
 ## Template Language
 
-This program provides an enhanced language on top of CSV.  All of the normal rules of CSV apply, with the addition that each cell can have modifiers (specified in `[[`/`]]` for cells and `![[`/`]]` for rows):
+A `csvpp` file consists of a (optional) code section and a CSV section separated by `---`.  In the code section you can define variables and functions that can be used in the CSV below it.  For example:
+
+```
+fees := 0.65 # my broker charges $0.65 a trade
+
+price := cellref(C)
+quantity := cellref(D)
+
+def profit() SUBTRACT(MULTIPLY(price, quantity), fees)
+
+---
+![[format=bold/align=center]]Date,Ticker,Price,Quantity,Total,Fees
+![[expand]],[[format=bold]],,,"=PROFIT()",$$fees
+```
+
+## Predefined Variables
+
+* `$$rownum` - The current row number.  The first row of the spreadsheet starts at 1
+
+## Predefined Functions
+
+* `cellref(CELL)` - Returns a reference to the `CELL` relative to the current row.  If the current `$$rownum` is `2`, then `CELLREF("C")` returns  a reference to cell `C2`.
+
+## Modifiers
+
+Modifiers can change the formatting of a cell or row, apply validation, change alignment, etc. All of the normal rules of CSV apply, with the addition that each cell can have modifiers (specified in `[[`/`]]` for cells and `![[`/`]]` for rows):
 
 ```
 foo,[[...]]bar,baz
@@ -35,19 +44,6 @@ specifying formatting or various other modifiers to the cell.  Additionally a ro
 ```
 
 which will apply that modifier to all cells in the row.
-
-You can also define a code section at the top of the CSV to put shared variables and calculations:
-
-```
-fees := 0.65 # my broker charges $0.65 a trade
-
-is_call := EQ(A$$rownum, "call")
-commission := IFS($$is_call, ADD(C$$rownum * $$fees, A$$rownum))
-
----
-![[format=bold/align=center]]Date,Purchase,Price,Quantity,Total,Fees
-![[expand]],[[format=bold]],,,"=PROFIT(C$$rownum, D$$rownum)",$$commission
-```
 
 ### Examples
 
@@ -67,12 +63,14 @@ Date,[[align=left]]Amount,Quantity,[[align=center/format=bold italic]]Price
 
 ```
 ![[align=center/format=bold]]Date,Price,Quantity,Profit
-![[expand=1:]],,,"=MULTIPLY(B$$ROW, C$$ROW)"
+![[expand=1:]],,,"=MULTIPLY(cellref(B), cellref(C))"
 ```
 
-## Predefined variables
+## Setup (Google Sheets)
 
-* `$$rownum` - The current row number.  The first row of the spreadsheet starts at 1
+* [Install asdf](https://asdf-vm.com/guide/getting-started.html) and the current ruby version in `.tool-versions`
+* Go to the [GCP developers console](https://console.cloud.google.com/projectselector2/apis/credentials?pli=1&supportedpurview=project), create a service account and export keys for it to `~/.config/gcloud/application_default_credentials.json`
+* "Share" the spreadsheet with the email associated with the service account
 
 ## CLI Arguments
 
@@ -88,3 +86,15 @@ Usage: csv++ [options]
     -y, --offset-rows OFFSET         Apply the template offset by OFFSET rows
     -h, --help                       Show help information
 ```
+
+## Usage Examples
+
+```
+# apply my_taxes_template.csvpp to an existing Google Sheet with name "Taxes 2022"
+$ csv++ --sheet-name "Taxes 2022" --sheet-id "[...]" my_taxes_template.csvpp
+
+# take input from stdin, supply a variable ($$rate = 1) and apply to the "Stocks" spreadsheet
+$ cat stocks.csvpp | csv++ -k "rate=1" -n "Stocks" -i "[...]"
+```
+
+
