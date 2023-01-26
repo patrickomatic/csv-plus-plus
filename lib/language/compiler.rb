@@ -140,7 +140,7 @@ module CSVPlusPlus
           stage: 'Parsing code section',
           processing_code_section: true
         ) do
-          csv_section = block.call(@runtime.input)
+          csv_section = block.call(@runtime.input.read)
           @runtime.rewrite_input!(csv_section)
         end
       end

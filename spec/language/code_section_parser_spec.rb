@@ -5,7 +5,7 @@ require 'code_section.tab'
 describe ::CSVPlusPlus::Language::CodeSectionParser do
   describe '#parse' do
     let(:runtime) { build(:runtime) }
-    let(:sections) { described_class.new.parse(::StringIO.new(input), runtime) }
+    let(:sections) { described_class.new.parse(input, runtime) }
     let(:code_section) { sections[0] }
     let(:csv_section) { sections[1] }
 

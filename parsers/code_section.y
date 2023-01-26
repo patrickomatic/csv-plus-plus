@@ -51,11 +51,61 @@ rule
 end
 
 ---- header
-require 'strscan'
+require_relative '../lexer'
 require_relative '../code_section'
-require_relative 'entities'
 
 ---- inner
+  include ::CSVPlusPlus::Lexer
+
+  def initialize
+    super
+    @code_section = CodeSection.new
+  end
+
+  protected
+
+  def anything_to_parse?(input)
+    @rest = input.strip
+
+    return !@rest.index(::CSVPlusPlus::Lexer::END_OF_CODE_SECTION).nil?
+  end
+
+  def parse_subject
+    'code section'
+  end
+
+  def tokenizer(input)
+    ::CSVPlusPlus::Lexer::Tokenizer.new(
+      catchall: /[\(\)\{\}\/\*\+\-,=&]/, # TODO this might not even be used
+      ignore: /\s+|\#[^\n]+\n/,
+      input:,
+      stop_fn: lambda do |scanner|
+        return false unless scanner.scan(/#{::CSVPlusPlus::Lexer::END_OF_CODE_SECTION}/)
+
+        @tokens << [:END_OF_CODE, scanner.matched]
+        @rest = scanner.rest.strip
+        true
+      end,
+      tokens: [
+        [/\n/, :EOL],
+        [/:=/, :ASSIGN],
+        [/\bdef\b/, :FN_DEF],
+        [/\bTRUE\b/, :TRUE],
+        [/\bFALSE\b/, :FALSE],
+        [/"(?:[^"\\]|\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/, :STRING],
+        [/-?[\d.]+/, :NUMBER],
+        [/\$\$/, :VAR_REF],
+        [/[!:\w_]+/, :ID],
+      ],
+    )
+  end
+
+  def return_value
+    [@code_section, @rest]
+  end
+
+  private
+
   def e(type, *entity_args)
     ::CSVPlusPlus::Language::TYPES[type].new(*entity_args)
   end
@@ -67,61 +117,4 @@ require_relative 'entities'
 
   def def_variable(id, ast)
     @code_section.def_variable(id, ast)
-  end
-
-  def parse(input, runtime)
-    text = input.read.strip
-    @code_section = CodeSection.new
-
-    eoc = ::CSVPlusPlus::Lexer::END_OF_CODE_SECTION
-    eoc_index = text.index(eoc)
-    return @code_section, text if eoc_index.nil?
-
-    tokens, rest = [], ''
-
-    s = StringScanner.new(text)
-    until s.empty?
-      case
-      when s.scan(/\s+/)
-      when s.scan(/\#[^\n]+\n/)
-      when s.scan(/#{eoc}/)
-        tokens << [:END_OF_CODE, s.matched]
-        rest = s.rest.strip
-        break
-      when s.scan(/\n/)
-        tokens << [:EOL, s.matched]
-      when s.scan(/:=/)
-        tokens << [:ASSIGN, s.matched]
-      when s.scan(/\bdef\b/)
-        tokens << [:FN_DEF, s.matched]
-      when s.scan(/TRUE/)
-        tokens << [:TRUE, s.matched]
-      when s.scan(/FALSE/)
-        tokens << [:FALSE, s.matched]
-      when s.scan(/"(?:[^"\\]|\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/)
-        tokens << [:STRING, s.matched]
-      when s.scan(/-?[\d.]+/)
-        tokens << [:NUMBER, s.matched]
-      when s.scan(/\$\$/)
-        tokens << [:VAR_REF, s.matched]
-      when s.scan(/[!:\w_]+/)
-        tokens << [:ID, s.matched]
-      when s.scan(/[\(\)\{\}\/\*\+\-,=&]/) # XXX I don't think this is used, get rid of this
-        tokens << [s.matched, s.matched]
-      else
-        runtime.raise_syntax_error('Unable to parse code section starting at', s.peek(100))
-      end
-    end
-
-    return @code_section, rest if tokens.empty?
-
-    define_singleton_method(:next_token) { tokens.shift }
-
-    begin
-      do_parse
-    rescue ::Racc::ParseError => e
-      runtime.raise_syntax_error('Error parsing code section', e.message, wrapped_error: e)
-    end
-
-    return @code_section, rest
   end
