@@ -10,7 +10,7 @@ module CSVPlusPlus
 
       # initialize
       # rubocop:disable Metrics/ParameterLists
-      def initialize(catchall:, ignore:, input:, tokens:, alter_matches: {}, stop_fn: nil)
+      def initialize(input:, tokens:, catchall: nil, ignore: nil, alter_matches: {}, stop_fn: nil)
         @scanner = ::StringScanner.new(input.strip)
         @last_token = nil
 
@@ -30,12 +30,12 @@ module CSVPlusPlus
 
       # Scan input against the catchall pattern
       def scan_catchall
-        @scanner.scan(@catchall)
+        @scanner.scan(@catchall) if @catchall
       end
 
       # Scan input against the ignore pattern
       def matches_ignore?
-        @scanner.scan(@ignore)
+        @scanner.scan(@ignore) if @ignore
       end
 
       # The value of the last token matched
