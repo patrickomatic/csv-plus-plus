@@ -1,13 +1,17 @@
 # frozen_string_literal: true
 
+require_relative 'lib/csv_plus_plus/version'
 require 'dotenv/load'
 require 'rspec/core/rake_task'
 require 'rubocop/rake_task'
 
+::RSpec::Core::RakeTask.new(:spec)
+::RuboCop::RakeTask.new
+
 RACC_FILES = {
-  'lib/language/code_section.tab.rb': 'parsers/code_section.y',
-  'lib/language/cell_value.tab.rb': 'parsers/cell_value.y',
-  'lib/modifier.tab.rb': 'parsers/modifier.y'
+  'lib/csv_plus_plus/language/code_section.tab.rb': 'parsers/code_section.y',
+  'lib/csv_plus_plus/language/cell_value.tab.rb': 'parsers/cell_value.y',
+  'lib/csv_plus_plus/modifier.tab.rb': 'parsers/modifier.y'
 }.freeze
 
 task default: ::RACC_FILES.keys.map(&:to_sym) + %i[
@@ -18,12 +22,8 @@ task default: ::RACC_FILES.keys.map(&:to_sym) + %i[
   test:google_sheets:all_features
 ]
 
-::RSpec::Core::RakeTask.new(:spec)
-
-::RuboCop::RakeTask.new
-
 ::RACC_FILES.each do |dep, source|
-  desc "Compile #{dep}"
+  desc "Use racc to generate parser file #{dep}"
   file dep => source do |t|
     sh "racc -o #{t.name} #{t.prerequisites.join(' ')}"
   end
@@ -31,7 +31,22 @@ end
 
 desc 'Remove generated files'
 task :clean do
-  sh "rm -f #{::RACC_FILES.keys.join(' ')}"
+  sh "rm -f #{::RACC_FILES.keys.join(' ')} csv_plus_plus-*.gem"
+end
+
+namespace :build do
+  desc 'Build a new release'
+  task :gem do
+    version = ::CSVPlusPlus::VERSION
+
+    sh "git tag -l v#{version} || git tag v#{version}"
+
+    sh 'gem build csv_plus_plus.gemspec'
+
+    gem_file = "csv_plus_plus-#{version}.gem"
+    sh "gem install #{gem_file}"
+    sh "gem push #{gem_file}"
+  end
 end
 
 namespace :test do

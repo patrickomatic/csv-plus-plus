@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative '../../lib/language/entities'
-
 ::FactoryBot.define do
   factory :boolean_true, class: ::CSVPlusPlus::Language::Entities::Boolean do
     initialize_with { new true }

@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative '../../lib/language/scope'
-
 ::FactoryBot.define do
   factory :scope, class: ::CSVPlusPlus::Language::Scope do
     transient do

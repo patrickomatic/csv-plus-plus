@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'tempfile'
-require_relative '../../lib/language/runtime'
 
 ::FactoryBot.define do
   factory :runtime, class: ::CSVPlusPlus::Language::Runtime do

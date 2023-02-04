@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative '../../lib/modifier'
-
 ::FactoryBot.define do
   factory :modifier, class: ::CSVPlusPlus::Modifier do
     transient do

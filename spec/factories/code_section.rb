@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative '../../lib/code_section'
-
 ::FactoryBot.define do
   factory :code_section, class: ::CSVPlusPlus::CodeSection do
     transient do

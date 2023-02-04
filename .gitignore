@@ -1,3 +1,4 @@
 .output
 .env
 coverage/
+csv_plus_plus-*.gem

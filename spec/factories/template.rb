@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative '../../lib/template'
-
 ::FactoryBot.define do
   factory :template, class: ::CSVPlusPlus::Template do
     transient do

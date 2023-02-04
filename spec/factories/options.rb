@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative '../../lib/options'
-
 ::FactoryBot.define do
   factory :options, class: ::CSVPlusPlus::Options do
     transient do

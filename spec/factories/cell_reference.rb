@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative '../../lib/language/entities'
-
 ::FactoryBot.define do
   factory :cell_reference, class: ::CSVPlusPlus::Language::Entities::CellReference do
     transient do
