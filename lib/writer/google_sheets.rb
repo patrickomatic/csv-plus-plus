@@ -99,7 +99,7 @@ module CSVPlusPlus
 
         return unless @sheet_name.nil?
 
-        @sheet_name = @spreadsheet.sheets.first.properties.title
+        @sheet_name = @spreadsheet.sheets&.first&.properties&.title
       end
 
       def create_sheet!
@@ -113,7 +113,7 @@ module CSVPlusPlus
       def update_cells!(template)
         builder = ::CSVPlusPlus::Writer::GoogleSheetBuilder.new(
           rows: template.rows,
-          sheet_id: sheet.properties.sheet_id,
+          sheet_id: sheet&.properties&.sheet_id,
           column_index: @options.offset[1],
           row_index: @options.offset[0],
           current_sheet_values: @current_sheet_values

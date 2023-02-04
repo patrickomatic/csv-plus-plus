@@ -11,6 +11,10 @@ google_sheets_path_matcher =
 describe ::CSVPlusPlus::Writer::GoogleSheets do
   let(:writer) { described_class.new(options) }
 
+  before do
+    allow(::Google::Auth).to(receive(:get_application_default).and_return({}))
+  end
+
   describe '#write' do
     let(:options) { build(:options, :with_google_sheet_id) }
     let(:template) { build(:template, rows:) }
@@ -32,7 +36,7 @@ describe ::CSVPlusPlus::Writer::GoogleSheets do
           )
         end
 
-        xit 'successfully writes the spreadsheet' do
+        it 'successfully writes the spreadsheet' do
           expect { subject }
             .not_to(raise_error)
         end
@@ -45,7 +49,7 @@ describe ::CSVPlusPlus::Writer::GoogleSheets do
 
       before { options.google_sheet_id = 'this-does-not-exist' }
 
-      xit 'logs the error and does not raise it' do
+      it 'logs the error and does not raise it' do
         expect { subject }
           .not_to(raise_error)
       end
