@@ -8,7 +8,6 @@ FULL_RANGE = 'A1:Z1000'
 
 module CSVPlusPlus
   module Writer
-    ##
     # A class that can output a +Template+ to Google Sheets (via their API)
     class GoogleSheets < ::CSVPlusPlus::Writer::BaseWriter
       # XXX it would be nice to raise this but we shouldn't expand out more than necessary for our data

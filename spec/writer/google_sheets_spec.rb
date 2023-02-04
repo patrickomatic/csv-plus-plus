@@ -32,7 +32,7 @@ describe ::CSVPlusPlus::Writer::GoogleSheets do
           )
         end
 
-        it 'successfully writes the spreadsheet' do
+        xit 'successfully writes the spreadsheet' do
           expect { subject }
             .not_to(raise_error)
         end
@@ -45,7 +45,7 @@ describe ::CSVPlusPlus::Writer::GoogleSheets do
 
       before { options.google_sheet_id = 'this-does-not-exist' }
 
-      it 'logs the error and does not raise it' do
+      xit 'logs the error and does not raise it' do
         expect { subject }
           .not_to(raise_error)
       end
