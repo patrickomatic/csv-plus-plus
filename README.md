@@ -14,7 +14,7 @@ fees := 0.65 # my broker charges $0.65 a trade
 price := cellref(C)
 quantity := cellref(D)
 
-def profit() SUBTRACT(MULTIPLY(price, quantity), fees)
+def profit() (price * quantity) - fees
 
 ---
 ![[format=bold/align=center]]Date,Ticker,Price,Quantity,Total,Fees

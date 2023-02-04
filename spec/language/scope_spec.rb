@@ -8,14 +8,14 @@ describe ::CSVPlusPlus::Language::Scope do
   let(:scope) { described_class.new(runtime:) }
 
   describe 'code_section=' do
-    let(:complicated_ast) do
+    let(:ast) do
       build(:fn_call, name: :multiply, arguments: [build(:variable, id: :bar), build(:variable, id: :foo)])
     end
     let(:variables) do
       {
         bar: build(:number_one),
         foo: build(:fn_call_add),
-        dep: complicated_ast
+        dep: ast
       }
     end
     let(:functions) { {} }
@@ -27,10 +27,22 @@ describe ::CSVPlusPlus::Language::Scope do
       subject { code_section.variables }
 
       it 'resolves the variables in dep' do
-        expect(subject[:dep]).to(eq(build(:fn_call, name: :multiply, arguments: [variables[:bar], variables[:foo]])))
+        expect(subject[:dep]).to(
+          eq(
+            build(
+              :fn_call,
+              name: :multiply,
+              arguments: [variables[:bar], variables[:foo]]
+            )
+          )
+        )
       end
 
       context 'with runtime variables' do
+        let(:ast) do
+          build(:fn_call, name: :multiply, arguments: [build(:variable, id: :rownum), build(:variable, id: :foo)])
+        end
+
         it 'resolves just the static variables in dep' do
           expect(subject[:dep]).to(
             eq(

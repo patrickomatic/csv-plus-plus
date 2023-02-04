@@ -1,5 +1,5 @@
 # Language
-- [ ] Get infix operators working
+- [x] Get infix operators working
 
 # Formats
 - [ ] Excel - look into caxlsx, Apache POI or openxml
@@ -26,8 +26,8 @@
 # Variables and functions
 
 - [ ] a way to not show a function if it's dependent cells are blank (make it less ugly when expanded out)
-- [ ] CELLREF()
 - [ ] SHEETREF()
+- [x] CELLREF()
 - [x] user defined functions at the top
 - [x] `$$row` current row
 

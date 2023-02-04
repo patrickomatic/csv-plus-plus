@@ -73,8 +73,20 @@ module CSVPlusPlus
       # Resolve all variable references defined statically in the code section
       def resolve_static_variables!
         variables = @code_section.variables
-        var_dependencies, resolution_order = variable_resolution_order(variables)
-        resolve_dependencies(var_dependencies, resolution_order, variables)
+        last_var_dependencies = {}
+        # TODO: might not need the infinite loop wrap
+        loop do
+          var_dependencies, resolution_order = variable_resolution_order(only_static_vars(variables))
+          return if var_dependencies == last_var_dependencies
+
+          # TODO: make the contract better here where we're not seting the variables of another class
+          @code_section.variables = resolve_dependencies(var_dependencies, resolution_order, variables)
+          last_var_dependencies = var_dependencies.clone
+        end
+      end
+
+      def only_static_vars(var_dependencies)
+        var_dependencies.reject { |k| @runtime.runtime_variable?(k) }
       end
 
       # Resolve all functions defined statically in the code section
@@ -170,18 +182,16 @@ module CSVPlusPlus
       end
 
       def resolve_dependencies(var_dependencies, resolution_order, variables)
-        resolved_vars = {}
+        {}.tap do |resolved_vars|
+          # for each var and each dependency it has, build up and mutate resolved_vars
+          resolution_order.each do |var|
+            resolved_vars[var] = variables[var].dup
 
-        # for each var and each dependency it has, build up and mutate resolved_vars
-        resolution_order.each do |var|
-          resolved_vars[var] = variables[var].dup
-
-          var_dependencies[var].each do |dependency|
-            resolved_vars[var] = variable_replace(resolved_vars[var], dependency, variables[dependency])
+            var_dependencies[var].each do |dependency|
+              resolved_vars[var] = variable_replace(resolved_vars[var], dependency, variables[dependency])
+            end
           end
         end
-
-        resolved_vars
       end
     end
     # rubocop:enable Metrics/ClassLength

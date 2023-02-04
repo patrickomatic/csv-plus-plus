@@ -19,7 +19,7 @@ rule
 
   exp: fn_call
      | infix_fn_call
-     | '(' exp ')'                    
+     | '(' exp ')'                    { result = val[1] }
      | VAR_REF ID                     { result = e(:variable, val[1])               }
      | STRING                         { result = e(:string, val[0])                 }
      | NUMBER                         { result = e(:number, val[0])                 }

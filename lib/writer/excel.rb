@@ -2,7 +2,6 @@
 
 module CSVPlusPlus
   module Writer
-    ##
     # A class that can output a +Template+ to an Excel file
     class Excel < ::CSVPlusPlus::Writer::BaseWriter
       # write a +template+ to an Excel file

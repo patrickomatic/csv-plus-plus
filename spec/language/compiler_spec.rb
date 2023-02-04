@@ -156,7 +156,7 @@ describe ::CSVPlusPlus::Language::Compiler do
       context 'a function with arguments' do
         let(:input) do
           <<~INPUT
-            def foo(a, b) add(a, b)
+            def foo(a, b) add($$a, $$b)
             ---
             foo,bar,baz
           INPUT

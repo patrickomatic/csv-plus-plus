@@ -41,6 +41,7 @@ describe ::CSVPlusPlus::Language::Entities::FunctionCall do
   describe '#==' do
     it { is_expected.to(eq(build(:fn_call, name: 'minus', arguments: [build(:number_one), build(:variable_foo)]))) }
 
+    it { is_expected.not_to(eq(')')) }
     it { is_expected.not_to(eq(build(:fn_foo))) }
     it { is_expected.not_to(eq(build(:number_one))) }
     it { is_expected.not_to(eq(build(:variable_foo))) }

@@ -17,7 +17,7 @@ module CSVPlusPlus
 
         # ==
         def ==(other)
-          super || @id == other.id
+          super && @id == other.id
         end
       end
     end

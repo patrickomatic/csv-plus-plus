@@ -17,7 +17,7 @@ module CSVPlusPlus
 
         # ==
         def ==(other)
-          @type == other.type && @id == other.id
+          self.class == other.class && @type == other.type && @id == other.id
         end
 
         # Respond to predicates that correspond to types like #boolean?, #string?, etc

@@ -14,7 +14,7 @@ require_relative '../../lib/language/entities'
 
     factory :fn_bar do
       name { :bar }
-      body { build(:fn_call, name: :indirect, arguments: [build(:string, s: 'bar')]) }
+      body { build(:fn_call, name: :indirect, arguments: [build(:string, s: 'BAR')]) }
     end
 
     factory :fn_foo do

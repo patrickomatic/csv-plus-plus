@@ -7,7 +7,8 @@ module CSVPlusPlus
   ##
   # A representation of the code section part of a template (the variable and function definitions)
   class CodeSection
-    attr_reader :functions, :variables
+    attr_reader :functions
+    attr_accessor :variables
 
     # initialize
     def initialize(variables: {}, functions: {})

@@ -181,13 +181,13 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
       context 'with a single function that takes no args' do
         let(:input) do
           <<~INPUT
-            def foo() INDIRECT("BAR")
+            def bar() INDIRECT("BAR")
             ---
             =$$foo(A1, B1),bar,baz
           INPUT
         end
 
-        it { is_expected.to(eq({ foo: build(:fn_foo) })) }
+        it { is_expected.to(eq({ bar: build(:fn_bar) })) }
       end
 
       context 'with a function that takes two args' do
@@ -239,7 +239,118 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
       end
 
       context 'with functions that depend on each other' do
-        # TODO
+        let(:input) do
+          <<~INPUT
+            def foo(a) ADD(bar($$a), 1)
+            def bar(a) ADD(baz($$a), 1)
+            def baz(a) ADD($$a, 1)
+            ---
+            =$$foo(2),bar,baz
+            10,20,30
+          INPUT
+        end
+
+        it do
+          is_expected.to(
+            eq(
+              {
+                foo: build(
+                  :fn,
+                  name: :foo,
+                  arguments: %i[a],
+                  body:
+                  build(
+                    :fn_call,
+                    name: :add,
+                    arguments: [
+                      build(:fn_call, name: :bar, arguments: [build(:variable, id: :a)]),
+                      build(:number_one)
+                    ]
+                  )
+                ),
+                bar: build(
+                  :fn,
+                  name: :bar,
+                  arguments: %i[a],
+                  body:
+                  build(
+                    :fn_call,
+                    name: :add,
+                    arguments: [
+                      build(:fn_call, name: :baz, arguments: [build(:variable, id: :a)]),
+                      build(:number_one)
+                    ]
+                  )
+                ),
+                baz: build(
+                  :fn,
+                  name: :baz,
+                  arguments: %i[a],
+                  body:
+                  build(:fn_call, name: :add, arguments: [build(:variable, id: :a), build(:number_one)])
+                )
+              }
+            )
+          )
+        end
+      end
+
+      context 'with an infix function call' do
+        let(:input) do
+          <<~INPUT
+            def foo(a) 1 + $$a
+            ---
+            =$$foo(2),bar,baz
+          INPUT
+        end
+
+        it do
+          is_expected.to(
+            eq(
+              {
+                foo: build(
+                  :fn,
+                  name: :foo,
+                  arguments: %i[a],
+                  body:
+                  build(:fn_call, name: :add, arguments: [build(:number_one), build(:variable, id: :a)])
+                )
+              }
+            )
+          )
+        end
+      end
+
+      context 'with an infix function call with parenthesis for grouping' do
+        let(:input) do
+          <<~INPUT
+            def bar(a) sum($$a) * ($$a + 2)
+            ---
+            =$$foo(2),bar,baz
+          INPUT
+        end
+
+        it do
+          is_expected.to(
+            eq(
+              {
+                bar: build(
+                  :fn,
+                  name: :bar,
+                  arguments: %i[a],
+                  body: build(
+                    :fn_call,
+                    name: :multiply,
+                    arguments: [
+                      build(:fn_call, name: :sum, arguments: [build(:variable, id: :a)]),
+                      build(:fn_call, name: :add, arguments: [build(:variable, id: :a), build(:number_two)])
+                    ]
+                  )
+                )
+              }
+            )
+          )
+        end
       end
     end
   end

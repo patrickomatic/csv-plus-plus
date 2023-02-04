@@ -108,7 +108,7 @@ racc_reduce_table = [
   3, 19, :_reduce_1,
   1, 20, :_reduce_none,
   1, 20, :_reduce_none,
-  3, 20, :_reduce_none,
+  3, 20, :_reduce_4,
   2, 20, :_reduce_5,
   1, 20, :_reduce_6,
   1, 20, :_reduce_7,
@@ -212,7 +212,12 @@ module_eval(<<'.,.,', 'cell_value.y', 17)
 
 # reduce 3 omitted
 
-# reduce 4 omitted
+module_eval(<<'.,.,', 'cell_value.y', 21)
+  def _reduce_4(val, _values, result)
+     result = val[1]
+    result
+  end
+.,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 22)
   def _reduce_5(val, _values, result)

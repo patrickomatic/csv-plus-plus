@@ -1,11 +1,11 @@
 class CSVPlusPlus::Language::CodeSectionParser
 
 prechigh
+  right END_OF_CODE
+  left '(' ')'
   left FN_DEF
   left ASSIGN
-  left '(' ')'
   left ','
-  right END_OF_CODE
 preclow
 
 token ASSIGN
@@ -27,26 +27,35 @@ rule
 
   def: fn_def | var_def
 
-  fn_def: FN_DEF ID '(' fn_def_args ')' exp   { def_function(val[1], val[3], val[5])          }
-  fn_def: FN_DEF ID '(' ')' exp               { def_function(val[1], [], val[4])              }
+  fn_def: FN_DEF ID '(' fn_def_args ')' exp   { def_function(val[1], val[3], val[5])                    }
+  fn_def: FN_DEF ID '(' ')' exp               { def_function(val[1], [], val[4])                        }
 
-  fn_def_args: fn_def_args ',' ID             { result = val[0] << val[2]                     }
-             | ID                             { result = [val[0]]                             }
+  fn_def_args: fn_def_args ',' ID             { result = val[0] << val[2]                               }
+             | ID                             { result = [val[0]]                                       }
 
-  var_def: ID ASSIGN exp                      { def_variable(val[0], val[2])                  }
+  var_def: ID ASSIGN exp                      { def_variable(val[0], val[2])                            }
 
-  exp: ID '(' fn_call_args ')'                { result = e(:function_call, val[0], val[2])    }
-     | ID '(' ')'                             { result = e(:function_call, val[0], [])        }
-     | ID '(' exp ')'                         { result = e(:function_call, val[0], [val[2]])  }
-     | VAR_REF ID                             { result = e(:variable, val[1])                 }
-     | STRING                                 { result = e(:string, val[0])                   }
-     | NUMBER                                 { result = e(:number, val[0])                   }
-     | TRUE                                   { result = e(:boolean, true)                    }
-     | FALSE                                  { result = e(:boolean, false)                   }
-     | ID                                     { result = e(:cell_reference, val[0])           }
+  exp: fn_call
+     | infix_fn_call
+     | '(' exp ')'                            { result = val[1] }
+     | VAR_REF ID                             { result = e(:variable, val[1])                           }
+     | STRING                                 { result = e(:string, val[0])                             }
+     | NUMBER                                 { result = e(:number, val[0])                             }
+     | TRUE                                   { result = e(:boolean, true)                              }
+     | FALSE                                  { result = e(:boolean, false)                             }
+     | ID                                     { result = e(:cell_reference, val[0])                     }
+     
+  infix_fn_call: exp '&' exp                  { result = e(:function_call, :concat, [val[0], val[2]])   }
+               | exp '*' exp                  { result = e(:function_call, :multiply, [val[0], val[2]]) }
+               | exp '+' exp                  { result = e(:function_call, :add, [val[0], val[2]])      }
+               | exp '-' exp                  { result = e(:function_call, :minus, [val[0], val[2]])    }
+               | exp '/' exp                  { result = e(:function_call, :divide, [val[0], val[2]])   }
 
-  fn_call_args: fn_call_args ',' exp          { result = val[0] << val[2]                     }
-              | exp                           { result = [val[0]]                             }
+  fn_call: ID '(' fn_call_args ')'            { result = e(:function_call, val[0], val[2])              }
+         | ID '(' ')'                         { result = e(:function_call, val[0], [])                  }
+
+  fn_call_args: fn_call_args ',' exp          { result = val[0] << val[2]                               }
+              | exp                           { result = [val[0]]                                       }
 
 end
 
@@ -76,7 +85,7 @@ require_relative '../code_section'
 
   def tokenizer(input)
     ::CSVPlusPlus::Lexer::Tokenizer.new(
-      catchall: /[\(\)\{\}\/\*\+\-,=&]/, # TODO this might not even be used
+      catchall: /[\(\)\{\}\/\*\+\-,=&]/,
       ignore: /\s+|\#[^\n]+\n/,
       input:,
       stop_fn: lambda do |scanner|
@@ -90,8 +99,8 @@ require_relative '../code_section'
         [/\n/, :EOL],
         [/:=/, :ASSIGN],
         [/\bdef\b/, :FN_DEF],
-        [/\bTRUE\b/, :TRUE],
-        [/\bFALSE\b/, :FALSE],
+        [/\bTRUE\b/i, :TRUE],
+        [/\bFALSE\b/i, :FALSE],
         [/"(?:[^"\\]|\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}))*"/, :STRING],
         [/-?[\d.]+/, :NUMBER],
         [/\$\$/, :VAR_REF],
