@@ -71,6 +71,7 @@ option_parser.parse!
 error_message = options.validate
 unless error_message.nil?
   warn(error_message)
+  puts(option_parser)
   exit(1)
 end
 

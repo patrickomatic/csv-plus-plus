@@ -34,17 +34,27 @@ task :clean do
   sh "rm -f #{::RACC_FILES.keys.join(' ')} csv_plus_plus-*.gem"
 end
 
-namespace :build do
+namespace :gem do
+  # based on the current version, the name of the built gem
+  def gem_file
+    "csv_plus_plus-#{::CSVPlusPlus::VERSION}.gem"
+  end
+
+  # create a tag in git for the current version
+  def git_tag_version
+    version_tag = "v#{::CSVPlusPlus::VERSION}"
+    sh("git tag -l #{version_tag} || git tag #{version_tag}")
+  end
+
   desc 'Build a new release'
-  task :gem do
-    version = ::CSVPlusPlus::VERSION
-
-    sh "git tag -l v#{version} || git tag v#{version}"
-
+  task :build do
     sh 'gem build csv_plus_plus.gemspec'
-
-    gem_file = "csv_plus_plus-#{version}.gem"
     sh "gem install #{gem_file}"
+  end
+
+  desc 'Publish the built release'
+  task publish: :build do
+    git_tag_version
     sh "gem push #{gem_file}"
   end
 end

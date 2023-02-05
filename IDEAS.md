@@ -1,17 +1,17 @@
 # Testing/Publishing
-- [ ] 
+
+- [ ] Homebrew package
+- [ ] Debian package
 - [x] Get the Google API default credentials working
 
-# Language
-- [x] Get infix operators working
+# Spreadsheet Compatibility
 
-# Formats
 - [ ] Excel - look into caxlsx, Apache POI or openxml
 - [ ] OpenOffice - whatever it's equivalent format is
 - [ ] Apple Numbers
 - [x] make it output to CSV (loses formatting, but keeps formulas, variables and expansions)
 
-# Modifiers to rows & cells
+# Modifiers 
 
 - [ ] conditional formatting
 - [ ] data validation
@@ -27,10 +27,12 @@
 - [x] horizontal alignment
 - [x] formatting: bold, italic, underline
 
-# Variables and functions
+# Language
 
 - [ ] a way to not show a function if it's dependent cells are blank (make it less ugly when expanded out)
 - [ ] SHEETREF()
+- [ ] turn it into a lisp???
+- [x] Get infix operators working
 - [x] CELLREF()
 - [x] user defined functions at the top
 - [x] `$$row` current row

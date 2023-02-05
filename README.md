@@ -9,7 +9,7 @@ A tool that allows you to programatically author spreadsheets in your favorite t
 A `csvpp` file consists of a (optional) code section and a CSV section separated by `---`.  In the code section you can define variables and functions that can be used in the CSV below it.  For example:
 
 ```
-fees := 0.65 # my broker charges $0.65 a trade
+fees := 0.50 # my broker charges $0.50 a trade
 
 price := cellref(C)
 quantity := cellref(D)
@@ -68,7 +68,12 @@ Date,[[align=left]]Amount,Quantity,[[align=center/format=bold italic]]Price
 
 ## Setup (Google Sheets)
 
-* [Install asdf](https://asdf-vm.com/guide/getting-started.html) and the current ruby version in `.tool-versions`
+Just install it via rubygems (homebrew and debian packages are in the works):
+
+`$ gem install csv_plus_plus`
+
+### Publishing to Google Sheets
+
 * Go to the [GCP developers console](https://console.cloud.google.com/projectselector2/apis/credentials?pli=1&supportedpurview=project), create a service account and export keys for it to `~/.config/gcloud/application_default_credentials.json`
 * "Share" the spreadsheet with the email associated with the service account
 
@@ -96,5 +101,3 @@ $ csv++ --sheet-name "Taxes 2022" --sheet-id "[...]" my_taxes_template.csvpp
 # take input from stdin, supply a variable ($$rate = 1) and apply to the "Stocks" spreadsheet
 $ cat stocks.csvpp | csv++ -k "rate=1" -n "Stocks" -i "[...]"
 ```
-
-
