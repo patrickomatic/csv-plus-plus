@@ -43,7 +43,12 @@ namespace :gem do
   # create a tag in git for the current version
   def git_tag_version
     version_tag = "v#{::CSVPlusPlus::VERSION}"
-    sh("git tag -l #{version_tag} || git tag #{version_tag}")
+    sh("git tag | grep '^#{version_tag}$'") do |tagged|
+      return if tagged
+
+      sh("git tag #{version_tag}")
+      sh('git push origin --tags')
+    end
   end
 
   desc 'Build a new release'
