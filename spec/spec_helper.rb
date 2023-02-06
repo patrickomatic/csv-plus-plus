@@ -7,10 +7,10 @@ require 'simplecov'
 require 'vcr'
 require 'webmock/rspec'
 
-require_relative '../lib/csv_plus_plus'
-
 ::SimpleCov.start
 ::SimpleCov.minimum_coverage(90)
+
+require_relative '../lib/csv_plus_plus'
 
 ::WebMock.enable!
 

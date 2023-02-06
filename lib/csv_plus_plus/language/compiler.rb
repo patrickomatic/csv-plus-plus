@@ -14,7 +14,6 @@ require_relative 'scope'
 
 module CSVPlusPlus
   module Language
-    ##
     # Encapsulates the parsing and building of objects (+Template+ -> +Row+ -> +Cell+).
     # Variable resolution is delegated to the +Scope+
     # rubocop:disable Metrics/ClassLength
