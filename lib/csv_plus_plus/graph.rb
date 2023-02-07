@@ -54,11 +54,6 @@ module CSVPlusPlus
       include ::TSort
       alias tsort_each_node each_key
 
-      # create a +DependencyGraph+ from a +Hash+
-      def self.from_hash(hash)
-        self[hash.map { |k, v| [k, v] }]
-      end
-
       # sort each child
       def tsort_each_child(node, &)
         fetch(node).each(&)

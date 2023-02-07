@@ -12,11 +12,17 @@ module CSVPlusPlus
         .gsub(/^#?/, '')
         .match(/(\w\w?)(\w\w?)(\w\w?)/)
         .captures
-        .map do |s|
-          255 / (s.length == 2 ? s : s + s).to_i(16)
-        rescue ::StandardError
-          0
-        end
+        .map { |s| (s.length == 2 ? s : s + s).to_i(16) / 255.0 }
+    end
+
+    # to_s
+    def to_s
+      "Color(r: #{@red}, g: #{@green}, b: #{@blue})"
+    end
+
+    # ==
+    def ==(other)
+      other.is_a?(self.class) && other.red == @red && other.green == @green && other.blue == @blue
     end
   end
 end

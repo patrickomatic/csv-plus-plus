@@ -38,6 +38,14 @@ describe ::CSVPlusPlus::Modifier do
     end
   end
 
+  describe '#bordercolor=' do
+    before { modifier.bordercolor = '#FF0000' }
+
+    it 'sets the border color' do
+      expect(modifier.bordercolor).to(be_a(::CSVPlusPlus::Color))
+    end
+  end
+
   describe '#borderstyle' do
     subject { modifier.borderstyle }
 
@@ -96,6 +104,14 @@ describe ::CSVPlusPlus::Modifier do
     end
   end
 
+  describe '#fontcolor=' do
+    before { modifier.fontcolor = '#FF0000' }
+
+    it 'sets the font color' do
+      expect(modifier.fontcolor).to(be_a(::CSVPlusPlus::Color))
+    end
+  end
+
   describe '#format=' do
     context 'with a single values' do
       before do
@@ -107,6 +123,17 @@ describe ::CSVPlusPlus::Modifier do
         expect(modifier).to(be_formatted('bold'))
         expect(modifier).to(be_formatted('strikethrough'))
       end
+    end
+  end
+
+  describe '#freeze!' do
+    context 'by default' do
+      it { is_expected.not_to(be_frozen) }
+    end
+
+    context 'after calling #freeze!' do
+      before { modifier.freeze! }
+      it { is_expected.to(be_frozen) }
     end
   end
 
