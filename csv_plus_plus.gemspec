@@ -20,6 +20,8 @@ require 'rake'
   s.executables = %w[csv++]
 
   s.metadata['rubygems_mfa_required'] = 'true'
+  s.metadata['github_repo'] = 'git://github.com/patrickomatic/csv_plus_plus'
+
   s.required_ruby_version = '>= 3.1'
 
   s.add_runtime_dependency('google-apis-sheets_v4', '~> 0.2')

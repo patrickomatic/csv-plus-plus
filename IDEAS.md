@@ -44,6 +44,7 @@
 
 # Other
 
+- [ ] Make it compatible with older ruby versions - no reason we need the newest
 - [ ] Revise the "how to use" docs
 - [ ] Charts
 - [ ] Pivot table support - not sure what this would even look like
