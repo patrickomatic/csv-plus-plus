@@ -7,64 +7,18 @@ require_relative '../lib/csv_plus_plus'
 options = ::CSVPlusPlus::Options.new
 
 option_parser =
-  # rubocop:disable Metrics/BlockLength
   ::OptionParser.new do |parser|
-    parser.on('-b', '--backup', 'Create a backup of the spreadsheet before applying changes.') do
-      options.backup = true
-    end
-
-    parser.on(
-      '-g SHEET_ID',
-      '--google-sheet-id SHEET_ID',
-      'The id of the sheet - you can extract this from the URL: ' \
-      'https://docs.google.com/spreadsheets/d/< ... SHEET_ID ... >/edit#gid=0'
-    ) do |v|
-      options.google_sheet_id = v
-    end
-
-    parser.on('-c', '--create', "Create the sheet if it doesn't exist.  It will use --sheet-name if specified") do
-      options.create_if_not_exists = true
-    end
-
-    parser.on(
-      '-k KEY_VALUES',
-      '--key-values KEY_VALUES',
-      'A comma-separated list of key=values which will be made available to the template'
-    ) do |v|
-      options.key_values =
-        begin
-          [v.split('=')].to_h
-        rescue ::StandardError
-          {}
-        end
-    end
-
-    parser.on('-n SHEET_NAME', '--sheet-name SHEET_NAME', 'The name of the sheet to apply the template to') do |v|
-      options.sheet_name = v
-    end
-
-    parser.on('-o OUTPUT_FILE', '--output OUTPUT_FILE', 'The file to write to (must be .csv, .ods, .xls)') do |v|
-      options.output_filename = v
-    end
-
-    parser.on('-v', '--verbose', 'Enable verbose output') do
-      options.verbose = true
-    end
-
-    parser.on('-x OFFSET', '--offset-columns OFFSET', 'Apply the template offset by OFFSET cells') do |v|
-      options.offset[0] = v
-    end
-
-    parser.on('-y OFFSET', '--offset-rows OFFSET', 'Apply the template offset by OFFSET rows') do |v|
-      options.offset[1] = v
-    end
-
     parser.on('-h', '--help', 'Show help information') do
       puts(parser)
       exit
     end
+
+    ::SUPPORTED_CSVPP_FLAGS.each do |flag|
+      parser.on(flag.short_flag, flag.long_flag, flag.description) do |v|
+        flag.handler.call(options, v)
+      end
+    end
   end
-# rubocop:enable Metrics/BlockLength
 
 option_parser.parse!
 

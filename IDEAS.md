@@ -2,7 +2,7 @@
 
 - [ ] Homebrew package
 - [ ] Debian package
-- [x] Get the Google API default credentials working
+- [x] Get the Google API default credentials working with tests
 
 # Spreadsheet Compatibility
 

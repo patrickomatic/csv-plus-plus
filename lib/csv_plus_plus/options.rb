@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative './cli_flag'
 require_relative './google_options'
 
 module CSVPlusPlus

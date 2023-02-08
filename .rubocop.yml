@@ -4,7 +4,7 @@ AllCops:
   Exclude:
     - 'lib/**/*.tab.rb'
 
-  # TODO lower this (no need to be fancy really) :((((
+  # TODO lower this (no need to be fancy really) 
   TargetRubyVersion: 3.1
 
 Style/DisableCopsWithinSourceCodeDirective:
