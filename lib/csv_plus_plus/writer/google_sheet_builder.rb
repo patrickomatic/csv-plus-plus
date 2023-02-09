@@ -2,7 +2,6 @@
 
 module CSVPlusPlus
   module Writer
-    ##
     # Given +rows+ from a +Template+, build requests compatible with Google Sheets Ruby API
     # rubocop:disable Metrics/ClassLength
     class GoogleSheetBuilder

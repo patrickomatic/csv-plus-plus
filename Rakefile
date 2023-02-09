@@ -18,6 +18,7 @@ task default: ::RACC_FILES.keys.map(&:to_sym) + %i[
   rubocop:autocorrect_all
   spec
   test:csv:all_features
+  test:excel:all_features
   test:google_sheets:stocks
   test:google_sheets:all_features
 ]
@@ -66,31 +67,42 @@ end
 
 namespace :test do
   namespace :google_sheets do
-    google_sheet_id = ::ENV.fetch('GOOGLE_SHEET_ID', nil)
-
-    desc 'Test with the examples/stocks.csvpp template'
-    task :stocks do
+    # get GOOGLE_SHEET_ID which should be set in the env (or warn)
+    def with_google_sheet_id
+      google_sheet_id = ::ENV.fetch('GOOGLE_SHEET_ID', nil)
       if google_sheet_id
-        sh %(./bin/csv++ -v -n "Sheet1" -g #{google_sheet_id} examples/stocks.csvpp)
+        yield(google_sheet_id)
       else
         warn('GOOGLE_SHEET_ID is not defined')
       end
     end
 
-    desc 'Test with the examples/all_features.csvpp template outputting to Google Sheets'
+    desc 'Test examples/stocks.csvpp outputting to Google Sheets'
+    task :stocks do
+      with_google_sheet_id do |google_sheet_id|
+        sh %(./bin/csv++ -v -n "Sheet1" -g #{google_sheet_id} examples/stocks.csvpp)
+      end
+    end
+
+    desc 'Test examples/all_features.csvpp outputting to Google Sheets'
     task :all_features do
-      if google_sheet_id
+      with_google_sheet_id do |google_sheet_id|
         sh %(./bin/csv++ --verbose -n "Sheet2" -g #{google_sheet_id} examples/all_features.csvpp)
-      else
-        warn('GOOGLE_SHEET_ID is not defined')
       end
     end
   end
 
   namespace :csv do
-    desc 'Test with the examples/all_features.csvpp template outputting to CSV'
+    desc 'Test examples/all_features.csvpp outputting to CSV'
     task :all_features do
-      sh %(./bin/csv++ --verbose -n "Sheet2" --output examples/all_features.csv examples/all_features.csvpp)
+      sh %(./bin/csv++ --verbose --output examples/all_features.csv examples/all_features.csvpp)
+    end
+  end
+
+  namespace :excel do
+    desc 'Test examples/all_features.csvpp outputting to Excel'
+    task :all_features do
+      sh %(./bin/csv++ -v -n "Excel test" -o examples/all_features.xlsx examples/all_features.csvpp)
     end
   end
 end

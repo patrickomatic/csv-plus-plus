@@ -127,8 +127,6 @@ module CSVPlusPlus
 
         # this will throw a syntax error if it doesn't exist (which is what we want)
         return ::BUILTIN_FUNCTIONS[id] if ::BUILTIN_FUNCTIONS.key?(id)
-
-        @runtime.raise_syntax_error('Unknown function', fn_id)
       end
 
       def apply_arguments(function, function_call)

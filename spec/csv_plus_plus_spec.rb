@@ -44,11 +44,11 @@ describe ::CSVPlusPlus do
       # TODO
     end
 
-    context 'to OpenDocument' do
+    context 'to Excel' do
       # TODO
     end
 
-    context 'to Excel' do
+    context 'to OpenDocument' do
       # TODO
     end
   end

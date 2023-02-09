@@ -19,12 +19,17 @@ describe ::CSVPlusPlus::Writer do
       it { is_expected.to(be_a(::CSVPlusPlus::Writer::OpenDocument)) }
     end
 
+    context 'when options.output_filename ends in .xlsx' do
+      let(:options) { build(:options, output_filename: 'foo.xlsx') }
+      it { is_expected.to(be_a(::CSVPlusPlus::Writer::Excel)) }
+    end
+
     context 'when options.output_filename ends in .xls' do
       let(:options) { build(:options, output_filename: 'foo.xls') }
       it { is_expected.to(be_a(::CSVPlusPlus::Writer::Excel)) }
     end
 
-    context 'otherwise' do
+    context 'otherwise it raises an exception' do
       let(:options) { build(:options, output_filename: 'foo.xyz') }
       it 'raises an error' do
         expect { subject }
