@@ -26,8 +26,8 @@ module CSVPlusPlus
       def write(template)
         auth!
 
-        save_spreadsheet!
-        save_spreadsheet_values!
+        fetch_spreadsheet!
+        fetch_spreadsheet_values!
 
         create_sheet! if @options.create_if_not_exists
 
@@ -58,7 +58,7 @@ module CSVPlusPlus
         @gs.authorization = ::Google::Auth.get_application_default(::AUTH_SCOPES)
       end
 
-      def save_spreadsheet_values!
+      def fetch_spreadsheet_values!
         formatted_values = get_all_spreadsheet_values('FORMATTED_VALUE')
         formula_values = get_all_spreadsheet_values('FORMULA')
 
@@ -94,7 +94,7 @@ module CSVPlusPlus
         @spreadsheet.sheets.find { |s| s.properties.title.strip == @sheet_name.strip }
       end
 
-      def save_spreadsheet!
+      def fetch_spreadsheet!
         @spreadsheet = @gs.get_spreadsheet(@sheet_id)
 
         return unless @sheet_name.nil?

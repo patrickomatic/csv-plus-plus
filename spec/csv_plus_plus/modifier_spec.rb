@@ -73,20 +73,8 @@ describe ::CSVPlusPlus::Modifier do
     before { modifier.color = hex_value }
     let(:hex_value) { '#FF00FF' }
 
-    it 'sets the red, green, blue values' do
-      expect(modifier.color.red).to(eq(1))
-      expect(modifier.color.green).to(eq(0))
-      expect(modifier.color.blue).to(eq(1))
-    end
-
-    context 'with a 3-digit hex value' do
-      let(:hex_value) { '#F0F' }
-
-      it 'sets the red, green, blue values' do
-        expect(modifier.color.red).to(eq(1))
-        expect(modifier.color.green).to(eq(0))
-        expect(modifier.color.blue).to(eq(1))
-      end
+    it 'sets the color attribute' do
+      expect(modifier.color).to(be_a(::CSVPlusPlus::Color))
     end
   end
 

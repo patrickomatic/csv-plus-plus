@@ -5,39 +5,61 @@ describe ::CSVPlusPlus::Color do
   let(:color) { ::CSVPlusPlus::Color.new(hex_string) }
 
   describe '#initialize' do
-    it 'sets @red component' do
-      expect(color.red).to(eq(1))
+    it 'sets @red_hex component' do
+      expect(color.red_hex).to(eq('FF'))
     end
 
-    it 'sets @green component' do
-      expect(color.green).to(eq(0))
+    it 'sets @green_hex component' do
+      expect(color.green_hex).to(eq('00'))
     end
 
-    it 'sets @blue component' do
-      expect(color.blue).to(eq(1 / 255.0))
+    it 'sets @blue_hex component' do
+      expect(color.blue_hex).to(eq('01'))
     end
 
-    context 'with an invalid hex_string' do
+    context 'with a 3-character hex string' do
+      let(:hex_string) { 'FA2' }
+
+      it 'sets @red_hex component' do
+        expect(color.red_hex).to(eq('FF'))
+      end
+
+      it 'sets @green_hex component' do
+        expect(color.green_hex).to(eq('AA'))
+      end
+
+      it 'sets @blue_hex component' do
+        expect(color.blue_hex).to(eq('22'))
+      end
+    end
+
+    context 'with an invalid hex string' do
       let(:hex_string) { 'invalid' }
 
-      it 'sets @red component to 0' do
-        expect(color.red).to(eq(0))
+      it 'sets @red_hex component to 0' do
+        expect(color.red_hex).to(be_nil)
       end
 
-      it 'sets @green component to 0' do
-        expect(color.green).to(eq(0))
+      it 'sets @green_hex component to 0' do
+        expect(color.green_hex).to(be_nil)
       end
 
-      it 'sets @blue component to 0' do
-        expect(color.blue).to(eq(0))
+      it 'sets @blue_hex component to 0' do
+        expect(color.blue_hex).to(be_nil)
       end
     end
+  end
+
+  describe '#to_hex' do
+    subject { color.to_hex }
+
+    it { is_expected.to(eq('FF0001')) }
   end
 
   describe '#to_s' do
     subject { color.to_s }
 
-    it { is_expected.to(eq('Color(r: 1.0, g: 0.0, b: 0.00392156862745098)')) }
+    it { is_expected.to(eq('Color(r: FF, g: 00, b: 01)')) }
   end
 
   describe '#==' do

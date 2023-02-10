@@ -32,6 +32,11 @@ module CSVPlusPlus
       @align.include?(direction)
     end
 
+    # Does it have any kind of alignment set?
+    def any_alignment?
+      !@align.empty?
+    end
+
     # Set the color.  hex_value is a String
     def color=(hex_value)
       @color = ::CSVPlusPlus::Color.new(hex_value)

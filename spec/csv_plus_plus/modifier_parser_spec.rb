@@ -65,9 +65,7 @@ describe ::CSVPlusPlus::ModifierParser do
       it { is_expected.to(eq('=ADD(1, 2)')) }
 
       it 'sets the color' do
-        expect(cell_modifier.color.red).to(eq(1))
-        expect(cell_modifier.color.green).to(eq(0))
-        expect(cell_modifier.color.blue).to(eq(1))
+        expect(cell_modifier.color.to_s).to(eq('Color(r: FF, g: 00, b: FF)'))
       end
     end
 

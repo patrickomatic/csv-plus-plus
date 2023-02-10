@@ -26,7 +26,7 @@ module CSVPlusPlus
       end
 
       def sheets_color(color)
-        sheets_ns::Color.new(red: color.red, green: color.green, blue: color.blue)
+        sheets_ns::Color.new(red: color.red_percent, green: color.green_percent, blue: color.blue_percent)
       end
 
       def set_extended_value_type!(extended_value, value)

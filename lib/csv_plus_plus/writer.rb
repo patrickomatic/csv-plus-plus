@@ -7,7 +7,6 @@ require_relative './writer/google_sheets'
 require_relative './writer/open_document'
 
 module CSVPlusPlus
-  ##
   # Various strategies for writing to various formats (excel, google sheets, CSV, OpenDocument)
   module Writer
     # Return an instance of a writer depending on the given +options+
