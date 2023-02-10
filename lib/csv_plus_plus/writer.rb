@@ -16,8 +16,8 @@ module CSVPlusPlus
       case options.output_filename
       when /\.csv$/ then ::CSVPlusPlus::Writer::CSV.new(options)
       when /\.ods$/ then ::CSVPlusPlus::Writer::OpenDocument.new(options)
-      when /\.xlsx?$/ then ::CSVPlusPlus::Writer::Excel.new(options)
-      else raise(::StandardError, "Unsupported extension: #{options.output_filename}")
+      when /\.xl(sx|sm|tx|tm)$/ then ::CSVPlusPlus::Writer::Excel.new(options)
+      else raise(::CSVPlusPlus::Error, "Unsupported file extension: #{options.output_filename}")
       end
     end
   end

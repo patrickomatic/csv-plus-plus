@@ -31,7 +31,12 @@ end
 
 begin
   ::CSVPlusPlus.apply_template_to_sheet!(::ARGF.read, ::ARGF.filename, options)
-rescue ::CSVPlusPlus::Language::SyntaxError => e
-  warn(options.verbose ? e.to_verbose_trace : e.to_trace)
+rescue ::CSVPlusPlus::Error => e
+  if e.is_a?(::CSVPlusPlus::Language::SyntaxError)
+    warn(options.verbose ? e.to_verbose_trace : e.to_trace)
+  else
+    warn(e.message)
+  end
+
   exit(1)
 end
