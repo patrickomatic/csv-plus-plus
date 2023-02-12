@@ -4,7 +4,7 @@ module CSVPlusPlus
   module Language
     ##
     # An error that can be thrown for various syntax errors
-    class SyntaxError < StandardError
+    class SyntaxError < ::CSVPlusPlus::Error
       # initialize
       def initialize(message, bad_input, runtime, wrapped_error: nil)
         @bad_input = bad_input.to_s

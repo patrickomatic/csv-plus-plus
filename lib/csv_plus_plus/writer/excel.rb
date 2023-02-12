@@ -1,23 +1,23 @@
 # frozen_string_literal: true
 
-require_relative './caxlsx_builder'
+require_relative './rubyxl_builder'
 
 module CSVPlusPlus
   module Writer
     # A class that can output a +Template+ to an Excel file
     class Excel < ::CSVPlusPlus::Writer::BaseWriter
-      # write a +template+ to an Excel file
+      # write the +template+ to an Excel file
       def write(template)
-        ::CSVPlusPlus::Writer::CaxlsxBuilder.new(rows: template.rows).write(
-          @options.sheet_name,
-          @options.output_filename
+        ::CSVPlusPlus::Writer::RubyXLBuilder.new(output_filename: @options.output_filename, rows: template.rows).write(
+          @options.sheet_name
         )
       end
 
       protected
 
       def load_requires
-        require('caxlsx')
+        require('rubyXL')
+        require('rubyXL/convenience_methods')
       end
     end
   end

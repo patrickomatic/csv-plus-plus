@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'csv_plus_plus/error'
 require_relative 'csv_plus_plus/language/compiler'
 require_relative 'csv_plus_plus/options'
 require_relative 'csv_plus_plus/writer'

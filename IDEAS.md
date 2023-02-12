@@ -6,9 +6,9 @@
 
 # Spreadsheet Compatibility
 
-- [ ] Excel - look into caxlsx, Apache POI or openxml
-- [ ] OpenOffice - whatever it's equivalent format is
 - [ ] Apple Numbers
+- [ ] OpenOffice - whatever it's equivalent format is
+- [x] Excel - look into caxlsx, Apache POI or openxml
 - [x] make it output to CSV (loses formatting, but keeps formulas, variables and expansions)
 
 # Modifiers 
@@ -16,6 +16,7 @@
 - [ ] conditional formatting
 - [ ] data validation
 - [ ] freeze
+- [ ] make horizontal and vertical alignments different things. right now it's ambiguous that they share 'center'.  also maybe add 'justified' and 'distributed'
 - [x] make cell-level modifiers override row-level
 - [x] data validation
 - [x] fonts

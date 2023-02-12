@@ -2,13 +2,13 @@
 
 source 'https://rubygems.org'
 
-# for writing OOXML documents
-gem 'caxlsx', '~> 3'
-
 # google sheets api
 gem 'google-apis-sheets_v4', '~> 0.2', require: false
 # googleauth api
 gem 'googleauth', '~> 1.3', require: false
+
+# for writing xlsx files
+gem 'rubyXL', '~> 3.4'
 
 group :development do
   # rake

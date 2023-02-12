@@ -26,6 +26,7 @@ require 'rake'
 
   s.add_runtime_dependency('google-apis-sheets_v4', '~> 0.2')
   s.add_runtime_dependency('googleauth', '~> 1.3')
+  s.add_runtime_dependency('rubyXL', '~> 3.4')
 
   s.add_development_dependency('bundler', '~> 2')
   s.add_development_dependency('rake', '~> 13')
