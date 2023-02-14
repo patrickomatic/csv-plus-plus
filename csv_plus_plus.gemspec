@@ -12,15 +12,20 @@ require 'rake'
   DESCRIPTION
   s.authors     = ['Patrick Carroll']
   s.email       = 'patrick@patrickomatic.com'
-  s.files       = ::FileList['bin/csv++', 'lib/**/*.rb', 'README.md', 'CHANGELOG.md']
-  s.homepage    = 'https://github.com/patrickomatic/csv-plus-plus'
   s.version     = ::CSVPlusPlus::VERSION
   s.license     = 'MIT'
+  s.files       = ::FileList['bin/csv++', 'lib/**/*.rb', 'README.md', 'CHANGELOG.md']
+  s.homepage    = 'https://github.com/patrickomatic/csv-plus-plus'
 
   s.executables = %w[csv++]
 
   s.metadata['rubygems_mfa_required'] = 'true'
+  s.metadata['bug_tracker_uri'] = 'https://github.com/patrickomatic/csv-plus-plus/issues'
+  s.metadata['documentation_uri'] = 'https://www.rubydoc.info/gems/csv_plus_plus/'
   s.metadata['github_repo'] = 'git://github.com/patrickomatic/csv_plus_plus'
+  s.metadata['homepage_uri'] = 'https://github.com/patrickomatic/csv_plus_plus'
+  s.metadata['source_code_uri'] = 'https://github.com/patrickomatic/csv_plus_plus'
+  s.metadata['changelog_uri'] = 'https://github.com/patrickomatic/csv_plus_plus/blob/main/CHANGELOG.md'
 
   s.required_ruby_version = '>= 3.1'
 
@@ -31,5 +36,4 @@ require 'rake'
   s.add_development_dependency('bundler', '~> 2')
   s.add_development_dependency('rake', '~> 13')
   s.add_development_dependency('rubocop', '~> 1.4')
-  s.add_development_dependency('solargraph', '~> 0')
 end
