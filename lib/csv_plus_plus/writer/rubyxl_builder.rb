@@ -2,9 +2,37 @@
 
 module CSVPlusPlus
   module Writer
-    # Build a Caxlsx object
+    # Build a RubyXL workbook formatted according to the given +rows+
+    # rubocop:disable Metrics/ClassLength
     class RubyXLBuilder
-      attr_reader :output_filename
+      # https://www.rubydoc.info/gems/rubyXL/RubyXL/NumberFormats
+      # https://support.microsoft.com/en-us/office/number-format-codes-5026bbd6-04bc-48cd-bf33-80f18b4eae68
+      NUM_FMT_IDS = {
+        currency: 5,
+        date: 14,
+        date_time: 22,
+        number: 1,
+        percent: 9,
+        text: 49,
+        time: 21,
+        scientific: 48
+      }.freeze
+      private_constant :NUM_FMT_IDS
+
+      # https://www.rubydoc.info/gems/rubyXL/2.3.0/RubyXL
+      # ST_BorderStyle = %w{ none thin medium dashed dotted thick double hair mediumDashed dashDot mediumDashDot
+      #                      dashDotDot slantDashDot }
+      BORDER_STYLES = {
+        dashed: 'dashed',
+        dotted: 'dotted',
+        double: 'double',
+        solid: 'thin',
+        solid_medium: 'medium',
+        solid_thick: 'thick'
+      }.freeze
+      private_constant :BORDER_STYLES
+
+      attr_reader :output_filename, :rows
 
       # initialize
       def initialize(rows:, output_filename:)
@@ -13,8 +41,9 @@ module CSVPlusPlus
         @workbook = open_workbook
       end
 
-      # write the given @rows to output
+      # write the given @rows in +sheet_name+ to +@output_filename+
       def write(sheet_name)
+        # TODO: this is leaving a blank sheet in front of the one we're creating
         @worksheet = @workbook[sheet_name] || @workbook.add_worksheet(sheet_name)
         build_workbook!
 
@@ -56,9 +85,10 @@ module CSVPlusPlus
       end
       # rubocop:enable Metrics/MethodLength, Metrics/PerceivedComplexity
 
-      def border_weight(_modifier)
-        # TODO
-        'medium'
+      def border_weight(modifier)
+        # rubocop:disable Lint/ConstantResolution
+        BORDER_STYLES[modifier.borderstyle.to_sym]
+        # rubocop:enable Lint/ConstantResolution
       end
 
       # rubocop:disable Metrics/MethodLength
@@ -99,7 +129,19 @@ module CSVPlusPlus
       end
 
       def do_number_formats!(cell, modifier)
-        # TODO
+        return unless modifier.numberformat
+
+        cell.set_number_format(number_format_code(modifier.numberformat))
+        # TODO: this is annoying... we have to set the contents with the correct type of object
+        cell.change_contents(cell.value)
+      end
+
+      def number_format_code(numberformat)
+        ::RubyXL::NumberFormats::DEFAULT_NUMBER_FORMATS.find_by_format_id(
+          # rubocop:disable Lint/ConstantResolution
+          NUM_FMT_IDS[numberformat.to_sym]
+          # rubocop:enable Lint/ConstantResolution
+        ).format_code
       end
 
       def format_cell!(row_index, cell_index, modifier)
@@ -121,5 +163,6 @@ module CSVPlusPlus
         end
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end
