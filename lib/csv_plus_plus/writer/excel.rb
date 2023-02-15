@@ -8,9 +8,11 @@ module CSVPlusPlus
     class Excel < ::CSVPlusPlus::Writer::BaseWriter
       # write the +template+ to an Excel file
       def write(template)
-        ::CSVPlusPlus::Writer::RubyXLBuilder.new(output_filename: @options.output_filename, rows: template.rows).write(
-          @options.sheet_name
-        )
+        ::CSVPlusPlus::Writer::RubyXLBuilder.new(
+          output_filename: @options.output_filename,
+          rows: template.rows,
+          sheet_name: @options.sheet_name
+        ).write
       end
 
       protected

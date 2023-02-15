@@ -35,18 +35,16 @@ module CSVPlusPlus
       attr_reader :output_filename, :rows
 
       # initialize
-      def initialize(rows:, output_filename:)
+      def initialize(output_filename:, rows:, sheet_name:)
         @rows = rows
         @output_filename = output_filename
-        @workbook = open_workbook
+        @workbook = open_workbook(sheet_name)
+        @worksheet = @workbook[sheet_name]
       end
 
       # write the given @rows in +sheet_name+ to +@output_filename+
-      def write(sheet_name)
-        # TODO: this is leaving a blank sheet in front of the one we're creating
-        @worksheet = @workbook[sheet_name] || @workbook.add_worksheet(sheet_name)
+      def write
         build_workbook!
-
         @workbook.write(@output_filename)
       end
 
@@ -155,11 +153,15 @@ module CSVPlusPlus
         end
       end
 
-      def open_workbook
+      def open_workbook(sheet_name)
         if ::File.exist?(@output_filename)
-          ::RubyXL::Parser.parse(@output_filename)
+          ::RubyXL::Parser.parse(@output_filename).tap do |workbook|
+            workbook.add_worksheet(sheet_name) unless workbook[sheet_name]
+          end
         else
-          ::RubyXL::Workbook.new
+          ::RubyXL::Workbook.new.tap do |workbook|
+            workbook.worksheets[0].sheet_name = sheet_name
+          end
         end
       end
     end
