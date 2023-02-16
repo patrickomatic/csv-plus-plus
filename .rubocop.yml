@@ -3,6 +3,7 @@ AllCops:
 
   Exclude:
     - 'lib/**/*.tab.rb'
+    - 'csv_plus_plus.gemspec'
 
   # TODO lower this (no need to be fancy really) 
   TargetRubyVersion: 3.1
