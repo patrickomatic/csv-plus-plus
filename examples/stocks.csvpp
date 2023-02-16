@@ -5,5 +5,5 @@ fees := MULTIPLY($$commission_charge, INDIRECT(CONCAT("D", $$rownum)))
 
 profit := MINUS(MULTIPLY(INDIRECT(CONCAT("B", $$rownum)), INDIRECT(CONCAT("C", $$rownum))), $$fees)
 ---
-![[format=bold/align=center/freeze]]Date,Purchase,Price,Quantity,Total,Fees
+![[format=bold/halign=center/freeze]]Date,Purchase,Price,Quantity,Total,Fees
 ![[expand]],[[format=bold]],,,"=ADD($$commission_charge, 1)","=ADD($$commission_charge, 1)"

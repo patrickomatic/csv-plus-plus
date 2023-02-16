@@ -144,4 +144,8 @@ describe ::CSVPlusPlus::Modifier do
       it { is_expected.to(be_row_level) }
     end
   end
+
+  describe '#take_deaults_from!' do
+    # TODO
+  end
 end

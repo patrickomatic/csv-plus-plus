@@ -17,35 +17,35 @@ describe ::CSVPlusPlus::ModifierParser do
     end
 
     context 'one modifier' do
-      let(:value) { '[[align=left]]foo' }
+      let(:value) { '[[halign=left]]foo' }
 
       it { is_expected.to(eq('foo')) }
 
-      it 'updates the cell_modifier with align=left' do
-        expect(cell_modifier).to(be_aligned('left'))
+      it 'updates the cell_modifier with halign=left' do
+        expect(cell_modifier.halign).to(eq('left'))
       end
     end
 
     context 'multiple modifiers' do
-      let(:value) { '[[align=left/format=bold/format=underline]]=A + B' }
+      let(:value) { '[[halign=left/format=bold/format=underline]]=A + B' }
 
       it { is_expected.to(eq('=A + B')) }
 
       it 'updates cell_modifier' do
         expect(cell_modifier).to(be_formatted('bold'))
         expect(cell_modifier).to(be_formatted('underline'))
-        expect(cell_modifier).to(be_aligned('left'))
+        expect(cell_modifier.halign).to(eq('left'))
       end
     end
 
     context 'row-based modifiers' do
-      let(:value) { '![[align=center / format=bold]]Stocks' }
+      let(:value) { '![[valign=center / format=bold]]Stocks' }
 
       it { is_expected.to(eq('Stocks')) }
 
       it 'updates row_modifier' do
         expect(row_modifier).to(be_formatted('bold'))
-        expect(row_modifier).to(be_aligned('center'))
+        expect(row_modifier.valign).to(eq('center'))
       end
     end
 
@@ -70,19 +70,19 @@ describe ::CSVPlusPlus::ModifierParser do
     end
 
     context 'a row and a cell modifier' do
-      let(:value) { '![[align=center / format=bold]][[format=underline]]Stocks' }
+      let(:value) { '![[valign=center/format=bold]][[format=underline]]Stocks' }
 
       it { is_expected.to(eq('Stocks')) }
 
       it 'parses the row modifier' do
         expect(row_modifier).to(be_formatted('bold'))
-        expect(row_modifier).to(be_aligned('center'))
+        expect(row_modifier.valign).to(eq('center'))
       end
 
       it 'also parses the cell modifier and applies the row modifier' do
         expect(cell_modifier).to(be_formatted('bold'))
         expect(cell_modifier).to(be_formatted('underline'))
-        expect(cell_modifier).to(be_aligned('center'))
+        expect(cell_modifier.valign).to(eq('center'))
       end
     end
   end

@@ -10,30 +10,14 @@ module CSVPlusPlus
   class Modifier
     attr_reader :bordercolor, :borders, :color, :fontcolor, :formats
     attr_writer :borderstyle
-    attr_accessor :expand, :fontfamily, :fontsize, :note, :numberformat, :row_level, :validation
+    attr_accessor :expand, :fontfamily, :fontsize, :halign, :valign, :note, :numberformat, :row_level, :validation
 
     # initialize
     def initialize(row_level: false)
       @row_level = row_level
       @freeze = false
-      @align = ::Set.new
       @borders = ::Set.new
       @formats = ::Set.new
-    end
-
-    # Set an align format. +direction+ must be 'center', 'left', 'right', 'bottom'
-    def align=(direction)
-      @align << direction
-    end
-
-    # Is it aligned to a given direction?
-    def aligned?(direction)
-      @align.include?(direction)
-    end
-
-    # Does it have any kind of alignment set?
-    def any_alignment?
-      !@align.empty?
     end
 
     # Set the color.  hex_value is a String
@@ -114,12 +98,13 @@ module CSVPlusPlus
     # to_s
     def to_s
       # TODO... I dunno, not sure how to manage this
-      "Modifier(row_level: #{@row_level} align: #{@align} format: #{@formats} font_size: #{@font_size})"
+      "Modifier(row_level: #{@row_level} halign: #{@halign} valign: #{@valign} format: #{@formats} " \
+        "font_size: #{@font_size})"
     end
 
     # Create a new modifier instance, with all values defaulted from +other+
     def take_defaults_from!(other)
-      instance_variables.each do |property|
+      other.instance_variables.each do |property|
         value = other.instance_variable_get(property)
         instance_variable_set(property, value.clone)
       end

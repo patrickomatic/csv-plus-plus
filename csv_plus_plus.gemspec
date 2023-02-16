@@ -20,13 +20,19 @@ require 'rake'
 
   s.executables = %w[csv++]
 
-  s.metadata['rubygems_mfa_required'] = 'true'
-  s.metadata['bug_tracker_uri'] = 'https://github.com/patrickomatic/csv-plus-plus/issues'
-  s.metadata['documentation_uri'] = 'https://www.rubydoc.info/gems/csv_plus_plus/'
-  s.metadata['github_repo'] = 'git://github.com/patrickomatic/csv_plus_plus'
-  s.metadata['homepage_uri'] = 'https://github.com/patrickomatic/csv_plus_plus'
-  s.metadata['source_code_uri'] = 'https://github.com/patrickomatic/csv_plus_plus'
-  s.metadata['changelog_uri'] = 'https://github.com/patrickomatic/csv_plus_plus/blob/main/CHANGELOG.md'
+  s.metadata = {
+    rubygems_mfa_required: 'true',
+    bug_tracker_uri: 'https://github.com/patrickomatic/csv-plus-plus/issues',
+    documentation_uri: 'https://www.rubydoc.info/gems/csv_plus_plus/',
+    github_repo: 'git://github.com/patrickomatic/csv_plus_plus',
+    homepage_uri: 'https://github.com/patrickomatic/csv_plus_plus',
+    source_code_uri: 'https://github.com/patrickomatic/csv_plus_plus',
+    changelog_uri: 'https://github.com/patrickomatic/csv_plus_plus/blob/main/CHANGELOG.md',
+    funding_uri: 'eth:patrickomatic.eth',
+    # rubocop:disable Style/StringHashKeys
+    'rubygems_mfa_required' => 'true'
+    # rubocop:enable Style/StringHashKeys
+  }
 
   s.required_ruby_version = '>= 3.1'
 

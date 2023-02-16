@@ -4,8 +4,8 @@ simple_var := 1
 depends_on_another := ADD($$simple_var, 2)
 
 ---
-![[format=bold/align=center]]Header1,[[format=underline]]Header2,[[border=top/border=bottom/format=strikethrough]]Header3,[[align=bottom/format=italic]]Header4,Header5
-![[align=left]]=$$depends_on_another,[[format=underline]]=$$simple_var,These are variables,
+![[format=bold/halign=center]]Header1,[[format=underline]]Header2,[[border=top/border=bottom/format=strikethrough]]Header3,[[valign=bottom/format=italic]]Header4,Header5
+![[halign=left]]=$$depends_on_another,[[format=underline]]=$$simple_var,These are variables,
 [[note='this is a note']]A note,
 [[fontcolor=#FF0000]]The font is red,
 [[font='Comic Sans MS']]The font is 'Comic Sans MS',
@@ -20,7 +20,7 @@ depends_on_another := ADD($$simple_var, 2)
 ,[[border=top/border=right]]Top & right border,
 [[border=all/borderstyle=dashed]]Dashed border,[[border=all/borderstyle=dotted]]Dotted border,[[border=all/borderstyle=double]]Double border,
 [[border=all/borderstyle=solid]]Solid border,[[border=all/borderstyle=solid_medium]]Solid medium border,[[border=all/borderstyle=solid_thick]]Solid thick border,
-[[align=left]]Left align,[[align=center]]Center align,[[align=right]]Right align,
+[[halign=left]]Left align,[[halign=center]]Center align,[[halign=right]]Right align,
 Number format: currency,[[numberformat=currency]]123456,
 Number format: date,[[numberformat=date]]123456,
 Number format: date_time,[[numberformat=date_time]]123456,

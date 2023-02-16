@@ -35,32 +35,10 @@ module CSVPlusPlus
         end
       end
 
-      # rubocop:disable Metrics/MethodLength, Metrics/PerceivedComplexity
       def do_alignments!(cell, modifier)
-        # TODO: make the main modifier work this way
-        # cell.change_horizontal_alignment(modifier.horizontal_alignment) if modifier.has_horizontal_alignment?
-        # cell.change_vertical_alignment(modifier.vertical_alignment) if modifier.has_vertical_alignment?
-        if modifier.aligned?('left')
-          cell.change_horizontal_alignment('left')
-        elsif modifier.aligned?('right')
-          cell.change_horizontal_alignment('right')
-          # rubocop:disable Style/MissingElse
-        elsif modifier.aligned?('center')
-          # rubocop:enable Style/MissingElse
-          cell.change_horizontal_alignment('center')
-        end
-
-        if modifier.aligned?('top')
-          cell.change_vertical_alignment('top')
-        elsif modifier.aligned?('bottom')
-          cell.change_vertical_alignment('bottom')
-          # rubocop:disable Style/MissingElse
-        elsif modifier.aligned?('center')
-          # rubocop:enable Style/MissingElse
-          cell.change_vertical_alignment('center')
-        end
+        cell.change_horizontal_alignment(modifier.halign) if modifier.halign
+        cell.change_vertical_alignment(modifier.valign) if modifier.valign
       end
-      # rubocop:enable Metrics/MethodLength, Metrics/PerceivedComplexity
 
       # rubocop:disable Metrics/MethodLength
       def do_borders!(cell, modifier)

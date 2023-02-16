@@ -1,5 +1,7 @@
 class CSVPlusPlus::ModifierParser
 prechigh
+  left '![['
+  left '[[' ']]'
   left ':'
   left '='
   left '/'
@@ -32,7 +34,8 @@ rule
 
   modifiers: modifiers MODIFIER_SEPARATOR modifier | modifier
 
-  modifier: 'align'        EQ align_options
+  modifier: 'halign'       EQ halign_option       { s!(:halign, val[2])                    }
+          | 'valign'       EQ valign_option       { s!(:valign, val[2])                    }
           | 'border'       EQ border_options
           | 'bordercolor'  EQ HEX_COLOR           { s!(:bordercolor, val[2])               }
           | 'borderstyle'  EQ borderstyle_option  { s!(:borderstyle, val[2])               }
@@ -51,11 +54,6 @@ rule
 
   format_options: format_options format_option | format_option { s!(:format, val[0])       }
   format_option: 'bold' | 'italic' | 'strikethrough' | 'underline'
-
-  align_options: halign_option valign_option  { s!(:align, val[0]); s!(:align, val[1])     }
-               | valign_option halign_option  { s!(:align, val[0]); s!(:align, val[1])     }
-               | halign_option                { s!(:align, val[0])                         }
-               | valign_option                { s!(:align, val[0])                         }
 
   halign_option: 'left' | 'center' | 'right'
   valign_option: 'top'  | 'center' | 'bottom'

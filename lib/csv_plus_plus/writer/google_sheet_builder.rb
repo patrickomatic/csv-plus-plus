@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative './google_sheet_modifier'
+
 module CSVPlusPlus
   module Writer
     # Given +rows+ from a +Template+, build requests compatible with Google Sheets Ruby API
@@ -25,9 +27,7 @@ module CSVPlusPlus
         ::Google::Apis::SheetsV4
       end
 
-      def sheets_color(color)
-        sheets_ns::Color.new(red: color.red_percent, green: color.green_percent, blue: color.blue_percent)
-      end
+      def sheets_color(color); end
 
       def set_extended_value_type!(extended_value, value)
         v = value || ''
@@ -42,38 +42,20 @@ module CSVPlusPlus
         end
       end
 
-      def build_text_format(mod)
-        sheets_ns::TextFormat.new(
-          bold: mod.formatted?('bold') || nil,
-          italic: mod.formatted?('italic') || nil,
-          strikethrough: mod.formatted?('strikethrough') || nil,
-          underline: mod.formatted?('underline') || nil,
-
-          font_family: mod.fontfamily,
-          font_size: mod.fontsize,
-
-          foreground_color: mod.fontcolor ? sheets_color(mod.fontcolor) : nil
-        )
-      end
-
-      # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity
+      # rubocop:disable Metrics/AbcSize
       def build_cell_format(mod)
         sheets_ns::CellFormat.new.tap do |cf|
-          cf.text_format = build_text_format(mod)
+          cf.text_format = mod.text_format
 
-          # TODO: are these not overwriting each other?
-          cf.horizontal_alignment = 'LEFT' if mod.aligned?('left')
-          cf.horizontal_alignment = 'RIGHT' if mod.aligned?('right')
-          cf.horizontal_alignment = 'CENTER' if mod.aligned?('center')
-          cf.vertical_alignment = 'TOP' if mod.aligned?('top')
-          cf.vertical_alignment = 'BOTTOM' if mod.aligned?('bottom')
+          cf.horizontal_alignment = mod.halign if mod.halign
+          cf.vertical_alignment = mod.valign if mod.valign
 
-          cf.background_color = sheets_color(mod.color) if mod.color
+          cf.background_color = mod.color if mod.color
 
-          cf.number_format = sheets_ns::NumberFormat.new(type: mod.numberformat) if mod.numberformat
+          cf.number_format = mod.numberformat if mod.numberformat
         end
       end
-      # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity
+      # rubocop:enable Metrics/AbcSize
 
       def grid_range_for_cell(cell)
         sheets_ns::GridRange.new(
@@ -105,10 +87,10 @@ module CSVPlusPlus
       end
 
       def build_cell_data(cell)
-        mod = cell.modifier
+        mod = ::CSVPlusPlus::Writer::GoogleSheetModifier.new(cell.modifier)
 
         sheets_ns::CellData.new.tap do |cd|
-          cd.user_entered_format = build_cell_format(cell.modifier)
+          cd.user_entered_format = build_cell_format(mod)
           cd.note = mod.note if mod.note
 
           # XXX apply data validation
