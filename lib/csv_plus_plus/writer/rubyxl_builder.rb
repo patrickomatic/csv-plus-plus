@@ -1,37 +1,11 @@
 # frozen_string_literal: true
 
+require_relative './rubyxl_modifier'
+
 module CSVPlusPlus
   module Writer
     # Build a RubyXL workbook formatted according to the given +rows+
-    # rubocop:disable Metrics/ClassLength
     class RubyXLBuilder
-      # https://www.rubydoc.info/gems/rubyXL/RubyXL/NumberFormats
-      # https://support.microsoft.com/en-us/office/number-format-codes-5026bbd6-04bc-48cd-bf33-80f18b4eae68
-      NUM_FMT_IDS = {
-        currency: 5,
-        date: 14,
-        date_time: 22,
-        number: 1,
-        percent: 9,
-        text: 49,
-        time: 21,
-        scientific: 48
-      }.freeze
-      private_constant :NUM_FMT_IDS
-
-      # https://www.rubydoc.info/gems/rubyXL/2.3.0/RubyXL
-      # ST_BorderStyle = %w{ none thin medium dashed dotted thick double hair mediumDashed dashDot mediumDashDot
-      #                      dashDotDot slantDashDot }
-      BORDER_STYLES = {
-        dashed: 'dashed',
-        dotted: 'dotted',
-        double: 'double',
-        solid: 'thin',
-        solid_medium: 'medium',
-        solid_thick: 'thick'
-      }.freeze
-      private_constant :BORDER_STYLES
-
       attr_reader :output_filename, :rows
 
       # initialize
@@ -53,14 +27,19 @@ module CSVPlusPlus
       def build_workbook!
         @rows.each_with_index do |row, x|
           row.cells.each_with_index do |cell, y|
+            modifier = ::CSVPlusPlus::Writer::RubyXLModifier.new(cell.modifier)
+
             @worksheet.add_cell(x, y, cell.to_csv)
-            format_cell!(x, y, cell.modifier)
+            format_cell!(x, y, modifier)
           end
         end
       end
 
       # rubocop:disable Metrics/MethodLength, Metrics/PerceivedComplexity
       def do_alignments!(cell, modifier)
+        # TODO: make the main modifier work this way
+        # cell.change_horizontal_alignment(modifier.horizontal_alignment) if modifier.has_horizontal_alignment?
+        # cell.change_vertical_alignment(modifier.vertical_alignment) if modifier.has_vertical_alignment?
         if modifier.aligned?('left')
           cell.change_horizontal_alignment('left')
         elsif modifier.aligned?('right')
@@ -83,18 +62,12 @@ module CSVPlusPlus
       end
       # rubocop:enable Metrics/MethodLength, Metrics/PerceivedComplexity
 
-      def border_weight(modifier)
-        # rubocop:disable Lint/ConstantResolution
-        BORDER_STYLES[modifier.borderstyle.to_sym]
-        # rubocop:enable Lint/ConstantResolution
-      end
-
       # rubocop:disable Metrics/MethodLength
       def do_borders!(cell, modifier)
         return unless modifier.any_border?
 
         color = modifier.bordercolor
-        weight = border_weight(modifier)
+        weight = modifier.border_weight
 
         if modifier.border_all?
           %i[top bottom left right].each do |direction|
@@ -129,17 +102,9 @@ module CSVPlusPlus
       def do_number_formats!(cell, modifier)
         return unless modifier.numberformat
 
-        cell.set_number_format(number_format_code(modifier.numberformat))
+        cell.set_number_format(modifier.number_format_code)
         # TODO: this is annoying... we have to set the contents with the correct type of object
         cell.change_contents(cell.value)
-      end
-
-      def number_format_code(numberformat)
-        ::RubyXL::NumberFormats::DEFAULT_NUMBER_FORMATS.find_by_format_id(
-          # rubocop:disable Lint/ConstantResolution
-          NUM_FMT_IDS[numberformat.to_sym]
-          # rubocop:enable Lint/ConstantResolution
-        ).format_code
       end
 
       def format_cell!(row_index, cell_index, modifier)
@@ -165,6 +130,5 @@ module CSVPlusPlus
         end
       end
     end
-    # rubocop:enable Metrics/ClassLength
   end
 end

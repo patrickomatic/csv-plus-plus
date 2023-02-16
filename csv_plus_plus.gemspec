@@ -3,6 +3,7 @@
 require_relative 'lib/csv_plus_plus/version'
 require 'rake'
 
+# rubocop:disable Metrics/BlockLength
 ::Gem::Specification.new do |s|
   s.name        = 'csv_plus_plus'
   s.summary     = 'A CSV-based programming language'
@@ -37,3 +38,4 @@ require 'rake'
   s.add_development_dependency('rake', '~> 13')
   s.add_development_dependency('rubocop', '~> 1.4')
 end
+# rubocop:enable Metrics/BlockLength
