@@ -2,7 +2,6 @@
 
 module CSVPlusPlus
   module Writer
-    ##
     # Some shared functionality that all Writers should build on
     class BaseWriter
       attr_accessor :options

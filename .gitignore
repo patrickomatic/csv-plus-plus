@@ -2,3 +2,4 @@
 .env
 coverage/
 csv_plus_plus-*.gem
+examples/all_features-*.csv

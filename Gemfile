@@ -2,6 +2,8 @@
 
 source 'https://rubygems.org'
 
+# google drive api
+gem 'google-apis-drive_v3', '~> 0.3', require: false
 # google sheets api
 gem 'google-apis-sheets_v4', '~> 0.2', require: false
 # googleauth api

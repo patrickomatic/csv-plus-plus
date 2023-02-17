@@ -40,17 +40,5 @@ describe ::CSVPlusPlus::Writer::GoogleSheets do
         end
       end
     end
-
-    describe 'an API error from Google Sheets API', vcr: { match_requests_on: [google_sheets_path_matcher] } do
-      let(:rows) { [row] }
-      let(:row) { build(:row, cells: [build(:cell)]) }
-
-      before { options.google_sheet_id = 'this-does-not-exist' }
-
-      it 'logs the error and does not raise it' do
-        expect { subject }
-          .not_to(raise_error)
-      end
-    end
   end
 end

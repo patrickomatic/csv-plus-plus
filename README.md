@@ -21,12 +21,17 @@ def profit() (price * quantity) - fees
 ![[expand]],[[format=bold]],,,"=PROFIT()",$$fees
 ```
 
-## Predefined Variables
+## Variables
 
-* `$$rownum` - The current row number.  The first row of the spreadsheet starts at 1
+Variables can be defined in the code section by giving a name (a combination of letters, numbers and underscores ) the expression `:=` and followed with a value.
 
-## Predefined Functions
+### Built-in Variables
 
+* `$$rownum` - The current row number.  The first row of the spreadsheet starts at 1.  Can be used anywhere and it's value will evaluate to the current row being processed.
+
+## Functions
+
+### Built-in Functions
 * `cellref(CELL)` - Returns a reference to the `CELL` relative to the current row.  If the current `$$rownum` is `2`, then `CELLREF("C")` returns  a reference to cell `C2`.
 
 ## Modifiers

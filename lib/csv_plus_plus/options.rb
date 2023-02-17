@@ -15,7 +15,6 @@ module CSVPlusPlus
       @create_if_not_exists = false
       @key_values = {}
       @verbose = false
-      # TODO: switch to true? probably a safer choice
       @backup = false
     end
 

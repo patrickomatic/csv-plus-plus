@@ -19,7 +19,8 @@ describe ::CSVPlusPlus do
 
     context 'to CSV' do
       let(:output_filename) { 'bar.csv' }
-      let(:options) { build(:options, output_filename:) }
+      let(:backup) { false }
+      let(:options) { build(:options, backup:, output_filename:) }
 
       before { subject }
 
@@ -37,6 +38,15 @@ describe ::CSVPlusPlus do
               1,2,3,"=SUM(INDIRECT(CONCAT(A, 2)), INDIRECT(CONCAT(B, 2)), INDIRECT(CONCAT(C, 2)))"
               "=MULTIPLY(MINUS(400, 500), 100)"
             OUTPUT
+      end
+
+      context 'when options.backup is set' do
+        let(:backup) { true }
+        let(:original) { 'foo,bar,baz' }
+
+        before { output_filename.write(original) }
+
+        # TODO
       end
     end
 

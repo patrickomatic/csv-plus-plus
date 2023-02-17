@@ -3,22 +3,48 @@
 require 'optparse'
 
 module CSVPlusPlus
-  # Handle running the application with the given CLI flags
+  # Hadle running the application with the given CLI flags
   module CLI
     # handle any CLI flags and launch the compiler
     def self.launch_compiler!
       options = parse_options
       ::CSVPlusPlus.apply_template_to_sheet!(::ARGF.read, ::ARGF.filename, options)
-    rescue ::CSVPlusPlus::Error => e
-      if e.is_a?(::CSVPlusPlus::Language::SyntaxError)
-        warn(options.verbose ? e.to_verbose_trace : e.to_trace)
-      else
-        warn(e.message)
-      end
+    rescue ::StandardError => e
+      handle_error(e, options)
       exit(1)
     end
 
     private
+
+    def self.handle_error(error, options)
+      case error
+      when ::CSVPlusPlus::Error
+        handle_internal_error(error, options)
+      when ::Google::Apis::ClientError
+        handle_google_error(error, options)
+      else
+        # TODO: more if verbose?
+        warn(error.message)
+      end
+    end
+    private_class_method :handle_error
+
+    def self.handle_internal_error(error, options)
+      if error.is_a?(::CSVPlusPlus::Language::SyntaxError)
+        warn(options.verbose ? error.to_verbose_trace : error.to_trace)
+      else
+        warn(error.message)
+      end
+    end
+    private_class_method :handle_internal_error
+
+    def self.handle_google_error(error, options)
+      warn("Error making Google Sheets API request: #{error.message}")
+      return unless options.verbose
+
+      warn("#{error.status_code} Error making Google API request [#{error.message}]: #{error.body}")
+    end
+    private_class_method :handle_google_error
 
     def self.parse_options
       ::CSVPlusPlus::Options.new.tap do |options|

@@ -6,8 +6,8 @@
 
 # Spreadsheet Compatibility
 
-- [ ] Apple Numbers
 - [ ] OpenOffice - whatever it's equivalent format is
+- [ ] Apple Numbers - I don't think there are even libraries to do it
 - [x] Excel - look into caxlsx, Apache POI or openxml
 - [x] make it output to CSV (loses formatting, but keeps formulas, variables and expansions)
 
@@ -16,7 +16,7 @@
 - [ ] conditional formatting
 - [ ] data validation
 - [ ] freeze
-- [ ] make horizontal and vertical alignments different things. right now it's ambiguous that they share 'center'.  also maybe add 'justified' and 'distributed'
+- [x] make horizontal and vertical alignments different things. right now it's ambiguous that they share 'center'.  also maybe add 'justified' and 'distributed'
 - [x] make cell-level modifiers override row-level
 - [x] data validation
 - [x] fonts
@@ -49,7 +49,7 @@
 - [ ] Revise the "how to use" docs
 - [ ] Charts
 - [ ] Pivot table support - not sure what this would even look like
-- [ ] backups before each write
+- [x] backups before each write
 - [x] Benchmarks in verbose mode
 - [x] Simplecov
 - [X] Rubocop

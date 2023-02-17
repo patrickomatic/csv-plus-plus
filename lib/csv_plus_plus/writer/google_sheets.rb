@@ -1,16 +1,14 @@
 # frozen_string_literal: true
 
+require_relative '../google_api_client'
 require_relative 'base_writer'
 require_relative 'google_sheet_builder'
 
-AUTH_SCOPES = ['https://www.googleapis.com/auth/spreadsheets'].freeze
-FULL_RANGE = 'A1:Z1000'
-
 module CSVPlusPlus
   module Writer
-    # A class that can output a +Template+ to Google Sheets (via their API)
+    # A class that can write a +Template+ to Google Sheets (via their API)
     class GoogleSheets < ::CSVPlusPlus::Writer::BaseWriter
-      # XXX it would be nice to raise this but we shouldn't expand out more than necessary for our data
+      # TODO: it would be nice to raise this but we shouldn't expand out more than necessary for our data
       SPREADSHEET_INFINITY = 1000
       public_constant :SPREADSHEET_INFINITY
 
@@ -24,7 +22,7 @@ module CSVPlusPlus
 
       # write a +template+ to Google Sheets
       def write(template)
-        auth!
+        @sheets_client = ::CSVPlusPlus::GoogleApiClient.sheets_client
 
         fetch_spreadsheet!
         fetch_spreadsheet_values!
@@ -32,13 +30,18 @@ module CSVPlusPlus
         create_sheet! if @options.create_if_not_exists
 
         update_cells!(template)
-      rescue ::Google::Apis::ClientError => e
-        handle_google_error(e)
+      end
+
+      # write a backup of the google sheet
+      def write_backup
+        drive_client = ::CSVPlusPlus::GoogleApiClient.drive_client
+        drive_client.copy_file(@sheet_id)
       end
 
       protected
 
       def load_requires
+        require('google/apis/drive_v3')
         require('google/apis/sheets_v4')
         require('googleauth')
       end
@@ -50,12 +53,7 @@ module CSVPlusPlus
       end
 
       def full_range
-        format_range(::FULL_RANGE)
-      end
-
-      def auth!
-        @gs ||= sheets_ns::SheetsService.new
-        @gs.authorization = ::Google::Auth.get_application_default(::AUTH_SCOPES)
+        format_range('A1:Z1000')
       end
 
       def fetch_spreadsheet_values!
@@ -85,7 +83,7 @@ module CSVPlusPlus
       end
 
       def get_all_spreadsheet_values(render_option)
-        @gs.get_spreadsheet_values(@sheet_id, full_range, value_render_option: render_option)
+        @sheets_client.get_spreadsheet_values(@sheet_id, full_range, value_render_option: render_option)
       end
 
       def sheet
@@ -95,7 +93,7 @@ module CSVPlusPlus
       end
 
       def fetch_spreadsheet!
-        @spreadsheet = @gs.get_spreadsheet(@sheet_id)
+        @spreadsheet = @sheets_client.get_spreadsheet(@sheet_id)
 
         return unless @sheet_name.nil?
 
@@ -105,7 +103,7 @@ module CSVPlusPlus
       def create_sheet!
         return if sheet
 
-        @gs.create_spreadsheet(@sheet_name)
+        @sheets_client.create_spreadsheet(@sheet_name)
         get_spreadsheet!
         @sheet_name = @spreadsheet.sheets.last.properties.title
       end
@@ -118,21 +116,7 @@ module CSVPlusPlus
           row_index: @options.offset[0],
           current_sheet_values: @current_sheet_values
         )
-        @gs.batch_update_spreadsheet(@sheet_id, builder.batch_update_spreadsheet_request)
-      rescue ::Google::Apis::ClientError => e
-        handle_google_error(e)
-      end
-
-      def sheets_ns
-        ::Google::Apis::SheetsV4
-      end
-
-      def handle_google_error(error)
-        if @options.verbose
-          warn("#{error.status_code} Error making Google Sheets API request [#{error.message}]: #{error.body}")
-        else
-          warn("Error making Google Sheets API request: #{error.message}")
-        end
+        @sheets_client.batch_update_spreadsheet(@sheet_id, builder.batch_update_spreadsheet_request)
       end
     end
   end

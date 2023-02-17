@@ -31,6 +31,7 @@ require 'rake'
 
   s.required_ruby_version = '>= 3.1'
 
+  s.add_runtime_dependency('google-apis-drive_v3', '~> 0.3')
   s.add_runtime_dependency('google-apis-sheets_v4', '~> 0.2')
   s.add_runtime_dependency('googleauth', '~> 1.3')
   s.add_runtime_dependency('rubyXL', '~> 3.4')

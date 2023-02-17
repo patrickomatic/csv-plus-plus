@@ -16,7 +16,10 @@ module CSVPlusPlus
       template = c.parse_template
 
       output = ::CSVPlusPlus::Writer.writer(options)
-      c.outputting! { output.write(template) }
+      c.outputting! do
+        output.write_backup if options.backup
+        output.write(template)
+      end
     end
   end
 end

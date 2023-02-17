@@ -1,10 +1,13 @@
 # frozen_string_literal: true
 
+require_relative './file_backer_upper'
+
 module CSVPlusPlus
   module Writer
-    ##
     # A class that can output a +Template+ to CSV
     class CSV < ::CSVPlusPlus::Writer::BaseWriter
+      include ::CSVPlusPlus::Writer::FileBackerUpper
+
       # write a +template+ to CSV
       def write(template)
         # TODO: also read it and merge the results

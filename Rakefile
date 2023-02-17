@@ -32,7 +32,7 @@ end
 
 desc 'Remove generated files'
 task :clean do
-  sh "rm -f #{::RACC_FILES.keys.join(' ')} csv_plus_plus-*.gem"
+  sh "rm -f #{::RACC_FILES.keys.join(' ')} csv_plus_plus-*.gem examples/all_features-*.csv"
 end
 
 namespace :gem do
@@ -55,11 +55,15 @@ namespace :gem do
   desc 'Build a new release'
   task :build do
     sh 'gem build csv_plus_plus.gemspec'
+  end
+
+  desc 'Install the gem locally'
+  task install: :build do
     sh "gem install #{gem_file}"
   end
 
   desc 'Publish the built release'
-  task publish: :build do
+  task publish: :install do
     git_tag_version
     sh "gem push #{gem_file}"
   end
@@ -95,7 +99,7 @@ namespace :test do
   namespace :csv do
     desc 'Test examples/all_features.csvpp outputting to CSV'
     task :all_features do
-      sh %(./bin/csv++ --verbose --output examples/all_features.csv examples/all_features.csvpp)
+      sh %(./bin/csv++ -b --verbose --output examples/all_features.csv examples/all_features.csvpp)
     end
   end
 
