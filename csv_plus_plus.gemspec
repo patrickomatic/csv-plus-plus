@@ -20,12 +20,12 @@ require 'rake'
   s.executables = %w[csv++ csvpp]
 
   s.metadata = {
-    bug_tracker_uri: 'https://github.com/patrickomatic/csv-plus-plus/issues',
-    documentation_uri: 'https://www.rubydoc.info/gems/csv_plus_plus/',
-    github_repo: 'git://github.com/patrickomatic/csv-plus-plus',
-    homepage_uri: 'https://github.com/patrickomatic/csv-plus-plus',
-    source_code_uri: 'https://github.com/patrickomatic/csv-plus-plus',
-    changelog_uri: 'https://github.com/patrickomatic/csv-plus-plus/blob/main/CHANGELOG.md',
+    'bug_tracker_uri' => 'https://github.com/patrickomatic/csv-plus-plus/issues',
+    'documentation_uri' => 'https://www.rubydoc.info/gems/csv_plus_plus/',
+    'github_repo' => 'git://github.com/patrickomatic/csv-plus-plus',
+    'homepage_uri' => 'https://github.com/patrickomatic/csv-plus-plus',
+    'source_code_uri' => 'https://github.com/patrickomatic/csv-plus-plus',
+    'changelog_uri' => 'https://github.com/patrickomatic/csv-plus-plus/blob/main/CHANGELOG.md',
     'rubygems_mfa_required' => 'true'
   }
 

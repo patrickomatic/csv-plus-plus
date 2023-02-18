@@ -3,6 +3,7 @@
 - Support the --backup/-b option
 - bin/csvpp (which does the same thing as bin/csv++ but will work better on other filesystems)
 - Fix links in gemspec (which end up on rubygems.org)
+- docs & tests
 
 ## v0.0.4
 
