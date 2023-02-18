@@ -9,13 +9,14 @@ module CSVPlusPlus
       class Entity
         attr_reader :id, :type
 
-        # initialize
+        # @param type [String, Symbol]
+        # @param id [String]
         def initialize(type, id: nil)
           @type = type.to_sym
           @id = id.downcase.to_sym if id
         end
 
-        # ==
+        # @return [Boolean]
         def ==(other)
           self.class == other.class && @type == other.type && @id == other.id
         end
@@ -30,7 +31,8 @@ module CSVPlusPlus
           end
         end
 
-        # support predicates by type
+        # Respond to predicates by type (entity.boolean?, entity.string?, etc)
+        # @return [Boolean]
         def respond_to_missing?(method_name, *_arguments)
           (method_name =~ /^(\w+)\?$/ && a_type?(::Regexp.last_match(1))) || super
         end
@@ -42,17 +44,19 @@ module CSVPlusPlus
         end
       end
 
-      # An entity that can take arguments
+      # An entity that can take other entities as arguments
       class EntityWithArguments < Entity
         attr_reader :arguments
 
-        # initialize
+        # @param type [String, Symbol]
+        # @param id [String]
+        # @param arguments [Array<Entity>]
         def initialize(type, id: nil, arguments: [])
           super(type, id:)
           @arguments = arguments
         end
 
-        # ==
+        # @return [Boolean]
         def ==(other)
           super && @arguments == other.arguments
         end

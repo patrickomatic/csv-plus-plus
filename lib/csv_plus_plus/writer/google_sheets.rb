@@ -104,19 +104,22 @@ module CSVPlusPlus
         return if sheet
 
         @sheets_client.create_spreadsheet(@sheet_name)
-        get_spreadsheet!
+        fetch_spreadsheet!
         @sheet_name = @spreadsheet.sheets.last.properties.title
       end
 
       def update_cells!(template)
-        builder = ::CSVPlusPlus::Writer::GoogleSheetBuilder.new(
+        @sheets_client.batch_update_spreadsheet(@sheet_id, builder(template).batch_update_spreadsheet_request)
+      end
+
+      def builder(template)
+        ::CSVPlusPlus::Writer::GoogleSheetBuilder.new(
           rows: template.rows,
           sheet_id: sheet&.properties&.sheet_id,
           column_index: @options.offset[1],
           row_index: @options.offset[0],
           current_sheet_values: @current_sheet_values
         )
-        @sheets_client.batch_update_spreadsheet(@sheet_id, builder.batch_update_spreadsheet_request)
       end
     end
   end

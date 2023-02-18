@@ -38,6 +38,32 @@ describe ::CSVPlusPlus::Modifier do
     end
   end
 
+  describe '#border_all?' do
+    subject { modifier }
+
+    it { is_expected.not_to(be_border_all) }
+
+    context 'with one border set' do
+      before { modifier.border = 'top' }
+      it { is_expected.not_to(be_border_all) }
+    end
+
+    context 'with border = "all"' do
+      before { modifier.border = 'all' }
+      it { is_expected.to(be_border_all) }
+    end
+
+    context 'with all of the borders set individually' do
+      before do
+        modifier.border = 'top'
+        modifier.border = 'bottom'
+        modifier.border = 'left'
+        modifier.border = 'right'
+      end
+      it { is_expected.to(be_border_all) }
+    end
+  end
+
   describe '#bordercolor=' do
     before { modifier.bordercolor = '#FF0000' }
 
@@ -145,7 +171,29 @@ describe ::CSVPlusPlus::Modifier do
     end
   end
 
-  describe '#take_deaults_from!' do
-    # TODO
+  describe '#take_defaults_from!' do
+    let(:modifier) { build(:row_modifier) }
+    let(:other_modifier) { build(:modifier) }
+    before do
+      modifier.format = 'bold'
+      modifier.format = 'underline'
+      modifier.border = 'top'
+      modifier.borderstyle = 'thin'
+      modifier.fontcolor = '#00FF00'
+
+      other_modifier.take_defaults_from!(modifier)
+    end
+
+    it 'copies values from modifier onto other_modifier' do
+      expect(other_modifier).to(be_formatted('bold'))
+      expect(other_modifier).to(be_formatted('underline'))
+      expect(other_modifier).to(be_border_along('top'))
+      expect(other_modifier.borderstyle).to(eq('thin'))
+      expect(other_modifier.fontcolor).to(eq(modifier.fontcolor))
+    end
+
+    it 'does not take row-specific values' do
+      expect(other_modifier).not_to(be_row_level)
+    end
   end
 end
