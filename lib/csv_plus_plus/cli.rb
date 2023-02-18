@@ -3,68 +3,72 @@
 require 'optparse'
 
 module CSVPlusPlus
-  # Hadle running the application with the given CLI flags
-  module CLI
+  # Handle running the application with the given CLI flags
+  class CLI
     # handle any CLI flags and launch the compiler
     def self.launch_compiler!
-      options = parse_options
-      ::CSVPlusPlus.apply_template_to_sheet!(::ARGF.read, ::ARGF.filename, options)
+      cli = new
+      cli.compile!
     rescue ::StandardError => e
-      handle_error(e, options)
+      cli.handle_error(e)
       exit(1)
     end
 
-    private
+    # initialize
+    def initialize
+      parse_options!
+    end
 
-    def self.handle_error(error, options)
+    # compile the given template, using the given CLI flags
+    def compile!
+      ::CSVPlusPlus.apply_template_to_sheet!(::ARGF.read, ::ARGF.filename, @options)
+    end
+
+    # (nicely) handle a given error.  how it's handled depends on if it's our error and if @options.verbose
+    def handle_error(error)
       case error
       when ::CSVPlusPlus::Error
-        handle_internal_error(error, options)
+        handle_internal_error(error)
       when ::Google::Apis::ClientError
-        handle_google_error(error, options)
+        handle_google_error(error)
       else
         # TODO: more if verbose?
         warn(error.message)
       end
     end
-    private_class_method :handle_error
 
-    def self.handle_internal_error(error, options)
+    private
+
+    def handle_internal_error(error)
       if error.is_a?(::CSVPlusPlus::Language::SyntaxError)
-        warn(options.verbose ? error.to_verbose_trace : error.to_trace)
+        warn(@options.verbose ? error.to_verbose_trace : error.to_trace)
       else
         warn(error.message)
       end
     end
-    private_class_method :handle_internal_error
 
-    def self.handle_google_error(error, options)
+    def handle_google_error(error)
       warn("Error making Google Sheets API request: #{error.message}")
-      return unless options.verbose
+      return unless @options.verbose
 
       warn("#{error.status_code} Error making Google API request [#{error.message}]: #{error.body}")
     end
-    private_class_method :handle_google_error
 
-    def self.parse_options
-      ::CSVPlusPlus::Options.new.tap do |options|
-        option_parser(options).parse!
-        validate_options(options)
-      end
+    def parse_options!
+      @options = ::CSVPlusPlus::Options.new
+      option_parser.parse!
+      validate_options
     end
-    private_class_method :parse_options
 
-    def self.validate_options(options)
-      error_message = options.validate
+    def validate_options
+      error_message = @options.validate
       return if error_message.nil?
 
-      warn(error_message)
       puts(option_parser)
-      exit(1)
+      raise(::CSVPlusPlus::Error, error_message)
     end
-    private_class_method :validate_options
 
-    def self.option_parser(options)
+    def option_parser
       ::OptionParser.new do |parser|
         parser.on('-h', '--help', 'Show help information') do
           puts(parser)
@@ -72,10 +76,9 @@ module CSVPlusPlus
         end
 
         ::SUPPORTED_CSVPP_FLAGS.each do |f|
-          parser.on(f.short_flag, f.long_flag, f.description) { |v| f.handler.call(options, v) }
+          parser.on(f.short_flag, f.long_flag, f.description) { |v| f.handler.call(@options, v) }
         end
       end
     end
-    private_class_method :option_parser
   end
 end
