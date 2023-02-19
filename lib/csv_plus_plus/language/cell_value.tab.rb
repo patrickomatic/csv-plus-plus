@@ -29,11 +29,10 @@ module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 48)
     @ast
   end
 
-  def tokenizer(input)
+  def tokenizer
     ::CSVPlusPlus::Lexer::Tokenizer.new(
       catchall: /[\(\)\/\*\+\-,=&]/,
       ignore: /\s+/,
-      input:,
       tokens: [
         [/true/i, :TRUE],
         [/false/i, :FALSE],

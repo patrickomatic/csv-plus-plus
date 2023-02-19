@@ -83,11 +83,10 @@ require_relative '../code_section'
     'code section'
   end
 
-  def tokenizer(input)
+  def tokenizer
     ::CSVPlusPlus::Lexer::Tokenizer.new(
       catchall: /[\(\)\{\}\/\*\+\-,=&]/,
       ignore: /\s+|\#[^\n]+\n/,
-      input:,
       stop_fn: lambda do |scanner|
         return false unless scanner.scan(/#{::CSVPlusPlus::Lexer::END_OF_CODE_SECTION}/)
 

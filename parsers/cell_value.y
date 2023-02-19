@@ -61,11 +61,10 @@ end
     @ast
   end
 
-  def tokenizer(input)
+  def tokenizer
     ::CSVPlusPlus::Lexer::Tokenizer.new(
       catchall: /[\(\)\/\*\+\-,=&]/,
       ignore: /\s+/,
-      input:,
       tokens: [
         [/true/i, :TRUE],
         [/false/i, :FALSE],

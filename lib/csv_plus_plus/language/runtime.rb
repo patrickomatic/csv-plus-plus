@@ -21,13 +21,13 @@ module CSVPlusPlus
   module Language
     # The runtime state of the compiler (the current +line_number+/+row_index+, +cell+, etc)
     #
-    # @attr_reader filename [String, nil] The filename that the input came from (mostly used for debugging since +filename+
-    #   can be +nil+ if it's read from stdin
+    # @attr_reader filename [String, nil] The filename that the input came from (mostly used for debugging since
+    #   +filename+ can be +nil+ if it's read from stdin.
     # @attr_reader length_of_code_section [Integer] The length (count of lines) of the code section part of the original
-    #   input
+    #   input.
     # @attr_reader length_of_csv_section [Integer] The length (count of lines) of the CSV part of the original csvpp
-    #   input
-    # @attr_reader length_of_original_file [Integer] The length (count of lines) of the original csvpp input
+    #   input.
+    # @attr_reader length_of_original_file [Integer] The length (count of lines) of the original csvpp input.
     #
     # @attr cell [Cell] The current cell being processed
     # @attr cell_index [Integer] The index of the current cell being processed (starts at 0)
@@ -159,6 +159,8 @@ module CSVPlusPlus
       end
 
       # We mutate the input over and over. It's ok because it's just a Tempfile
+      #
+      # @param data [String] The data to rewrite our input file to
       def rewrite_input!(data)
         @tmp.truncate(0)
         @tmp.write(data)

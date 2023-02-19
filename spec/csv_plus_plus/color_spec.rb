@@ -50,6 +50,21 @@ describe ::CSVPlusPlus::Color do
     end
   end
 
+  describe '#blue_percent' do
+    subject { color.blue_percent }
+    it { is_expected.to(eq(0.00392156862745098)) }
+  end
+
+  describe '#green_percent' do
+    subject { color.green_percent }
+    it { is_expected.to(eq(0.0)) }
+  end
+
+  describe '#red_percent' do
+    subject { color.red_percent }
+    it { is_expected.to(eq(1.0)) }
+  end
+
   describe '#to_hex' do
     subject { color.to_hex }
 

@@ -1,19 +1,28 @@
 # frozen_string_literal: true
 
 module CSVPlusPlus
-  # Common methods to be mixed into our Racc parsers
+  # Common methods to be mixed into the Racc parsers
+  #
+  # @attr_reader tokens [Array]
   module Lexer
-    # initialize
-    def initialize
-      @tokens = []
+    attr_reader :tokens
+
+    # Initialize a lexer instance with an empty +@tokens+
+    def initialize(tokens: [])
+      @tokens = tokens
     end
 
     # Used by racc to iterate each token
+    #
+    # @return [Array<(String, String)>]
     def next_token
       @tokens.shift
     end
 
-    # parse
+    # Orchestate the tokenizing, parsing and error handling of parsing input.  Each instance will implement their own
+    #   #tokenizer method
+    #
+    # @return [Lexer#return_value] Each instance will define it's own +return_value+ with the result of parsing
     def parse(input, runtime)
       return if input.nil?
 
@@ -28,10 +37,20 @@ module CSVPlusPlus
 
     protected
 
+    # Given a +type+, instantiate the proper instance with the given +entity_args+
+    #
+    # @param type [Symbol]
+    # @param entity_args
+    def e(type, *entity_args)
+      ::CSVPlusPlus::Language::TYPES[type].new(*entity_args)
+    end
+
+    private
+
     def tokenize(input, runtime)
       return if input.nil?
 
-      t = tokenizer(input)
+      t = tokenizer.scan(input)
 
       until t.scanner.empty?
         next if t.matches_ignore?
@@ -44,12 +63,6 @@ module CSVPlusPlus
 
       @tokens << %i[EOL EOL]
     end
-
-    def e(type, *entity_args)
-      ::CSVPlusPlus::Language::TYPES[type].new(*entity_args)
-    end
-
-    private
 
     def consume_token(tokenizer, runtime)
       if tokenizer.last_token

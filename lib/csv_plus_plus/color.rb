@@ -1,11 +1,17 @@
 # frozen_string_literal: true
 
 module CSVPlusPlus
-  # A color value
+  # A color value parsed into it's respective components
+  #
+  # attr_reader blue_hex [String] The blue value in hex ("FF", "00", "AF", etc)
+  # attr_reader green_hex [String] The green value in hex ("FF", "00", "AF", etc)
+  # attr_reader red_hex [String] The red value in hex ("FF", "00", "AF", etc)
   class Color
     attr_reader :red_hex, :green_hex, :blue_hex
 
     # create an instance from a string like "#FFF" or "#FFFFFF"
+    #
+    # @param hex_string [String] The hex string input to parse
     def initialize(hex_string)
       @red_hex, @green_hex, @blue_hex = hex_string
                                         .gsub(/^#?/, '')
@@ -15,31 +21,39 @@ module CSVPlusPlus
     end
 
     # The percent (decimal between 0-1) of red
+    #
+    # @return [Numeric]
     def red_percent
       hex_to_percent(@red_hex)
     end
 
     # The percent (decimal between 0-1) of green
+    #
+    # @return [Numeric]
     def green_percent
       hex_to_percent(@green_hex)
     end
 
     # The percent (decimal between 0-1) of blue
+    #
+    # @return [Numeric]
     def blue_percent
       hex_to_percent(@blue_hex)
     end
 
-    # to_hex
+    # Create a hex representation of the color (without a '#')
+    #
+    # @return [String]
     def to_hex
       [@red_hex, @green_hex, @blue_hex].join
     end
 
-    # to_s
+    # @return [String]
     def to_s
       "Color(r: #{@red_hex}, g: #{@green_hex}, b: #{@blue_hex})"
     end
 
-    # ==
+    # @return [boolean]
     def ==(other)
       other.is_a?(self.class) &&
         other.red_hex == @red_hex &&
@@ -50,7 +64,7 @@ module CSVPlusPlus
     private
 
     def hex_to_percent(hex)
-      hex.to_i(16) / 255
+      hex.to_i(16) / 255.0
     end
   end
 end

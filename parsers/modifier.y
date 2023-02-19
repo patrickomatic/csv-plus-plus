@@ -122,6 +122,7 @@ require_relative './lexer'
 
   include ::CSVPlusPlus::Lexer
 
+  # @param cell_modifier 
   def initialize(cell_modifier:, row_modifier:)
     super()
 
@@ -147,11 +148,10 @@ require_relative './lexer'
     'modifier'
   end
 
-  def tokenizer(input)
+  def tokenizer
     ::CSVPlusPlus::Lexer::Tokenizer.new(
       catchall: /\w+/,
       ignore: /\s+/,
-      input:,
       stop_fn: lambda do |scanner|
         return false unless scanner.scan(/\]\]/)
 

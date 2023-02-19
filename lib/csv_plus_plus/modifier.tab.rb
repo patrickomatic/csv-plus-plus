@@ -17,6 +17,7 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 121)
 
   include ::CSVPlusPlus::Lexer
 
+  # @param cell_modifier 
   def initialize(cell_modifier:, row_modifier:)
     super()
 
@@ -42,11 +43,10 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 121)
     'modifier'
   end
 
-  def tokenizer(input)
+  def tokenizer
     ::CSVPlusPlus::Lexer::Tokenizer.new(
       catchall: /\w+/,
       ignore: /\s+/,
-      input:,
       stop_fn: lambda do |scanner|
         return false unless scanner.scan(/\]\]/)
 

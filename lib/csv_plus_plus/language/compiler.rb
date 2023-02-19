@@ -30,6 +30,7 @@ module CSVPlusPlus
       attr_reader :timings, :benchmark, :options, :runtime, :scope
 
       # Create a compiler and make sure it gets cleaned up
+      #
       # @param input [String]
       # @param filename [String]
       # @param options [Options]
@@ -56,7 +57,10 @@ module CSVPlusPlus
         end
       end
 
-      # initialize
+      # @param runtime [Runtime]
+      # @param options [Options]
+      # @param scope [Scope, nil]
+      # @param benchmark [Benchmark, nil]
       def initialize(runtime:, options:, scope: nil, benchmark: nil)
         @options = options
         @runtime = runtime
@@ -66,6 +70,7 @@ module CSVPlusPlus
       end
 
       # Parse an entire template and return a +::CSVPlusPlus::Template+ instance
+      #
       # @return [Template]
       def parse_template
         parse_code_section!
@@ -78,7 +83,8 @@ module CSVPlusPlus
         end
       end
 
-      # parses the input file and returns a +CodeSection+
+      # Parses the input file and returns a +CodeSection+
+      #
       # @return [CodeSection]
       def parse_code_section!
         parsing_code_section do |input|
@@ -97,6 +103,7 @@ module CSVPlusPlus
       end
 
       # Workflow when parsing csv
+      #
       # @return [Array<Row>]
       def parse_csv_section!
         workflow(stage: 'Parsing CSV section') do

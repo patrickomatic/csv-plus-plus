@@ -8,7 +8,7 @@ describe ::CSVPlusPlus::Lexer::Tokenizer do
   let(:tokens) { [] }
   let(:stop_fn) { nil }
 
-  subject(:tokenizer) { described_class.new(alter_matches:, input:, catchall:, ignore:, tokens:, stop_fn:) }
+  subject(:tokenizer) { described_class.new(alter_matches:, catchall:, ignore:, tokens:, stop_fn:).scan(input) }
 
   describe '#initialize' do
     it 'sets initial state' do
