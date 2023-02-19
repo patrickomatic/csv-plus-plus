@@ -8,23 +8,26 @@ require_relative './language/syntax_error'
 module CSVPlusPlus
   # A container representing the operations that can be applied to a cell or row
   #
-  # @attr expand [Expand]
-  # @attr fontfamily [String]
-  # @attr fontsize [String]
-  # @attr halign ['left', 'center', 'right']
-  # @attr valign ['top', 'center', 'bottom']
-  # @attr note [String]
-  # @attr numberformat [String]
-  # @attr row_level [Boolean]
+  # @attr borders [Array<String>] The borders that will be set
+  # @attr expand [Expand] Whether this row expands into multiple rows
+  # @attr fontfamily [String] The font family
+  # @attr fontsize [Number] The font size
+  # @attr halign ['left', 'center', 'right'] Horizontal alignment
+  # @attr note [String] A note/comment on the cell
+  # @attr numberformat [String] A number format to apply to the value in the cell
+  # @attr row_level [Boolean] Is this a row modifier? If so it's values will apply to all cells in the row
+  #   (unless overridden by the cell modifier)
   # @attr validation [Object]
+  # @attr valign ['top', 'center', 'bottom'] Vertical alignment
   #
-  # @attr_writer borderstyle [String]
+  # @attr_writer borderstyle ['dashed', 'dotted', 'double', 'solid', 'solid_medium', 'solid_thick']
+  #   The style of border on the cell
   #
   # @attr_reader bordercolor [String]
   # @attr_reader borders [Array<String>]
-  # @attr_reader color [Color]
-  # @attr_reader fontcolor [Color]
-  # @attr_reader formats [Array<String>]
+  # @attr_reader color [Color] The background color of the cell
+  # @attr_reader fontcolor [Color] The font color of the cell
+  # @attr_reader formats [Array<String>] Bold/italics/underline/strikethrough formatting
   class Modifier
     attr_reader :bordercolor, :borders, :color, :fontcolor, :formats
     attr_writer :borderstyle
@@ -40,6 +43,7 @@ module CSVPlusPlus
 
     # Set the color
     # @param hex_value [String]
+    # @return [Color]
     def color=(hex_value)
       @color = ::CSVPlusPlus::Color.new(hex_value)
     end
@@ -96,6 +100,7 @@ module CSVPlusPlus
     end
 
     # Freeze the row from edits
+    # @return [true]
     def freeze!
       @frozen = true
     end
@@ -107,6 +112,7 @@ module CSVPlusPlus
     end
 
     # Mark this modifer as row-level
+    # @return [true]
     def row_level!
       @row_level = true
     end

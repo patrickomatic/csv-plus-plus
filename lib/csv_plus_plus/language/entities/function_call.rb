@@ -5,17 +5,18 @@ module CSVPlusPlus
     module Entities
       # A function call
       class FunctionCall < EntityWithArguments
-        # initialize
+        # @param id [String] The name of the function
+        # @param arguments [Array<Entity>] The arguments to the function
         def initialize(id, arguments)
           super(:function_call, id:, arguments:)
         end
 
-        # to_s
+        # @return [String]
         def to_s
           "#{@id.to_s.upcase}(#{arguments_to_s})"
         end
 
-        # ==
+        # @return [boolean]
         def ==(other)
           super && @id == other.id
         end

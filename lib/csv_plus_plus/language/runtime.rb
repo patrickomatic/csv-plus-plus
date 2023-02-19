@@ -4,23 +4,43 @@ require_relative 'entities'
 require_relative 'syntax_error'
 require 'tempfile'
 
-ENTITIES = ::CSVPlusPlus::Language::Entities
-
 RUNTIME_VARIABLES = {
-  rownum: ::ENTITIES::RuntimeValue.new(->(r) { ::ENTITIES::Number.new(r.row_index + 1) }),
-  cellnum: ::ENTITIES::RuntimeValue.new(->(r) { ::ENTITIES::Number.new(r.cell_index + 1) })
+  rownum: ::CSVPlusPlus::Language::Entities::RuntimeValue.new(
+    lambda { |r|
+      ::CSVPlusPlus::Language::Entities::Number.new(r.row_index + 1)
+    }
+  ),
+  cellnum: ::CSVPlusPlus::Language::Entities::RuntimeValue.new(
+    lambda { |r|
+      ::CSVPlusPlus::Language::Entities::Number.new(r.cell_index + 1)
+    }
+  )
 }.freeze
 
 module CSVPlusPlus
   module Language
-    ##
-    # The runtime state of the compiler (the current linenumber/row, cell, etc)
+    # The runtime state of the compiler (the current +line_number+/+row_index+, +cell+, etc)
+    #
+    # @attr_reader filename [String, nil] The filename that the input came from (mostly used for debugging since +filename+
+    #   can be +nil+ if it's read from stdin
+    # @attr_reader length_of_code_section [Integer] The length (count of lines) of the code section part of the original
+    #   input
+    # @attr_reader length_of_csv_section [Integer] The length (count of lines) of the CSV part of the original csvpp
+    #   input
+    # @attr_reader length_of_original_file [Integer] The length (count of lines) of the original csvpp input
+    #
+    # @attr cell [Cell] The current cell being processed
+    # @attr cell_index [Integer] The index of the current cell being processed (starts at 0)
+    # @attr row_index [Integer] The index of the current row being processed (starts at 0)
+    # @attr line_number [Integer] The line number of the original csvpp template (starts at 1)
     class Runtime
       attr_reader :filename, :length_of_code_section, :length_of_csv_section, :length_of_original_file
 
       attr_accessor :cell, :cell_index, :row_index, :line_number
 
-      # initialize
+      # @param input [String] The input to be parsed
+      # @param filename [String, nil] The filename that the input came from (mostly used for debugging since +filename+
+      #   can be +nil+ if it's read from stdin
       def initialize(input:, filename:)
         @filename = filename || 'stdin'
 
@@ -28,7 +48,10 @@ module CSVPlusPlus
         init!(1)
       end
 
-      # map over an unparsed file and keep track of line_number and row_index
+      # Map over an a csvpp file and keep track of line_number and row_index
+      #
+      # @param lines [Array]
+      # @return [Array]
       def map_lines(lines, &block)
         @line_number = 1
         lines.map do |line|
@@ -36,7 +59,10 @@ module CSVPlusPlus
         end
       end
 
-      # map over a single row and keep track of the cell and it's index
+      # Map over a single row and keep track of the cell and it's index
+      #
+      # @param row [Array<Cell>] The row to map each cell over
+      # @return [Array]
       def map_row(row, &block)
         @cell_index = 0
         row.map.with_index do |cell, index|
@@ -45,7 +71,11 @@ module CSVPlusPlus
         end
       end
 
-      # map over all rows and keep track of row and line numbers
+      # Map over all rows and keep track of row and line numbers
+      #
+      # @param rows [Array<Row>] The rows to map over (and keep track of indexes)
+      # @param cells_too [boolean] If the cells of each +row+ should be iterated over also.
+      # @return [Array]
       def map_rows(rows, cells_too: false, &block)
         @row_index = 0
         map_lines(rows) do |row|
@@ -59,12 +89,17 @@ module CSVPlusPlus
       end
 
       # Increment state to the next line
+      #
+      # @return [Integer]
       def next_line!
         @row_index += 1 unless @row_index.nil?
         @line_number += 1
       end
 
       # Set the current cell and index
+      #
+      # @param cell [Cell] The current cell
+      # @param cell_index [Integer] The index of the cell
       def set_cell!(cell, cell_index)
         @cell = cell
         @cell_index = cell_index
@@ -72,17 +107,23 @@ module CSVPlusPlus
 
       # Each time we run a parse on the input, call this so that the runtime state
       # is set to it's default values
+      #
+      # @param start_line_number_at [Integer] The value to start +@line_number+ at.  This is a param because depending
+      #   on if the code section has already been parsed, we might want to start the +@line_number+ where it ends.
       def init!(start_line_number_at)
         @row_index = @cell_index = nil
         @line_number = start_line_number_at
       end
 
-      # to_s
+      # @return [String]
       def to_s
         "Runtime(cell: #{@cell}, row_index: #{@row_index}, cell_index: #{@cell_index})"
       end
 
       # get the current (entity) value of a runtime value
+      #
+      # @param var_id [String, Symbol] The Variable#id  of the variable being resolved.
+      # @return [Entity]
       def runtime_value(var_id)
         if runtime_variable?(var_id)
           ::RUNTIME_VARIABLES[var_id.to_sym].resolve_fn.call(self)
@@ -92,18 +133,27 @@ module CSVPlusPlus
       end
 
       # Is +var_id+ a runtime variable?  (it's a static variable otherwise)
+      #
+      # @param var_id [String, Symbol] The Variable#id to check if it's a runtime variable
+      # @return [boolean]
       def runtime_variable?(var_id)
         ::RUNTIME_VARIABLES.key?(var_id.to_sym)
       end
 
       # Called when an error is encoutered during parsing.  It will construct a useful
       # error with the current +@row/@cell_index+, +@line_number+ and +@filename+
+      #
+      # @param message [String] A message relevant to why this error is being raised.
+      # @param bad_input [String] The offending input that caused this error to be thrown.
+      # @param wrapped_error [StandardError, nil] The underlying error that was raised (if it's not from our own logic)
       def raise_syntax_error(message, bad_input, wrapped_error: nil)
         raise(::CSVPlusPlus::Language::SyntaxError.new(message, bad_input, self, wrapped_error:))
       end
 
       # The currently available input for parsing.  The tmp state will be re-written
       # between parsing the code section and the CSV section
+      #
+      # @return [String]
       def input
         @tmp
       end

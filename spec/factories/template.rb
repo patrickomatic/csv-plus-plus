@@ -3,10 +3,9 @@
 ::FactoryBot.define do
   factory :template, class: ::CSVPlusPlus::Template do
     transient do
-      scope { build(:scope) }
       rows { [] }
     end
 
-    initialize_with { new(rows:, scope:) }
+    initialize_with { new(rows:) }
   end
 end

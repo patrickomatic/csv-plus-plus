@@ -5,26 +5,27 @@ require 'optparse'
 module CSVPlusPlus
   # Handle running the application with the given CLI flags
   class CLI
-    # handle any CLI flags and launch the compiler
+    # Handle CLI flags and launch the compiler
+    # @return [CLI]
     def self.launch_compiler!
-      cli = new
-      cli.compile!
+      cli = new.tap(&:compile!)
     rescue ::StandardError => e
       cli.handle_error(e)
       exit(1)
     end
 
-    # initialize
+    # Parses command line options on initialization (since everything else depends on the options)
     def initialize
       parse_options!
     end
 
-    # compile the given template, using the given CLI flags
+    # Compile the given template using the given CLI flags
     def compile!
       ::CSVPlusPlus.apply_template_to_sheet!(::ARGF.read, ::ARGF.filename, @options)
     end
 
     # (nicely) handle a given error.  how it's handled depends on if it's our error and if @options.verbose
+    # @param error [CSVPlusPlus::Error, Google::Apis::ClientError, StandardError]
     def handle_error(error)
       case error
       when ::CSVPlusPlus::Error

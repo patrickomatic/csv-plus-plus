@@ -12,7 +12,7 @@ module CSVPlusPlus
       SPREADSHEET_INFINITY = 1000
       public_constant :SPREADSHEET_INFINITY
 
-      # initialize
+      # @param options [Options]
       def initialize(options)
         super(options)
 
@@ -21,6 +21,7 @@ module CSVPlusPlus
       end
 
       # write a +template+ to Google Sheets
+      # @param template [Template]
       def write(template)
         @sheets_client = ::CSVPlusPlus::GoogleApiClient.sheets_client
 

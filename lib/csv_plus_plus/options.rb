@@ -4,7 +4,16 @@ require_relative './cli_flag'
 require_relative './google_options'
 
 module CSVPlusPlus
-  # The options a user can supply
+  # The options a user can supply (via CLI flags)
+  #
+  # @attr backup [boolean] Create a backup of the spreadsheet before writing
+  # @attr create_if_not_exists [boolean] Create the spreadsheet if it does not exist?
+  # @attr key_values [Hash] Additional variables that can be supplied to the template
+  # @attr offset [Array<Integer>] An [x, y] offset (array with two integers)
+  # @attr output_filename [String] The file to write our compiled results to
+  # @attr sheet_name [String] The name of the spreadsheet to write to
+  # @attr verbose [boolean] Include extra verbose output?
+  # @attr_reader google [GoogleOptions] Options that are specific to the Google Sheets writer
   class Options
     attr_accessor :backup, :create_if_not_exists, :key_values, :offset, :output_filename, :sheet_name, :verbose
     attr_reader :google
@@ -19,11 +28,16 @@ module CSVPlusPlus
     end
 
     # Set the Google Sheet ID
+    #
+    # @param sheet_id [String] The identifier used by Google's API to reference the sheet.  You can find it in the URL
+    #   for the sheet
+    # @return [String]
     def google_sheet_id=(sheet_id)
       @google = ::CSVPlusPlus::GoogleOptions.new(sheet_id)
     end
 
     # Returns an error string or nil if there are no validation problems
+    # @return [String, nil]
     def validate
       return if @google || @output_filename
 
@@ -31,6 +45,7 @@ module CSVPlusPlus
     end
 
     # Return a string with a verbose description of what we're doing with the options
+    # @return [String]
     def verbose_summary
       <<~SUMMARY
         #{summary_divider}
@@ -55,7 +70,7 @@ module CSVPlusPlus
       SUMMARY
     end
 
-    # to_s
+    # @return [String]
     def to_s
       "Options(create_if_not_exists: #{@create_if_not_exists}, google: #{@google}, key_values: #{@key_values}, " \
         "offset: #{@offset}, sheet_name: #{@sheet_name}, verbose: #{@verbose})"

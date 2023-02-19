@@ -2,6 +2,7 @@
 
 require 'benchmark'
 require 'csv'
+# TODO: move some of these out to csv_plus_plus.rb
 require_relative '../cell'
 require_relative '../modifier'
 require_relative '../modifier.tab'
@@ -14,13 +15,24 @@ require_relative 'scope'
 
 module CSVPlusPlus
   module Language
-    # Encapsulates the parsing and building of objects (+Template+ -> +Row+ -> +Cell+).
-    # Variable resolution is delegated to the +Scope+
+    # Encapsulates the parsing and building of objects (+Template+ -> +Row+ -> +Cell+). Variable resolution is delegated
+    # to the +Scope+
+    #
+    # @attr_reader timings [Array<Benchmark::Tms>] +Benchmark+ timings that have been accumulated by each step of
+    #   compilation
+    # @attr_reader benchmark [Benchmark] A +Benchmark+ instance (if we're capturing a benchmark)
+    # @attr_reader options [Options] The +Options+ to compile with
+    # @attr_reader runtime [Runtime] The runtime execution
+    # @attr_reader scope [Scope] +Scope+ for variable resolution
+    #
     # rubocop:disable Metrics/ClassLength
     class Compiler
       attr_reader :timings, :benchmark, :options, :runtime, :scope
 
       # Create a compiler and make sure it gets cleaned up
+      # @param input [String]
+      # @param filename [String]
+      # @param options [Options]
       def self.with_compiler(input:, filename:, options:, &block)
         runtime = ::CSVPlusPlus::Language::Runtime.new(filename:, input:)
 
@@ -54,11 +66,12 @@ module CSVPlusPlus
       end
 
       # Parse an entire template and return a +::CSVPlusPlus::Template+ instance
+      # @return [Template]
       def parse_template
         parse_code_section!
         rows = parse_csv_section!
 
-        ::CSVPlusPlus::Template.new(rows:, scope: @scope).tap do |t|
+        ::CSVPlusPlus::Template.new(rows:).tap do |t|
           t.validate_infinite_expands(@runtime)
           expanding { t.expand_rows! }
           resolve_all_cells!(t)
@@ -66,6 +79,7 @@ module CSVPlusPlus
       end
 
       # parses the input file and returns a +CodeSection+
+      # @return [CodeSection]
       def parse_code_section!
         parsing_code_section do |input|
           code_section, csv_section = ::CSVPlusPlus::Language::CodeSectionParser.new.parse(input, self)
@@ -82,7 +96,8 @@ module CSVPlusPlus
         @scope.code_section
       end
 
-      # workflow when parsing csv
+      # Workflow when parsing csv
+      # @return [Array<Row>]
       def parse_csv_section!
         workflow(stage: 'Parsing CSV section') do
           @runtime.map_rows(::CSV.new(runtime.input)) do |csv_row|
@@ -96,6 +111,9 @@ module CSVPlusPlus
 
       # Using the current +@runtime+ and the given +csv_row+ parse it into a +Row+ of +Cell+s
       # +csv_row+ should have already been run through a CSV parser and is an array of strings
+      #
+      # @param csv_row [Array<Array<String>>]
+      # @return [Row]
       def parse_row(csv_row)
         row_modifier = ::CSVPlusPlus::Modifier.new(row_level: true)
 
@@ -110,7 +128,10 @@ module CSVPlusPlus
         ::CSVPlusPlus::Row.new(@runtime.row_index, cells, row_modifier)
       end
 
-      # workflow when resolving the values of all cells
+      # Workflow when resolving the values of all cells
+      #
+      # @param template [Template]
+      # @return [Array<Entity>]
       def resolve_all_cells!(template)
         workflow(stage: 'Resolving each cell') do
           @runtime.map_rows(template.rows, cells_too: true) do |cell|
@@ -119,19 +140,17 @@ module CSVPlusPlus
         end
       end
 
-      # workflow when writing results
+      # Workflow when writing results
       def outputting!(&block)
         workflow(stage: 'Writing the spreadsheet') do
           block.call
         end
       end
 
-      # to_s
+      # @return [String]
       def to_s
         "Compiler(options: #{@options}, runtime: #{@runtime}, scope: #{@scope})"
       end
-
-      private
 
       # workflow when parsing the code section
       def parsing_code_section(&block)
@@ -143,6 +162,8 @@ module CSVPlusPlus
           @runtime.rewrite_input!(csv_section)
         end
       end
+
+      private
 
       # workflow when expanding rows
       def expanding(&block)

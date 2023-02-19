@@ -6,10 +6,11 @@ module CSVPlusPlus
   module Language
     module Entities
       # A boolean value
+      #
+      # @attr_reader value [true, false]
       class Boolean < Entity
         attr_reader :value
 
-        # initialize
         # @param value [String, Boolean]
         def initialize(value)
           super(:boolean)
@@ -22,7 +23,7 @@ module CSVPlusPlus
           @value.to_s.upcase
         end
 
-        # @return [Boolean]
+        # @return [boolean]
         def ==(other)
           super && value == other.value
         end

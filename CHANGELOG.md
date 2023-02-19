@@ -1,3 +1,7 @@
+## v0.0.6
+
+- docs & tests
+
 ## v0.0.5
 
 - Support the --backup/-b option

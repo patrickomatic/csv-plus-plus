@@ -2,21 +2,23 @@
 
 module CSVPlusPlus
   # Contains the flow and data from a code section and CSV section
+  #
+  # @attr_reader rows [Array<Row>] The +Row+s that comprise this +Template+
   class Template
-    attr_reader :rows, :scope
+    attr_reader :rows
 
-    # initialize
-    def initialize(rows:, scope:)
+    # @param rows [Array<Row>] The +Row+s that comprise this +Template+
+    def initialize(rows:)
       @rows = rows
-      @scope = scope
     end
 
-    # to_s
+    # @return [String]
     def to_s
-      "Template(rows: #{@rows}, scope: #{@scope})"
+      "Template(rows: #{@rows})"
     end
 
     # Apply any expand= modifiers to the parsed template
+    # @return [Array<Row>]
     def expand_rows!
       expanded_rows = []
       row_index = 0
@@ -32,6 +34,8 @@ module CSVPlusPlus
     end
 
     # Make sure that the template has a valid amount of infinite expand modifiers
+    #
+    # @param runtime [Runtime] The compiler's current runtime
     def validate_infinite_expands(runtime)
       infinite_expand_rows = @rows.filter { |r| r.modifier.expand&.infinite? }
       return unless infinite_expand_rows.length > 1

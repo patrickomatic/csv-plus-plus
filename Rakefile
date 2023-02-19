@@ -35,6 +35,13 @@ task :clean do
   sh "rm -f #{::RACC_FILES.keys.join(' ')} csv_plus_plus-*.gem examples/all_features-*.csv"
 end
 
+namespace :docs do
+  desc 'Build Yard docs locally'
+  task :yard do
+    sh 'bundle exec yard'
+  end
+end
+
 namespace :gem do
   # based on the current version, the name of the built gem
   def gem_file

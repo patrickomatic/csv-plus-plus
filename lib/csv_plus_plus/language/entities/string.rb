@@ -3,23 +3,25 @@
 module CSVPlusPlus
   module Language
     module Entities
-      ##
       # A string value
+      #
+      # @attr_reader value [String]
       class String < Entity
         attr_reader :value
 
-        # initialize
+        # @param value [String] The string that has been parsed out of the template
         def initialize(value)
           super(:string)
+
           @value = value.gsub(/^"|"$/, '')
         end
 
-        # to_s
+        # @return [String]
         def to_s
           "\"#{@value}\""
         end
 
-        # ==
+        # @return [boolean]
         def ==(other)
           super && value == other.value
         end

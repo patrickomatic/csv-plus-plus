@@ -6,17 +6,21 @@ module CSVPlusPlus
   module Language
     module Entities
       # A basic building block of the abstract syntax tree (AST)
+      #
+      # @attr_reader id [Symbol] The identifier of the entity.  For functions this is the function name,
+      #   for variables it's the variable name
+      # @attr_reader type [Symbol] The type of the entity.  Valid values are defined in +::CSVPlusPlus::Language::Types+
       class Entity
         attr_reader :id, :type
 
-        # @param type [String, Symbol]
-        # @param id [String]
+        # @param type [::String, Symbol]
+        # @param id [::String]
         def initialize(type, id: nil)
           @type = type.to_sym
           @id = id.downcase.to_sym if id
         end
 
-        # @return [Boolean]
+        # @return [boolean]
         def ==(other)
           self.class == other.class && @type == other.type && @id == other.id
         end
@@ -32,7 +36,7 @@ module CSVPlusPlus
         end
 
         # Respond to predicates by type (entity.boolean?, entity.string?, etc)
-        # @return [Boolean]
+        # @return [boolean]
         def respond_to_missing?(method_name, *_arguments)
           (method_name =~ /^(\w+)\?$/ && a_type?(::Regexp.last_match(1))) || super
         end
@@ -44,19 +48,22 @@ module CSVPlusPlus
         end
       end
 
-      # An entity that can take other entities as arguments
+      # An entity that can take other entities as arguments.  Current use cases for this
+      # are function calls and function definitions
+      #
+      # @attr_reader arguments [Array<Entity>] The arguments supplied to this entity.
       class EntityWithArguments < Entity
         attr_reader :arguments
 
-        # @param type [String, Symbol]
-        # @param id [String]
+        # @param type [::String, Symbol]
+        # @param id [::String]
         # @param arguments [Array<Entity>]
         def initialize(type, id: nil, arguments: [])
           super(type, id:)
           @arguments = arguments
         end
 
-        # @return [Boolean]
+        # @return [boolean]
         def ==(other)
           super && @arguments == other.arguments
         end

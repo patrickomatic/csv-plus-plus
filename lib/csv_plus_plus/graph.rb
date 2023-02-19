@@ -3,7 +3,6 @@
 require 'tsort'
 
 module CSVPlusPlus
-  ##
   # Graph ordering and searching functions
   module Graph
     # Get a list of all variables references in a given +ast+

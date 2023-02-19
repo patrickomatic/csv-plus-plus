@@ -278,7 +278,7 @@ describe ::CSVPlusPlus::Language::Compiler do
   end
 
   describe '#resolve_all_cells!' do
-    let(:template) { build(:template, rows:, scope:) }
+    let(:template) { build(:template, rows:) }
     let(:scope) { build(:scope, code_section:) }
     let(:code_section) { build(:code_section, variables:) }
     let(:cells_row0) do
