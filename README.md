@@ -1,4 +1,5 @@
 [![Ruby Style Guide](https://img.shields.io/badge/code_style-community-brightgreen.svg)](https://rubystyle.guide)
+[![Gem Version](https://badge.fury.io/rb/csv_plus_plus.svg)](https://badge.fury.io/rb/csv_plus_plus)
 
 # csv++
 
