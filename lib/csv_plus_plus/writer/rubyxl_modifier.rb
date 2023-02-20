@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 module CSVPlusPlus
-  # Writer
   module Writer
     # Build a RubyXL-decorated Modifier class adds some support for Excel
     class RubyXLModifier < ::SimpleDelegator
@@ -32,20 +31,28 @@ module CSVPlusPlus
       }.freeze
       private_constant :BORDER_STYLES
 
+      # The excel-specific border weight
+      #
+      # @return [Integer]
+      def border_weight
+        return unless borderstyle
+
+        # rubocop:disable Lint/ConstantResolution
+        BORDER_STYLES[borderstyle.to_sym]
+        # rubocop:enable Lint/ConstantResolution
+      end
+
       # The excel-specific number format code
+      #
+      # @return [String]
       def number_format_code
+        return unless numberformat
+
         ::RubyXL::NumberFormats::DEFAULT_NUMBER_FORMATS.find_by_format_id(
           # rubocop:disable Lint/ConstantResolution
           NUM_FMT_IDS[numberformat.to_sym]
           # rubocop:enable Lint/ConstantResolution
         ).format_code
-      end
-
-      # The excel-specific border weight
-      def border_weight
-        # rubocop:disable Lint/ConstantResolution
-        BORDER_STYLES[borderstyle.to_sym]
-        # rubocop:enable Lint/ConstantResolution
       end
     end
   end

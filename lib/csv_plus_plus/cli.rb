@@ -6,9 +6,11 @@ module CSVPlusPlus
   # Handle running the application with the given CLI flags
   class CLI
     # Handle CLI flags and launch the compiler
+    #
     # @return [CLI]
     def self.launch_compiler!
-      cli = new.tap(&:compile!)
+      cli = new
+      cli.compile!
     rescue ::StandardError => e
       cli.handle_error(e)
       exit(1)
@@ -25,6 +27,7 @@ module CSVPlusPlus
     end
 
     # (nicely) handle a given error.  how it's handled depends on if it's our error and if @options.verbose
+    #
     # @param error [CSVPlusPlus::Error, Google::Apis::ClientError, StandardError]
     def handle_error(error)
       case error

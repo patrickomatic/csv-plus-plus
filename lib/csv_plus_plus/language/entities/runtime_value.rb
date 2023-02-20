@@ -3,21 +3,21 @@
 module CSVPlusPlus
   module Language
     module Entities
-      ##
-      # A runtime value
-      #
-      # These are values which can be materialized at any point via the +resolve_fn+
+      # A runtime value. These are values which can be materialized at any point via the +resolve_fn+
       # which takes an ExecutionContext as a param
+      #
+      # @attr_reader resolve_fn [lambda] A lambda that is called when the runtime value is resolved
       class RuntimeValue < Entity
         attr_reader :resolve_fn
 
-        # initialize
+        # @param resolve_fn [lambda] A lambda that is called when the runtime value is resolved
         def initialize(resolve_fn)
           super(:runtime_value)
+
           @resolve_fn = resolve_fn
         end
 
-        # to_s
+        # @return [String]
         def to_s
           '(runtime_value)'
         end

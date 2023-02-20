@@ -29,6 +29,10 @@ BUILTIN_FUNCTIONS = {
 module CSVPlusPlus
   module Language
     # A class representing the scope of the current Template and responsible for resolving variables
+    #
+    # @attr_reader code_section [CodeSection] The CodeSection containing variables and functions to be resolved
+    # @attr_reader runtime [Runtime] The compiler's current runtime
+    #
     # rubocop:disable Metrics/ClassLength
     class Scope
       attr_reader :code_section, :runtime
@@ -40,6 +44,8 @@ module CSVPlusPlus
       end
 
       # Resolve all values in the ast of the current cell being processed
+      #
+      # @return [Entity]
       def resolve_cell_value
         return unless (ast = @runtime.cell&.ast)
 
@@ -56,6 +62,8 @@ module CSVPlusPlus
       end
 
       # Set the +code_section+ and resolve all inner dependencies in it's variables and functions.
+      #
+      # @param code_section [CodeSection] The code_section to be resolved
       def code_section=(code_section)
         @code_section = code_section
 
@@ -63,7 +71,7 @@ module CSVPlusPlus
         resolve_static_functions!
       end
 
-      # to_s
+      # @return [String]
       def to_s
         "Scope(code_section: #{@code_section}, runtime: #{@runtime})"
       end

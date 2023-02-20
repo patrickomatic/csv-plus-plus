@@ -14,7 +14,7 @@ describe ::CSVPlusPlus::Writer::FileBackerUpper do
   let(:options) { build(:options, output_filename:) }
   let(:writer) { ::TestWriter.new(options) }
   let(:output_file) do
-    ::Tempfile.new(%w[foo csvpp]) do |f|
+    ::Tempfile.new(%w[foo csvpp]).tap do |f|
       f.write('foo,bar,baz')
     end
   end
@@ -25,16 +25,17 @@ describe ::CSVPlusPlus::Writer::FileBackerUpper do
   end
 
   describe '#write_backup' do
-    subject { options.write_backup }
+    subject { writer.write_backup }
 
-    context 'when the first desired choice is taken' do
-      # TODO
+    after { subject.unlink }
+
+    context 'when the first backup file is taken' do
+      it 'creates the backup file' do
+        expect(::File.exist?(subject)).to(be(true))
+      end
     end
 
-    context 'when the second desired choice is taken' do
-      # TODO
-    end
-    context 'when the third desired choice is taken' do
+    context 'when all the backup file options are taken' do
       # TODO
     end
   end

@@ -42,6 +42,7 @@ module CSVPlusPlus
     end
 
     # Set the color
+    #
     # @param hex_value [String]
     # @return [Color]
     def color=(hex_value)
@@ -49,12 +50,14 @@ module CSVPlusPlus
     end
 
     # Assign a border
+    #
     # @param side ['top', 'left', 'bottom', 'right', 'all']
     def border=(side)
       @borders << side
     end
 
     # Does this have a border along +side+?
+    #
     # @param side ['top', 'left', 'bottom', 'right', 'all']
     # @return [Boolean]
     def border_along?(side)
@@ -62,6 +65,7 @@ module CSVPlusPlus
     end
 
     # Does this have a border along all sides?
+    #
     # @return [Boolean]
     def border_all?
       @borders.include?('all') \
@@ -69,30 +73,35 @@ module CSVPlusPlus
     end
 
     # Set the bordercolor
+    #
     # @param hex_value [String] formatted as '#000000', '#000' or '000000'
     def bordercolor=(hex_value)
       @bordercolor = ::CSVPlusPlus::Color.new(hex_value)
     end
 
     # Are there any borders set?
+    #
     # @return [Boolean]
     def any_border?
       !@borders.empty?
     end
 
     # Set the fontcolor
+    #
     # @param hex_value [String] formatted as '#000000', '#000' or '000000'
     def fontcolor=(hex_value)
       @fontcolor = ::CSVPlusPlus::Color.new(hex_value)
     end
 
     # Set a text format (bolid, italic, underline or strikethrough)
+    #
     # @param value ['bold', 'italic', 'underline', 'strikethrough']
     def format=(value)
       @formats << value
     end
 
     # Is the given format set?
+    #
     # @param type ['bold', 'italic', 'underline', 'strikethrough']
     # @return [Boolean]
     def formatted?(type)
@@ -100,36 +109,42 @@ module CSVPlusPlus
     end
 
     # Freeze the row from edits
+    #
     # @return [true]
     def freeze!
       @frozen = true
     end
 
-    # Is the row forzen?
+    # Is the row frozen?
+    #
     # @return [Boolean]
     def frozen?
       @frozen
     end
 
     # Mark this modifer as row-level
+    #
     # @return [true]
     def row_level!
       @row_level = true
     end
 
     # Is this a row-level modifier?
+    #
     # @return [Boolean]
     def row_level?
       @row_level
     end
 
     # Is this a cell-level modifier?
+    #
     # @return [Boolean]
     def cell_level?
       !@row_level
     end
 
     # Style of border
+    #
     # @return [String]
     def borderstyle
       @borderstyle || 'solid'
@@ -143,6 +158,7 @@ module CSVPlusPlus
     end
 
     # Create a new modifier instance, with all values defaulted from +other+
+    #
     # @param other [Modifier]
     def take_defaults_from!(other)
       other.instance_variables.each do |property|

@@ -21,6 +21,7 @@ module CSVPlusPlus
       end
 
       # write a +template+ to Google Sheets
+      #
       # @param template [Template]
       def write(template)
         @sheets_client = ::CSVPlusPlus::GoogleApiClient.sheets_client
@@ -37,14 +38,6 @@ module CSVPlusPlus
       def write_backup
         drive_client = ::CSVPlusPlus::GoogleApiClient.drive_client
         drive_client.copy_file(@sheet_id)
-      end
-
-      protected
-
-      def load_requires
-        require('google/apis/drive_v3')
-        require('google/apis/sheets_v4')
-        require('googleauth')
       end
 
       private
@@ -119,7 +112,7 @@ module CSVPlusPlus
           sheet_id: sheet&.properties&.sheet_id,
           column_index: @options.offset[1],
           row_index: @options.offset[0],
-          current_sheet_values: @current_sheet_values
+          current_sheet_values: @current_values
         )
       end
     end

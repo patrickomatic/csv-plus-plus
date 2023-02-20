@@ -7,7 +7,7 @@ module CSVPlusPlus
     # Given +rows+ from a +Template+, build requests compatible with Google Sheets Ruby API
     # rubocop:disable Metrics/ClassLength
     class GoogleSheetBuilder
-      # initialize
+      # @param current_sheet_values
       def initialize(current_sheet_values:, sheet_id:, rows:, column_index: 0, row_index: 0)
         @current_sheet_values = current_sheet_values
         @sheet_id = sheet_id
@@ -17,6 +17,8 @@ module CSVPlusPlus
       end
 
       # Build a Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest
+      #
+      # @return [Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest]
       def batch_update_spreadsheet_request
         build_batch_request(@rows)
       end
@@ -42,20 +44,16 @@ module CSVPlusPlus
         end
       end
 
-      # rubocop:disable Metrics/AbcSize
       def build_cell_format(mod)
         sheets_ns::CellFormat.new.tap do |cf|
           cf.text_format = mod.text_format
 
-          cf.horizontal_alignment = mod.halign if mod.halign
-          cf.vertical_alignment = mod.valign if mod.valign
-
-          cf.background_color = mod.color if mod.color
-
-          cf.number_format = mod.numberformat if mod.numberformat
+          cf.horizontal_alignment = mod.halign
+          cf.vertical_alignment = mod.valign
+          cf.background_color = mod.color
+          cf.number_format = mod.numberformat
         end
       end
-      # rubocop:enable Metrics/AbcSize
 
       def grid_range_for_cell(cell)
         sheets_ns::GridRange.new(
@@ -68,7 +66,7 @@ module CSVPlusPlus
       end
 
       def current_value(row_index, cell_index)
-        @current_values[row_index][cell_index]
+        @current_sheet_values[row_index][cell_index]
       rescue ::StandardError
         nil
       end

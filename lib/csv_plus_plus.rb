@@ -1,12 +1,18 @@
 # frozen_string_literal: true
 
+require 'google/apis/drive_v3'
+require 'google/apis/sheets_v4'
+require 'googleauth'
+require 'rubyXL'
+require 'rubyXL/convenience_methods'
+
 require_relative 'csv_plus_plus/cli'
 require_relative 'csv_plus_plus/error'
 require_relative 'csv_plus_plus/language/compiler'
 require_relative 'csv_plus_plus/options'
 require_relative 'csv_plus_plus/writer'
 
-# A language for writing rich CSV data
+# A programming language for writing rich CSV files
 module CSVPlusPlus
   # Parse the input into a +Template+ and write it to the desired format
   def self.apply_template_to_sheet!(input, filename, options)

@@ -17,13 +17,6 @@ module CSVPlusPlus
           sheet_name: @options.sheet_name
         ).write
       end
-
-      protected
-
-      def load_requires
-        require('rubyXL')
-        require('rubyXL/convenience_methods')
-      end
     end
   end
 end
