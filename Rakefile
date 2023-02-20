@@ -33,6 +33,7 @@ end
 desc 'Remove generated files'
 task :clean do
   sh "rm -f #{::RACC_FILES.keys.join(' ')} csv_plus_plus-*.gem examples/all_features-*.csv"
+  sh 'rm -rf coverage/ doc/ .yardoc/'
 end
 
 namespace :docs do
