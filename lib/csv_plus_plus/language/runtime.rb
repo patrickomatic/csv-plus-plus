@@ -45,7 +45,7 @@ module CSVPlusPlus
         @filename = filename || 'stdin'
 
         init_input!(input)
-        init!(1)
+        start!
       end
 
       # Map over an a csvpp file and keep track of line_number and row_index
@@ -105,14 +105,17 @@ module CSVPlusPlus
         @cell_index = cell_index
       end
 
-      # Each time we run a parse on the input, call this so that the runtime state
-      # is set to it's default values
-      #
-      # @param start_line_number_at [Integer] The value to start +@line_number+ at.  This is a param because depending
-      #   on if the code section has already been parsed, we might want to start the +@line_number+ where it ends.
-      def init!(start_line_number_at)
+      # Each time we run a parse on the input, reset the runtime state starting at the beginning of the file
+      def start!
         @row_index = @cell_index = nil
-        @line_number = start_line_number_at
+        @line_number = 1
+      end
+
+      # Reset the runtime state starting at the CSV section
+      def start_at_csv!
+        # TODO: isn't the input re-written anyway without the code section? why do we need this?
+        start!
+        @line_number = @length_of_code_section || 1
       end
 
       # @return [String]

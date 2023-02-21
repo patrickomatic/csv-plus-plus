@@ -19,7 +19,7 @@ module CSVPlusPlus
     warn(options.verbose_summary) if options.verbose
 
     ::CSVPlusPlus::Language::Compiler.with_compiler(input:, filename:, options:) do |c|
-      template = c.parse_template
+      template = c.compile_template
 
       output = ::CSVPlusPlus::Writer.writer(options)
       c.outputting! do

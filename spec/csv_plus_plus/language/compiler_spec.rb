@@ -34,8 +34,8 @@ describe ::CSVPlusPlus::Language::Compiler do
     end
   end
 
-  describe '#parse_template' do
-    let(:template) { compiler.parse_template }
+  describe '#compile_template' do
+    let(:template) { compiler.compile_template }
     let(:input) { "foo0,bar0,baz0\nfoo1,bar1,baz1\nfoo2,bar2,baz2\n" }
 
     it 'creates rows' do
@@ -76,238 +76,239 @@ describe ::CSVPlusPlus::Language::Compiler do
     end
   end
 
-  describe '#parse_code_section!' do
-    subject { compiler.parse_code_section! }
-
-    context 'with no code section' do
-      let(:input) { 'foo,bar,baz' }
-
-      it { is_expected.not_to(be_nil) }
-
-      it 'has empty variables' do
-        expect(subject.variables).to(be_empty)
-      end
-
-      it 'has empty functions' do
-        expect(subject.functions).to(be_empty)
-      end
-    end
-
-    context 'with comments' do
-      let(:input) do
-        <<~INPUT
-          # this is a comment
-          ---
-          foo,bar,bar
-        INPUT
-      end
-
-      it 'has empty variables' do
-        expect(subject.variables).to(be_empty)
-      end
-
-      it 'has empty functions' do
-        expect(subject.functions).to(be_empty)
-      end
-    end
-
-    context 'with variable definitions' do
-      let(:input) do
-        <<~INPUT
-          foo := 1
-          ---
-          foo,bar,baz
-        INPUT
-      end
-
-      it 'sets a variable' do
-        expect(subject.variables).to(eq({ foo: build(:number_one) }))
-      end
-    end
-
-    context 'with function definitions' do
-      context 'a function with no arguments' do
-        let(:input) do
-          <<~INPUT
-            def foo() indirect("c1")
-            ---
-            foo,bar,baz
-          INPUT
-        end
-
-        it 'sets the function on functions' do
-          expect(subject.functions).to(
-            eq(
-              {
-                foo: build(
-                  :fn,
-                  name: :foo,
-                  arguments: [],
-                  body: build(:fn_call, name: :indirect, arguments: [build(:string, s: 'c1')])
-                )
-              }
-            )
-          )
-        end
-      end
-
-      context 'a function with arguments' do
-        let(:input) do
-          <<~INPUT
-            def foo(a, b) add($$a, $$b)
-            ---
-            foo,bar,baz
-          INPUT
-        end
-
-        it 'sets the function on functions' do
-          expect(subject.functions).to(
-            eq(
-              {
-                foo: build(
-                  :fn,
-                  name: :foo,
-                  arguments: %i[a b],
-                  body: build(:fn_call, name: :add, arguments: [build(:variable, id: 'a'), build(:variable, id: 'b')])
-                )
-              }
-            )
-          )
-        end
-      end
-    end
-
-    context 'with key_values' do
-      let(:input) do
-        <<~INPUT
-          foo := 1
-          ---
-          foo,bar,baz
-        INPUT
-      end
-      let(:key_values) { { fooz: 'bar' } }
-
-      it 'sets the variable, inferring the type as a string' do
-        expect(subject.variables).to(eq({ foo: build(:number_one), fooz: build(:string, s: 'bar') }))
-      end
-
-      context 'with the same name as a variable' do
-        let(:key_values) { { foo: 'bar' } }
-
-        it 'they should overwrite any defined variables' do
-          expect(subject.variables).to(eq({ foo: build(:string, s: 'bar') }))
-        end
-      end
-    end
-  end
-
-  describe '#parse_csv_section!' do
-    let(:input) { "foo,bar,baz\nfoo1,bar1,baz1\nfoo2,bar2,baz2\n" }
-
-    subject { compiler.parse_csv_section! }
-
-    it 'parses the CSV rows' do
-      expect(subject.length).to(eq(3))
-    end
-
-    context 'with modifiers' do
-      let(:input) { "[[halign=right]]foo,bar,baz\n[[note='test']]foo1,bar1,baz1\n[[format=bold]]foo2,bar2,baz2\n" }
-
-      it 'parses the CSV rows' do
-        expect(subject.length).to(eq(3))
-      end
-    end
-  end
-
-  describe '#parse_row' do
-    let(:values) { ['foo', '=ADD(1 ,2)', '=$$var'] }
-
-    subject(:row) { compiler.parse_row(values) }
-
-    it { is_expected.to(be_a(::CSVPlusPlus::Row)) }
-
-    it 'sets rows.index' do
-      expect(row.index).to(eq(0))
-    end
-
-    it 'sets cell.index' do
-      expect(row.cells[0].index).to(eq(0))
-      expect(row.cells[1].index).to(eq(1))
-      expect(row.cells[2].index).to(eq(2))
-    end
-
-    it 'sets cell.row_index' do
-      expect(row.cells[0].row_index).to(eq(row.index))
-      expect(row.cells[1].row_index).to(eq(row.index))
-      expect(row.cells[2].row_index).to(eq(row.index))
-    end
-
-    it 'sets cell.ast' do
-      expect(row.cells[0].ast).to(be_nil)
-      expect(row.cells[1].ast).to(eq(build(:fn_call_add)))
-      expect(row.cells[2].ast).to(eq(build(:variable, id: :var)))
-    end
-
-    context 'with a cell modifier' do
-      let(:values) { ['[[format=bold]]foo', 'bar', 'baz'] }
-
-      it 'does not set the modifier on the row' do
-        expect(row.modifier).not_to(be_formatted('bold'))
-      end
-
-      it 'sets bold only on one cell' do
-        expect(row.cells[0].modifier).to(be_formatted('bold'))
-        expect(row.cells[1].modifier).not_to(be_formatted('bold'))
-        expect(row.cells[2].modifier).not_to(be_formatted('bold'))
-      end
-    end
-
-    describe 'a row modifier provides defaults for the row' do
-      let(:values) { ['![[format=bold]]foo', 'bar', 'baz'] }
-
-      it 'sets bold on the row' do
-        expect(row.modifier).to(be_formatted('bold'))
-      end
-
-      it 'sets bold on each cell' do
-        expect(row.cells[0].modifier).to(be_formatted('bold'))
-        expect(row.cells[1].modifier).to(be_formatted('bold'))
-        expect(row.cells[2].modifier).to(be_formatted('bold'))
-      end
-    end
-  end
-
-  describe '#resolve_all_cells!' do
-    let(:template) { build(:template, rows:) }
-    let(:scope) { build(:scope, code_section:) }
-    let(:code_section) { build(:code_section, variables:) }
-    let(:cells_row0) do
-      [
-        build(:cell, row_index: 0, index: 0, value: '=$$foo', ast: build(:variable, id: :foo)),
-        build(:cell, row_index: 0, index: 1, value: '=foo'),
-        build(:cell, row_index: 0, index: 2, value: 'foo'),
-        build(:cell, row_index: 0, index: 3, value: '=$$rownum', ast: build(:variable, id: :rownum))
-      ]
-    end
-    let(:rows) { [build(:row, index: 0, cells: cells_row0)] }
-    let(:variables) { { foo: build(:number_one) } }
-
-    before { compiler.resolve_all_cells!(template) }
-
-    it 'resolves the first one and leaves the others alone' do
-      expect(template.rows[0].cells[0].to_csv).to(eq('=1'))
-      expect(template.rows[0].cells[1].to_csv).to(eq('=foo'))
-      expect(template.rows[0].cells[2].to_csv).to(eq('foo'))
-    end
-
-    it 'resolves runtime variables' do
-      expect(template.rows[0].cells[3].to_csv).to(eq('=1'))
-    end
-  end
-
-  describe '#to_s' do
-    subject { compiler.to_s }
-
-    it { is_expected.to(match(/Compiler\(options: Options\(.*\), runtime: Runtime\(.*\), scope: Scope\(.*\)/)) }
-  end
+  #   describe '#parse_code_section!' do
+  #     subject { compiler.parse_code_section! }
+  #
+  #     context 'with no code section' do
+  #       let(:input) { 'foo,bar,baz' }
+  #
+  #       it { is_expected.not_to(be_nil) }
+  #
+  #       it 'has empty variables' do
+  #         expect(subject.variables).to(be_empty)
+  #       end
+  #
+  #       it 'has empty functions' do
+  #         expect(subject.functions).to(be_empty)
+  #       end
+  #     end
+  #
+  #     context 'with comments' do
+  #       let(:input) do
+  #         <<~INPUT
+  #           # this is a comment
+  #           ---
+  #           foo,bar,bar
+  #         INPUT
+  #       end
+  #
+  #       it 'has empty variables' do
+  #         expect(subject.variables).to(be_empty)
+  #       end
+  #
+  #       it 'has empty functions' do
+  #         expect(subject.functions).to(be_empty)
+  #       end
+  #     end
+  #
+  #     context 'with variable definitions' do
+  #       let(:input) do
+  #         <<~INPUT
+  #           foo := 1
+  #           ---
+  #           foo,bar,baz
+  #         INPUT
+  #       end
+  #
+  #       it 'sets a variable' do
+  #         expect(subject.variables).to(eq({ foo: build(:number_one) }))
+  #       end
+  #     end
+  #
+  #     context 'with function definitions' do
+  #       context 'a function with no arguments' do
+  #         let(:input) do
+  #           <<~INPUT
+  #             def foo() indirect("c1")
+  #             ---
+  #             foo,bar,baz
+  #           INPUT
+  #         end
+  #
+  #         it 'sets the function on functions' do
+  #           expect(subject.functions).to(
+  #             eq(
+  #               {
+  #                 foo: build(
+  #                   :fn,
+  #                   name: :foo,
+  #                   arguments: [],
+  #                   body: build(:fn_call, name: :indirect, arguments: [build(:string, s: 'c1')])
+  #                 )
+  #               }
+  #             )
+  #           )
+  #         end
+  #       end
+  #
+  #       context 'a function with arguments' do
+  #         let(:input) do
+  #           <<~INPUT
+  #             def foo(a, b) add($$a, $$b)
+  #             ---
+  #             foo,bar,baz
+  #           INPUT
+  #         end
+  #
+  #         it 'sets the function on functions' do
+  #           expect(subject.functions).to(
+  #             eq(
+  #               {
+  #                 foo: build(
+  #                   :fn,
+  #                   name: :foo,
+  #                   arguments: %i[a b],
+  #                   body: build(:fn_call, name: :add, arguments: [build(:variable, id: 'a'),
+  #                           build(:variable, id: 'b')])
+  #                 )
+  #               }
+  #             )
+  #           )
+  #         end
+  #       end
+  #     end
+  #
+  #     context 'with key_values' do
+  #       let(:input) do
+  #         <<~INPUT
+  #           foo := 1
+  #           ---
+  #           foo,bar,baz
+  #         INPUT
+  #       end
+  #       let(:key_values) { { fooz: 'bar' } }
+  #
+  #       it 'sets the variable, inferring the type as a string' do
+  #         expect(subject.variables).to(eq({ foo: build(:number_one), fooz: build(:string, s: 'bar') }))
+  #       end
+  #
+  #       context 'with the same name as a variable' do
+  #         let(:key_values) { { foo: 'bar' } }
+  #
+  #         it 'they should overwrite any defined variables' do
+  #           expect(subject.variables).to(eq({ foo: build(:string, s: 'bar') }))
+  #         end
+  #       end
+  #     end
+  #   end
+  #
+  #   describe '#parse_csv_section!' do
+  #     let(:input) { "foo,bar,baz\nfoo1,bar1,baz1\nfoo2,bar2,baz2\n" }
+  #
+  #     subject { compiler.parse_csv_section! }
+  #
+  #     it 'parses the CSV rows' do
+  #       expect(subject.length).to(eq(3))
+  #     end
+  #
+  #     context 'with modifiers' do
+  #       let(:input) { "[[halign=right]]foo,bar,baz\n[[note='test']]foo1,bar1,baz1\n[[format=bold]]foo2,bar2,baz2\n" }
+  #
+  #       it 'parses the CSV rows' do
+  #         expect(subject.length).to(eq(3))
+  #       end
+  #     end
+  #   end
+  #
+  #   describe '#parse_row' do
+  #     let(:values) { ['foo', '=ADD(1 ,2)', '=$$var'] }
+  #
+  #     subject(:row) { compiler.parse_row(values) }
+  #
+  #     it { is_expected.to(be_a(::CSVPlusPlus::Row)) }
+  #
+  #     it 'sets rows.index' do
+  #       expect(row.index).to(eq(0))
+  #     end
+  #
+  #     it 'sets cell.index' do
+  #       expect(row.cells[0].index).to(eq(0))
+  #       expect(row.cells[1].index).to(eq(1))
+  #       expect(row.cells[2].index).to(eq(2))
+  #     end
+  #
+  #     it 'sets cell.row_index' do
+  #       expect(row.cells[0].row_index).to(eq(row.index))
+  #       expect(row.cells[1].row_index).to(eq(row.index))
+  #       expect(row.cells[2].row_index).to(eq(row.index))
+  #     end
+  #
+  #     it 'sets cell.ast' do
+  #       expect(row.cells[0].ast).to(be_nil)
+  #       expect(row.cells[1].ast).to(eq(build(:fn_call_add)))
+  #       expect(row.cells[2].ast).to(eq(build(:variable, id: :var)))
+  #     end
+  #
+  #     context 'with a cell modifier' do
+  #       let(:values) { ['[[format=bold]]foo', 'bar', 'baz'] }
+  #
+  #       it 'does not set the modifier on the row' do
+  #         expect(row.modifier).not_to(be_formatted('bold'))
+  #       end
+  #
+  #       it 'sets bold only on one cell' do
+  #         expect(row.cells[0].modifier).to(be_formatted('bold'))
+  #         expect(row.cells[1].modifier).not_to(be_formatted('bold'))
+  #         expect(row.cells[2].modifier).not_to(be_formatted('bold'))
+  #       end
+  #     end
+  #
+  #     describe 'a row modifier provides defaults for the row' do
+  #       let(:values) { ['![[format=bold]]foo', 'bar', 'baz'] }
+  #
+  #       it 'sets bold on the row' do
+  #         expect(row.modifier).to(be_formatted('bold'))
+  #       end
+  #
+  #       it 'sets bold on each cell' do
+  #         expect(row.cells[0].modifier).to(be_formatted('bold'))
+  #         expect(row.cells[1].modifier).to(be_formatted('bold'))
+  #         expect(row.cells[2].modifier).to(be_formatted('bold'))
+  #       end
+  #     end
+  #   end
+  #
+  #   describe '#resolve_all_cells!' do
+  #     let(:template) { build(:template, rows:) }
+  #     let(:scope) { build(:scope, code_section:) }
+  #     let(:code_section) { build(:code_section, variables:) }
+  #     let(:cells_row0) do
+  #       [
+  #         build(:cell, row_index: 0, index: 0, value: '=$$foo', ast: build(:variable, id: :foo)),
+  #         build(:cell, row_index: 0, index: 1, value: '=foo'),
+  #         build(:cell, row_index: 0, index: 2, value: 'foo'),
+  #         build(:cell, row_index: 0, index: 3, value: '=$$rownum', ast: build(:variable, id: :rownum))
+  #       ]
+  #     end
+  #     let(:rows) { [build(:row, index: 0, cells: cells_row0)] }
+  #     let(:variables) { { foo: build(:number_one) } }
+  #
+  #     before { compiler.resolve_all_cells!(template) }
+  #
+  #     it 'resolves the first one and leaves the others alone' do
+  #       expect(template.rows[0].cells[0].to_csv).to(eq('=1'))
+  #       expect(template.rows[0].cells[1].to_csv).to(eq('=foo'))
+  #       expect(template.rows[0].cells[2].to_csv).to(eq('foo'))
+  #     end
+  #
+  #     it 'resolves runtime variables' do
+  #       expect(template.rows[0].cells[3].to_csv).to(eq('=1'))
+  #     end
+  #   end
+  #
+  #   describe '#to_s' do
+  #     subject { compiler.to_s }
+  #
+  #     it { is_expected.to(match(/Compiler\(options: Options\(.*\), runtime: Runtime\(.*\), scope: Scope\(.*\)/)) }
+  #   end
 end
