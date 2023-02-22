@@ -26,13 +26,9 @@ module CSVPlusPlus
 
       # Create a compiler and make sure it gets cleaned up
       #
-      # @param input [String]
-      # @param filename [String]
+      # @param runtime [Runtime] The initial +Runtime+ for the compiler
       # @param options [Options]
-      # rubocop:disable Metrics/MethodLength
-      def self.with_compiler(input:, filename:, options:, &block)
-        runtime = ::CSVPlusPlus::Language::Runtime.new(filename:, input:)
-
+      def self.with_compiler(runtime:, options:, &block)
         compiler = new(options:, runtime:)
         if options.verbose
           ::CSVPlusPlus::Language::BenchmarkedCompiler.with_benchmarks(compiler) do |c|
@@ -44,7 +40,6 @@ module CSVPlusPlus
       ensure
         runtime.cleanup!
       end
-      # rubocop:enable Metrics/MethodLength
 
       # @param runtime [Runtime]
       # @param options [Options]

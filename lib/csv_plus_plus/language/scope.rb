@@ -38,6 +38,8 @@ module CSVPlusPlus
       attr_reader :code_section, :runtime
 
       # initialize with a +Runtime+ and optional +CodeSection+
+      # @param runtime [Runtime]
+      # @param code_section [Runtime, nil]
       def initialize(runtime:, code_section: nil)
         @code_section = code_section if code_section
         @runtime = runtime
@@ -97,12 +99,15 @@ module CSVPlusPlus
         var_dependencies.reject { |k| @runtime.runtime_variable?(k) }
       end
 
-      # Resolve all functions defined statically in the code section
+      # Resolve all functions defined in the code section
       def resolve_static_functions!
         # TODO: I'm still torn if it's worth replacing function references
         #
-        # my current theory is that if we resolve static functions befor processing each cell,
+        # my current theory is that if we resolve static functions before processing each cell,
         # overall compile time will be improved because there will be less to do for each cell
+        #
+        # though I don't think we'll ever be able to fully resolve them because they can be a mix
+        # of global functions and defined functions?
       end
 
       def resolve_functions(ast, refs)

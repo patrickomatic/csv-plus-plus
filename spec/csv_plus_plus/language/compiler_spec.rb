@@ -12,7 +12,7 @@ describe ::CSVPlusPlus::Language::Compiler do
     let(:filename) { 'foo.csvpp' }
 
     it 'yields a Compiler' do
-      expect { |b| described_class.with_compiler(input:, filename:, options:, &b) }
+      expect { |b| described_class.with_compiler(options:, runtime:, &b) }
         .to(yield_with_args(described_class))
     end
 
@@ -20,7 +20,7 @@ describe ::CSVPlusPlus::Language::Compiler do
       let(:options) { build(:options, verbose: true) }
 
       it 'yields a Compiler with #benchmark set' do
-        described_class.with_compiler(input:, filename:, options:) do |compiler|
+        described_class.with_compiler(options:, runtime:) do |compiler|
           expect(compiler.benchmark).not_to(be_nil)
         end
       end

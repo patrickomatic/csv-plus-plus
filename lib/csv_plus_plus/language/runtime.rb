@@ -19,7 +19,9 @@ RUNTIME_VARIABLES = {
 
 module CSVPlusPlus
   module Language
-    # The runtime state of the compiler (the current +line_number+/+row_index+, +cell+, etc)
+    # The runtime state of the compiler (the current +line_number+/+row_index+, +cell+ being processed, etc).  We take
+    # multiple runs through the input file for parsing so it's really convenient to have a central place for these
+    # things to be managed.
     #
     # @attr_reader filename [String, nil] The filename that the input came from (mostly used for debugging since
     #   +filename+ can be +nil+ if it's read from stdin.
