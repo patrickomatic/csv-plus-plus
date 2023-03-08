@@ -5,21 +5,29 @@ require_relative './rubyxl_modifier'
 module CSVPlusPlus
   module Writer
     # Build a RubyXL workbook formatted according to the given +rows+
+    #
+    # @attr_reader input_filename [String] The filename being written to
+    # @attr_reader rows [Array<Row>] The rows being written
     class RubyXLBuilder
       attr_reader :output_filename, :rows
 
-      # initialize
+      # @param input_filename [String] The file to write to
+      # @param rows [Array<Row>] The rows to write
+      # @param sheet_name [String] The name of the sheet within the workbook to write to
       def initialize(output_filename:, rows:, sheet_name:)
         @rows = rows
         @output_filename = output_filename
-        @workbook = open_workbook(sheet_name)
-        @worksheet = @workbook[sheet_name]
+        @sheet_name = sheet_name
       end
 
-      # write the given @rows in +sheet_name+ to +@output_filename+
-      def write
-        build_workbook!
-        @workbook.write(@output_filename)
+      # Write the given +@rows+ in +sheet_name+ to +@output_filename+
+      #
+      # @return [RubyXL::Workbook]
+      def build_workbook
+        open_workbook(@sheet_mame).tap do |workbook|
+          @worksheet = workbook[sheet_name]
+          build_workbook!
+        end
       end
 
       private
