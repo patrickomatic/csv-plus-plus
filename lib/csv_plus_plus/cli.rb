@@ -4,29 +4,30 @@ require 'optparse'
 
 module CSVPlusPlus
   # Handle running the application with the given CLI flags
+  #
+  # @attr options [Options, nil] The parsed CLI options
   class CLI
+    attr_accessor :options
+
     # Handle CLI flags and launch the compiler
     #
     # @return [CLI]
     def self.launch_compiler!
       cli = new
-      cli.compile!
+      cli.parse_options!
+      cli.main
     rescue ::StandardError => e
       cli.handle_error(e)
       exit(1)
     end
 
-    # Parses command line options on initialization (since everything else depends on the options)
-    def initialize
-      parse_options!
-    end
-
     # Compile the given template using the given CLI flags
-    def compile!
+    def main
+      parse_options! unless @options
       ::CSVPlusPlus.apply_template_to_sheet!(::ARGF.read, ::ARGF.filename, @options)
     end
 
-    # (nicely) handle a given error.  how it's handled depends on if it's our error and if @options.verbose
+    # Nicely handle a given error.  How it's handled depends on if it's our error and if @options.verbose
     #
     # @param error [CSVPlusPlus::Error, Google::Apis::ClientError, StandardError]
     def handle_error(error)
@@ -39,6 +40,20 @@ module CSVPlusPlus
         # TODO: more if verbose?
         warn(error.message)
       end
+    end
+
+    # Handle the supplied command line options, setting +@options+ or throw an error if anything is invalid
+    def parse_options!
+      @options = ::CSVPlusPlus::Options.new
+      option_parser.parse!
+      validate_options
+    rescue ::OptionParser::InvalidOption => e
+      raise(::CSVPlusPlus::Error, e.message)
+    end
+
+    # @return [String]
+    def to_s
+      "CLI(options: #{options})"
     end
 
     private
@@ -56,12 +71,6 @@ module CSVPlusPlus
       return unless @options.verbose
 
       warn("#{error.status_code} Error making Google API request [#{error.message}]: #{error.body}")
-    end
-
-    def parse_options!
-      @options = ::CSVPlusPlus::Options.new
-      option_parser.parse!
-      validate_options
     end
 
     def validate_options

@@ -4,10 +4,18 @@ require_relative './google_options'
 
 module CSVPlusPlus
   # Individual CLI flags that a user can supply
+  #
+  # @attr_reader short_flag [String] A definition of the short/single-character flag
+  # @attr_reader long_flag [String] A definition of the long/word-based flag
+  # @attr_reader description [String] A description of what the flag does
+  # @attr_reader handler [Proc(Options, String)] A proc which is called to handle when this flag is seen
   class CliFlag
     attr_reader :short_flag, :long_flag, :description, :handler
 
-    # initialize
+    # @param short_flag [String] A definition of the short/single-character flag
+    # @param long_flag [String] A definition of the long/word-based flag
+    # @param description [String] A description of what the flag does
+    # @param handler [Proc(Options, String)] A proc which is called to handle when this flag is seen
     def initialize(short_flag, long_flag, description, handler)
       @short_flag = short_flag
       @long_flag = long_flag
@@ -15,7 +23,7 @@ module CSVPlusPlus
       @handler = handler
     end
 
-    # to_s
+    # @return [String]
     def to_s
       "#{@short_flag}, #{@long_flag}  #{@description}"
     end

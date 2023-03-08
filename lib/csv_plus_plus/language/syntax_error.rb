@@ -2,10 +2,13 @@
 
 module CSVPlusPlus
   module Language
-    ##
     # An error that can be thrown for various syntax errors
     class SyntaxError < ::CSVPlusPlus::Error
-      # initialize
+      # @param message [String] The primary message to be shown to the user
+      # @param bad_input [String] The offending input that caused the error to be thrown
+      # @param runtime [Runtime] The current runtime
+      # @param wrapped_error [StandardError] The underlying error that caused the syntax error.  For example a
+      #   Racc::ParseError that was thrown
       def initialize(message, bad_input, runtime, wrapped_error: nil)
         @bad_input = bad_input.to_s
         @runtime = runtime
@@ -15,19 +18,21 @@ module CSVPlusPlus
         super(message)
       end
 
-      # to_s
+      # @return [String]
       def to_s
         to_trace
       end
 
       # Output a verbose user-helpful string that references the current runtime
       def to_verbose_trace
-        warn(@wrapped_error.full_message)
-        warn(@wrapped_error.backtrace)
+        warn(@wrapped_error.full_message) if @wrapped_error
+        warn(@wrapped_error.backtrace) if @wrapped_error
         to_trace
       end
 
       # Output a user-helpful string that references the runtime state
+      #
+      # @return [String]
       def to_trace
         "#{message_prefix}#{cell_index} #{message_postfix}"
       end

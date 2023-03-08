@@ -48,5 +48,11 @@ describe ::CSVPlusPlus::Language::SyntaxError do
     subject { syntax_error.to_verbose_trace }
 
     it { is_expected.to(eq('csv++ foo.csvpp:1 Invalid token: "this$![ is bad input"')) }
+
+    context 'without a #wrapper_error' do
+      let(:syntax_error) { described_class.new('Invalid token', 'this$![ is bad input', runtime) }
+
+      it { is_expected.to(eq('csv++ foo.csvpp:1 Invalid token: "this$![ is bad input"')) }
+    end
   end
 end
