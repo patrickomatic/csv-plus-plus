@@ -35,16 +35,6 @@ module CSVPlusPlus
       runtime.raise_syntax_error("Error parsing #{parse_subject}", e.message, wrapped_error: e)
     end
 
-    protected
-
-    # Given a +type+, instantiate the proper instance with the given +entity_args+
-    #
-    # @param type [Symbol]
-    # @param entity_args
-    def e(type, *entity_args)
-      ::CSVPlusPlus::Language::TYPES[type].new(*entity_args)
-    end
-
     private
 
     def tokenize(input, runtime)

@@ -7,12 +7,14 @@
 require 'racc/parser.rb'
 
   require_relative '../lexer'
+  require_relative '../language/ast_builder'
 
 module CSVPlusPlus
   module Language
     class CellValueParser < Racc::Parser
 
-module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 48)
+module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 49)
+  include ::CSVPlusPlus::Language::ASTBuilder
   include ::CSVPlusPlus::Lexer
 
   protected
@@ -220,56 +222,56 @@ module_eval(<<'.,.,', 'cell_value.y', 21)
 
 module_eval(<<'.,.,', 'cell_value.y', 22)
   def _reduce_5(val, _values, result)
-     result = e(:variable, val[1])
+     result = variable(val[1])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 23)
   def _reduce_6(val, _values, result)
-     result = e(:string, val[0])
+     result = string(val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 24)
   def _reduce_7(val, _values, result)
-     result = e(:number, val[0])
+     result = number(val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 25)
   def _reduce_8(val, _values, result)
-     result = e(:boolean, true)
+     result = boolean(true)
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 26)
   def _reduce_9(val, _values, result)
-     result = e(:boolean, false)
+     result = boolean(false)
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 27)
   def _reduce_10(val, _values, result)
-     result = e(:cell_reference, val[0])
+     result = cell_reference(val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 29)
   def _reduce_11(val, _values, result)
-     result = e(:function_call, val[0], val[2])
+     result = function_call(val[0], val[2])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 30)
   def _reduce_12(val, _values, result)
-     result = e(:function_call, val[0], [])
+     result = function_call(val[0], [])
     result
   end
 .,.,
@@ -290,35 +292,35 @@ module_eval(<<'.,.,', 'cell_value.y', 33)
 
 module_eval(<<'.,.,', 'cell_value.y', 35)
   def _reduce_15(val, _values, result)
-     result = e(:function_call, :concat, [val[0], val[2]])
+     result = function_call(:concat, [val[0], val[2]])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 36)
   def _reduce_16(val, _values, result)
-     result = e(:function_call, :multiply, [val[0], val[2]])
+     result = function_call(:multiply, [val[0], val[2]])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 37)
   def _reduce_17(val, _values, result)
-     result = e(:function_call, :add, [val[0], val[2]])
+     result = function_call(:add, [val[0], val[2]])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 38)
   def _reduce_18(val, _values, result)
-     result = e(:function_call, :minus, [val[0], val[2]])
+     result = function_call(:minus, [val[0], val[2]])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'cell_value.y', 39)
   def _reduce_19(val, _values, result)
-     result = e(:function_call, :divide, [val[0], val[2]])
+     result = function_call(:divide, [val[0], val[2]])
     result
   end
 .,.,

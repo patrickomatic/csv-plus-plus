@@ -27,44 +27,46 @@ rule
 
   def: fn_def | var_def
 
-  fn_def: FN_DEF ID '(' fn_def_args ')' exp   { def_function(val[1], val[3], val[5])                    }
-  fn_def: FN_DEF ID '(' ')' exp               { def_function(val[1], [], val[4])                        }
+  fn_def: FN_DEF ID '(' fn_def_args ')' exp   { def_function(val[1], val[3], val[5])                }
+  fn_def: FN_DEF ID '(' ')' exp               { def_function(val[1], [], val[4])                    }
 
-  fn_def_args: fn_def_args ',' ID             { result = val[0] << val[2]                               }
-             | ID                             { result = [val[0]]                                       }
+  fn_def_args: fn_def_args ',' ID             { result = val[0] << val[2]                           }
+             | ID                             { result = [val[0]]                                   }
 
-  var_def: ID ASSIGN exp                      { def_variable(val[0], val[2])                            }
+  var_def: ID ASSIGN exp                      { def_variable(val[0], val[2])                        }
 
   exp: fn_call
      | infix_fn_call
      | '(' exp ')'                            { result = val[1] }
-     | VAR_REF ID                             { result = e(:variable, val[1])                           }
-     | STRING                                 { result = e(:string, val[0])                             }
-     | NUMBER                                 { result = e(:number, val[0])                             }
-     | TRUE                                   { result = e(:boolean, true)                              }
-     | FALSE                                  { result = e(:boolean, false)                             }
-     | ID                                     { result = e(:cell_reference, val[0])                     }
+     | VAR_REF ID                             { result = variable(val[1])                           }
+     | STRING                                 { result = string(val[0])                             }
+     | NUMBER                                 { result = number(val[0])                             }
+     | TRUE                                   { result = boolean(true)                              }
+     | FALSE                                  { result = boolean(false)                             }
+     | ID                                     { result = cell_reference(val[0])                     }
      
-  infix_fn_call: exp '&' exp                  { result = e(:function_call, :concat, [val[0], val[2]])   }
-               | exp '*' exp                  { result = e(:function_call, :multiply, [val[0], val[2]]) }
-               | exp '+' exp                  { result = e(:function_call, :add, [val[0], val[2]])      }
-               | exp '-' exp                  { result = e(:function_call, :minus, [val[0], val[2]])    }
-               | exp '/' exp                  { result = e(:function_call, :divide, [val[0], val[2]])   }
+  infix_fn_call: exp '&' exp                  { result = function_call(:concat, [val[0], val[2]])   }
+               | exp '*' exp                  { result = function_call(:multiply, [val[0], val[2]]) }
+               | exp '+' exp                  { result = function_call(:add, [val[0], val[2]])      }
+               | exp '-' exp                  { result = function_call(:minus, [val[0], val[2]])    }
+               | exp '/' exp                  { result = function_call(:divide, [val[0], val[2]])   }
 
-  fn_call: ID '(' fn_call_args ')'            { result = e(:function_call, val[0], val[2])              }
-         | ID '(' ')'                         { result = e(:function_call, val[0], [])                  }
+  fn_call: ID '(' fn_call_args ')'            { result = function_call(val[0], val[2])              }
+         | ID '(' ')'                         { result = function_call(val[0], [])                  }
 
-  fn_call_args: fn_call_args ',' exp          { result = val[0] << val[2]                               }
-              | exp                           { result = [val[0]]                                       }
+  fn_call_args: fn_call_args ',' exp          { result = val[0] << val[2]                           }
+              | exp                           { result = [val[0]]                                   }
 
 end
 
 ---- header
-require_relative '../lexer'
-require_relative '../code_section'
+  require_relative '../lexer'
+  require_relative '../code_section'
+  require_relative '../language/ast_builder'
 
 ---- inner
   include ::CSVPlusPlus::Lexer
+  include ::CSVPlusPlus::Language::ASTBuilder
 
   def initialize
     super
@@ -114,12 +116,8 @@ require_relative '../code_section'
 
   private
 
-  def e(type, *entity_args)
-    ::CSVPlusPlus::Language::TYPES[type].new(*entity_args)
-  end
-
   def def_function(id, arguments, body)
-    fn_def = e(:function, id, arguments, body)
+    fn_def = function(id, arguments, body)
     @code_section.def_function(fn_def.id, fn_def)
   end
 

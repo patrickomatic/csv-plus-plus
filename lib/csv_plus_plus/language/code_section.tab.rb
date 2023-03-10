@@ -6,15 +6,17 @@
 
 require 'racc/parser.rb'
 
-require_relative '../lexer'
-require_relative '../code_section'
+  require_relative '../lexer'
+  require_relative '../code_section'
+  require_relative '../language/ast_builder'
 
 module CSVPlusPlus
   module Language
     class CodeSectionParser < Racc::Parser
 
-module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 67)
+module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 68)
   include ::CSVPlusPlus::Lexer
+  include ::CSVPlusPlus::Language::ASTBuilder
 
   def initialize
     super
@@ -64,12 +66,8 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 67)
 
   private
 
-  def e(type, *entity_args)
-    ::CSVPlusPlus::Language::TYPES[type].new(*entity_args)
-  end
-
   def def_function(id, arguments, body)
-    fn_def = e(:function, id, arguments, body)
+    fn_def = function(id, arguments, body)
     @code_section.def_function(fn_def.id, fn_def)
   end
 
@@ -330,91 +328,91 @@ module_eval(<<'.,.,', 'code_section.y', 39)
 
 module_eval(<<'.,.,', 'code_section.y', 40)
   def _reduce_15(val, _values, result)
-     result = e(:variable, val[1])
+     result = variable(val[1])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 41)
   def _reduce_16(val, _values, result)
-     result = e(:string, val[0])
+     result = string(val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 42)
   def _reduce_17(val, _values, result)
-     result = e(:number, val[0])
+     result = number(val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 43)
   def _reduce_18(val, _values, result)
-     result = e(:boolean, true)
+     result = boolean(true)
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 44)
   def _reduce_19(val, _values, result)
-     result = e(:boolean, false)
+     result = boolean(false)
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 45)
   def _reduce_20(val, _values, result)
-     result = e(:cell_reference, val[0])
+     result = cell_reference(val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 47)
   def _reduce_21(val, _values, result)
-     result = e(:function_call, :concat, [val[0], val[2]])
+     result = function_call(:concat, [val[0], val[2]])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 48)
   def _reduce_22(val, _values, result)
-     result = e(:function_call, :multiply, [val[0], val[2]])
+     result = function_call(:multiply, [val[0], val[2]])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 49)
   def _reduce_23(val, _values, result)
-     result = e(:function_call, :add, [val[0], val[2]])
+     result = function_call(:add, [val[0], val[2]])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 50)
   def _reduce_24(val, _values, result)
-     result = e(:function_call, :minus, [val[0], val[2]])
+     result = function_call(:minus, [val[0], val[2]])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 51)
   def _reduce_25(val, _values, result)
-     result = e(:function_call, :divide, [val[0], val[2]])
+     result = function_call(:divide, [val[0], val[2]])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 53)
   def _reduce_26(val, _values, result)
-     result = e(:function_call, val[0], val[2])
+     result = function_call(val[0], val[2])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 54)
   def _reduce_27(val, _values, result)
-     result = e(:function_call, val[0], [])
+     result = function_call(val[0], [])
     result
   end
 .,.,
