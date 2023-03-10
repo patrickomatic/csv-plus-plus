@@ -6,26 +6,6 @@ require_relative './entities'
 require_relative './references'
 require_relative './syntax_error'
 
-BUILTIN_FUNCTIONS = {
-  # =CELLREF(C) === =INDIRECT(CONCAT($$C, $$rownum))
-  cellref: ::CSVPlusPlus::Language::Entities::Function.new(
-    :cellref,
-    [:cell],
-    ::CSVPlusPlus::Language::Entities::FunctionCall.new(
-      :indirect,
-      [
-        ::CSVPlusPlus::Language::Entities::FunctionCall.new(
-          :concat,
-          [
-            ::CSVPlusPlus::Language::Entities::Variable.new(:cell),
-            ::CSVPlusPlus::Language::Entities::Variable.new(:rownum)
-          ]
-        )
-      ]
-    )
-  )
-}.freeze
-
 module CSVPlusPlus
   module Language
     # A class representing the scope of the current Template and responsible for resolving variables
@@ -38,6 +18,7 @@ module CSVPlusPlus
       attr_reader :code_section, :runtime
 
       # initialize with a +Runtime+ and optional +CodeSection+
+      #
       # @param runtime [Runtime]
       # @param code_section [Runtime, nil]
       def initialize(runtime:, code_section: nil)
@@ -68,9 +49,7 @@ module CSVPlusPlus
       # @param code_section [CodeSection] The code_section to be resolved
       def code_section=(code_section)
         @code_section = code_section
-
         resolve_static_variables!
-        resolve_static_functions!
       end
 
       # @return [String]
@@ -81,10 +60,10 @@ module CSVPlusPlus
       private
 
       # Resolve all variable references defined statically in the code section
+      # TODO: experiment with getting rid of this - does it even play correctly with runtime vars?
       def resolve_static_variables!
         variables = @code_section.variables
         last_var_dependencies = {}
-        # TODO: might not need the infinite loop wrap
         loop do
           var_dependencies, resolution_order = variable_resolution_order(only_static_vars(variables))
           return if var_dependencies == last_var_dependencies
@@ -97,17 +76,6 @@ module CSVPlusPlus
 
       def only_static_vars(var_dependencies)
         var_dependencies.reject { |k| @runtime.runtime_variable?(k) }
-      end
-
-      # Resolve all functions defined in the code section
-      def resolve_static_functions!
-        # TODO: I'm still torn if it's worth replacing function references
-        #
-        # my current theory is that if we resolve static functions before processing each cell,
-        # overall compile time will be improved because there will be less to do for each cell
-        #
-        # though I don't think we'll ever be able to fully resolve them because they can be a mix
-        # of global functions and defined functions?
       end
 
       def resolve_functions(ast, refs)
@@ -125,10 +93,13 @@ module CSVPlusPlus
       # Make a copy of the AST represented by +node+ and replace +fn_id+ with +replacement+ throughout
       def function_replace(node, fn_id, replacement)
         if node.function_call? && node.id == fn_id
-          apply_arguments(replacement, node)
+          call_function_or_runtime_value(replacement, node)
         elsif node.function_call?
-          arguments = node.arguments.map { |n| function_replace(n, fn_id, replacement) }
-          ::CSVPlusPlus::Language::Entities::FunctionCall.new(node.id, arguments)
+          # not our function, but continue our depth first search on it
+          ::CSVPlusPlus::Language::Entities::FunctionCall.new(
+            node.id,
+            node.arguments.map { |n| function_replace(n, fn_id, replacement) }
+          )
         else
           node
         end
@@ -138,11 +109,18 @@ module CSVPlusPlus
         id = fn_id.to_sym
         return @code_section.functions[id] if @code_section.defined_function?(id)
 
-        # this will throw a syntax error if it doesn't exist (which is what we want)
-        return ::BUILTIN_FUNCTIONS[id] if ::BUILTIN_FUNCTIONS.key?(id)
+        ::CSVPlusPlus::Language::Builtins::FUNCTIONS[id]
       end
 
-      def apply_arguments(function, function_call)
+      def call_function_or_runtime_value(function_or_runtime_value, function_call)
+        if function_or_runtime_value.function?
+          call_function(function_or_runtime_value, function_call)
+        else
+          function_or_runtime_value.resolve_fn.call(@runtime, function_call.arguments)
+        end
+      end
+
+      def call_function(function, function_call)
         i = 0
         function.arguments.reduce(function.body.dup) do |ast, argument|
           variable_replace(ast, argument, function_call.arguments[i]).tap do

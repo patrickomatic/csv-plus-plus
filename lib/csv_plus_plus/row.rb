@@ -22,6 +22,7 @@ module CSVPlusPlus
     end
 
     # Set the row's +index+ and update the +row_index+ of all affected cells
+    #
     # @param index [Integer] The index of this row (starts at 0)
     def index=(index)
       @index = index
@@ -29,6 +30,7 @@ module CSVPlusPlus
     end
 
     # How much this row will expand itself, if at all (0)
+    #
     # @return [Integer]
     def expand_amount
       return 0 unless @modifier.expand
@@ -42,6 +44,7 @@ module CSVPlusPlus
     end
 
     # Return a deep copy of this row
+    #
     # @return [Row]
     def deep_clone
       ::Marshal.load(::Marshal.dump(self))

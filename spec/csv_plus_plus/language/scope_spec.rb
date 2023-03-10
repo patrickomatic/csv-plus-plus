@@ -86,7 +86,7 @@ describe ::CSVPlusPlus::Language::Scope do
     let(:scope) { build(:scope, code_section:, runtime:) }
     let(:runtime) { build(:runtime, cell:) }
 
-    let(:fn_call_cellref) { build(:fn_call, name: :cellref, arguments: [build(:cell_reference, ref: 'A')]) }
+    let(:fn_call_celladjacent) { build(:fn_call, name: :celladjacent, arguments: [build(:cell_reference, ref: 'A')]) }
 
     subject { scope.resolve_cell_value }
 
@@ -128,43 +128,23 @@ describe ::CSVPlusPlus::Language::Scope do
       end
     end
 
-    context 'with a builtin function reference (cellref)' do
-      let(:ast) { fn_call_cellref }
-      let(:cell) { build(:cell, value: '=CELLREF(A)', ast:) }
+    context 'with a builtin function reference (celladjacent)' do
+      let(:ast) { fn_call_celladjacent }
+      let(:cell) { build(:cell, value: '=CELLADJACENT(A)', ast:) }
 
       it 'replaces the function call with the builtin function' do
-        expect(subject).to(
-          eq(
-            build(
-              :fn_call,
-              name: :indirect,
-              arguments: [
-                build(:fn_call, name: :concat, arguments: [build(:cell_reference, ref: 'A'), build(:number_one)])
-              ]
-            )
-          )
-        )
+        expect(subject).to(eq(build(:cell_reference, ref: 'A1')))
       end
     end
 
     context 'with a defined function that references a builtin' do
-      let(:functions) { { foo: build(:fn, name: :foo, arguments: %i[], body: fn_call_cellref) } }
+      let(:functions) { { foo: build(:fn, name: :foo, arguments: %i[], body: fn_call_celladjacent) } }
 
       let(:ast) { build(:fn_call, name: :foo, arguments: []) }
       let(:cell) { build(:cell, value: '=FOO()', ast:) }
 
       it 'resolves all the way down' do
-        expect(subject).to(
-          eq(
-            build(
-              :fn_call,
-              name: :indirect,
-              arguments: [
-                build(:fn_call, name: :concat, arguments: [build(:cell_reference, ref: 'A'), build(:number_one)])
-              ]
-            )
-          )
-        )
+        expect(subject).to(eq(build(:cell_reference, ref: 'A1')))
       end
     end
   end

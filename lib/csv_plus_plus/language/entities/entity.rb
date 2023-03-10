@@ -14,7 +14,7 @@ module CSVPlusPlus
         attr_reader :id, :type
 
         # @param type [::String, Symbol]
-        # @param id [::String]
+        # @param id [::String, nil]
         def initialize(type, id: nil)
           @type = type.to_sym
           @id = id.downcase.to_sym if id
@@ -26,6 +26,8 @@ module CSVPlusPlus
         end
 
         # Respond to predicates that correspond to types like #boolean?, #string?, etc
+        #
+        # @param method_name [Symbol] The +method_name+ to respond to
         def method_missing(method_name, *_arguments)
           if method_name =~ /^(\w+)\?$/
             t = ::Regexp.last_match(1)
@@ -36,6 +38,9 @@ module CSVPlusPlus
         end
 
         # Respond to predicates by type (entity.boolean?, entity.string?, etc)
+        #
+        # @param method_name [Symbol] The +method_name+ to respond to
+        #
         # @return [boolean]
         def respond_to_missing?(method_name, *_arguments)
           (method_name =~ /^(\w+)\?$/ && a_type?(::Regexp.last_match(1))) || super

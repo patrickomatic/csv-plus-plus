@@ -63,6 +63,7 @@ foo1,bar1,baz1
 
     context 'with a nil row_index' do
       let(:row_index) { nil }
+
       it 'does not increment row_index' do
         expect(runtime.map_lines(lines) { runtime.row_index }).to(eq([nil, nil, nil]))
       end
@@ -133,6 +134,18 @@ foo1,bar1,baz1
             )
           )
       end
+    end
+  end
+
+  describe '#rownum' do
+    subject { runtime.rownum }
+
+    it { is_expected.to(eq(1)) }
+
+    context 'when @row_index is not set' do
+      let(:row_index) { nil }
+
+      it { is_expected.to(be_nil) }
     end
   end
 

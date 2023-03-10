@@ -15,7 +15,7 @@ module CSVPlusPlus
           input_filename: @options.output_filename,
           rows: template.rows,
           sheet_name: @options.sheet_name
-        ).build.write(@options.output_filename)
+        ).build_workbook.write(@options.output_filename)
       end
     end
   end

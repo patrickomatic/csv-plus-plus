@@ -4,19 +4,6 @@ require_relative 'entities'
 require_relative 'syntax_error'
 require 'tempfile'
 
-RUNTIME_VARIABLES = {
-  rownum: ::CSVPlusPlus::Language::Entities::RuntimeValue.new(
-    lambda { |r|
-      ::CSVPlusPlus::Language::Entities::Number.new(r.row_index + 1)
-    }
-  ),
-  cellnum: ::CSVPlusPlus::Language::Entities::RuntimeValue.new(
-    lambda { |r|
-      ::CSVPlusPlus::Language::Entities::Number.new(r.cell_index + 1)
-    }
-  )
-}.freeze
-
 module CSVPlusPlus
   module Language
     # The runtime state of the compiler (the current +line_number+/+row_index+, +cell+ being processed, etc).  We take
@@ -53,6 +40,7 @@ module CSVPlusPlus
       # Map over an a csvpp file and keep track of line_number and row_index
       #
       # @param lines [Array]
+      #
       # @return [Array]
       def map_lines(lines, &block)
         @line_number = 1
@@ -64,6 +52,7 @@ module CSVPlusPlus
       # Map over a single row and keep track of the cell and it's index
       #
       # @param row [Array<Cell>] The row to map each cell over
+      #
       # @return [Array]
       def map_row(row, &block)
         @cell_index = 0
@@ -77,6 +66,7 @@ module CSVPlusPlus
       #
       # @param rows [Array<Row>] The rows to map over (and keep track of indexes)
       # @param cells_too [boolean] If the cells of each +row+ should be iterated over also.
+      #
       # @return [Array]
       def map_rows(rows, cells_too: false, &block)
         @row_index = 0
@@ -96,6 +86,15 @@ module CSVPlusPlus
       def next_line!
         @row_index += 1 unless @row_index.nil?
         @line_number += 1
+      end
+
+      # Return the current spreadsheet row number.  It parallels +@row_index+ but starts at 1.
+      #
+      # @return [Integer, nil]
+      def rownum
+        return if @row_index.nil?
+
+        @row_index + 1
       end
 
       # Set the current cell and index
@@ -125,13 +124,14 @@ module CSVPlusPlus
         "Runtime(cell: #{@cell}, row_index: #{@row_index}, cell_index: #{@cell_index})"
       end
 
-      # get the current (entity) value of a runtime value
+      # Get the current (entity) value of a runtime value
       #
       # @param var_id [String, Symbol] The Variable#id  of the variable being resolved.
+      #
       # @return [Entity]
       def runtime_value(var_id)
         if runtime_variable?(var_id)
-          ::RUNTIME_VARIABLES[var_id.to_sym].resolve_fn.call(self)
+          ::CSVPlusPlus::Language::Builtins::VARIABLES[var_id.to_sym].resolve_fn.call(self)
         else
           raise_syntax_error('Undefined variable', var_id)
         end
@@ -140,9 +140,10 @@ module CSVPlusPlus
       # Is +var_id+ a runtime variable?  (it's a static variable otherwise)
       #
       # @param var_id [String, Symbol] The Variable#id to check if it's a runtime variable
+      #
       # @return [boolean]
       def runtime_variable?(var_id)
-        ::RUNTIME_VARIABLES.key?(var_id.to_sym)
+        ::CSVPlusPlus::Language::Builtins::VARIABLES.key?(var_id.to_sym)
       end
 
       # Called when an error is encoutered during parsing.  It will construct a useful

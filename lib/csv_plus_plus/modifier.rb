@@ -44,6 +44,7 @@ module CSVPlusPlus
     # Set the color
     #
     # @param hex_value [String]
+    #
     # @return [Color]
     def color=(hex_value)
       @color = ::CSVPlusPlus::Color.new(hex_value)
@@ -59,6 +60,7 @@ module CSVPlusPlus
     # Does this have a border along +side+?
     #
     # @param side ['top', 'left', 'bottom', 'right', 'all']
+    #
     # @return [Boolean]
     def border_along?(side)
       @borders.include?('all') || @borders.include?(side)
@@ -103,6 +105,7 @@ module CSVPlusPlus
     # Is the given format set?
     #
     # @param type ['bold', 'italic', 'underline', 'strikethrough']
+    #
     # @return [Boolean]
     def formatted?(type)
       @formats.include?(type)

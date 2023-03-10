@@ -5,7 +5,7 @@ describe ::CSVPlusPlus do
   let(:input) do
     <<~INPUT
       var := 42
-      def added(a, b, c) SUM(CELLREF($$a), CELLREF($$b), CELLREF($$c))
+      def added(a, b, c) SUM(CELLABOVE($$a), CELLADJACENT($$b), CELLBELOW($$c))
       def compute(a, b) ($$b - $$a) * 100
       ---
       [[format=bold]]foo,"=ADD($$var, 22)",baz
@@ -35,7 +35,7 @@ describe ::CSVPlusPlus do
           eq(
             <<~OUTPUT))
               foo,"=ADD(42, 22)",baz
-              1,2,3,"=SUM(INDIRECT(CONCAT(A, 2)), INDIRECT(CONCAT(B, 2)), INDIRECT(CONCAT(C, 2)))"
+              1,2,3,"=SUM(A1, B2, C3)"
               "=MULTIPLY(MINUS(400, 500), 100)"
             OUTPUT
       end

@@ -8,6 +8,7 @@ require 'rubyXL/convenience_methods'
 
 require_relative 'csv_plus_plus/cli'
 require_relative 'csv_plus_plus/error'
+require_relative 'csv_plus_plus/language/builtins'
 require_relative 'csv_plus_plus/language/compiler'
 require_relative 'csv_plus_plus/language/runtime'
 require_relative 'csv_plus_plus/options'

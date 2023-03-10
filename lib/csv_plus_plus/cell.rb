@@ -19,6 +19,8 @@ module CSVPlusPlus
     # @param value [String] A string value which should already have been processed through a CSV parser
     # @param runtime [Runtime]
     # @param modifier [Modifier]
+    #
+    # @return [Cell]
     def self.parse(value, runtime:, modifier:)
       new(value:, row_index: runtime.row_index, index: runtime.cell_index, modifier:).tap do |c|
         c.ast = ::CSVPlusPlus::Language::CellValueParser.new.parse(value, runtime)
@@ -37,6 +39,7 @@ module CSVPlusPlus
     end
 
     # The +@value+ (cleaned up some)
+    #
     # @return [String]
     def value
       return if @value.nil? || @value.strip.empty?
@@ -56,8 +59,8 @@ module CSVPlusPlus
     def to_csv
       return value unless @ast
 
-      # This looks really simple but we're relying on each node of the AST to define #to_s and calling
-      # this at the top will recursively print the tree
+      # This looks really simple but we're relying on each node of the AST to define #to_s such that calling
+      # this at the top will recursively print the tree (as a well-formatted spreadsheet formula)
       "=#{@ast}"
     end
   end

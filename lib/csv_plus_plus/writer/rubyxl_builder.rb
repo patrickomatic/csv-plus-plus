@@ -9,23 +9,23 @@ module CSVPlusPlus
     # @attr_reader input_filename [String] The filename being written to
     # @attr_reader rows [Array<Row>] The rows being written
     class RubyXLBuilder
-      attr_reader :output_filename, :rows
+      attr_reader :input_filename, :rows
 
       # @param input_filename [String] The file to write to
       # @param rows [Array<Row>] The rows to write
       # @param sheet_name [String] The name of the sheet within the workbook to write to
-      def initialize(output_filename:, rows:, sheet_name:)
+      def initialize(input_filename:, rows:, sheet_name:)
         @rows = rows
-        @output_filename = output_filename
+        @input_filename = input_filename
         @sheet_name = sheet_name
       end
 
-      # Write the given +@rows+ in +sheet_name+ to +@output_filename+
+      # Build a +RubyXL::Workbook+ with the given +@rows+ in +sheet_name+
       #
       # @return [RubyXL::Workbook]
       def build_workbook
-        open_workbook(@sheet_mame).tap do |workbook|
-          @worksheet = workbook[sheet_name]
+        open_workbook.tap do |workbook|
+          @worksheet = workbook[@sheet_name]
           build_workbook!
         end
       end
@@ -104,14 +104,14 @@ module CSVPlusPlus
         end
       end
 
-      def open_workbook(sheet_name)
-        if ::File.exist?(@output_filename)
-          ::RubyXL::Parser.parse(@output_filename).tap do |workbook|
-            workbook.add_worksheet(sheet_name) unless workbook[sheet_name]
+      def open_workbook
+        if ::File.exist?(@input_filename)
+          ::RubyXL::Parser.parse(@input_filename).tap do |workbook|
+            workbook.add_worksheet(@sheet_name) unless workbook[@sheet_name]
           end
         else
           ::RubyXL::Workbook.new.tap do |workbook|
-            workbook.worksheets[0].sheet_name = sheet_name
+            workbook.worksheets[0].sheet_name = @sheet_name
           end
         end
       end

@@ -13,6 +13,7 @@
 
 # Modifiers 
 
+- [ ] bind - assign this cell to a variable (you can't do this in an expand)
 - [ ] conditional formatting
 - [ ] data validation
 - [ ] freeze
@@ -30,9 +31,13 @@
 
 # Language
 
+- [ ] can I get rid of $$ syntax and just resolve the functions and runtime vars it knows about?
 - [ ] a way to not show a function if it's dependent cells are blank (make it less ugly when expanded out)
-- [ ] SHEETREF()
 - [ ] turn it into a lisp???
+- [x] ROWABOVE - given 2 (or 2A, $2A, etc) returns 1
+- [x] ROWBELOW - given 2 (or 2A, $2A, etc) returns 3
+- [x] CELLABOVE - given 2B returns 1B
+- [x] CELLBELOW - given 2B returns 1B
 - [x] Get infix operators working
 - [x] CELLREF()
 - [x] user defined functions at the top

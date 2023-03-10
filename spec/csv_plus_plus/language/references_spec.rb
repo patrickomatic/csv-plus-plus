@@ -47,7 +47,7 @@ describe ::CSVPlusPlus::Language::References do
     end
 
     context 'with a builtin function' do
-      let(:ast) { build(:fn_call, name: :cellref) }
+      let(:ast) { build(:fn_call, name: :celladjacent) }
 
       it 'finds function references' do
         expect(subject.functions).to(eq([ast]))
