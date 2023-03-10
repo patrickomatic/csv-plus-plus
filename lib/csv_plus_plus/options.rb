@@ -31,12 +31,14 @@ module CSVPlusPlus
     #
     # @param sheet_id [String] The identifier used by Google's API to reference the sheet.  You can find it in the URL
     #   for the sheet
+    #
     # @return [String]
     def google_sheet_id=(sheet_id)
       @google = ::CSVPlusPlus::GoogleOptions.new(sheet_id)
     end
 
     # Returns an error string or nil if there are no validation problems
+    #
     # @return [String, nil]
     def validate
       return if @google || @output_filename
@@ -45,6 +47,7 @@ module CSVPlusPlus
     end
 
     # Return a string with a verbose description of what we're doing with the options
+    #
     # @return [String]
     def verbose_summary
       <<~SUMMARY

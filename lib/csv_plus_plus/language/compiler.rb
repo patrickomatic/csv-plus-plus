@@ -1,12 +1,7 @@
 # frozen_string_literal: true
 
 require 'csv'
-# TODO: move some of these out to csv_plus_plus.rb
-require_relative '../cell'
-require_relative '../modifier'
-require_relative '../modifier.tab'
-require_relative '../row'
-require_relative '../template'
+
 require_relative 'benchmarked_compiler'
 require_relative 'code_section.tab'
 require_relative 'entities'
@@ -63,7 +58,7 @@ module CSVPlusPlus
         parse_code_section!
         rows = parse_csv_section!
 
-        ::CSVPlusPlus::Template.new(rows:).tap do |t|
+        ::CSVPlusPlus::Template.new(rows:, code_section: scope.code_section).tap do |t|
           t.validate_infinite_expands(@runtime)
           expanding { t.expand_rows! }
           resolve_all_cells!(t)

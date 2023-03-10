@@ -64,5 +64,38 @@ module CSVPlusPlus
     def to_s
       "CodeSection(functions: #{@functions}, variables: #{@variables})"
     end
+
+    # Provide a summary of the functions and variables compiled (to show in verbose mode)
+    #
+    # @return [String]
+    def verbose_summary
+      <<~SUMMARY
+        # Code Section Summary
+
+        ## Resolved Variables
+
+        #{variable_summary}
+
+        ## Functions
+
+        #{function_summary}
+      SUMMARY
+    end
+
+    private
+
+    def variable_summary
+      return '(no variables defined)' if @variables.empty?
+
+      @variables.map { |k, v| "#{k} := #{v}" }
+                .join("\n")
+    end
+
+    def function_summary
+      return '(no functions defined)' if @functions.empty?
+
+      @functions.map { |k, f| "#{k}: #{f}" }
+                .join("\n")
+    end
   end
 end

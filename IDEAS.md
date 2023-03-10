@@ -37,7 +37,7 @@
 - [x] ROWABOVE - given 2 (or 2A, $2A, etc) returns 1
 - [x] ROWBELOW - given 2 (or 2A, $2A, etc) returns 3
 - [x] CELLABOVE - given 2B returns 1B
-- [x] CELLBELOW - given 2B returns 1B
+- [x] CELLBELOW - given 2B returns 3B
 - [x] Get infix operators working
 - [x] CELLREF()
 - [x] user defined functions at the top
@@ -50,7 +50,7 @@
 
 # Other
 
-- [ ] Make it compatible with older ruby versions - no reason we need the newest
+- [ ] Make it compatible with older ruby versions - no reason we need the newest (it seems like 2.3 would be reasonable to target)
 - [ ] Revise the "how to use" docs
 - [ ] Charts
 - [ ] Pivot table support - not sure what this would even look like

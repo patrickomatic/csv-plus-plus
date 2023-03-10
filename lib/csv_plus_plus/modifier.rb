@@ -1,10 +1,5 @@
 # frozen_string_literal: true
 
-require 'set'
-require_relative './color'
-require_relative './expand'
-require_relative './language/syntax_error'
-
 module CSVPlusPlus
   # A container representing the operations that can be applied to a cell or row
   #

@@ -1,8 +1,11 @@
+## v0.1.1
+
+- When in verbose mode, print a summary of compiled functions and variables
+- docs & tests
 
 ## v0.1.0
 
 - revamp of builtin functions
-
 - docs & tests
 
 ## v0.0.5

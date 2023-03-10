@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 describe ::CSVPlusPlus::Template do
+  let(:template) { build(:template, rows:) }
+
   describe '#expand_rows!' do
-    let(:template) { build(:template, rows:) }
     let(:cells_row0) do
       [
         build(:cell, row_index: 0, index: 0, value: 'foo'),
@@ -139,5 +140,13 @@ describe ::CSVPlusPlus::Template do
           .to(raise_error(::CSVPlusPlus::Language::SyntaxError))
       end
     end
+  end
+
+  describe '#verbose_summary' do
+    let(:rows) { [] }
+
+    subject { template.verbose_summary }
+
+    it { is_expected.to(match(/0 rows to be written/)) }
   end
 end

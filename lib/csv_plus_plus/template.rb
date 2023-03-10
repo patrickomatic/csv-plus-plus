@@ -3,12 +3,15 @@
 module CSVPlusPlus
   # Contains the flow and data from a code section and CSV section
   #
+  # @attr_reader code_section [CodeSection] The +CodeSection+ containing the functions and variables defined herein
   # @attr_reader rows [Array<Row>] The +Row+s that comprise this +Template+
   class Template
-    attr_reader :rows
+    attr_reader :code_section, :rows
 
+    # @param code_section [CodeSection] The +CodeSection+ containing the functions and variables
     # @param rows [Array<Row>] The +Row+s that comprise this +Template+
-    def initialize(rows:)
+    def initialize(code_section:, rows:)
+      @code_section = code_section
       @rows = rows
     end
 
@@ -18,6 +21,7 @@ module CSVPlusPlus
     end
 
     # Apply any expand= modifiers to the parsed template
+    #
     # @return [Array<Row>]
     def expand_rows!
       expanded_rows = []
@@ -44,6 +48,18 @@ module CSVPlusPlus
         'You can only have one infinite expand= (on all others you must specify an amount)',
         infinite_expand_rows[1]
       )
+    end
+
+    # Provide a summary of the state of the template (and it's +@code_section+)
+    #
+    # @return [String]
+    def verbose_summary
+      # TODO: we can probably include way more stats in here
+      <<~SUMMARY
+        #{@code_section.verbose_summary}
+
+        > #{@rows.length} rows to be written
+      SUMMARY
     end
 
     private

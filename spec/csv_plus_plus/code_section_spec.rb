@@ -79,4 +79,11 @@ describe ::CSVPlusPlus::CodeSection do
 
     it { is_expected.to(eq('CodeSection(functions: {}, variables: {})')) }
   end
+
+  describe '#verbose_summary' do
+    subject { code_section.verbose_summary }
+
+    it { is_expected.to(match(/\#.*Variables/)) }
+    it { is_expected.to(match(/\#.*Functions/)) }
+  end
 end
