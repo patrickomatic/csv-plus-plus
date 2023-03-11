@@ -26,7 +26,16 @@ task default: ::RACC_FILES.keys.map(&:to_sym) + %i[
 ::RACC_FILES.each do |dep, source|
   desc "Use racc to generate parser file #{dep}"
   file dep => source do |t|
-    sh "racc -o #{t.name} #{t.prerequisites.join(' ')}"
+    sh "bundle exec racc -o #{t.name} #{t.prerequisites.join(' ')}"
+  end
+end
+
+namespace :racc do
+  desc 'Debug racc grammars'
+  task :debug do
+    ::RACC_FILES.each do |_, source|
+      sh "bundle exec racc -vt #{source}"
+    end
   end
 end
 
@@ -34,6 +43,7 @@ desc 'Remove generated files'
 task :clean do
   sh "rm -f #{::RACC_FILES.keys.join(' ')} csv_plus_plus-*.gem examples/all_features-*.csv"
   sh 'rm -rf coverage/ doc/ .yardoc/'
+  sh 'rm -rf parsers/*.tab.rb modifier.output code_section.output cell_value.output'
 end
 
 namespace :docs do
