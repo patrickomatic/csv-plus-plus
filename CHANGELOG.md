@@ -1,6 +1,7 @@
 ## v0.1.2
 
 - Fixes a bug with creating a new excel spreadsheet
+- Docs & tests
 
 ## v0.1.1
 

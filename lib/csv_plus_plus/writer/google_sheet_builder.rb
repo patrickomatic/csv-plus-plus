@@ -25,12 +25,6 @@ module CSVPlusPlus
 
       private
 
-      def sheets_ns
-        ::Google::Apis::SheetsV4
-      end
-
-      def sheets_color(color); end
-
       def set_extended_value_type!(extended_value, value)
         v = value || ''
         if v.start_with?('=')
@@ -45,7 +39,7 @@ module CSVPlusPlus
       end
 
       def build_cell_format(mod)
-        sheets_ns::CellFormat.new.tap do |cf|
+        ::Google::Apis::SheetsV4::CellFormat.new.tap do |cf|
           cf.text_format = mod.text_format
 
           cf.horizontal_alignment = mod.halign
@@ -56,7 +50,7 @@ module CSVPlusPlus
       end
 
       def grid_range_for_cell(cell)
-        sheets_ns::GridRange.new(
+        ::Google::Apis::SheetsV4::GridRange.new(
           sheet_id: @sheet_id,
           start_column_index: cell.index,
           end_column_index: cell.index + 1,
@@ -72,7 +66,7 @@ module CSVPlusPlus
       end
 
       def build_cell_value(cell)
-        sheets_ns::ExtendedValue.new.tap do |xv|
+        ::Google::Apis::SheetsV4::ExtendedValue.new.tap do |xv|
           value =
             if cell.value.nil?
               current_value(cell.row_index, cell.index)
@@ -87,7 +81,7 @@ module CSVPlusPlus
       def build_cell_data(cell)
         mod = ::CSVPlusPlus::Writer::GoogleSheetModifier.new(cell.modifier)
 
-        sheets_ns::CellData.new.tap do |cd|
+        ::Google::Apis::SheetsV4::CellData.new.tap do |cd|
           cd.user_entered_format = build_cell_format(mod)
           cd.note = mod.note if mod.note
 
@@ -97,13 +91,13 @@ module CSVPlusPlus
       end
 
       def build_row_data(row)
-        sheets_ns::RowData.new(values: row.cells.map { |cell| build_cell_data(cell) })
+        ::Google::Apis::SheetsV4::RowData.new(values: row.cells.map { |cell| build_cell_data(cell) })
       end
 
       def build_update_cells_request(rows)
-        sheets_ns::UpdateCellsRequest.new(
+        ::Google::Apis::SheetsV4::UpdateCellsRequest.new(
           fields: '*',
-          start: sheets_ns::GridCoordinate.new(
+          start: ::Google::Apis::SheetsV4::GridCoordinate.new(
             sheet_id: @sheet_id,
             column_index: @column_index,
             row_index: @row_index
@@ -113,10 +107,10 @@ module CSVPlusPlus
       end
 
       def build_border(cell)
-        mod = cell.modifier
-        # TODO: allow different border styles per side
-        border = sheets_ns::Border.new(color: mod.bordercolor || '#000000', style: mod.borderstyle || 'solid')
-        sheets_ns::UpdateBordersRequest.new(
+        mod = ::CSVPlusPlus::Writer::GoogleSheetModifier.new(cell.modifier)
+        border = mod.border
+
+        ::Google::Apis::SheetsV4::UpdateBordersRequest.new(
           top: mod.border_along?('top') ? border : nil,
           right: mod.border_along?('right') ? border : nil,
           left: mod.border_along?('left') ? border : nil,
@@ -126,16 +120,18 @@ module CSVPlusPlus
       end
 
       def build_update_borders_request(cell)
-        sheets_ns::Request.new(update_borders: build_border(cell))
+        ::Google::Apis::SheetsV4::Request.new(update_borders: build_border(cell))
       end
 
-      # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+      def chunked_requests(rows)
+        rows.each_slice(1000).to_a.map do |chunked_rows|
+          ::Google::Apis::SheetsV4::Request.new(update_cells: build_update_cells_request(chunked_rows))
+        end
+      end
+
       def build_batch_request(rows)
-        sheets_ns::BatchUpdateSpreadsheetRequest.new.tap do |bu|
-          bu.requests =
-            rows.each_slice(1000).to_a.map do |chunked_rows|
-              sheets_ns::Request.new(update_cells: build_update_cells_request(chunked_rows))
-            end
+        ::Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest.new.tap do |bu|
+          bu.requests = chunked_requests(rows)
 
           rows.each do |row|
             row.cells.filter { |c| c.modifier.any_border? }
@@ -145,7 +141,6 @@ module CSVPlusPlus
           end
         end
       end
-      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
     end
     # rubocop:enable Metrics/ClassLength
   end

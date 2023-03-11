@@ -24,9 +24,7 @@ module CSVPlusPlus
       #
       # @return [RubyXL::Workbook]
       def build_workbook
-        open_workbook.tap do
-          build_workbook!
-        end
+        open_workbook.tap { build_workbook! }
       end
 
       private

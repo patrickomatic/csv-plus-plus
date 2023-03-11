@@ -4,32 +4,45 @@ module CSVPlusPlus
   module Writer
     # Decorate a Modifier so it can be written to the Google Sheets API
     class GoogleSheetModifier < ::SimpleDelegator
-      # Format the halign for Google Sheets
-      def halign
-        super&.upcase
-      end
-
-      # Format the valign for Google Sheets
-      def valign
-        super&.upcase
+      # Format the border for Google Sheets
+      #
+      # @return [Google::Apis::SheetsV4::Border]
+      def border
+        # TODO: allow different border styles per side
+        ::Google::Apis::SheetsV4::Border.new(color: bordercolor || '#000000', style: borderstyle || 'solid')
       end
 
       # Format the color for Google Sheets
+      #
+      # @return [Google::Apis::SheetsV4::Color]
       def color
         google_sheets_color(super) if super
       end
 
       # Format the fontcolor for Google Sheets
+      #
+      # @return [Google::Apis::SheetsV4::Color]
       def fontcolor
         google_sheets_color(super) if super
       end
 
+      # Format the halign for Google Sheets
+      #
+      # @return [String]
+      def halign
+        super&.upcase
+      end
+
       # Format the numberformat for Google Sheets
+      #
+      # @return [::Google::Apis::SheetsV4::NumberFormat]
       def numberformat
         ::Google::Apis::SheetsV4::NumberFormat.new(type: super) if super
       end
 
       # Builds a SheetsV4::TextFormat with the underlying Modifier
+      #
+      # @return [::Google::Apis::SheetsV4::TextFormat]
       def text_format
         ::Google::Apis::SheetsV4::TextFormat.new(
           bold: formatted?('bold') || nil,
@@ -40,6 +53,11 @@ module CSVPlusPlus
           font_size: fontsize,
           foreground_color: fontcolor
         )
+      end
+
+      # Format the valign for Google Sheets
+      def valign
+        super&.upcase
       end
 
       private

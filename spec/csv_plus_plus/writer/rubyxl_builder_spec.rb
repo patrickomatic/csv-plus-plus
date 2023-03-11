@@ -1,25 +1,21 @@
 # frozen_string_literal: true
 
-require 'google/apis/sheets_v4'
+describe ::CSVPlusPlus::Writer::RubyXLBuilder do
+  let(:sheet_name) { 'Test Excel Sheet' }
+  let(:rows) { [] }
+  let(:input_filename) { 'test.xlsx' }
 
-describe ::CSVPlusPlus::Writer::GoogleSheetBuilder do
-  let(:current_sheet_values) do
-    [
-      ['foo', 'bar', 0],
-      [1, 2, 4],
-      ['=add(1, 2)', 'foo', 3]
-    ]
-  end
-  let(:sheet_id) { '#id' }
-  let(:rows) { [build(:row), build(:row), build(:row)] }
+  subject(:rubyxl_builder) { described_class.new(sheet_name:, rows:, input_filename:) }
 
-  subject(:google_sheet_builder) { described_class.new(current_sheet_values:, sheet_id:, rows:) }
+  describe '#build_workbook' do
+    let(:worksheet) { subject.worksheets[0] }
+    let(:first_row) { worksheet.sheet_data[0] }
 
-  describe '#batch_update_spreadsheet_request' do
-    let(:first_row) { subject.requests[0].update_cells.rows[0].values }
-    subject { google_sheet_builder.batch_update_spreadsheet_request }
+    subject { rubyxl_builder.build_workbook }
 
-    it { is_expected.not_to(be_nil) }
+    it 'sets the sheet name' do
+      expect(worksheet.sheet_name).to(eq(sheet_name))
+    end
 
     describe 'alignments' do
       let(:rows) do
@@ -39,17 +35,16 @@ describe ::CSVPlusPlus::Writer::GoogleSheetBuilder do
       end
 
       it 'sets the alignments' do
-        expect(first_row[0].user_entered_format.horizontal_alignment).to(eq('LEFT'))
-        expect(first_row[1].user_entered_format.horizontal_alignment).to(eq('CENTER'))
-        expect(first_row[2].user_entered_format.horizontal_alignment).to(eq('RIGHT'))
-        expect(first_row[3].user_entered_format.vertical_alignment).to(eq('TOP'))
-        expect(first_row[4].user_entered_format.vertical_alignment).to(eq('CENTER'))
-        expect(first_row[5].user_entered_format.vertical_alignment).to(eq('BOTTOM'))
+        expect(first_row[0].horizontal_alignment).to(eq('left'))
+        expect(first_row[1].horizontal_alignment).to(eq('center'))
+        expect(first_row[2].horizontal_alignment).to(eq('right'))
+        expect(first_row[3].vertical_alignment).to(eq('top'))
+        expect(first_row[4].vertical_alignment).to(eq('center'))
+        expect(first_row[5].vertical_alignment).to(eq('bottom'))
       end
     end
 
     describe 'borders' do
-      let(:border_request) { subject.requests[1] }
       let(:rows) do
         [
           build(
@@ -66,16 +61,7 @@ describe ::CSVPlusPlus::Writer::GoogleSheetBuilder do
       end
 
       it 'sets the borders' do
-        expect(subject.requests[1].update_borders.top.style).to(eq('solid'))
-        expect(subject.requests[1].update_borders.top.color).to(eq('#000000'))
-        expect(subject.requests[2].update_borders.left.style).to(eq('solid'))
-        expect(subject.requests[3].update_borders.right.style).to(eq('solid'))
-        expect(subject.requests[4].update_borders.bottom.style).to(eq('solid'))
-
-        expect(subject.requests[5].update_borders.top.style).to(eq('solid'))
-        expect(subject.requests[5].update_borders.left.style).to(eq('solid'))
-        expect(subject.requests[5].update_borders.right.style).to(eq('solid'))
-        expect(subject.requests[5].update_borders.bottom.style).to(eq('solid'))
+        # TODO
       end
 
       # TODO: test weights
@@ -113,8 +99,7 @@ describe ::CSVPlusPlus::Writer::GoogleSheetBuilder do
       end
 
       it 'sets the fonts' do
-        expect(first_row[0].user_entered_format.text_format.font_family).to(eq('Helvetica'))
-        expect(first_row[1].user_entered_format.text_format.font_size).to(eq(40))
+        # TODO
       end
     end
 
@@ -134,10 +119,10 @@ describe ::CSVPlusPlus::Writer::GoogleSheetBuilder do
       end
 
       it 'sets the formats' do
-        expect(first_row[0].user_entered_format.text_format.bold).to(eq(true))
-        expect(first_row[1].user_entered_format.text_format.italic).to(eq(true))
-        expect(first_row[2].user_entered_format.text_format.strikethrough).to(eq(true))
-        expect(first_row[3].user_entered_format.text_format.underline).to(eq(true))
+        expect(first_row[0].get_cell_font.b.val).to(be(true))
+        expect(first_row[1].get_cell_font.i.val).to(be(true))
+        expect(first_row[2].get_cell_font.strike.val).to(be(true))
+        expect(first_row[3].get_cell_font.u.val).to(be(true))
       end
     end
 
