@@ -18,6 +18,7 @@ token A1_NOTATION
       START_ROW_MODIFIERS
       STRING
       URL
+      VARIABLE_ID
 
 rule
   modifiers_definition: row_modifiers cell_modifiers 
@@ -34,23 +35,23 @@ rule
 
   modifiers: modifiers MODIFIER_SEPARATOR modifier | modifier
 
-  modifier: 'halign'       EQ halign_option       { s!(:halign, val[2])                    }
-          | 'valign'       EQ valign_option       { s!(:valign, val[2])                    }
-          | 'border'       EQ border_options
+  modifier: 'border'       EQ border_options
           | 'bordercolor'  EQ HEX_COLOR           { s!(:bordercolor, val[2])               }
           | 'borderstyle'  EQ borderstyle_option  { s!(:borderstyle, val[2])               }
           | 'color'        EQ HEX_COLOR           { s!(:color, val[2])                     }
           | 'expand'       EQ NUMBER              { s!(:expand, Expand.new(val[2].to_i))   }
           | 'expand'                              { s!(:expand, Expand.new)                }
-          | 'font'         EQ STRING              { s!(:fontfamily, val[2])                }
           | 'fontcolor'    EQ HEX_COLOR           { s!(:fontcolor, val[2])                 }
           | 'fontfamily'   EQ STRING              { s!(:fontfamily, val[2])                }
           | 'fontsize'     EQ NUMBER              { s!(:fontsize, val[2].to_f)             }
           | 'format'       EQ format_options
           | 'freeze'                              { freeze!                                }
+          | 'halign'       EQ halign_option       { s!(:halign, val[2])                    }
           | 'note'         EQ STRING              { s!(:note, val[2])                      }
           | 'numberformat' EQ numberformat_option { s!(:numberformat, val[2])              }
           | 'validate'     EQ condition           { s!(:validation, val[2])                }
+          | 'valign'       EQ valign_option       { s!(:valign, val[2])                    }
+          | 'variable'     EQ VARIABLE_ID         { s!(:variable, val[2])                  }
 
   format_options: format_options format_option | format_option { s!(:format, val[0])       }
   format_option: 'bold' | 'italic' | 'strikethrough' | 'underline'

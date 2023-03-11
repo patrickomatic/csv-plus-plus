@@ -1,0 +1,23 @@
+##
+# A template for a simple loan with a fixed interest amount.  For example a $500 loan
+# with 10% interest would net $550
+
+loan_amount := 2B
+interest_rate := 3B
+start_date := 4B
+
+def final_amount()
+  $$loan_amount + $$interest_rate * $$loan_amount
+
+def ending_balance()
+  celladjacent(B) - celladjacent(C)
+
+---
+![[bgcolor=#FF0000,format=bold,fontsize=20]],,Loan Summary,
+[[format=bold]]Loan Amount,,,[[format=bold]]Monthly Payment,
+[[format=bold]]Interest Rate,,,[[format=bold]]Total Interest,
+[[format=bold]]Start Date,,,[[format=bold]]Final Amount,
+,
+![[format=bold/align=center]]Payment Date,Beginning Balance,Payment,Ending Balance
+,$$loan_amount,,=ending_balance()
+![[expand]],=cellabove(D),,=ending_balance()

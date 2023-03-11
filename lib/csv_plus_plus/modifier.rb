@@ -24,7 +24,7 @@ module CSVPlusPlus
   # @attr_reader fontcolor [Color] The font color of the cell
   # @attr_reader formats [Array<String>] Bold/italics/underline/strikethrough formatting
   class Modifier
-    attr_reader :bordercolor, :borders, :color, :fontcolor, :formats
+    attr_reader :bordercolor, :borders, :color, :fontcolor, :formats, :variable
     attr_writer :borderstyle
     attr_accessor :expand, :fontfamily, :fontsize, :halign, :valign, :note, :numberformat, :row_level, :validation
 
@@ -34,6 +34,27 @@ module CSVPlusPlus
       @freeze = false
       @borders = ::Set.new
       @formats = ::Set.new
+    end
+
+    # Are there any borders set?
+    #
+    # @return [Boolean]
+    def any_border?
+      !@borders.empty?
+    end
+
+    # Style of border
+    #
+    # @return [String]
+    def borderstyle
+      @borderstyle || 'solid'
+    end
+
+    # Is this a cell-level modifier?
+    #
+    # @return [Boolean]
+    def cell_level?
+      !@row_level
     end
 
     # Set the color
@@ -74,13 +95,6 @@ module CSVPlusPlus
     # @param hex_value [String] formatted as '#000000', '#000' or '000000'
     def bordercolor=(hex_value)
       @bordercolor = ::CSVPlusPlus::Color.new(hex_value)
-    end
-
-    # Are there any borders set?
-    #
-    # @return [Boolean]
-    def any_border?
-      !@borders.empty?
     end
 
     # Set the fontcolor
@@ -134,20 +148,6 @@ module CSVPlusPlus
       @row_level
     end
 
-    # Is this a cell-level modifier?
-    #
-    # @return [Boolean]
-    def cell_level?
-      !@row_level
-    end
-
-    # Style of border
-    #
-    # @return [String]
-    def borderstyle
-      @borderstyle || 'solid'
-    end
-
     # @return [String]
     def to_s
       # TODO... I dunno, not sure how to manage this
@@ -166,6 +166,11 @@ module CSVPlusPlus
         value = other.instance_variable_get(property)
         instance_variable_set(property, value.clone)
       end
+    end
+
+    # Bind this cell to a variable
+    def variable=(variable_id)
+      @variable = ::CSVPlusPlus::Language::Entities::CellReference.new(variable_id)
     end
   end
 end

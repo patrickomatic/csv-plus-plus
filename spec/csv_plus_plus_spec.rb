@@ -10,7 +10,7 @@ describe ::CSVPlusPlus do
       def added(a, b, c) SUM(CELLABOVE($$a), CELLADJACENT($$b), CELLBELOW($$c))
       def compute(a, b) ($$b - $$a) * 100
       ---
-      [[format=bold]]foo,"=FOO($$var, 22)",baz
+      [[format=bold]]foo,"=$$var",baz
       1,2,3,"=ADDED(A, B, C)"
       "=COMPUTE(500, 400)"
     INPUT
@@ -37,7 +37,7 @@ describe ::CSVPlusPlus do
 
         expect(::File.read(output_filename)).to(
           eq(<<~OUTPUT))
-            foo,"=FOO(42, 22)",baz
+            foo,=42,baz
             1,2,3,"=SUM(A1, B2, C3)"
             =((400 - 500) * 100)
           OUTPUT
