@@ -50,8 +50,8 @@ module CSVPlusPlus
   # @param compiler [Compiler] The compiler currently in use
   # @param options [Options] The options we're running with
   def self.write_template(template, compiler, options)
-    output = ::CSVPlusPlus::Writer.writer(options)
     compiler.outputting! do
+      output = ::CSVPlusPlus::Writer.writer(options)
       output.write_backup if options.backup
       output.write(template)
     end

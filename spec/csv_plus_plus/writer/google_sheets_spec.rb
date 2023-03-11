@@ -14,7 +14,7 @@ describe ::CSVPlusPlus::Writer::GoogleSheets do
   end
 
   describe '#write' do
-    let(:options) { build(:options, :with_google_sheet_id) }
+    let(:options) { build(:options, :with_google_sheet_id, sheet_name: nil) }
     let(:template) { build(:template, rows:) }
 
     subject { writer.write(template) }

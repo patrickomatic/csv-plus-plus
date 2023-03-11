@@ -1,3 +1,7 @@
+## v0.1.2
+
+- Fixes a bug with creating a new excel spreadsheet
+
 ## v0.1.1
 
 - Better support for the various infix operators (+,-,/,*,^,%,=,<,etc)

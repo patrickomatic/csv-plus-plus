@@ -24,8 +24,7 @@ module CSVPlusPlus
       #
       # @return [RubyXL::Workbook]
       def build_workbook
-        open_workbook.tap do |workbook|
-          @worksheet = workbook[@sheet_name]
+        open_workbook.tap do
           build_workbook!
         end
       end
@@ -107,11 +106,11 @@ module CSVPlusPlus
       def open_workbook
         if ::File.exist?(@input_filename)
           ::RubyXL::Parser.parse(@input_filename).tap do |workbook|
-            workbook.add_worksheet(@sheet_name) unless workbook[@sheet_name]
+            @worksheet = workbook[@sheet_name] || workbook.add_worksheet(@sheet_name)
           end
         else
           ::RubyXL::Workbook.new.tap do |workbook|
-            workbook.worksheets[0].sheet_name = @sheet_name
+            @worksheet = workbook.worksheets[0].tap { |w| w.sheet_name = @sheet_name }
           end
         end
       end

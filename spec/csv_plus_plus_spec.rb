@@ -24,15 +24,17 @@ describe ::CSVPlusPlus do
       let(:backup) { false }
       let(:options) { build(:options, backup:, output_filename:) }
 
-      before { subject }
-
       after { ::File.delete(output_filename) if ::File.exist?(output_filename) }
 
       it 'creates the .csv file' do
+        subject
+
         expect(::File).to(exist(output_filename))
       end
 
       it 'parses the input and generates CSV' do
+        subject
+
         expect(::File.read(output_filename)).to(
           eq(<<~OUTPUT))
             foo,"=FOO(42, 22)",baz
@@ -44,10 +46,16 @@ describe ::CSVPlusPlus do
       context 'when options.backup is set' do
         let(:backup) { true }
         let(:original) { 'foo,bar,baz' }
+        let(:backed_up_files) { ::Dir.children('.').grep(/bar-.+\.csv/) }
 
-        before { output_filename.write(original) }
+        before { ::File.write(output_filename, original) }
 
-        # TODO
+        it 'creates a backup file' do
+          subject
+
+          expect(backed_up_files.length).to(eq(1))
+          ::File.delete(backed_up_files[0])
+        end
       end
     end
 
@@ -58,12 +66,11 @@ describe ::CSVPlusPlus do
     context 'to Excel' do
       let(:output_filename) { 'bar.xlsx' }
 
-      # TODO
-      # before { subject }
+      before { subject }
 
       after { ::File.delete(output_filename) if ::File.exist?(output_filename) }
 
-      xit 'creates the .xlsx file' do
+      it 'creates the .xlsx file' do
         expect(::File).to(exist(output_filename))
       end
     end
