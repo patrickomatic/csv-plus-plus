@@ -59,11 +59,12 @@ describe ::CSVPlusPlus::Language::CellValueParser do
           eq(
             build(
               :fn_call,
-              name: 'MINUS',
+              name: :-,
               arguments: [
                 build(:number, n: 3),
                 build(:number, n: 2)
-              ]
+              ],
+              infix: true
             )
           )
         )
@@ -78,11 +79,12 @@ describe ::CSVPlusPlus::Language::CellValueParser do
           eq(
             build(
               :fn_call,
-              name: 'MULTIPLY',
+              name: :*,
               arguments: [
                 build(:number, n: 1),
-                build(:fn_call, name: 'MINUS', arguments: [build(:number, n: 3), build(:number, n: 2)])
-              ]
+                build(:fn_call, name: :-, arguments: [build(:number, n: 3), build(:number, n: 2)], infix: true)
+              ],
+              infix: true
             )
           )
         )

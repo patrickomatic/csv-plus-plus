@@ -1,5 +1,9 @@
 ## v0.1.1
 
+- Better support for the various infix operators (+,-,/,*,^,%,=,<,etc)
+  * Previously we were converting them to their prefix equivalent (multiply, minus, concat, etc) but excel doesn't support most of those.  So we keep them infix
+  * Didn't support some infix operators (^, %, </>/<=/>=/<>)
+  * Proper support for operator precedence
 - When in verbose mode, print a summary of compiled functions and variables
 - docs & tests
 

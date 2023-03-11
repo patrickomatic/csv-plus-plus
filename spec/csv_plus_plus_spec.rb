@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 describe ::CSVPlusPlus do
+  let(:backup) { false }
+  let(:options) { build(:options, backup:, output_filename:) }
   let(:filename) { 'foo.csvpp' }
   let(:input) do
     <<~INPUT
@@ -8,7 +10,7 @@ describe ::CSVPlusPlus do
       def added(a, b, c) SUM(CELLABOVE($$a), CELLADJACENT($$b), CELLBELOW($$c))
       def compute(a, b) ($$b - $$a) * 100
       ---
-      [[format=bold]]foo,"=ADD($$var, 22)",baz
+      [[format=bold]]foo,"=FOO($$var, 22)",baz
       1,2,3,"=ADDED(A, B, C)"
       "=COMPUTE(500, 400)"
     INPUT
@@ -26,18 +28,17 @@ describe ::CSVPlusPlus do
 
       after { ::File.delete(output_filename) if ::File.exist?(output_filename) }
 
-      it 'creates the CSV' do
+      it 'creates the .csv file' do
         expect(::File).to(exist(output_filename))
       end
 
       it 'parses the input and generates CSV' do
         expect(::File.read(output_filename)).to(
-          eq(
-            <<~OUTPUT))
-              foo,"=ADD(42, 22)",baz
-              1,2,3,"=SUM(A1, B2, C3)"
-              "=MULTIPLY(MINUS(400, 500), 100)"
-            OUTPUT
+          eq(<<~OUTPUT))
+            foo,"=FOO(42, 22)",baz
+            1,2,3,"=SUM(A1, B2, C3)"
+            =((400 - 500) * 100)
+          OUTPUT
       end
 
       context 'when options.backup is set' do
@@ -55,7 +56,16 @@ describe ::CSVPlusPlus do
     end
 
     context 'to Excel' do
+      let(:output_filename) { 'bar.xlsx' }
+
       # TODO
+      # before { subject }
+
+      after { ::File.delete(output_filename) if ::File.exist?(output_filename) }
+
+      xit 'creates the .xlsx file' do
+        expect(::File).to(exist(output_filename))
+      end
     end
 
     context 'to OpenDocument' do

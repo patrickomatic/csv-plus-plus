@@ -91,6 +91,7 @@ module CSVPlusPlus
       end
 
       # Make a copy of the AST represented by +node+ and replace +fn_id+ with +replacement+ throughout
+      # rubocop:disable Metrics/MethodLength
       def function_replace(node, fn_id, replacement)
         if node.function_call? && node.id == fn_id
           call_function_or_runtime_value(replacement, node)
@@ -98,12 +99,14 @@ module CSVPlusPlus
           # not our function, but continue our depth first search on it
           ::CSVPlusPlus::Language::Entities::FunctionCall.new(
             node.id,
-            node.arguments.map { |n| function_replace(n, fn_id, replacement) }
+            node.arguments.map { |n| function_replace(n, fn_id, replacement) },
+            infix: node.infix
           )
         else
           node
         end
       end
+      # rubocop:enable Metrics/MethodLength
 
       def resolve_function(fn_id)
         id = fn_id.to_sym
@@ -133,7 +136,8 @@ module CSVPlusPlus
       def variable_replace(node, var_id, replacement)
         if node.function_call?
           arguments = node.arguments.map { |n| variable_replace(n, var_id, replacement) }
-          ::CSVPlusPlus::Language::Entities::FunctionCall.new(node.id, arguments)
+          # TODO: refactor these places where we copy functions... it's brittle with the kwargs
+          ::CSVPlusPlus::Language::Entities::FunctionCall.new(node.id, arguments, infix: node.infix)
         elsif node.variable? && node.id == var_id
           replacement
         else

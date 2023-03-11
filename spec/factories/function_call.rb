@@ -5,13 +5,15 @@
     transient do
       name { :foo }
       arguments { [] }
+      infix { false }
     end
 
-    initialize_with { new(name, arguments) }
+    initialize_with { new(name, arguments, infix:) }
 
     factory :fn_call_add do
       name { :add }
       arguments { [build(:number_one), build(:number_two)] }
+      infix { true }
     end
 
     factory :fn_call_foo do

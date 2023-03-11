@@ -13,11 +13,11 @@ module CSVPlusPlus
       # @param arguments [] The arguments to create the entity with
       #
       # @return [Entity, #super]
-      def method_missing(method_name, *arguments)
+      def method_missing(method_name, *args, **kwargs, &)
         entity_class = ::CSVPlusPlus::Language::TYPES[method_name.to_sym]
         return super unless entity_class
 
-        entity_class.new(*arguments)
+        entity_class.new(*args, **kwargs, &)
       end
 
       # Let the current class have functions which can build a given entity by calling it's type.  For example

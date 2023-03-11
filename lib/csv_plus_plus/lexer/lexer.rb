@@ -35,6 +35,17 @@ module CSVPlusPlus
       runtime.raise_syntax_error("Error parsing #{parse_subject}", e.message, wrapped_error: e)
     end
 
+    TOKEN_LIBRARY = {
+      TRUE: [/true/i, :TRUE],
+      FALSE: [/false/i, :FALSE],
+      NUMBER: [/-?[\d.]+/, :NUMBER],
+      STRING: [%r{"(?:[^"\\]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*"}, :STRING],
+      INFIX_OP: [%r{\^|\+|-|\*|/|&|<|>|<=|>=|<>}, :INFIX_OP],
+      VAR_REF: [/\$\$/, :VAR_REF],
+      ID: [/[$!\w:]+/, :ID]
+    }.freeze
+    public_constant :TOKEN_LIBRARY
+
     private
 
     def tokenize(input, runtime)

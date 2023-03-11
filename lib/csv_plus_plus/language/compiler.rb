@@ -78,7 +78,7 @@ module CSVPlusPlus
       def parse_code_section!
         @runtime.start!
         parsing_code_section do |input|
-          code_section, csv_section = ::CSVPlusPlus::Language::CodeSectionParser.new.parse(input, self)
+          code_section, csv_section = ::CSVPlusPlus::Language::CodeSectionParser.new.parse(input, @runtime)
           # TODO: infer a type
           # allow user-supplied key/values to override anything global or from the code section
           code_section.def_variables(

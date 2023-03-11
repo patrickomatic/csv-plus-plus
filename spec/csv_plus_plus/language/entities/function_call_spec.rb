@@ -34,6 +34,22 @@ describe ::CSVPlusPlus::Language::Entities::FunctionCall do
 
       it { is_expected.to(eq('FOO(A, B, C)')) }
     end
+
+    context 'with an infix function' do
+      let(:function_call) do
+        build(
+          :fn_call,
+          name: :*,
+          arguments: [
+            build(:cell_reference, ref: 'A'),
+            build(:cell_reference, ref: 'B')
+          ],
+          infix: true
+        )
+      end
+
+      it { is_expected.to(eq('(A * B)')) }
+    end
   end
 
   describe '#==' do

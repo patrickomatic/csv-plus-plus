@@ -108,7 +108,7 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
       context 'with a variable definition with function calls' do
         let(:input) do
           <<~INPUT
-            foo := ADD(MULTIPLY(C1, 8), $$var)
+            foo := FOO(BAR(C1, 8), $$var)
             ---
             =$$foo,bar,baz
           INPUT
@@ -120,9 +120,9 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
               {
                 foo: build(
                   :fn_call,
-                  name: 'ADD',
+                  name: 'FOO',
                   arguments: [
-                    build(:fn_call, name: 'MULTIPLY', arguments: [build(:cell_reference), build(:number, n: 8)]),
+                    build(:fn_call, name: 'BAR', arguments: [build(:cell_reference), build(:number, n: 8)]),
                     build(:variable, id: 'var')
                   ]
                 )
@@ -136,7 +136,7 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
         let(:input) do
           <<~INPUT
             foo := 1
-            bar := ADD($$foo, 2)
+            bar := FOO($$foo, 2)
             ---
             =$$foo,=$$bar,baz
           INPUT
@@ -147,7 +147,7 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
             eq(
               {
                 foo: build(:number_one),
-                bar: build(:fn_call, name: 'ADD', arguments: [build(:variable, id: 'foo'), build(:number_two)])
+                bar: build(:fn_call, name: 'FOO', arguments: [build(:variable, id: 'foo'), build(:number_two)])
               }
             )
           )
@@ -311,7 +311,7 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
                   name: :foo,
                   arguments: %i[a],
                   body:
-                  build(:fn_call, name: :add, arguments: [build(:number_one), build(:variable, id: :a)])
+                  build(:fn_call, name: :+, arguments: [build(:number_one), build(:variable, id: :a)], infix: true)
                 )
               }
             )
@@ -324,7 +324,7 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
           <<~INPUT
             def bar(a) sum($$a) * ($$a + 2)
             ---
-            =$$foo(2),bar,baz
+            =foo,bar(2),baz
           INPUT
         end
 
@@ -338,11 +338,12 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
                   arguments: %i[a],
                   body: build(
                     :fn_call,
-                    name: :multiply,
+                    name: :*,
                     arguments: [
                       build(:fn_call, name: :sum, arguments: [build(:variable, id: :a)]),
-                      build(:fn_call, name: :add, arguments: [build(:variable, id: :a), build(:number_two)])
-                    ]
+                      build(:fn_call, name: :+, arguments: [build(:variable, id: :a), build(:number_two)], infix: true)
+                    ],
+                    infix: true
                   )
                 )
               }
