@@ -17,7 +17,7 @@ module CSVPlusPlus
     # @attr_reader runtime [Runtime] The runtime execution
     # @attr_reader scope [Scope] +Scope+ for variable resolution
     class Compiler
-      attr_reader :timings, :benchmark, :options, :runtime, :scope
+      attr_reader :options, :runtime, :scope
 
       # Create a compiler and make sure it gets cleaned up
       #

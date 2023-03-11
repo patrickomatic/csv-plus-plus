@@ -15,7 +15,6 @@ preclow
 
 token ASSIGN
       END_OF_CODE
-      EOL
       FALSE
       FN_DEF
       ID
@@ -100,7 +99,6 @@ end
         true
       end,
       tokens: [
-        [/\n/, :EOL], # XXX do I need this?
         [/:=/, :ASSIGN],
         [/def/, :FN_DEF],
         TOKEN_LIBRARY[:TRUE],

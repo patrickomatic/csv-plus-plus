@@ -36,13 +36,14 @@ module CSVPlusPlus
     end
 
     TOKEN_LIBRARY = {
-      TRUE: [/true/i, :TRUE],
       FALSE: [/false/i, :FALSE],
+      HEX_COLOR: [/^#(([0-9a-fA-F]{2}){3}|([0-9a-fA-F]){3})/, :HEX_COLOR],
+      ID: [/[$!\w:]+/, :ID],
+      INFIX_OP: [%r{\^|\+|-|\*|/|&|<|>|<=|>=|<>}, :INFIX_OP],
       NUMBER: [/-?[\d.]+/, :NUMBER],
       STRING: [%r{"(?:[^"\\]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*"}, :STRING],
-      INFIX_OP: [%r{\^|\+|-|\*|/|&|<|>|<=|>=|<>}, :INFIX_OP],
-      VAR_REF: [/\$\$/, :VAR_REF],
-      ID: [/[$!\w:]+/, :ID]
+      TRUE: [/true/i, :TRUE],
+      VAR_REF: [/\$\$/, :VAR_REF]
     }.freeze
     public_constant :TOKEN_LIBRARY
 
