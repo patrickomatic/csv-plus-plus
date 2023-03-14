@@ -3,14 +3,15 @@
 describe ::CSVPlusPlus::Language::CodeSectionParser do
   describe '#parse' do
     let(:runtime) { build(:runtime) }
-    let(:sections) { described_class.new.parse(input, runtime) }
-    let(:code_section) { sections[0] }
-    let(:csv_section) { sections[1] }
+    let(:scope) { build(:scope, runtime:) }
+    let(:csv_section) { described_class.new(scope).parse(input, runtime) }
 
-    describe 'CodeSection#variables' do
-      subject { code_section.variables }
+    describe 'Scope#variables' do
+      subject { scope.variables }
 
       context 'with comments' do
+        before { csv_section }
+
         let(:input) do
           <<~INPUT
             # this is a comment
@@ -27,6 +28,8 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
       end
 
       context 'with a bunch of spacing' do
+        before { csv_section }
+
         let(:input) do
           <<~INPUT
 
@@ -55,12 +58,14 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
         end
 
         it 'raises an error' do
-          expect { subject }
+          expect { csv_section }
             .to(raise_error(::CSVPlusPlus::Language::SyntaxError))
         end
       end
 
       context 'with a simple variable definition' do
+        before { csv_section }
+
         let(:input) do
           <<~INPUT
             foo := 1
@@ -77,6 +82,8 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
       end
 
       context 'with cell references' do
+        before { csv_section }
+
         let(:input) do
           <<~INPUT
             foo := A1
@@ -106,6 +113,8 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
       end
 
       context 'with a variable definition with function calls' do
+        before { csv_section }
+
         let(:input) do
           <<~INPUT
             foo := FOO(BAR(C1, 8), $$var)
@@ -133,6 +142,8 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
       end
 
       context 'with a variable referencing other variables' do
+        before { csv_section }
+
         let(:input) do
           <<~INPUT
             foo := 1
@@ -159,6 +170,8 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
       end
 
       context 'with an function with a single arg' do
+        before { csv_section }
+
         let(:input) do
           <<~INPUT
             foo := BAR(1)
@@ -173,8 +186,10 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
       end
     end
 
-    describe 'CodeSection#functions' do
-      subject { code_section.functions }
+    describe 'Scope#functions' do
+      before { csv_section }
+
+      subject { scope.functions }
 
       context 'with a single function that takes no args' do
         let(:input) do

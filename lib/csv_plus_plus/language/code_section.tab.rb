@@ -7,20 +7,19 @@
 require 'racc/parser.rb'
 
   require_relative '../lexer'
-  require_relative '../code_section'
   require_relative '../language/ast_builder'
 
 module CSVPlusPlus
   module Language
     class CodeSectionParser < Racc::Parser
 
-module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 70)
+module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 69)
   include ::CSVPlusPlus::Lexer
   include ::CSVPlusPlus::Language::ASTBuilder
 
-  def initialize
-    super
-    @code_section = CodeSection.new
+  def initialize(scope)
+    super()
+    @scope = scope
   end
 
   protected
@@ -61,18 +60,18 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 70)
   end
 
   def return_value
-    [@code_section, @rest]
+    @rest
   end
 
   private
 
   def def_function(id, arguments, body)
     fn_def = function(id, arguments, body)
-    @code_section.def_function(fn_def.id, fn_def)
+    @scope.def_function(fn_def.id, fn_def)
   end
 
   def def_variable(id, ast)
-    @code_section.def_variable(id, ast)
+    @scope.def_variable(id, ast)
   end
 ...end code_section.y/module_eval...
 ##### State transition tables begin ###

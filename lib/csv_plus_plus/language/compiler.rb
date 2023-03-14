@@ -43,6 +43,12 @@ module CSVPlusPlus
         @options = options
         @runtime = runtime
         @scope = scope || ::CSVPlusPlus::Language::Scope.new(runtime:)
+
+        # TODO: infer a type
+        # allow user-supplied key/values to override anything global or from the code section
+        @scope.def_variables(
+          options.key_values.transform_values { |v| ::CSVPlusPlus::Language::Entities::String.new(v.to_s) }
+        )
       end
 
       # Write the compiled results
@@ -58,7 +64,7 @@ module CSVPlusPlus
         parse_code_section!
         rows = parse_csv_section!
 
-        ::CSVPlusPlus::Template.new(rows:, code_section: scope.code_section).tap do |t|
+        ::CSVPlusPlus::Template.new(rows:, scope: @scope).tap do |t|
           t.validate_infinite_expands(@runtime)
           expanding { t.expand_rows! }
           resolve_all_cells!(t)
@@ -77,19 +83,15 @@ module CSVPlusPlus
       # @return [CodeSection]
       def parse_code_section!
         @runtime.start!
+
         parsing_code_section do |input|
-          code_section, csv_section = ::CSVPlusPlus::Language::CodeSectionParser.new.parse(input, @runtime)
-          # TODO: infer a type
-          # allow user-supplied key/values to override anything global or from the code section
-          code_section.def_variables(
-            options.key_values.transform_values { |v| ::CSVPlusPlus::Language::Entities::String.new(v.to_s) }
-          )
-          @scope.code_section = code_section
+          csv_section = ::CSVPlusPlus::Language::CodeSectionParser.new(@scope).parse(input, @runtime)
+          # XXX call scope.resolve_static_variables!
 
           # return the csv_section to the caller because they're gonna re-write input with it
           next csv_section
         end
-        @scope.code_section
+        # @scope.code_section
       end
 
       # Parse the CSV section and return an array of +Row+s
@@ -137,15 +139,19 @@ module CSVPlusPlus
       def parse_row(csv_row)
         row_modifier = ::CSVPlusPlus::Modifier.new(row_level: true)
 
-        cells =
-          @runtime.map_row(csv_row) do |value, _cell_index|
-            cell_modifier = ::CSVPlusPlus::Modifier.new
-            parsed_value = ::CSVPlusPlus::ModifierParser.new(row_modifier:, cell_modifier:).parse(value, @runtime)
-
-            ::CSVPlusPlus::Cell.parse(parsed_value, runtime:, modifier: cell_modifier)
-          end
+        cells = @runtime.map_row(csv_row) { |value, _cell_index| parse_cell(value, row_modifier) }
 
         ::CSVPlusPlus::Row.new(@runtime.row_index, cells, row_modifier)
+      end
+
+      def parse_cell(value, row_modifier)
+        cell_modifier = ::CSVPlusPlus::Modifier.new
+        parsed_value = ::CSVPlusPlus::ModifierParser.new(cell_modifier:, row_modifier:, scope: @scope).parse(
+          value,
+          @runtime
+        )
+
+        ::CSVPlusPlus::Cell.parse(parsed_value, runtime:, modifier: cell_modifier)
       end
     end
   end

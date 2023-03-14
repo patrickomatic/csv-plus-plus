@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require_relative '../code_section'
 require_relative '../graph'
+require_relative './can_define_references'
 require_relative './entities'
 require_relative './references'
 require_relative './syntax_error'
@@ -10,20 +10,22 @@ module CSVPlusPlus
   module Language
     # A class representing the scope of the current Template and responsible for resolving variables
     #
-    # @attr_reader code_section [CodeSection] The CodeSection containing variables and functions to be resolved
+    # @attr_reader functions [Hash<Symbol, Function>] The currently functions defined
     # @attr_reader runtime [Runtime] The compiler's current runtime
+    # @attr_reader variables [Hash<Symbol, Entity>] The currently defined variables
     #
     # rubocop:disable Metrics/ClassLength
     class Scope
-      attr_reader :code_section, :runtime
+      include ::CSVPlusPlus::Language::CanDefineReferences
+      # TODO: split out a CanResolveReferences
 
-      # initialize with a +Runtime+ and optional +CodeSection+
-      #
+      attr_reader :functions, :runtime, :variables
+
       # @param runtime [Runtime]
-      # @param code_section [Runtime, nil]
-      def initialize(runtime:, code_section: nil)
-        @code_section = code_section if code_section
+      def initialize(runtime:, functions: {}, variables: {})
         @runtime = runtime
+        @functions = functions
+        @variables = variables
       end
 
       # Resolve all values in the ast of the current cell being processed
@@ -34,7 +36,7 @@ module CSVPlusPlus
 
         last_round = nil
         loop do
-          refs = ::CSVPlusPlus::Language::References.extract(ast, @code_section)
+          refs = ::CSVPlusPlus::Language::References.extract(ast, self)
           return ast if refs.empty?
 
           # TODO: throw an error here instead I think - basically we did a round and didn't make progress
@@ -44,17 +46,23 @@ module CSVPlusPlus
         end
       end
 
-      # Set the +code_section+ and resolve all inner dependencies in it's variables and functions.
+      # Bind +var_id+ to the current cell (based on where +@runtime+ is currently pointing).
       #
-      # @param code_section [CodeSection] The code_section to be resolved
-      def code_section=(code_section)
-        @code_section = code_section
-        resolve_static_variables!
+      # @param var_id [Symbol] The name of the variable to bind the cell reference to
+      #
+      # @return [CellReference]
+      def bind_variable_to_cell(var_id)
+        ::CSVPlusPlus::Language::Entities::CellReference.from_index(
+          cell_index: runtime.cell_index,
+          row_index: runtime.row_index
+        ).tap do |cell_reference|
+          def_variable(var_id, cell_reference)
+        end
       end
 
       # @return [String]
       def to_s
-        "Scope(code_section: #{@code_section}, runtime: #{@runtime})"
+        "Scope(functions: #{@functions}, runtime: #{@runtime}, variables: #{@variables})"
       end
 
       private
@@ -62,14 +70,13 @@ module CSVPlusPlus
       # Resolve all variable references defined statically in the code section
       # TODO: experiment with getting rid of this - does it even play correctly with runtime vars?
       def resolve_static_variables!
-        variables = @code_section.variables
         last_var_dependencies = {}
         loop do
           var_dependencies, resolution_order = variable_resolution_order(only_static_vars(variables))
           return if var_dependencies == last_var_dependencies
 
-          # TODO: make the contract better here where we're not seting the variables of another class
-          @code_section.variables = resolve_dependencies(var_dependencies, resolution_order, variables)
+          # TODO: make the contract better here
+          @variables = resolve_dependencies(var_dependencies, resolution_order, variables)
           last_var_dependencies = var_dependencies.clone
         end
       end
@@ -110,7 +117,7 @@ module CSVPlusPlus
 
       def resolve_function(fn_id)
         id = fn_id.to_sym
-        return @code_section.functions[id] if @code_section.defined_function?(id)
+        return functions[id] if defined_function?(id)
 
         ::CSVPlusPlus::Language::Builtins::FUNCTIONS[id]
       end
@@ -147,7 +154,7 @@ module CSVPlusPlus
 
       def resolve_variable(var_id)
         id = var_id.to_sym
-        return @code_section.variables[id] if @code_section.defined_variable?(id)
+        return variables[id] if defined_variable?(id)
 
         # this will throw a syntax error if it doesn't exist (which is what we want)
         @runtime.runtime_value(id)

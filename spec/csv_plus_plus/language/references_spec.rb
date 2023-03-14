@@ -27,10 +27,10 @@ describe ::CSVPlusPlus::Language::References do
 
   describe '.extract' do
     let(:functions) { { foo: build(:fn_foo) } }
-    let(:code_section) { build(:code_section, functions:) }
+    let(:scope) { build(:scope, functions:) }
     let(:ast) { build(:number_one) }
 
-    subject { described_class.extract(ast, code_section) }
+    subject { described_class.extract(ast, scope) }
 
     it 'finds no references' do
       expect(subject.functions).to(be_empty)

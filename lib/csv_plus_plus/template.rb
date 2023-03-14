@@ -1,23 +1,23 @@
 # frozen_string_literal: true
 
 module CSVPlusPlus
-  # Contains the flow and data from a code section and CSV section
+  # Contains the data from a parsed csvpp template.
   #
-  # @attr_reader code_section [CodeSection] The +CodeSection+ containing the functions and variables defined herein
   # @attr_reader rows [Array<Row>] The +Row+s that comprise this +Template+
+  # @attr_reader scope [Scope] The +Scope+ containing all function and variable references
   class Template
-    attr_reader :code_section, :rows
+    attr_reader :rows, :scope
 
-    # @param code_section [CodeSection] The +CodeSection+ containing the functions and variables
     # @param rows [Array<Row>] The +Row+s that comprise this +Template+
-    def initialize(code_section:, rows:)
-      @code_section = code_section
+    # @param scope [Scope] The +Scope+ containing all function and variable references
+    def initialize(rows:, scope:)
+      @scope = scope
       @rows = rows
     end
 
     # @return [String]
     def to_s
-      "Template(rows: #{@rows})"
+      "Template(rows: #{@rows}, scope: #{@scope})"
     end
 
     # Apply any expand= modifiers to the parsed template
@@ -50,13 +50,13 @@ module CSVPlusPlus
       )
     end
 
-    # Provide a summary of the state of the template (and it's +@code_section+)
+    # Provide a summary of the state of the template (and it's +@scope+)
     #
     # @return [String]
     def verbose_summary
       # TODO: we can probably include way more stats in here
       <<~SUMMARY
-        #{@code_section.verbose_summary}
+        #{@scope.verbose_summary}
 
         > #{@rows.length} rows to be written
       SUMMARY

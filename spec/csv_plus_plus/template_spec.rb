@@ -59,7 +59,7 @@ describe ::CSVPlusPlus::Template do
   describe '#to_s' do
     subject { build(:template).to_s }
 
-    it { is_expected.to(eq('Template(rows: [])')) }
+    it { is_expected.to(match(/Template\(rows: .+, scope: .+\)/)) }
   end
 
   describe '#validate_infinite_expands' do

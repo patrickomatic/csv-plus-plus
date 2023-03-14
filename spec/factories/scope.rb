@@ -3,10 +3,11 @@
 ::FactoryBot.define do
   factory :scope, class: ::CSVPlusPlus::Language::Scope do
     transient do
-      code_section { build(:code_section) }
       runtime { build(:runtime) }
+      variables { {} }
+      functions { {} }
     end
 
-    initialize_with { new(code_section:, runtime:) }
+    initialize_with { new(variables:, functions:, runtime:) }
   end
 end

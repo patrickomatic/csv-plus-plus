@@ -51,7 +51,7 @@ rule
           | 'numberformat' EQ numberformat_option { s!(:numberformat, val[2])              }
           | 'validate'     EQ condition           { s!(:validation, val[2])                }
           | 'valign'       EQ valign_option       { s!(:valign, val[2])                    }
-          | 'variable'     EQ VARIABLE_ID         { s!(:variable, val[2])                  }
+          | 'var'          EQ VARIABLE_ID         { var(val[2])                            }
 
   format_options: format_options format_option | format_option { s!(:format, val[0])       }
   format_option: 'bold' | 'italic' | 'strikethrough' | 'underline'
@@ -124,12 +124,13 @@ require_relative './lexer'
   include ::CSVPlusPlus::Lexer
 
   # @param cell_modifier 
-  def initialize(cell_modifier:, row_modifier:)
+  def initialize(cell_modifier:, row_modifier:, scope:)
     super()
 
     @parsing_row = false
     @cell_modifier = cell_modifier
     @row_modifier = row_modifier
+    @scope = scope
   end
 
   protected
@@ -199,6 +200,11 @@ require_relative './lexer'
 
   def freeze!
     (@parsing_row ? @row_modifier : @cell_modifier).freeze!
+  end
+
+  def var(var_id)
+    @scope.define_variable(var_id)
+    s!(:variable, var_id)
   end
 
   def s!(property, value)

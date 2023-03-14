@@ -1,5 +1,6 @@
 ## v0.1.2
 
+- var=... modifier which allows binding a variable to a cell
 - Fixes a bug with creating a new excel spreadsheet
 - Docs & tests
 

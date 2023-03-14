@@ -18,12 +18,13 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 122)
   include ::CSVPlusPlus::Lexer
 
   # @param cell_modifier 
-  def initialize(cell_modifier:, row_modifier:)
+  def initialize(cell_modifier:, row_modifier:, scope:)
     super()
 
     @parsing_row = false
     @cell_modifier = cell_modifier
     @row_modifier = row_modifier
+    @scope = scope
   end
 
   protected
@@ -93,6 +94,11 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 122)
 
   def freeze!
     (@parsing_row ? @row_modifier : @cell_modifier).freeze!
+  end
+
+  def var(var_id)
+    @scope.define_variable(var_id)
+    s!(:variable, var_id)
   end
 
   def s!(property, value)
@@ -385,7 +391,7 @@ racc_token_table = {
   "numberformat" => 32,
   "validate" => 33,
   "valign" => 34,
-  "variable" => 35,
+  "var" => 35,
   "bold" => 36,
   "italic" => 37,
   "strikethrough" => 38,
@@ -504,7 +510,7 @@ Racc_token_to_s_table = [
   "\"numberformat\"",
   "\"validate\"",
   "\"valign\"",
-  "\"variable\"",
+  "\"var\"",
   "\"bold\"",
   "\"italic\"",
   "\"strikethrough\"",
@@ -730,7 +736,7 @@ module_eval(<<'.,.,', 'modifier.y', 52)
 
 module_eval(<<'.,.,', 'modifier.y', 53)
   def _reduce_26(val, _values, result)
-     s!(:variable, val[2])
+     var(val[2])
     result
   end
 .,.,

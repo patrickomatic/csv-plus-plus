@@ -2,13 +2,14 @@
 
 describe ::CSVPlusPlus::ModifierParser do
   let(:runtime) { build(:runtime) }
+  let(:scope) { build(:scope) }
 
   describe '#parse' do
     let(:row_modifier) { build(:modifier) }
     let(:cell_modifier) { build(:modifier) }
 
     before(:each) { subject }
-    subject { described_class.new(cell_modifier:, row_modifier:).parse(value, runtime) }
+    subject { described_class.new(cell_modifier:, row_modifier:, scope:).parse(value, runtime) }
 
     context 'without a modifier' do
       let(:value) { 'foo' }

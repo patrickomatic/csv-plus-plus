@@ -3,6 +3,8 @@
 module CSVPlusPlus
   module Language
     module Entities
+      # TODO: get rid of this I think - everything will just be References
+      #
       # A reference to a variable
       class Variable < Entity
         # @param id [Symbol] The identifier of the variable

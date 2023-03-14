@@ -16,15 +16,15 @@ module CSVPlusPlus
       #
       # @param ast [Entity] An +Entity+ to do a depth first search on for references.  Entities can be
       #   infinitely deep because they can contain other function calls as params to a function call
-      # @param code_section [CodeSection] The +CodeSection+ containing all currently defined functions
+      # @param scope [Scope] The +CodeSection+ containing all currently defined functions & variables
       #
       # @return [References]
-      def self.extract(ast, code_section)
+      def self.extract(ast, scope)
         new.tap do |refs|
           ::CSVPlusPlus::Graph.depth_first_search(ast) do |node|
             next unless node.function_call? || node.variable?
 
-            refs.functions << node if function_reference?(node, code_section)
+            refs.functions << node if function_reference?(node, scope)
             refs.variables << node if node.variable?
           end
         end
@@ -36,8 +36,8 @@ module CSVPlusPlus
       #
       # @return [boolean]
       # TODO: move this into the Entity subclasses
-      def self.function_reference?(node, code_section)
-        node.function_call? && (code_section.defined_function?(node.id) \
+      def self.function_reference?(node, scope)
+        node.function_call? && (scope.defined_function?(node.id) \
                                 || ::CSVPlusPlus::Language::Builtins::FUNCTIONS.key?(node.id))
       end
 

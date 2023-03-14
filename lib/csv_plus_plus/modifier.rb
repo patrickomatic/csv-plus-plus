@@ -14,6 +14,7 @@ module CSVPlusPlus
   #   (unless overridden by the cell modifier)
   # @attr validation [Object]
   # @attr valign ['top', 'center', 'bottom'] Vertical alignment
+  # @attr variable [Symbol] The variable bound to this cell
   #
   # @attr_writer borderstyle ['dashed', 'dotted', 'double', 'solid', 'solid_medium', 'solid_thick']
   #   The style of border on the cell
@@ -24,9 +25,18 @@ module CSVPlusPlus
   # @attr_reader fontcolor [Color] The font color of the cell
   # @attr_reader formats [Array<String>] Bold/italics/underline/strikethrough formatting
   class Modifier
-    attr_reader :bordercolor, :borders, :color, :fontcolor, :formats, :variable
+    attr_accessor :expand,
+                  :fontfamily,
+                  :fontsize,
+                  :halign,
+                  :valign,
+                  :note,
+                  :numberformat,
+                  :row_level,
+                  :validation,
+                  :variable
+    attr_reader :bordercolor, :borders, :color, :fontcolor, :formats
     attr_writer :borderstyle
-    attr_accessor :expand, :fontfamily, :fontsize, :halign, :valign, :note, :numberformat, :row_level, :validation
 
     # @param row_level [Boolean] Whether or not this modifier applies to the entire row
     def initialize(row_level: false)
@@ -166,11 +176,6 @@ module CSVPlusPlus
         value = other.instance_variable_get(property)
         instance_variable_set(property, value.clone)
       end
-    end
-
-    # Bind this cell to a variable
-    def variable=(variable_id)
-      @variable = ::CSVPlusPlus::Language::Entities::CellReference.new(variable_id)
     end
   end
 end
