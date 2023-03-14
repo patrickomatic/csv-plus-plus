@@ -73,9 +73,9 @@ around them.
 
 ## Modifiers
 
-Modifiers can change the formatting of a cell or row, apply validation, change alignment, etc. All 
-of the normal rules of CSV apply, with the addition that each cell can have modifiers (specified in 
-`[[`/`]]` for cells and `![[`/`]]` for rows):
+Modifiers can change the formatting of a cell or row, bind cells to variables, apply validation, 
+change alignment, etc. All of the normal rules of CSV apply, with the addition that each cell can 
+have modifiers (specified in `[[`/`]]` for cells and `![[`/`]]` for rows):
 
 ```
 foo,[[...]]bar,baz
@@ -88,6 +88,57 @@ specifying formatting or various other modifiers to the cell.  Additionally a ro
 ```
 
 which will apply that modifier to all cells in the row.
+
+### All Modifiers
+
+* `border` `=` `all | top | bottom | left | right`
+  - Sets a border on the given side (or all four sides if `all`).
+  - Can be repeated multiple times to set multiple borders.
+
+* `bordercolor` `=` `HEX_COLOR`
+  - The color of the border, where `HEX_COLOR` is a 6-character hex color code.
+
+* `borderstyle` `=` `dashed | dotted | double | solid | solid_medium | solid_thick`
+  - The style of the border. `solid` if a border is set and it is not specifieid.
+
+* `color` - 
+  - The color of the cell, where `HEX_COLOR` is a 6-character hex color code.
+
+* `expand` `=` `AMOUNT`
+  - Duplicate the row `AMOUNT` times.  If `AMOUNT` is not supplied, the row will be repeated for
+  the rest of the sheet.
+
+* `fontcolor` `=` `HEX_COLOR`
+  - The color of the font, where `HEX_COLOR` is a 6-character hex color code.
+
+* `fontfamily` `=` `Arial | Helvetica | ...`
+  - The font family to use.  It must be a valid font, compatible with your target spreadsheet
+
+* `fontsize` `=` `INTEGER`
+  - The font size to use, as a whole number.
+
+* `format` `=` `bold | italic | underline | strikethrough`
+  - Applies the given format.
+  - Can be repeated multiple times to set multiple formats.
+
+* `freeze` - 
+
+* `halign` `=` `left | center | right`
+  - The horizontal alignment.
+
+* `note` `=` `STRING`
+  - A note to associate with the cell.
+
+* `numberformat` `=` `currency | date | date_time | number | percent | text | time | scientific`
+  - The number format to apply to the cell.
+
+* `validate`
+
+* `valign` `=` `top | center | bottom`
+  - The vertical alignment.
+
+* `var` `=` `VARIABLE_ID`
+  - Bind a variable (specified by `VARIABLE_ID`) to reference this cell.
 
 ### Examples
 
