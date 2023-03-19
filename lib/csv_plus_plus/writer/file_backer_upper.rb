@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require 'fileutils'
-require 'pathname'
-
 module CSVPlusPlus
   module Writer
     # A module that can be mixed into any Writer that needs to back up it's @output_filename (all of them except Google
@@ -26,6 +23,7 @@ module CSVPlusPlus
 
       private
 
+      # rubocop:disable Metrics/MethodLength
       def attempt_backups
         attempted =
           # rubocop:disable Lint/ConstantResolution
@@ -39,8 +37,12 @@ module CSVPlusPlus
             return backed_up_to
           end
 
-        raise(::CSVPlusPlus::Error, "Unable to write backup file despite trying these: #{attempted.join(', ')}")
+        raise(
+          ::CSVPlusPlus::Error::WriterError,
+          "Unable to write backup file despite trying these: #{attempted.join(', ')}"
+        )
       end
+      # rubocop:enable Metrics/MethodLength
 
       def backup(filename)
         return if ::File.exist?(filename)

@@ -33,7 +33,7 @@ describe ::CSVPlusPlus::CLI do
 
       it 'raises an error' do
         expect { subject }
-          .to(raise_error(::CSVPlusPlus::Error))
+          .to(raise_error(::CSVPlusPlus::Error::Error))
       end
     end
 
@@ -42,13 +42,13 @@ describe ::CSVPlusPlus::CLI do
 
       it 'raises an error' do
         expect { subject }
-          .to(raise_error(::CSVPlusPlus::Error))
+          .to(raise_error(::CSVPlusPlus::Error::Error))
       end
     end
   end
 
   describe '#handle_error' do
-    let(:error) { ::CSVPlusPlus::Error.new('error') }
+    let(:error) { ::CSVPlusPlus::Error::Error.new('error') }
     let(:options) { build(:options) }
 
     before do
@@ -66,7 +66,7 @@ describe ::CSVPlusPlus::CLI do
 
     context 'with a syntax error' do
       let(:runtime) { build(:runtime) }
-      let(:error) { ::CSVPlusPlus::Language::SyntaxError.new('error', 'syntax error', runtime) }
+      let(:error) { ::CSVPlusPlus::Error::FormulaSyntaxError.new('error', 'syntax error', runtime) }
       let(:options) { build(:options, verbose: true) }
 
       it "prints but doesn't raise the error" do

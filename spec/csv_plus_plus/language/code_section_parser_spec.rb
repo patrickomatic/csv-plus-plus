@@ -59,7 +59,7 @@ describe ::CSVPlusPlus::Language::CodeSectionParser do
 
         it 'raises an error' do
           expect { csv_section }
-            .to(raise_error(::CSVPlusPlus::Language::SyntaxError))
+            .to(raise_error(::CSVPlusPlus::Error::SyntaxError))
         end
       end
 

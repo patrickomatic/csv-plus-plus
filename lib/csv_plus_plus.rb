@@ -1,20 +1,25 @@
 # frozen_string_literal: true
 
+require 'csv'
+require 'fileutils'
 require 'google/apis/drive_v3'
 require 'google/apis/sheets_v4'
 require 'googleauth'
+require 'pathname'
 require 'rubyXL'
 require 'rubyXL/convenience_methods'
 require 'set'
+require 'tempfile'
 
 require_relative 'csv_plus_plus/cell'
 require_relative 'csv_plus_plus/cli'
 require_relative 'csv_plus_plus/color'
 require_relative 'csv_plus_plus/error'
+# TODO: consolidate these requires to the module level
 require_relative 'csv_plus_plus/language/builtins'
 require_relative 'csv_plus_plus/language/compiler'
+require_relative 'csv_plus_plus/language/entities'
 require_relative 'csv_plus_plus/language/runtime'
-require_relative 'csv_plus_plus/language/syntax_error'
 require_relative 'csv_plus_plus/lexer'
 require_relative 'csv_plus_plus/lexer/tokenizer'
 require_relative 'csv_plus_plus/modifier'
@@ -22,6 +27,7 @@ require_relative 'csv_plus_plus/modifier.tab'
 require_relative 'csv_plus_plus/options'
 require_relative 'csv_plus_plus/row'
 require_relative 'csv_plus_plus/template'
+require_relative 'csv_plus_plus/validated_modifier'
 require_relative 'csv_plus_plus/writer'
 
 # A programming language for writing rich CSV files

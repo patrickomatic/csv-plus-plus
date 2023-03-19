@@ -9,13 +9,19 @@ module CSVPlusPlus
   class Color
     attr_reader :red_hex, :green_hex, :blue_hex
 
-    # create an instance from a string like "#FFF" or "#FFFFFF"
+    HEX_STRING_REGEXP = /^#?([0-9a-f]{1,2})([0-9a-f]{1,2})([0-9a-f]{1,2})/i
+    public_constant :HEX_STRING_REGEXP
+
+    # @return [boolean]
+    def self.valid_hex_string?(hex_string)
+      !(hex_string.strip =~ ::CSVPlusPlus::Color::HEX_STRING_REGEXP).nil?
+    end
+
+    # Create an instance from a string like "#FFF" or "#FFFFFF"
     #
     # @param hex_string [String] The hex string input to parse
     def initialize(hex_string)
-      @red_hex, @green_hex, @blue_hex = hex_string
-                                        .gsub(/^#?/, '')
-                                        .match(/([0-9a-f]{1,2})([0-9a-f]{1,2})([0-9a-f]{1,2})/i)
+      @red_hex, @green_hex, @blue_hex = hex_string.strip.match(::CSVPlusPlus::Color::HEX_STRING_REGEXP)
                                         &.captures
                                         &.map { |s| s.length == 1 ? s + s : s }
     end
@@ -43,12 +49,12 @@ module CSVPlusPlus
 
     # Create a hex representation of the color (without a '#')
     #
-    # @return [String]
+    # @return [::String]
     def to_hex
       [@red_hex, @green_hex, @blue_hex].join
     end
 
-    # @return [String]
+    # @return [::String]
     def to_s
       "Color(r: #{@red_hex}, g: #{@green_hex}, b: #{@blue_hex})"
     end

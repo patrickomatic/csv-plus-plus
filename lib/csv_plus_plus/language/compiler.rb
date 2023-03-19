@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'csv'
-
 require_relative 'benchmarked_compiler'
 require_relative 'code_section.tab'
 require_relative 'entities'
@@ -84,9 +82,11 @@ module CSVPlusPlus
       def parse_code_section!
         @runtime.start!
 
+        # TODO: this flow can probably be refactored, it used to have more needs back when we had to
+        # parse and save the code_section
         parsing_code_section do |input|
           csv_section = ::CSVPlusPlus::Language::CodeSectionParser.new(@scope).parse(input, @runtime)
-          # XXX call scope.resolve_static_variables!
+          # TODO: call scope.resolve_static_variables?? or maybe it doesn't matter
 
           # return the csv_section to the caller because they're gonna re-write input with it
           next csv_section
@@ -137,7 +137,7 @@ module CSVPlusPlus
       # @param csv_row [Array<Array<String>>]
       # @return [Row]
       def parse_row(csv_row)
-        row_modifier = ::CSVPlusPlus::Modifier.new(row_level: true)
+        row_modifier = ::CSVPlusPlus::ValidatedModifier.new(row_level: true)
 
         cells = @runtime.map_row(csv_row) { |value, _cell_index| parse_cell(value, row_modifier) }
 
@@ -145,7 +145,7 @@ module CSVPlusPlus
       end
 
       def parse_cell(value, row_modifier)
-        cell_modifier = ::CSVPlusPlus::Modifier.new
+        cell_modifier = ::CSVPlusPlus::ValidatedModifier.new
         parsed_value = ::CSVPlusPlus::ModifierParser.new(cell_modifier:, row_modifier:, scope: @scope).parse(
           value,
           @runtime

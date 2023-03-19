@@ -31,14 +31,16 @@ module CSVPlusPlus
     #
     # @param error [CSVPlusPlus::Error, Google::Apis::ClientError, StandardError]
     def handle_error(error)
+      # make sure that we're on a newline (verbose mode might be in the middle of printing a benchmark)
+      puts("\n\n") if @options.verbose
+
       case error
-      when ::CSVPlusPlus::Error
+      when ::CSVPlusPlus::Error::Error
         handle_internal_error(error)
       when ::Google::Apis::ClientError
         handle_google_error(error)
       else
-        # TODO: more if verbose?
-        warn(error.message)
+        unhandled_error(error)
       end
     end
 
@@ -48,18 +50,33 @@ module CSVPlusPlus
       option_parser.parse!
       validate_options
     rescue ::OptionParser::InvalidOption => e
-      raise(::CSVPlusPlus::Error, e.message)
+      raise(::CSVPlusPlus::Error::Error, e.message)
     end
 
-    # @return [String]
+    # @return [::String]
     def to_s
       "CLI(options: #{options})"
     end
 
     private
 
+    # An error was thrown that we weren't planning on
+    def unhandled_error(error)
+      warn(
+        <<~ERROR_MESSAGE)
+          An unexpected error was encountered.  Please try running again with --verbose and
+          reporting the error at: https://github.com/patrickomatic/csv-plus-plus/issues/new'
+        ERROR_MESSAGE
+
+      return unless @options.verbose
+
+      warn(error.full_message)
+      warn("Cause: #{error.cause}") if error.cause
+    end
+
     def handle_internal_error(error)
-      if error.is_a?(::CSVPlusPlus::Language::SyntaxError)
+      case error
+      when ::CSVPlusPlus::Error::SyntaxError
         warn(@options.verbose ? error.to_verbose_trace : error.to_trace)
       else
         warn(error.message)
@@ -78,7 +95,7 @@ module CSVPlusPlus
       return if error_message.nil?
 
       puts(option_parser)
-      raise(::CSVPlusPlus::Error, error_message)
+      raise(::CSVPlusPlus::Error::Error, error_message)
     end
 
     def option_parser

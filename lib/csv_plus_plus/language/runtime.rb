@@ -1,14 +1,10 @@
 # frozen_string_literal: true
 
-require_relative 'entities'
-require_relative 'syntax_error'
-require 'tempfile'
-
 module CSVPlusPlus
   module Language
-    # The runtime state of the compiler (the current +line_number+/+row_index+, +cell+ being processed, etc).  We take
-    # multiple runs through the input file for parsing so it's really convenient to have a central place for these
-    # things to be managed.
+    # The runtime state of the compiler (the current +line_number+/+row_index+, +cell+ being processed, etc) for parsing
+    # a given file.  We take multiple runs through the input file for parsing so it's really convenient to have a
+    # central place for these things to be managed.
     #
     # @attr_reader filename [String, nil] The filename that the input came from (mostly used for debugging since
     #   +filename+ can be +nil+ if it's read from stdin.
@@ -133,7 +129,7 @@ module CSVPlusPlus
         if runtime_variable?(var_id)
           ::CSVPlusPlus::Language::Builtins::VARIABLES[var_id.to_sym].resolve_fn.call(self)
         else
-          raise_syntax_error('Undefined variable', var_id)
+          raise_formula_syntax_error('Undefined variable', var_id)
         end
       end
 
@@ -152,8 +148,8 @@ module CSVPlusPlus
       # @param message [String] A message relevant to why this error is being raised.
       # @param bad_input [String] The offending input that caused this error to be thrown.
       # @param wrapped_error [StandardError, nil] The underlying error that was raised (if it's not from our own logic)
-      def raise_syntax_error(message, bad_input, wrapped_error: nil)
-        raise(::CSVPlusPlus::Language::SyntaxError.new(message, bad_input, self, wrapped_error:))
+      def raise_formula_syntax_error(message, bad_input, wrapped_error: nil)
+        raise(::CSVPlusPlus::Error::FormulaSyntaxError.new(message, bad_input, self, wrapped_error:))
       end
 
       # The currently available input for parsing.  The tmp state will be re-written

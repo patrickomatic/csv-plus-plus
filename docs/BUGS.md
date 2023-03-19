@@ -1,0 +1,1 @@
+- [ ] when parsing modifiers and it hits a parse error, it prints the wrong row number because it doesn't take into account the length of the code section

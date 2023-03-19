@@ -2,7 +2,6 @@ class CSVPlusPlus::ModifierParser
 prechigh
   left '![['
   left '[[' ']]'
-  left ':'
   left '='
   left '/'
 preclow
@@ -12,106 +11,45 @@ token A1_NOTATION
       EQ
       HEX_COLOR
       NUMBER
-      MODIFIER_ID
+      MODIFIER
       MODIFIER_SEPARATOR
       START_CELL_MODIFIERS
       START_ROW_MODIFIERS
       STRING
-      URL
-      VARIABLE_ID
+      WORD
 
 rule
   modifiers_definition: row_modifiers cell_modifiers 
                       | row_modifiers 
                       | cell_modifiers
 
-  row_modifiers: START_ROW_MODIFIERS    { parsing_row! }
+  row_modifiers: START_ROW_MODIFIERS      { parsing_row! }
                  modifiers 
-                 END_MODIFIERS          { finished_row! }
+                 END_MODIFIERS            { finished_row! }
 
-  cell_modifiers: START_CELL_MODIFIERS  { parsing_cell! }
+  cell_modifiers: START_CELL_MODIFIERS    { parsing_cell! }
                   modifiers 
                   END_MODIFIERS 
 
   modifiers: modifiers MODIFIER_SEPARATOR modifier | modifier
 
-  modifier: 'border'       EQ border_options
-          | 'bordercolor'  EQ HEX_COLOR           { s!(:bordercolor, val[2])               }
-          | 'borderstyle'  EQ borderstyle_option  { s!(:borderstyle, val[2])               }
-          | 'color'        EQ HEX_COLOR           { s!(:color, val[2])                     }
-          | 'expand'       EQ NUMBER              { s!(:expand, Expand.new(val[2].to_i))   }
-          | 'expand'                              { s!(:expand, Expand.new)                }
-          | 'fontcolor'    EQ HEX_COLOR           { s!(:fontcolor, val[2])                 }
-          | 'fontfamily'   EQ STRING              { s!(:fontfamily, val[2])                }
-          | 'fontsize'     EQ NUMBER              { s!(:fontsize, val[2].to_f)             }
-          | 'format'       EQ format_options
-          | 'freeze'                              { freeze!                                }
-          | 'halign'       EQ halign_option       { s!(:halign, val[2])                    }
-          | 'note'         EQ STRING              { s!(:note, val[2])                      }
-          | 'numberformat' EQ numberformat_option { s!(:numberformat, val[2])              }
-          | 'validate'     EQ condition           { s!(:validation, val[2])                }
-          | 'valign'       EQ valign_option       { s!(:valign, val[2])                    }
-          | 'var'          EQ VARIABLE_ID         { var(val[2])                            }
-
-  format_options: format_options format_option | format_option { s!(:format, val[0])       }
-  format_option: 'bold' | 'italic' | 'strikethrough' | 'underline'
-
-  halign_option: 'left' | 'center' | 'right'
-  valign_option: 'top'  | 'center' | 'bottom'
-
-  border_options: border_options border_option | border_option { s!(:border, val[0])       }
-  border_option: 'all' | 'top' | 'right' | 'left' | 'bottom'
-
-  borderstyle_option: 'dashed' | 'dotted' | 'double' | 'solid' | 'solid_medium' | 'solid_thick'
-
-  numberformat_option: 'currency'
-                     | 'date'
-                     | 'date_time'
-                     | 'number'
-                     | 'percent'
-                     | 'text'
-                     | 'time'
-                     | 'scientific'
-
-  condition: 'blank'
-           | 'boolean'
-           | 'boolean'                 ':' condition_value
-           | 'boolean'                 ':' condition_value | condition_value
-           | 'custom_formula'          ':' condition_value
-           | 'date_after'              ':' relative_date
-           | 'date_before'             ':' relative_date
-           | 'date_between'            ':' condition_value condition_value
-           | 'date_eq'                 ':' condition_value
-           | 'date_is_valid'
-           | 'date_not_between'        ':' condition_value condition_value
-           | 'date_not_eq'             ':' condition_values
-           | 'date_on_or_after'        ':' condition_value | relative_date
-           | 'date_on_or_before'       ':' condition_value | relative_date
-           | 'not_blank'
-           | 'number_between'          ':' condition_value condition_value
-           | 'number_eq'               ':' condition_value
-           | 'number_greater'          ':' condition_value
-           | 'number_greater_than_eq'  ':' condition_value
-           | 'number_less'             ':' condition_value
-           | 'number_less_than_eq'     ':' condition_value
-           | 'number_not_between'      ':' condition_value condition_value
-           | 'number_not_eq'           ':' condition_value
-           | 'one_of_list'             ':' condition_values
-           | 'one_of_range'            ':' A1_NOTATION
-           | 'text_contains'           ':' condition_value
-           | 'text_ends_with'          ':' condition_value
-           | 'text_eq'                 ':' condition_value
-           | 'text_is_email'
-           | 'text_is_url'
-           | 'text_not_contains'       ':' condition_value
-           | 'text_not_eq'             ':' condition_values
-           | 'text_starts_with'        ':' condition_value
-
-  condition_values: condition_values condition_value | condition_value
-  condition_value: STRING
-
-  relative_date: 'past_year' | 'past_month' | 'past_week' | 'yesterday' | 'today' | 'tomorrow'
-
+  modifier: 'border'       EQ WORD        { modifier.border = val[2]        }
+          | 'bordercolor'  EQ HEX_COLOR   { modifier.bordercolor = val[2]   }
+          | 'borderstyle'  EQ WORD        { modifier.borderstyle = val[2]   }
+          | 'color'        EQ HEX_COLOR   { modifier.color = val[2]         }
+          | 'expand'       EQ NUMBER      { modifier.expand = val[2]        }
+          | 'expand'                      { modifier.expand!                }
+          | 'fontcolor'    EQ HEX_COLOR   { modifier.fontcolor = val[2]     }
+          | 'fontfamily'   EQ STRING      { modifier.fontfamily = val[2]    }
+          | 'fontsize'     EQ NUMBER      { modifier.fontsize = val[2]      }
+          | 'format'       EQ WORD        { modifier.format = val[2]        }
+          | 'freeze'                      { modifier.freeze!                }
+          | 'halign'       EQ WORD        { modifier.halign = val[2]        }
+          | 'note'         EQ STRING      { modifier.note = val[2]          }
+          | 'numberformat' EQ WORD        { modifier.numberformat = val[2]  }
+          | 'validate'     EQ WORD        { modifier.validation = val[2]    }
+          | 'valign'       EQ WORD        { modifier.valign = val[2]        }
+          | 'var'          EQ WORD        { define_var(val[2])              }
 end
 
 ---- header
@@ -123,7 +61,9 @@ require_relative './lexer'
 
   include ::CSVPlusPlus::Lexer
 
-  # @param cell_modifier 
+  # @param cell_modifier [Modifier]
+  # @param row_modifier [Modifier]
+  # @param scope [Scope]
   def initialize(cell_modifier:, row_modifier:, scope:)
     super()
 
@@ -152,7 +92,6 @@ require_relative './lexer'
 
   def tokenizer
     ::CSVPlusPlus::Lexer::Tokenizer.new(
-      catchall: /\w+/,
       ignore: /\s+/,
       stop_fn: lambda do |scanner|
         return false unless scanner.scan(/\]\]/)
@@ -164,14 +103,31 @@ require_relative './lexer'
         @modifiers_to_parse == 0
       end,
       tokens: [
+        [/\bborder\b/, 'border'],
+        [/\bbordercolor\b/, 'bordercolor'],
+        [/\bborderstyle\b/, 'borderstyle'],
+        [/\bcolor\b/, 'color'],
+        [/\bexpand\b/, 'expand'],
+        [/\bfontcolor\b/, 'fontcolor'],
+        [/\bfontfamily\b/, 'fontfamily'],
+        [/\bfontsize\b/, 'fontsize'],
+        [/\bformat\b/, 'format'],
+        [/\bfreeze\b/, 'freeze'],
+        [/\bhalign\b/, 'halign'],
+        [/\bnote\b/, 'note'],
+        [/\bnumberformat\b/, 'numberformat'],
+        [/\bvalidate\b/, 'validate'],
+        [/\bvalign\b/, 'valign'],
+        [/\bvar\b/, 'var'],
         [/\[\[/, :START_CELL_MODIFIERS],
         [/!\[\[/, :START_ROW_MODIFIERS],
-        [/^#(([0-9a-fA-F]{2}){3}|([0-9a-fA-F]){3})/, :HEX_COLOR],
-        [/(['\w]+\!)?[\w\d]+:[\w\d]+/, :A1_NOTATION],
         [/=/, :EQ],
         [/-?[\d.]+/, :NUMBER],
         [/'(?:[^'\\]|\\(?:['\\\/bfnrt]|u[0-9a-fA-F]{4}))*'/, :STRING],
         [/\//, :MODIFIER_SEPARATOR],
+        TOKEN_LIBRARY[:A1_NOTATION],
+        TOKEN_LIBRARY[:HEX_COLOR],
+        [/[\w]+/, :WORD],
       ],
       alter_matches: {
         STRING: ->(s) { s.gsub(/^'|'$/, '') }
@@ -198,16 +154,11 @@ require_relative './lexer'
     assign_defaults!
   end
 
-  def freeze!
-    (@parsing_row ? @row_modifier : @cell_modifier).freeze!
+  def define_var(var_id)
+    @scope.bind_variable_to_cell(var_id)
+    modifier.var = var_id.to_sym
   end
 
-  def var(var_id)
-    @scope.define_variable(var_id)
-    s!(:variable, var_id)
-  end
-
-  def s!(property, value)
-    target = @parsing_row ? @row_modifier : @cell_modifier
-    target.public_send("#{property}=".to_sym, value)
+  def modifier
+    @parsing_row ? @row_modifier : @cell_modifier
   end

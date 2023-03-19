@@ -4,7 +4,6 @@ require_relative '../graph'
 require_relative './can_define_references'
 require_relative './entities'
 require_relative './references'
-require_relative './syntax_error'
 
 module CSVPlusPlus
   module Language
@@ -164,7 +163,7 @@ module CSVPlusPlus
         unbound_vars = dependencies.values.flatten - variables.keys
         return if unbound_vars.empty?
 
-        @runtime.raise_syntax_error('Undefined variables', unbound_vars.map(&:to_s).join(', '))
+        @runtime.raise_formula_syntax_error('Undefined variables', unbound_vars.map(&:to_s).join(', '))
       end
 
       def variable_resolution_order(variables)
@@ -178,7 +177,7 @@ module CSVPlusPlus
         [var_dependencies, ::CSVPlusPlus::Graph.topological_sort(var_dependencies)]
         # TODO: don't expose this exception directly to the caller
       rescue ::TSort::Cyclic
-        @runtime.raise_syntax_error('Cyclic variable dependency detected', var_refs.keys)
+        @runtime.raise_formula_syntax_error('Cyclic variable dependency detected', var_refs.keys)
       end
 
       def resolve_dependencies(var_dependencies, resolution_order, variables)

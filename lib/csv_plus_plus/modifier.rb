@@ -3,29 +3,32 @@
 module CSVPlusPlus
   # A container representing the operations that can be applied to a cell or row
   #
-  # @attr borders [Array<String>] The borders that will be set
+  # @attr bordercolor [Color]
+  # @attr borders [Array<Symbol>] The borders that will be set
+  # @attr color [Color] The background color of the cell
   # @attr expand [Expand] Whether this row expands into multiple rows
-  # @attr fontfamily [String] The font family
-  # @attr fontsize [Number] The font size
-  # @attr halign ['left', 'center', 'right'] Horizontal alignment
-  # @attr note [String] A note/comment on the cell
-  # @attr numberformat [String] A number format to apply to the value in the cell
-  # @attr row_level [Boolean] Is this a row modifier? If so it's values will apply to all cells in the row
+  # @attr fontcolor [Color] The font color of the cell
+  # @attr fontfamily [::String] The font family
+  # @attr fontsize [Integer] The font size
+  # @attr halign [:left, :center, :right] Horizontal alignment
+  # @attr note [::String] A note/comment on the cell
+  # @attr numberformat [Symbol] A number format to apply to the value in the cell
+  # @attr row_level [boolean] Is this a row modifier? If so it's values will apply to all cells in the row
   #   (unless overridden by the cell modifier)
   # @attr validation [Object]
-  # @attr valign ['top', 'center', 'bottom'] Vertical alignment
-  # @attr variable [Symbol] The variable bound to this cell
+  # @attr valign [:top, :center, :bottom] Vertical alignment
+  # @attr var [Symbol] The variable bound to this cell
   #
-  # @attr_writer borderstyle ['dashed', 'dotted', 'double', 'solid', 'solid_medium', 'solid_thick']
+  # @attr_writer borderstyle [:hashed, :dotted, :double, :solid, :solid_medium, :solid_thick]
   #   The style of border on the cell
   #
-  # @attr_reader bordercolor [String]
-  # @attr_reader borders [Array<String>]
-  # @attr_reader color [Color] The background color of the cell
-  # @attr_reader fontcolor [Color] The font color of the cell
-  # @attr_reader formats [Array<String>] Bold/italics/underline/strikethrough formatting
+  # @attr_reader borders [Array<Symbol>]
+  # @attr_reader formats [Array<Symbol>] Bold/italics/underline/strikethrough formatting
   class Modifier
-    attr_accessor :expand,
+    attr_accessor :bordercolor,
+                  :color,
+                  :expand,
+                  :fontcolor,
                   :fontfamily,
                   :fontsize,
                   :halign,
@@ -34,9 +37,20 @@ module CSVPlusPlus
                   :numberformat,
                   :row_level,
                   :validation,
-                  :variable
-    attr_reader :bordercolor, :borders, :color, :fontcolor, :formats
+                  :var
+    attr_reader :borders, :formats
     attr_writer :borderstyle
+
+    # When instantiating a new object, extend it with our validation functionality.
+    #
+    # I'm not sure why I need to do it this way tbh, using +include ValidatedModifier+ at the
+    # class level didn't seem to have access to the parent methods
+    # def self.new(*args, **kwargs, &)
+    #   allocate.tap do |i|
+    #     i.__send__(:initialize, *args, **kwargs, &)
+    #     i.extend(::CSVPlusPlus::ValidatedModifier)
+    #   end
+    # end
 
     # @param row_level [Boolean] Whether or not this modifier applies to the entire row
     def initialize(row_level: false)
@@ -55,9 +69,9 @@ module CSVPlusPlus
 
     # Style of border
     #
-    # @return [String]
+    # @return [Symbol]
     def borderstyle
-      @borderstyle || 'solid'
+      @borderstyle || :solid
     end
 
     # Is this a cell-level modifier?
@@ -67,63 +81,47 @@ module CSVPlusPlus
       !@row_level
     end
 
-    # Set the color
-    #
-    # @param hex_value [String]
-    #
-    # @return [Color]
-    def color=(hex_value)
-      @color = ::CSVPlusPlus::Color.new(hex_value)
-    end
-
     # Assign a border
     #
-    # @param side ['top', 'left', 'bottom', 'right', 'all']
+    # @param side [:top, :left, :bottom, :right, :all]
     def border=(side)
       @borders << side
     end
 
     # Does this have a border along +side+?
     #
-    # @param side ['top', 'left', 'bottom', 'right', 'all']
+    # @param side [:top, :left, :bottom, :right, :all]
     #
-    # @return [Boolean]
+    # @return [boolean]
     def border_along?(side)
-      @borders.include?('all') || @borders.include?(side)
+      @borders.include?(:all) || @borders.include?(side)
     end
 
     # Does this have a border along all sides?
     #
-    # @return [Boolean]
+    # @return [boolean]
     def border_all?
-      @borders.include?('all') \
-        || (border_along?('top') && border_along?('bottom') && border_along?('left') && border_along?('right'))
+      @borders.include?(:all) \
+        || (border_along?(:top) && border_along?(:bottom) && border_along?(:left) && border_along?(:right))
     end
 
-    # Set the bordercolor
+    # Set this modifier to expand infinitely
     #
-    # @param hex_value [String] formatted as '#000000', '#000' or '000000'
-    def bordercolor=(hex_value)
-      @bordercolor = ::CSVPlusPlus::Color.new(hex_value)
-    end
-
-    # Set the fontcolor
-    #
-    # @param hex_value [String] formatted as '#000000', '#000' or '000000'
-    def fontcolor=(hex_value)
-      @fontcolor = ::CSVPlusPlus::Color.new(hex_value)
+    # @return [::Expand]
+    def expand!
+      @expand = ::CSVPlusPlus::Expand.new if row_level?
     end
 
     # Set a text format (bolid, italic, underline or strikethrough)
     #
-    # @param value ['bold', 'italic', 'underline', 'strikethrough']
+    # @param value [:bold, :italic, :underline, :strikethrough]
     def format=(value)
       @formats << value
     end
 
     # Is the given format set?
     #
-    # @param type ['bold', 'italic', 'underline', 'strikethrough']
+    # @param type [:bold, :italic, :underline, :strikethrough]
     #
     # @return [Boolean]
     def formatted?(type)
@@ -139,7 +137,7 @@ module CSVPlusPlus
 
     # Is the row frozen?
     #
-    # @return [Boolean]
+    # @return [boolean]
     def frozen?
       @frozen
     end
@@ -153,12 +151,12 @@ module CSVPlusPlus
 
     # Is this a row-level modifier?
     #
-    # @return [Boolean]
+    # @return [boolean]
     def row_level?
       @row_level
     end
 
-    # @return [String]
+    # @return [::String]
     def to_s
       # TODO... I dunno, not sure how to manage this
       "Modifier(row_level: #{@row_level} halign: #{@halign} valign: #{@valign} format: #{@formats} " \

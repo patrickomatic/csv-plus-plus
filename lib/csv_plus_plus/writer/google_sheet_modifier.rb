@@ -9,7 +9,10 @@ module CSVPlusPlus
       # @return [Google::Apis::SheetsV4::Border]
       def border
         # TODO: allow different border styles per side
-        ::Google::Apis::SheetsV4::Border.new(color: bordercolor || '#000000', style: borderstyle || 'solid')
+        ::Google::Apis::SheetsV4::Border.new(
+          color: bordercolor&.to_s || '#000000',
+          style: borderstyle&.to_s || 'solid'
+        )
       end
 
       # Format the color for Google Sheets
@@ -30,7 +33,7 @@ module CSVPlusPlus
       #
       # @return [String]
       def halign
-        super&.upcase
+        super&.to_s&.upcase
       end
 
       # Format the numberformat for Google Sheets
@@ -45,10 +48,10 @@ module CSVPlusPlus
       # @return [::Google::Apis::SheetsV4::TextFormat]
       def text_format
         ::Google::Apis::SheetsV4::TextFormat.new(
-          bold: formatted?('bold') || nil,
-          italic: formatted?('italic') || nil,
-          strikethrough: formatted?('strikethrough') || nil,
-          underline: formatted?('underline') || nil,
+          bold: formatted?(:bold) || nil,
+          italic: formatted?(:italic) || nil,
+          strikethrough: formatted?(:strikethrough) || nil,
+          underline: formatted?(:underline) || nil,
           font_family: fontfamily,
           font_size: fontsize,
           foreground_color: fontcolor
@@ -57,7 +60,7 @@ module CSVPlusPlus
 
       # Format the valign for Google Sheets
       def valign
-        super&.upcase
+        super&.to_s&.upcase
       end
 
       private

@@ -62,7 +62,7 @@ describe ::CSVPlusPlus::Language::Scope do
   #
   #         it 'should raise a SyntaxError' do
   #           expect { scope.code_section = bad_code_section }
-  #             .to(raise_error(::CSVPlusPlus::Language::SyntaxError))
+  #             .to(raise_error(::CSVPlusPlus::Error::SyntaxError))
   #         end
   #       end
   #     end
@@ -111,7 +111,7 @@ describe ::CSVPlusPlus::Language::Scope do
 
       it 'should raise a SyntaxError' do
         expect { subject }
-          .to(raise_error(::CSVPlusPlus::Language::SyntaxError))
+          .to(raise_error(::CSVPlusPlus::Error::SyntaxError))
       end
     end
 

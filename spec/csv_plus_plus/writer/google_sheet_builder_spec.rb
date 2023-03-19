@@ -27,12 +27,12 @@ describe ::CSVPlusPlus::Writer::GoogleSheetBuilder do
           build(
             :row,
             cells: [
-              build(:cell, modifier: build(:modifier, halign: 'left')),
-              build(:cell, modifier: build(:modifier, halign: 'center')),
-              build(:cell, modifier: build(:modifier, halign: 'right')),
-              build(:cell, modifier: build(:modifier, valign: 'top')),
-              build(:cell, modifier: build(:modifier, valign: 'center')),
-              build(:cell, modifier: build(:modifier, valign: 'bottom'))
+              build(:cell, modifier: build(:modifier, halign: :left)),
+              build(:cell, modifier: build(:modifier, halign: :center)),
+              build(:cell, modifier: build(:modifier, halign: :right)),
+              build(:cell, modifier: build(:modifier, valign: :top)),
+              build(:cell, modifier: build(:modifier, valign: :center)),
+              build(:cell, modifier: build(:modifier, valign: :bottom))
             ]
           )
         ]
@@ -55,11 +55,11 @@ describe ::CSVPlusPlus::Writer::GoogleSheetBuilder do
           build(
             :row,
             cells: [
-              build(:cell, modifier: build(:modifier, border: 'top')),
-              build(:cell, modifier: build(:modifier, border: 'left')),
-              build(:cell, modifier: build(:modifier, border: 'right')),
-              build(:cell, modifier: build(:modifier, border: 'bottom')),
-              build(:cell, modifier: build(:modifier, border: 'all'))
+              build(:cell, modifier: build(:modifier, border: :top)),
+              build(:cell, modifier: build(:modifier, border: :left)),
+              build(:cell, modifier: build(:modifier, border: :right)),
+              build(:cell, modifier: build(:modifier, border: :bottom)),
+              build(:cell, modifier: build(:modifier, border: :all))
             ]
           )
         ]
@@ -124,10 +124,10 @@ describe ::CSVPlusPlus::Writer::GoogleSheetBuilder do
           build(
             :row,
             cells: [
-              build(:cell, modifier: build(:modifier, format: 'bold')),
-              build(:cell, modifier: build(:modifier, format: 'italic')),
-              build(:cell, modifier: build(:modifier, format: 'strikethrough')),
-              build(:cell, modifier: build(:modifier, format: 'underline'))
+              build(:cell, modifier: build(:modifier, format: :bold)),
+              build(:cell, modifier: build(:modifier, format: :italic)),
+              build(:cell, modifier: build(:modifier, format: :strikethrough)),
+              build(:cell, modifier: build(:modifier, format: :underline))
             ]
           )
         ]

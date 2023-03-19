@@ -111,10 +111,10 @@ module CSVPlusPlus
         border = mod.border
 
         ::Google::Apis::SheetsV4::UpdateBordersRequest.new(
-          top: mod.border_along?('top') ? border : nil,
-          right: mod.border_along?('right') ? border : nil,
-          left: mod.border_along?('left') ? border : nil,
-          bottom: mod.border_along?('bottom') ? border : nil,
+          top: mod.border_along?(:top) ? border : nil,
+          right: mod.border_along?(:right) ? border : nil,
+          left: mod.border_along?(:left) ? border : nil,
+          bottom: mod.border_along?(:bottom) ? border : nil,
           range: grid_range_for_cell(cell)
         )
       end

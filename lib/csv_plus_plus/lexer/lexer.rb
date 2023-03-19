@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../color'
+
 module CSVPlusPlus
   # Common methods to be mixed into the Racc parsers
   #
@@ -32,12 +34,15 @@ module CSVPlusPlus
       do_parse
       return_value
     rescue ::Racc::ParseError => e
-      runtime.raise_syntax_error("Error parsing #{parse_subject}", e.message, wrapped_error: e)
+      runtime.raise_formula_syntax_error("Error parsing #{parse_subject}", e.message, wrapped_error: e)
+    rescue ::CSVPlusPlus::Error::ModifierValidationError => e
+      raise(::CSVPlusPlus::Error::ModifierSyntaxError(runtime, wrapped_error: e))
     end
 
     TOKEN_LIBRARY = {
+      A1_NOTATION: [/(['\w]+!)?\w+:\w+/, :A1_NOTATION],
       FALSE: [/false/i, :FALSE],
-      HEX_COLOR: [/^#(([0-9a-fA-F]{2}){3}|([0-9a-fA-F]){3})/, :HEX_COLOR],
+      HEX_COLOR: [::CSVPlusPlus::Color::HEX_STRING_REGEXP, :HEX_COLOR],
       ID: [/[$!\w:]+/, :ID],
       INFIX_OP: [%r{\^|\+|-|\*|/|&|<|>|<=|>=|<>}, :INFIX_OP],
       NUMBER: [/-?[\d.]+/, :NUMBER],
@@ -72,7 +77,7 @@ module CSVPlusPlus
       elsif tokenizer.scan_catchall
         @tokens << [tokenizer.last_match, tokenizer.last_match]
       else
-        runtime.raise_syntax_error("Unable to parse #{parse_subject} starting at", tokenizer.peek)
+        runtime.raise_formula_syntax_error("Unable to parse #{parse_subject} starting at", tokenizer.peek)
       end
     end
   end

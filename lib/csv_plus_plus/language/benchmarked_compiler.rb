@@ -5,6 +5,7 @@ require 'benchmark'
 module CSVPlusPlus
   module Language
     # Extend a +Compiler+ class and add benchmark timings
+    #
     # @attr_reader timings [Array<Benchmark::Tms>] +Benchmark+ timings that have been accumulated by each step of
     #   compilation
     # @attr_reader benchmark [Benchmark] A +Benchmark+ instance

@@ -4,11 +4,13 @@ module CSVPlusPlus
   Expand =
     ::Struct.new(:repetitions) do
       # Does this infinitely expand?
+      #
+      # @return [boolean]
       def infinite?
         repetitions.nil?
       end
 
-      # to_s
+      # @return [::String]
       def to_s
         "Expand #{repetitions || 'infinity'}"
       end

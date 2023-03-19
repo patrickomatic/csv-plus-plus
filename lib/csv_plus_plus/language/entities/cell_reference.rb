@@ -21,7 +21,8 @@ module CSVPlusPlus
         def self.from_index(cell_index:, row_index:)
           return unless row_index || cell_index
 
-          new(::CSVPlusPlus::Language::ASTBuilder.ref(cell_index:, row_index:))
+          # I can't just extend this class due to circular references
+          # new(Class.new.extend(::CSVPlusPlus::Language::ASTBuilder).ref(cell_index:, row_index:))
         end
 
         # @param cell_reference [String] The cell reference in A1 format

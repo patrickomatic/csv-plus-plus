@@ -44,7 +44,7 @@ module CSVPlusPlus
       infinite_expand_rows = @rows.filter { |r| r.modifier.expand&.infinite? }
       return unless infinite_expand_rows.length > 1
 
-      runtime.raise_syntax_error(
+      runtime.raise_formula_syntax_error(
         'You can only have one infinite expand= (on all others you must specify an amount)',
         infinite_expand_rows[1]
       )

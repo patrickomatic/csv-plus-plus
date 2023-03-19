@@ -137,7 +137,7 @@ describe ::CSVPlusPlus::Template do
 
       it 'does not raise an exception' do
         expect { subject }
-          .to(raise_error(::CSVPlusPlus::Language::SyntaxError))
+          .to(raise_error(::CSVPlusPlus::Error::SyntaxError))
       end
     end
   end

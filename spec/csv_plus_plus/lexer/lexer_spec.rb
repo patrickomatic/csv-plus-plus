@@ -82,7 +82,7 @@ describe ::CSVPlusPlus::Lexer do
 
       it 'raises a syntax error' do
         expect { subject }
-          .to(raise_error(::CSVPlusPlus::Language::SyntaxError))
+          .to(raise_error(::CSVPlusPlus::Error::SyntaxError))
       end
     end
 
@@ -93,7 +93,7 @@ describe ::CSVPlusPlus::Lexer do
 
       it 'raises a syntax error' do
         expect { subject }
-          .to(raise_error(::CSVPlusPlus::Language::SyntaxError))
+          .to(raise_error(::CSVPlusPlus::Error::SyntaxError))
       end
     end
   end
