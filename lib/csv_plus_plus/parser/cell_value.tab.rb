@@ -7,14 +7,14 @@
 require 'racc/parser.rb'
 
   require_relative '../lexer'
-  require_relative '../language/ast_builder'
+  require_relative '../entities/ast_builder'
 
 module CSVPlusPlus
-  module Language
-    class CellValueParser < Racc::Parser
+  module Parser
+    class CellValue < Racc::Parser
 
-module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 48)
-  include ::CSVPlusPlus::Language::ASTBuilder
+module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 49)
+  include ::CSVPlusPlus::Entities::ASTBuilder
   include ::CSVPlusPlus::Lexer
 
   protected
@@ -201,7 +201,7 @@ Racc_debug_parser = false
 
 # reduce 0 omitted
 
-module_eval(<<'.,.,', 'cell_value.y', 20)
+module_eval(<<'.,.,', 'cell_value.y', 21)
   def _reduce_1(val, _values, result)
      @ast = val[1]
     result
@@ -212,84 +212,84 @@ module_eval(<<'.,.,', 'cell_value.y', 20)
 
 # reduce 3 omitted
 
-module_eval(<<'.,.,', 'cell_value.y', 24)
+module_eval(<<'.,.,', 'cell_value.y', 25)
   def _reduce_4(val, _values, result)
      result = val[1]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 25)
+module_eval(<<'.,.,', 'cell_value.y', 26)
   def _reduce_5(val, _values, result)
      result = variable(val[1])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 26)
+module_eval(<<'.,.,', 'cell_value.y', 27)
   def _reduce_6(val, _values, result)
      result = string(val[0])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 27)
+module_eval(<<'.,.,', 'cell_value.y', 28)
   def _reduce_7(val, _values, result)
      result = number(val[0])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 28)
+module_eval(<<'.,.,', 'cell_value.y', 29)
   def _reduce_8(val, _values, result)
      result = boolean(true)
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 29)
+module_eval(<<'.,.,', 'cell_value.y', 30)
   def _reduce_9(val, _values, result)
      result = boolean(false)
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 30)
+module_eval(<<'.,.,', 'cell_value.y', 31)
   def _reduce_10(val, _values, result)
      result = cell_reference(val[0])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 32)
+module_eval(<<'.,.,', 'cell_value.y', 33)
   def _reduce_11(val, _values, result)
      result = function_call(val[0], val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 33)
+module_eval(<<'.,.,', 'cell_value.y', 34)
   def _reduce_12(val, _values, result)
      result = function_call(val[0], [])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 35)
+module_eval(<<'.,.,', 'cell_value.y', 36)
   def _reduce_13(val, _values, result)
      result = val[0] << val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 36)
+module_eval(<<'.,.,', 'cell_value.y', 37)
   def _reduce_14(val, _values, result)
      result = [val[0]]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'cell_value.y', 38)
+module_eval(<<'.,.,', 'cell_value.y', 39)
   def _reduce_15(val, _values, result)
      result = function_call(val[1], [val[0], val[2]], infix: true)
     result
@@ -300,6 +300,6 @@ def _reduce_none(val, _values, result)
   val[0]
 end
 
-    end   # class CellValueParser
-  end   # module Language
+    end   # class CellValue
+  end   # module Parser
 end   # module CSVPlusPlus

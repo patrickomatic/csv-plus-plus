@@ -1,4 +1,4 @@
-class CSVPlusPlus::Language::CodeSectionParser
+class CSVPlusPlus::Parser::CodeSection
 
 prechigh
   right END_OF_CODE
@@ -63,11 +63,11 @@ end
 
 ---- header
   require_relative '../lexer'
-  require_relative '../language/ast_builder'
+  require_relative '../entities/ast_builder'
 
 ---- inner
   include ::CSVPlusPlus::Lexer
-  include ::CSVPlusPlus::Language::ASTBuilder
+  include ::CSVPlusPlus::Entities::ASTBuilder
 
   def initialize(scope)
     super()

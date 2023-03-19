@@ -7,15 +7,15 @@
 require 'racc/parser.rb'
 
   require_relative '../lexer'
-  require_relative '../language/ast_builder'
+  require_relative '../entities/ast_builder'
 
 module CSVPlusPlus
-  module Language
-    class CodeSectionParser < Racc::Parser
+  module Parser
+    class CodeSection < Racc::Parser
 
 module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 69)
   include ::CSVPlusPlus::Lexer
-  include ::CSVPlusPlus::Language::ASTBuilder
+  include ::CSVPlusPlus::Entities::ASTBuilder
 
   def initialize(scope)
     super()
@@ -405,6 +405,6 @@ def _reduce_none(val, _values, result)
   val[0]
 end
 
-    end   # class CodeSectionParser
-  end   # module Language
+    end   # class CodeSection
+  end   # module Parser
 end   # module CSVPlusPlus

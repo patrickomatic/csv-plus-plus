@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 ::FactoryBot.define do
-  factory :scope, class: ::CSVPlusPlus::Language::Scope do
+  factory :scope, class: ::CSVPlusPlus::Scope do
     transient do
       runtime { build(:runtime) }
       variables { {} }

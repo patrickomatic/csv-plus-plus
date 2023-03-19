@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'benchmark'
 require 'csv'
 require 'fileutils'
 require 'google/apis/drive_v3'
@@ -11,15 +12,16 @@ require 'rubyXL/convenience_methods'
 require 'set'
 require 'tempfile'
 
+require_relative 'csv_plus_plus/entities'
+require_relative 'csv_plus_plus/error'
+
 require_relative 'csv_plus_plus/cell'
 require_relative 'csv_plus_plus/cli'
 require_relative 'csv_plus_plus/color'
-require_relative 'csv_plus_plus/error'
-# TODO: consolidate these requires to the module level
-require_relative 'csv_plus_plus/language/builtins'
-require_relative 'csv_plus_plus/language/compiler'
-require_relative 'csv_plus_plus/language/entities'
-require_relative 'csv_plus_plus/language/runtime'
+
+require_relative 'csv_plus_plus/compiler'
+require_relative 'csv_plus_plus/runtime'
+
 require_relative 'csv_plus_plus/lexer'
 require_relative 'csv_plus_plus/lexer/tokenizer'
 require_relative 'csv_plus_plus/modifier'
@@ -40,9 +42,9 @@ module CSVPlusPlus
   def self.apply_template_to_sheet!(input, filename, options)
     warn(options.verbose_summary) if options.verbose
 
-    runtime = ::CSVPlusPlus::Language::Runtime.new(input:, filename:)
+    runtime = ::CSVPlusPlus::Runtime.new(input:, filename:)
 
-    ::CSVPlusPlus::Language::Compiler.with_compiler(options:, runtime:) do |compiler|
+    ::CSVPlusPlus::Compiler.with_compiler(options:, runtime:) do |compiler|
       template = compiler.compile_template
 
       warn(template.verbose_summary) if options.verbose

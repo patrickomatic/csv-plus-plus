@@ -10,9 +10,10 @@ require_relative '../expand'
 require_relative '../lexer'
 
 module CSVPlusPlus
-  class ModifierParser < Racc::Parser
+  module Parser
+    class Modifier < Racc::Parser
 
-module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 60)
+module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 61)
   attr_reader :return_value
 
   include ::CSVPlusPlus::Lexer
@@ -318,21 +319,21 @@ Racc_debug_parser = false
 
 # reduce 3 omitted
 
-module_eval(<<'.,.,', 'modifier.y', 25)
+module_eval(<<'.,.,', 'modifier.y', 26)
   def _reduce_4(val, _values, result)
      parsing_row!
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 27)
+module_eval(<<'.,.,', 'modifier.y', 28)
   def _reduce_5(val, _values, result)
      finished_row!
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 29)
+module_eval(<<'.,.,', 'modifier.y', 30)
   def _reduce_6(val, _values, result)
      parsing_cell!
     result
@@ -345,119 +346,119 @@ module_eval(<<'.,.,', 'modifier.y', 29)
 
 # reduce 9 omitted
 
-module_eval(<<'.,.,', 'modifier.y', 35)
+module_eval(<<'.,.,', 'modifier.y', 36)
   def _reduce_10(val, _values, result)
      modifier.border = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 36)
+module_eval(<<'.,.,', 'modifier.y', 37)
   def _reduce_11(val, _values, result)
      modifier.bordercolor = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 37)
+module_eval(<<'.,.,', 'modifier.y', 38)
   def _reduce_12(val, _values, result)
      modifier.borderstyle = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 38)
+module_eval(<<'.,.,', 'modifier.y', 39)
   def _reduce_13(val, _values, result)
      modifier.color = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 39)
+module_eval(<<'.,.,', 'modifier.y', 40)
   def _reduce_14(val, _values, result)
      modifier.expand = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 40)
+module_eval(<<'.,.,', 'modifier.y', 41)
   def _reduce_15(val, _values, result)
      modifier.expand!
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 41)
+module_eval(<<'.,.,', 'modifier.y', 42)
   def _reduce_16(val, _values, result)
      modifier.fontcolor = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 42)
+module_eval(<<'.,.,', 'modifier.y', 43)
   def _reduce_17(val, _values, result)
      modifier.fontfamily = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 43)
+module_eval(<<'.,.,', 'modifier.y', 44)
   def _reduce_18(val, _values, result)
      modifier.fontsize = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 44)
+module_eval(<<'.,.,', 'modifier.y', 45)
   def _reduce_19(val, _values, result)
      modifier.format = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 45)
+module_eval(<<'.,.,', 'modifier.y', 46)
   def _reduce_20(val, _values, result)
      modifier.freeze!
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 46)
+module_eval(<<'.,.,', 'modifier.y', 47)
   def _reduce_21(val, _values, result)
      modifier.halign = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 47)
+module_eval(<<'.,.,', 'modifier.y', 48)
   def _reduce_22(val, _values, result)
      modifier.note = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 48)
+module_eval(<<'.,.,', 'modifier.y', 49)
   def _reduce_23(val, _values, result)
      modifier.numberformat = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 49)
+module_eval(<<'.,.,', 'modifier.y', 50)
   def _reduce_24(val, _values, result)
      modifier.validation = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 50)
+module_eval(<<'.,.,', 'modifier.y', 51)
   def _reduce_25(val, _values, result)
      modifier.valign = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 51)
+module_eval(<<'.,.,', 'modifier.y', 52)
   def _reduce_26(val, _values, result)
      define_var(val[2])
     result
@@ -468,5 +469,6 @@ def _reduce_none(val, _values, result)
   val[0]
 end
 
-  end   # class ModifierParser
+    end   # class Modifier
+  end   # module Parser
 end   # module CSVPlusPlus

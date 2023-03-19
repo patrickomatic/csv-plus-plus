@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require_relative './modifier'
-require_relative './parser/cell_value.tab'
+require_relative 'modifier'
+require_relative 'parser/cell_value.tab'
 
 module CSVPlusPlus
   # A cell of a template
@@ -23,7 +23,7 @@ module CSVPlusPlus
     # @return [Cell]
     def self.parse(value, runtime:, modifier:)
       new(value:, row_index: runtime.row_index, index: runtime.cell_index, modifier:).tap do |c|
-        c.ast = ::CSVPlusPlus::Language::CellValueParser.new.parse(value, runtime)
+        c.ast = ::CSVPlusPlus::Parser::CellValue.new.parse(value, runtime)
       end
     end
 

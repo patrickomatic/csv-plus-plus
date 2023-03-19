@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
-require 'tempfile'
-
 ::FactoryBot.define do
-  factory :runtime, class: ::CSVPlusPlus::Language::Runtime do
+  factory :runtime, class: ::CSVPlusPlus::Runtime do
     transient do
       row_index { 0 }
       cell_index { nil }

@@ -1,4 +1,5 @@
-class CSVPlusPlus::Language::CellValueParser
+class CSVPlusPlus::Parser::CellValue
+
 prechigh
   left '(' ')'
   left '^'
@@ -42,10 +43,10 @@ end
 
 ---- header
   require_relative '../lexer'
-  require_relative '../language/ast_builder'
+  require_relative '../entities/ast_builder'
 
 ---- inner
-  include ::CSVPlusPlus::Language::ASTBuilder
+  include ::CSVPlusPlus::Entities::ASTBuilder
   include ::CSVPlusPlus::Lexer
 
   protected

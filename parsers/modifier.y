@@ -1,4 +1,5 @@
-class CSVPlusPlus::ModifierParser
+class CSVPlusPlus::Parser::Modifier
+
 prechigh
   left '![['
   left '[[' ']]'

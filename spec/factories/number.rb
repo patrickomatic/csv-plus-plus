@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 ::FactoryBot.define do
-  factory :number, class: ::CSVPlusPlus::Language::Entities::Number do
+  factory :number, class: ::CSVPlusPlus::Entities::Number do
     transient do
       n { 0 }
     end
