@@ -53,8 +53,8 @@ rule
 end
 
 ---- header
-require_relative './expand'
-require_relative './lexer'
+require_relative '../expand'
+require_relative '../lexer'
 
 ---- inner
   attr_reader :return_value

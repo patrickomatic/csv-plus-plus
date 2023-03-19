@@ -9,9 +9,9 @@ require 'rubocop/rake_task'
 ::RuboCop::RakeTask.new
 
 RACC_FILES = {
-  'lib/csv_plus_plus/language/code_section.tab.rb': 'parsers/code_section.y',
-  'lib/csv_plus_plus/language/cell_value.tab.rb': 'parsers/cell_value.y',
-  'lib/csv_plus_plus/modifier.tab.rb': 'parsers/modifier.y'
+  'lib/csv_plus_plus/parser/code_section.tab.rb': 'parsers/code_section.y',
+  'lib/csv_plus_plus/parser/cell_value.tab.rb': 'parsers/cell_value.y',
+  'lib/csv_plus_plus/parser/modifier.tab.rb': 'parsers/modifier.y'
 }.freeze
 
 task default: ::RACC_FILES.keys.map(&:to_sym) + %i[

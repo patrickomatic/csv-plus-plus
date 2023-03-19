@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require_relative 'cell'
-require_relative 'modifier.tab'
-
 module CSVPlusPlus
   # A row of a template
   #

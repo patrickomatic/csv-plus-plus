@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../parser/code_section.tab'
 require_relative 'benchmarked_compiler'
-require_relative 'code_section.tab'
 require_relative 'entities'
 require_relative 'runtime'
 require_relative 'scope'

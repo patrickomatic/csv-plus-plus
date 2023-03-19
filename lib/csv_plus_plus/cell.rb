@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require_relative './language/cell_value.tab'
 require_relative './modifier'
+require_relative './parser/cell_value.tab'
 
 module CSVPlusPlus
   # A cell of a template

@@ -6,8 +6,8 @@
 
 require 'racc/parser.rb'
 
-require_relative './expand'
-require_relative './lexer'
+require_relative '../expand'
+require_relative '../lexer'
 
 module CSVPlusPlus
   class ModifierParser < Racc::Parser
