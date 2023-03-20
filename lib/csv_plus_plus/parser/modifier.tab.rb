@@ -82,14 +82,16 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 61)
         [
           /
             (?:
+              \w+\s*:\s*'([^'\\]|\\.)*')    # allow for a single-quoted string which can accept any input and also allow 
+                                  # for escaping via backslash (i.e., 'ain\\'t won\\'t something' is valid)
+              |                   # - or -
+            (?:'([^'\\]|\\.)*')    # allow for a single-quoted string which can accept any input and also allow 
+              |
+            (?:
               [\w,_:-]            # something that accepts most basic input if it doesn't need to be quoted
               [\w\s,_:-]+         # same thing but allow spaces in the middle
               [\w,_:-]            # no spaces at the end
             )
-              |                   # - or -
-            (?:
-              '([^'\\]|\\.)*')    # allow for a single-quoted string which can accept any input and also allow 
-                                  # for escaping via backslash (i.e., 'ain\\'t won\\'t something' is valid)
           /x,
           :RIGHT_SIDE,
         ],

@@ -136,7 +136,7 @@ module CSVPlusPlus
     # @param csv_row [Array<Array<String>>]
     # @return [Row]
     def parse_row(csv_row)
-      row_modifier = ::CSVPlusPlus::ValidatedModifier.new(row_level: true)
+      row_modifier = ::CSVPlusPlus::Modifier.new(row_level: true)
 
       cells = @runtime.map_row(csv_row) { |value, _cell_index| parse_cell(value, row_modifier) }
 
@@ -144,7 +144,7 @@ module CSVPlusPlus
     end
 
     def parse_cell(value, row_modifier)
-      cell_modifier = ::CSVPlusPlus::ValidatedModifier.new
+      cell_modifier = ::CSVPlusPlus::Modifier.new
       parsed_value = ::CSVPlusPlus::Parser::Modifier.new(cell_modifier:, row_modifier:, scope: @scope).parse(
         value,
         @runtime

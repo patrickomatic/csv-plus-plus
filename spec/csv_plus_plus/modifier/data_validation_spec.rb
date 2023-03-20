@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe ::CSVPlusPlus::DataValidation do
+describe ::CSVPlusPlus::Modifier::DataValidation do
   describe '#valid?' do
     let(:value) { nil }
 

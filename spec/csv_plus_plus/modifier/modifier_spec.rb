@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe ::CSVPlusPlus::Modifier do
+describe ::CSVPlusPlus::Modifier::Modifier do
   subject(:modifier) { build(:modifier) }
 
   describe '#any_border?' do
@@ -87,18 +87,22 @@ describe ::CSVPlusPlus::Modifier do
     end
   end
 
-  describe '#expand=' do
-    let(:amount) { nil }
-    before { modifier.expand = expand }
-    subject(:expand) { ::CSVPlusPlus::Expand.new(amount) }
+  describe '#expand!' do
+    let(:modifier) { build(:modifier, row_level: true) }
+
+    subject { modifier.expand }
+
+    before { modifier.expand! }
 
     it { is_expected.to(be_infinite) }
+  end
 
-    context 'with an amount' do
-      let(:amount) { 2 }
+  describe '#expand=' do
+    subject { modifier.expand }
 
-      it { is_expected.not_to(be_infinite) }
-    end
+    before { modifier.expand = 2 }
+
+    it { is_expected.not_to(be_infinite) }
   end
 
   describe '#format=' do
@@ -153,7 +157,7 @@ describe ::CSVPlusPlus::Modifier do
       modifier.format = :bold
       modifier.format = :underline
       modifier.border = :top
-      modifier.borderstyle = :thin
+      modifier.borderstyle = :dotted
       modifier.fontcolor = '#00FF00'
 
       other_modifier.take_defaults_from!(modifier)
@@ -163,7 +167,7 @@ describe ::CSVPlusPlus::Modifier do
       expect(other_modifier).to(be_formatted(:bold))
       expect(other_modifier).to(be_formatted(:underline))
       expect(other_modifier).to(be_border_along(:top))
-      expect(other_modifier.borderstyle).to(eq(:thin))
+      expect(other_modifier.borderstyle).to(eq(:dotted))
       expect(other_modifier.fontcolor).to(eq(modifier.fontcolor))
     end
 

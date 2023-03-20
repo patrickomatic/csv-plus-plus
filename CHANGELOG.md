@@ -1,3 +1,7 @@
+## v0.2.0
+
+- Bugfix: multiple modifiers on the same row weren't being handled 
+
 ## v0.1.2
 
 - var=... modifier which allows binding a variable to a cell

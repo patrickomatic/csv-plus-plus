@@ -13,6 +13,7 @@
 
 # Modifiers 
 
+- [ ] make var= work better with expand=.  if it's on a row that then it should just bind relative to the current row... (use celladjacent?)
 - [ ] conditional formatting
 - [ ] implement freeze
 - [ ] data validation

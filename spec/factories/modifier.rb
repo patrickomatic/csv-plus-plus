@@ -14,14 +14,12 @@
 
       factory :modifier_with_expand do
         after(:build) do |m|
-          m.expand = build(:expand, repetitions: 2)
+          m.expand = '2'
         end
       end
 
       factory :modifier_with_infinite_expand do
-        after(:build) do |m|
-          m.expand = build(:expand)
-        end
+        after(:build, &:expand!)
       end
     end
   end

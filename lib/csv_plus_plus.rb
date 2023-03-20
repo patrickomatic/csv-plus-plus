@@ -29,7 +29,6 @@ require_relative 'csv_plus_plus/options'
 require_relative 'csv_plus_plus/parser/modifier.tab'
 require_relative 'csv_plus_plus/row'
 require_relative 'csv_plus_plus/template'
-require_relative 'csv_plus_plus/validated_modifier'
 require_relative 'csv_plus_plus/writer'
 
 # A programming language for writing rich CSV files

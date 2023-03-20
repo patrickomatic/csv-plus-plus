@@ -41,8 +41,8 @@ module CSVPlusPlus
       end
 
       def do_alignments!(cell, modifier)
-        cell.change_horizontal_alignment(modifier.halign) if modifier.halign
-        cell.change_vertical_alignment(modifier.valign) if modifier.valign
+        cell.change_horizontal_alignment(modifier.halign.to_s) if modifier.halign
+        cell.change_vertical_alignment(modifier.valign.to_s) if modifier.valign
       end
 
       # rubocop:disable Metrics/MethodLength
@@ -70,10 +70,10 @@ module CSVPlusPlus
       end
 
       def do_formats!(cell, modifier)
-        cell.change_font_bold(true) if modifier.formatted?('bold')
-        cell.change_font_italics(true) if modifier.formatted?('italic')
-        cell.change_font_underline(true) if modifier.formatted?('underline')
-        cell.change_font_strikethrough(true) if modifier.formatted?('strikethrough')
+        cell.change_font_bold(true) if modifier.formatted?(:bold)
+        cell.change_font_italics(true) if modifier.formatted?(:italic)
+        cell.change_font_underline(true) if modifier.formatted?(:underline)
+        cell.change_font_strikethrough(true) if modifier.formatted?(:strikethrough)
       end
 
       def do_fonts!(cell, modifier)

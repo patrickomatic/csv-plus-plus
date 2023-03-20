@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe ::CSVPlusPlus::ValidatedModifier do
+describe ::CSVPlusPlus::Modifier::ValidatedModifier do
   let(:modifier) { described_class.new }
 
   describe '#border=' do
@@ -9,6 +9,7 @@ describe ::CSVPlusPlus::ValidatedModifier do
     { top: 'top', all: 'ALL', bottom: 'bottoM', right: 'right', left: 'LEFT' }.each do |expected_value, value|
       context value do
         before { modifier.border = value }
+
         it { is_expected.to(include(expected_value)) }
       end
     end
@@ -26,6 +27,7 @@ describe ::CSVPlusPlus::ValidatedModifier do
 
     context '#FF00AA' do
       before { modifier.bordercolor = '#FF00AA' }
+
       it { is_expected.to(be_a(::CSVPlusPlus::Color)) }
     end
 
@@ -50,6 +52,7 @@ describe ::CSVPlusPlus::ValidatedModifier do
     }.each do |expected_value, value|
       context value do
         before { modifier.borderstyle = value }
+
         it { is_expected.to(eq(expected_value)) }
       end
     end
@@ -67,6 +70,7 @@ describe ::CSVPlusPlus::ValidatedModifier do
 
     context '#FF00AA' do
       before { modifier.color = '#FF00AA' }
+
       it { is_expected.to(be_a(::CSVPlusPlus::Color)) }
     end
 
@@ -83,6 +87,7 @@ describe ::CSVPlusPlus::ValidatedModifier do
 
     context '5' do
       before { modifier.expand = '5' }
+
       it { is_expected.to(be_a(::CSVPlusPlus::Expand)) }
     end
 
@@ -99,6 +104,7 @@ describe ::CSVPlusPlus::ValidatedModifier do
 
     context '#F0A' do
       before { modifier.fontcolor = '#F0A' }
+
       it { is_expected.to(be_a(::CSVPlusPlus::Color)) }
     end
 
@@ -115,6 +121,7 @@ describe ::CSVPlusPlus::ValidatedModifier do
 
     context 'Helvetica Sans' do
       before { modifier.fontfamily = 'Helvetica Sans' }
+
       it { is_expected.to(eq('Helvetica Sans')) }
     end
 
@@ -127,6 +134,7 @@ describe ::CSVPlusPlus::ValidatedModifier do
 
     context 'when quoted' do
       before { modifier.fontfamily = "'Helvetica Sans'" }
+
       it { is_expected.to(eq('Helvetica Sans')) }
     end
   end
@@ -136,6 +144,7 @@ describe ::CSVPlusPlus::ValidatedModifier do
 
     context '22' do
       before { modifier.fontsize = '22' }
+
       it { is_expected.to(eq(22)) }
     end
 
@@ -158,6 +167,7 @@ describe ::CSVPlusPlus::ValidatedModifier do
     }.each do |expected_value, value|
       context value do
         before { modifier.format = value }
+
         it { is_expected.to(include(expected_value)) }
       end
     end
@@ -176,6 +186,7 @@ describe ::CSVPlusPlus::ValidatedModifier do
     { left: 'left', center: 'CENTER', right: 'Right' }.each do |expected_value, value|
       context value do
         before { modifier.halign = value }
+
         it { is_expected.to(eq(expected_value)) }
       end
     end
@@ -193,6 +204,7 @@ describe ::CSVPlusPlus::ValidatedModifier do
 
     context "'this is a note'" do
       before { modifier.note = 'this is a note' }
+
       it { is_expected.to(eq('this is a note')) }
     end
   end
@@ -212,6 +224,7 @@ describe ::CSVPlusPlus::ValidatedModifier do
     }.each do |expected_value, value|
       context value do
         before { modifier.numberformat = value }
+
         it { is_expected.to(eq(expected_value)) }
       end
     end
@@ -230,6 +243,7 @@ describe ::CSVPlusPlus::ValidatedModifier do
     { top: 'top', center: 'Center', bottom: 'BOTTOM' }.each do |expected_value, value|
       context value do
         before { modifier.valign = value }
+
         it { is_expected.to(eq(expected_value)) }
       end
     end
@@ -247,14 +261,20 @@ describe ::CSVPlusPlus::ValidatedModifier do
 
     context 'validation that takes no args' do
       before { modifier.validation = 'blank' }
+
+      it { is_expected.to(be_a(::CSVPlusPlus::Modifier::DataValidation)) }
     end
 
     context 'validation that takes two args' do
       before { modifier.validation = 'number_eq: 42' }
+
+      it { is_expected.to(be_a(::CSVPlusPlus::Modifier::DataValidation)) }
     end
 
     context 'validation that takes any number of args' do
       before { modifier.validation = 'one_of_list: 1 2 3' }
+
+      it { is_expected.to(be_a(::CSVPlusPlus::Modifier::DataValidation)) }
     end
   end
 
@@ -263,6 +283,7 @@ describe ::CSVPlusPlus::ValidatedModifier do
 
     context 'variable_name' do
       before { modifier.var = 'variable_name' }
+
       it { is_expected.to(eq(:variable_name)) }
     end
 
