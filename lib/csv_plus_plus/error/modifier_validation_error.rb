@@ -33,6 +33,17 @@ module CSVPlusPlus
 
         super(@message)
       end
+
+      # Create a relevant error message given +@choices+ or +@message+ (one of them must be supplied).
+      #
+      # @return [::String]
+      def error_message
+        <<~ERROR_MESSAGE
+          Error parsing modifier: [[#{@modifier}=...]]
+          Bad input: #{@bad_input}
+          Reason: #{@message}
+        ERROR_MESSAGE
+      end
     end
   end
 end

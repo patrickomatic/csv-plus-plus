@@ -2,6 +2,7 @@
 
 - var=... modifier which allows binding a variable to a cell
 - Improved error handling and messages
+- Moving in a direction that allows for the context-dependent aspects of modifiers
 - Fixes a bug with creating a new excel spreadsheet
 - Docs & tests
 

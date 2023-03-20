@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'data_validation'
 require_relative 'modifier'
 
 module CSVPlusPlus
@@ -54,7 +55,7 @@ module CSVPlusPlus
 
     # Validates that +fontcolor+ is a hex color.
     def fontfamily=(value)
-      super(matches_regexp(:fontfamily, value, /^[\w\s]+$/, 'It is not a valid font family.'))
+      super(matches_regexp(:fontfamily, unquote(value), /^[\w\s]+$/, 'It is not a valid font family.'))
     end
 
     # Validates that +fontsize+ is a positive integer
@@ -97,49 +98,13 @@ module CSVPlusPlus
       super(one_of(:valign, value, %i[top center bottom]))
     end
 
-    # XXX
+    # Validates that the conditional validating rules are well-formed.
+    #
+    # Pretty much based off of the Google Sheets API spec here:
     #
     # @param value [String] The unvalidated user input
     def validation=(value)
-      # XXX: this is really complicated
-      #   condition: 'blank'
-      #            | 'boolean'
-      #            | 'boolean'                 ':' condition_value
-      #            | 'boolean'                 ':' condition_value | condition_value
-      #            | 'custom_formula'          ':' condition_value
-      #            | 'date_after'              ':' relative_date
-      #            | 'date_before'             ':' relative_date
-      #            | 'date_between'            ':' condition_value condition_value
-      #            | 'date_eq'                 ':' condition_value
-      #            | 'date_is_valid'
-      #            | 'date_not_between'        ':' condition_value condition_value
-      #            | 'date_not_eq'             ':' condition_values
-      #            | 'date_on_or_after'        ':' condition_value | relative_date
-      #            | 'date_on_or_before'       ':' condition_value | relative_date
-      #            | 'not_blank'
-      #            | 'number_between'          ':' condition_value condition_value
-      #            | 'number_eq'               ':' condition_value
-      #            | 'number_greater'          ':' condition_value
-      #            | 'number_greater_than_eq'  ':' condition_value
-      #            | 'number_less'             ':' condition_value
-      #            | 'number_less_than_eq'     ':' condition_value
-      #            | 'number_not_between'      ':' condition_value condition_value
-      #            | 'number_not_eq'           ':' condition_value
-      #            | 'one_of_list'             ':' condition_values
-      #            | 'one_of_range'            ':' A1_NOTATION
-      #            | 'text_contains'           ':' condition_value
-      #            | 'text_ends_with'          ':' condition_value
-      #            | 'text_eq'                 ':' condition_value
-      #            | 'text_is_email'
-      #            | 'text_is_url'
-      #            | 'text_not_contains'       ':' condition_value
-      #            | 'text_not_eq'             ':' condition_values
-      #            | 'text_starts_with'        ':' condition_value
-      #
-      #   condition_values: condition_values condition_value | condition_value
-      #   condition_value: STRING
-      #
-      #   relative_date: 'past_year' | 'past_month' | 'past_week' | 'yesterday' | 'today' | 'tomorrow'
+      super(a_data_validation(:validation, value))
     end
 
     # Validates +variable+ is a valid variable identifier.
@@ -152,12 +117,17 @@ module CSVPlusPlus
 
     private
 
-    def positive_integer(modifier, value)
-      Integer(value, 10).tap do |i|
-        raise_error(modifier, value, message: 'It must be positive and greater than 0.') unless i.positive?
-      end
-    rescue ::ArgumentError
-      raise_error(modifier, value, message: 'It must be a valid (whole) number.')
+    # XXX centralize this :(((
+    def unquote(str)
+      # TODO: I'm pretty sure this isn't sufficient and we need to deal with the backslashes
+      str.gsub(/^['\s]*|['\s]*$/, '')
+    end
+
+    def a_data_validation(modifier, value)
+      data_validation = ::CSVPlusPlus::DataValidation.new(value)
+      return data_validation unless data_validation.valid?
+
+      raise_error(modifier, value, message: data_validation.invalid_reason)
     end
 
     def color_value(modifier, value)
@@ -168,15 +138,23 @@ module CSVPlusPlus
       ::CSVPlusPlus::Color.new(value)
     end
 
+    def matches_regexp(modifier, value, regexp, message)
+      raise_error(modifier, value, message:) unless value =~ regexp
+      value
+    end
+
     def one_of(modifier, value, choices)
       value.downcase.to_sym.tap do |v|
         raise_error(modifier, value, choices:) unless choices.include?(v)
       end
     end
 
-    def matches_regexp(modifier, value, regexp, message)
-      raise_error(modifier, value, message:) unless value =~ regexp
-      value
+    def positive_integer(modifier, value)
+      Integer(value, 10).tap do |i|
+        raise_error(modifier, value, message: 'It must be positive and greater than 0.') unless i.positive?
+      end
+    rescue ::ArgumentError
+      raise_error(modifier, value, message: 'It must be a valid (whole) number.')
     end
 
     def raise_error(modifier, bad_input, choices: nil, message: nil)

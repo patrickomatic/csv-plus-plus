@@ -11,6 +11,32 @@ describe ::CSVPlusPlus::Entities::CellReference do
     end
   end
 
+  describe '.valid_cell_reference?' do
+    let(:cell_reference_string) { 'A1:B2' }
+
+    subject { described_class.valid_cell_reference?(cell_reference_string) }
+
+    it { is_expected.to(be(true)) }
+
+    context 'with a sheet name' do
+      let(:cell_reference_string) { 'Sheet1!A1:B2' }
+
+      it { is_expected.to(be(true)) }
+    end
+
+    context 'with a sheet name with quotes' do
+      let(:cell_reference_string) { "'Test Sheet'!A1:B2" }
+
+      it { is_expected.to(be(true)) }
+    end
+
+    context 'not a cell reference' do
+      let(:cell_reference_string) { 'foo' }
+
+      it { is_expected.not_to(be(true)) }
+    end
+  end
+
   describe '#initialize' do
     it 'lowercases and converts the id to a symbol' do
       expect(subject.cell_reference).to(eq('A1'))

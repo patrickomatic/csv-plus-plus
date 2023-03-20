@@ -124,6 +124,11 @@ describe ::CSVPlusPlus::ValidatedModifier do
           .to(raise_error(::CSVPlusPlus::Error::ModifierValidationError))
       end
     end
+
+    context 'when quoted' do
+      before { modifier.fontfamily = "'Helvetica Sans'" }
+      it { is_expected.to(eq('Helvetica Sans')) }
+    end
   end
 
   describe '#fontsize=' do
@@ -234,6 +239,22 @@ describe ::CSVPlusPlus::ValidatedModifier do
         expect { modifier.valign = 'foo' }
           .to(raise_error(::CSVPlusPlus::Error::ModifierValidationError))
       end
+    end
+  end
+
+  describe '#validation=' do
+    subject { modifier.validation }
+
+    context 'validation that takes no args' do
+      before { modifier.validation = 'blank' }
+    end
+
+    context 'validation that takes two args' do
+      before { modifier.validation = 'number_eq: 42' }
+    end
+
+    context 'validation that takes any number of args' do
+      before { modifier.validation = 'one_of_list: 1 2 3' }
     end
   end
 

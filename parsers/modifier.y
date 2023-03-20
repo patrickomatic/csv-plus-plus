@@ -7,17 +7,16 @@ prechigh
   left '/'
 preclow
 
-token A1_NOTATION
-      END_MODIFIERS
+token END_MODIFIERS
       EQ
       HEX_COLOR
       NUMBER
       MODIFIER
       MODIFIER_SEPARATOR
+      RIGHT_SIDE
       START_CELL_MODIFIERS
       START_ROW_MODIFIERS
       STRING
-      WORD
 
 rule
   modifiers_definition: row_modifiers cell_modifiers 
@@ -34,26 +33,27 @@ rule
 
   modifiers: modifiers MODIFIER_SEPARATOR modifier | modifier
 
-  modifier: 'border'       EQ WORD        { modifier.border = val[2]        }
+  modifier: 'border'       EQ RIGHT_SIDE  { modifier.border = val[2]        }
           | 'bordercolor'  EQ HEX_COLOR   { modifier.bordercolor = val[2]   }
-          | 'borderstyle'  EQ WORD        { modifier.borderstyle = val[2]   }
+          | 'borderstyle'  EQ RIGHT_SIDE  { modifier.borderstyle = val[2]   }
           | 'color'        EQ HEX_COLOR   { modifier.color = val[2]         }
           | 'expand'       EQ NUMBER      { modifier.expand = val[2]        }
           | 'expand'                      { modifier.expand!                }
           | 'fontcolor'    EQ HEX_COLOR   { modifier.fontcolor = val[2]     }
-          | 'fontfamily'   EQ STRING      { modifier.fontfamily = val[2]    }
+          | 'fontfamily'   EQ RIGHT_SIDE  { modifier.fontfamily = val[2]    }
           | 'fontsize'     EQ NUMBER      { modifier.fontsize = val[2]      }
-          | 'format'       EQ WORD        { modifier.format = val[2]        }
+          | 'format'       EQ RIGHT_SIDE  { modifier.format = val[2]        }
           | 'freeze'                      { modifier.freeze!                }
-          | 'halign'       EQ WORD        { modifier.halign = val[2]        }
-          | 'note'         EQ STRING      { modifier.note = val[2]          }
-          | 'numberformat' EQ WORD        { modifier.numberformat = val[2]  }
-          | 'validate'     EQ WORD        { modifier.validation = val[2]    }
-          | 'valign'       EQ WORD        { modifier.valign = val[2]        }
-          | 'var'          EQ WORD        { define_var(val[2])              }
+          | 'halign'       EQ RIGHT_SIDE  { modifier.halign = val[2]        }
+          | 'note'         EQ RIGHT_SIDE  { modifier.note = val[2]          }
+          | 'numberformat' EQ RIGHT_SIDE  { modifier.numberformat = val[2]  }
+          | 'validate'     EQ RIGHT_SIDE  { modifier.validation = val[2]    }
+          | 'valign'       EQ RIGHT_SIDE  { modifier.valign = val[2]        }
+          | 'var'          EQ RIGHT_SIDE  { define_var(val[2])              }
 end
 
 ---- header
+
 require_relative '../expand'
 require_relative '../lexer'
 
@@ -120,15 +120,26 @@ require_relative '../lexer'
         [/\bvalidate\b/, 'validate'],
         [/\bvalign\b/, 'valign'],
         [/\bvar\b/, 'var'],
+        [/-?[\d.]+/, :NUMBER],
+        TOKEN_LIBRARY[:HEX_COLOR],
+        [
+          /
+            (?:
+              [\w,_:-]            # something that accepts most basic input if it doesn't need to be quoted
+              [\w\s,_:-]+         # same thing but allow spaces in the middle
+              [\w,_:-]            # no spaces at the end
+            )
+              |                   # - or -
+            (?:
+              '([^'\\]|\\.)*')    # allow for a single-quoted string which can accept any input and also allow 
+                                  # for escaping via backslash (i.e., 'ain\\'t won\\'t something' is valid)
+          /x,
+          :RIGHT_SIDE,
+        ],
         [/\[\[/, :START_CELL_MODIFIERS],
         [/!\[\[/, :START_ROW_MODIFIERS],
-        [/=/, :EQ],
-        [/-?[\d.]+/, :NUMBER],
-        [/'(?:[^'\\]|\\(?:['\\\/bfnrt]|u[0-9a-fA-F]{4}))*'/, :STRING],
         [/\//, :MODIFIER_SEPARATOR],
-        TOKEN_LIBRARY[:A1_NOTATION],
-        TOKEN_LIBRARY[:HEX_COLOR],
-        [/[\w]+/, :WORD],
+        [/=/, :EQ],
       ],
       alter_matches: {
         STRING: ->(s) { s.gsub(/^'|'$/, '') }

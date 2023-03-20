@@ -6,6 +6,7 @@
 
 require 'racc/parser.rb'
 
+
 require_relative '../expand'
 require_relative '../lexer'
 
@@ -76,15 +77,26 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 61)
         [/\bvalidate\b/, 'validate'],
         [/\bvalign\b/, 'valign'],
         [/\bvar\b/, 'var'],
+        [/-?[\d.]+/, :NUMBER],
+        TOKEN_LIBRARY[:HEX_COLOR],
+        [
+          /
+            (?:
+              [\w,_:-]            # something that accepts most basic input if it doesn't need to be quoted
+              [\w\s,_:-]+         # same thing but allow spaces in the middle
+              [\w,_:-]            # no spaces at the end
+            )
+              |                   # - or -
+            (?:
+              '([^'\\]|\\.)*')    # allow for a single-quoted string which can accept any input and also allow 
+                                  # for escaping via backslash (i.e., 'ain\\'t won\\'t something' is valid)
+          /x,
+          :RIGHT_SIDE,
+        ],
         [/\[\[/, :START_CELL_MODIFIERS],
         [/!\[\[/, :START_ROW_MODIFIERS],
-        [/=/, :EQ],
-        [/-?[\d.]+/, :NUMBER],
-        [/'(?:[^'\\]|\\(?:['\\\/bfnrt]|u[0-9a-fA-F]{4}))*'/, :STRING],
         [/\//, :MODIFIER_SEPARATOR],
-        TOKEN_LIBRARY[:A1_NOTATION],
-        TOKEN_LIBRARY[:HEX_COLOR],
-        [/[\w]+/, :WORD],
+        [/=/, :EQ],
       ],
       alter_matches: {
         STRING: ->(s) { s.gsub(/^'|'$/, '') }
@@ -145,11 +157,11 @@ racc_action_check = [
     40,    41,    42,    43,    44,    45,    46 ]
 
 racc_action_pointer = [
-    36,    52,    41,   nil,   nil,   nil,    56,   nil,   -18,    -2,
-   nil,    40,   nil,    48,    49,    50,    51,    52,    53,    54,
-    55,    56,   nil,    57,    58,    59,    60,    61,    62,    41,
-   nil,    14,    55,    63,    57,    65,    65,    67,    62,    68,
-    63,    64,    66,    66,    67,    68,    69,   nil,   nil,   nil,
+    36,    52,    41,   nil,   nil,   nil,    56,   nil,   -17,    -1,
+   nil,    41,   nil,    49,    50,    51,    52,    53,    54,    55,
+    56,    57,   nil,    58,    59,    60,    61,    62,    63,    42,
+   nil,    15,    59,    64,    61,    66,    66,    68,    65,    69,
+    67,    68,    69,    70,    71,    72,    73,   nil,   nil,   nil,
    nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,
    nil,   nil,   nil,   nil ]
 
@@ -176,32 +188,32 @@ racc_goto_default = [
 
 racc_reduce_table = [
   0, 0, :racc_error,
-  2, 35, :_reduce_none,
-  1, 35, :_reduce_none,
-  1, 35, :_reduce_none,
-  0, 39, :_reduce_4,
-  4, 36, :_reduce_5,
-  0, 40, :_reduce_6,
-  4, 37, :_reduce_none,
-  3, 38, :_reduce_none,
-  1, 38, :_reduce_none,
-  3, 41, :_reduce_10,
-  3, 41, :_reduce_11,
-  3, 41, :_reduce_12,
-  3, 41, :_reduce_13,
-  3, 41, :_reduce_14,
-  1, 41, :_reduce_15,
-  3, 41, :_reduce_16,
-  3, 41, :_reduce_17,
-  3, 41, :_reduce_18,
-  3, 41, :_reduce_19,
-  1, 41, :_reduce_20,
-  3, 41, :_reduce_21,
-  3, 41, :_reduce_22,
-  3, 41, :_reduce_23,
-  3, 41, :_reduce_24,
-  3, 41, :_reduce_25,
-  3, 41, :_reduce_26 ]
+  2, 34, :_reduce_none,
+  1, 34, :_reduce_none,
+  1, 34, :_reduce_none,
+  0, 38, :_reduce_4,
+  4, 35, :_reduce_5,
+  0, 39, :_reduce_6,
+  4, 36, :_reduce_none,
+  3, 37, :_reduce_none,
+  1, 37, :_reduce_none,
+  3, 40, :_reduce_10,
+  3, 40, :_reduce_11,
+  3, 40, :_reduce_12,
+  3, 40, :_reduce_13,
+  3, 40, :_reduce_14,
+  1, 40, :_reduce_15,
+  3, 40, :_reduce_16,
+  3, 40, :_reduce_17,
+  3, 40, :_reduce_18,
+  3, 40, :_reduce_19,
+  1, 40, :_reduce_20,
+  3, 40, :_reduce_21,
+  3, 40, :_reduce_22,
+  3, 40, :_reduce_23,
+  3, 40, :_reduce_24,
+  3, 40, :_reduce_25,
+  3, 40, :_reduce_26 ]
 
 racc_reduce_n = 27
 
@@ -215,35 +227,34 @@ racc_token_table = {
   "]]" => 4,
   "=" => 5,
   "/" => 6,
-  :A1_NOTATION => 7,
-  :END_MODIFIERS => 8,
-  :EQ => 9,
-  :HEX_COLOR => 10,
-  :NUMBER => 11,
-  :MODIFIER => 12,
-  :MODIFIER_SEPARATOR => 13,
+  :END_MODIFIERS => 7,
+  :EQ => 8,
+  :HEX_COLOR => 9,
+  :NUMBER => 10,
+  :MODIFIER => 11,
+  :MODIFIER_SEPARATOR => 12,
+  :RIGHT_SIDE => 13,
   :START_CELL_MODIFIERS => 14,
   :START_ROW_MODIFIERS => 15,
   :STRING => 16,
-  :WORD => 17,
-  "border" => 18,
-  "bordercolor" => 19,
-  "borderstyle" => 20,
-  "color" => 21,
-  "expand" => 22,
-  "fontcolor" => 23,
-  "fontfamily" => 24,
-  "fontsize" => 25,
-  "format" => 26,
-  "freeze" => 27,
-  "halign" => 28,
-  "note" => 29,
-  "numberformat" => 30,
-  "validate" => 31,
-  "valign" => 32,
-  "var" => 33 }
+  "border" => 17,
+  "bordercolor" => 18,
+  "borderstyle" => 19,
+  "color" => 20,
+  "expand" => 21,
+  "fontcolor" => 22,
+  "fontfamily" => 23,
+  "fontsize" => 24,
+  "format" => 25,
+  "freeze" => 26,
+  "halign" => 27,
+  "note" => 28,
+  "numberformat" => 29,
+  "validate" => 30,
+  "valign" => 31,
+  "var" => 32 }
 
-racc_nt_base = 34
+racc_nt_base = 33
 
 racc_use_result_var = true
 
@@ -271,17 +282,16 @@ Racc_token_to_s_table = [
   "\"]]\"",
   "\"=\"",
   "\"/\"",
-  "A1_NOTATION",
   "END_MODIFIERS",
   "EQ",
   "HEX_COLOR",
   "NUMBER",
   "MODIFIER",
   "MODIFIER_SEPARATOR",
+  "RIGHT_SIDE",
   "START_CELL_MODIFIERS",
   "START_ROW_MODIFIERS",
   "STRING",
-  "WORD",
   "\"border\"",
   "\"bordercolor\"",
   "\"borderstyle\"",
@@ -319,21 +329,21 @@ Racc_debug_parser = false
 
 # reduce 3 omitted
 
-module_eval(<<'.,.,', 'modifier.y', 26)
+module_eval(<<'.,.,', 'modifier.y', 25)
   def _reduce_4(val, _values, result)
      parsing_row!
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 28)
+module_eval(<<'.,.,', 'modifier.y', 27)
   def _reduce_5(val, _values, result)
      finished_row!
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 30)
+module_eval(<<'.,.,', 'modifier.y', 29)
   def _reduce_6(val, _values, result)
      parsing_cell!
     result
@@ -346,119 +356,119 @@ module_eval(<<'.,.,', 'modifier.y', 30)
 
 # reduce 9 omitted
 
-module_eval(<<'.,.,', 'modifier.y', 36)
+module_eval(<<'.,.,', 'modifier.y', 35)
   def _reduce_10(val, _values, result)
      modifier.border = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 37)
+module_eval(<<'.,.,', 'modifier.y', 36)
   def _reduce_11(val, _values, result)
      modifier.bordercolor = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 38)
+module_eval(<<'.,.,', 'modifier.y', 37)
   def _reduce_12(val, _values, result)
      modifier.borderstyle = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 39)
+module_eval(<<'.,.,', 'modifier.y', 38)
   def _reduce_13(val, _values, result)
      modifier.color = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 40)
+module_eval(<<'.,.,', 'modifier.y', 39)
   def _reduce_14(val, _values, result)
      modifier.expand = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 41)
+module_eval(<<'.,.,', 'modifier.y', 40)
   def _reduce_15(val, _values, result)
      modifier.expand!
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 42)
+module_eval(<<'.,.,', 'modifier.y', 41)
   def _reduce_16(val, _values, result)
      modifier.fontcolor = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 43)
+module_eval(<<'.,.,', 'modifier.y', 42)
   def _reduce_17(val, _values, result)
      modifier.fontfamily = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 44)
+module_eval(<<'.,.,', 'modifier.y', 43)
   def _reduce_18(val, _values, result)
      modifier.fontsize = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 45)
+module_eval(<<'.,.,', 'modifier.y', 44)
   def _reduce_19(val, _values, result)
      modifier.format = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 46)
+module_eval(<<'.,.,', 'modifier.y', 45)
   def _reduce_20(val, _values, result)
      modifier.freeze!
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 47)
+module_eval(<<'.,.,', 'modifier.y', 46)
   def _reduce_21(val, _values, result)
      modifier.halign = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 48)
+module_eval(<<'.,.,', 'modifier.y', 47)
   def _reduce_22(val, _values, result)
      modifier.note = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 49)
+module_eval(<<'.,.,', 'modifier.y', 48)
   def _reduce_23(val, _values, result)
      modifier.numberformat = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 50)
+module_eval(<<'.,.,', 'modifier.y', 49)
   def _reduce_24(val, _values, result)
      modifier.validation = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 51)
+module_eval(<<'.,.,', 'modifier.y', 50)
   def _reduce_25(val, _values, result)
      modifier.valign = val[2]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'modifier.y', 52)
+module_eval(<<'.,.,', 'modifier.y', 51)
   def _reduce_26(val, _values, result)
      define_var(val[2])
     result

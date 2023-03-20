@@ -1,1 +1,3 @@
 - [ ] when parsing modifiers and it hits a parse error, it prints the wrong row number because it doesn't take into account the length of the code section
+- [ ] it raises a FormulaSyntaxError rather than a ModifierSyntaxError when the lexer throws an error while parsing modifiers
+- [ ] I'm pretty sure that unquoting doesn't work.  If you try 'this won\\'t work' and publish it, I bet it doesn't work

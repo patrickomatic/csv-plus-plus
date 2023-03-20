@@ -13,10 +13,10 @@
 
 # Modifiers 
 
-- [ ] bind - assign this cell to a variable (you can't do this in an expand)
 - [ ] conditional formatting
+- [ ] implement freeze
 - [ ] data validation
-- [ ] freeze
+- [x] bind - assign this cell to a variable (you can't do this in an expand)
 - [x] make horizontal and vertical alignments different things. right now it's ambiguous that they share 'center'.  also maybe add 'justified' and 'distributed'
 - [x] make cell-level modifiers override row-level
 - [x] data validation

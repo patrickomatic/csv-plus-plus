@@ -36,11 +36,11 @@ module CSVPlusPlus
     rescue ::Racc::ParseError => e
       runtime.raise_formula_syntax_error("Error parsing #{parse_subject}", e.message, wrapped_error: e)
     rescue ::CSVPlusPlus::Error::ModifierValidationError => e
-      raise(::CSVPlusPlus::Error::ModifierSyntaxError(runtime, wrapped_error: e))
+      raise(::CSVPlusPlus::Error::ModifierSyntaxError.new(runtime, wrapped_error: e))
     end
 
     TOKEN_LIBRARY = {
-      A1_NOTATION: [/(['\w]+!)?\w+:\w+/, :A1_NOTATION],
+      A1_NOTATION: [::CSVPlusPlus::Entities::CellReference::A1_NOTATION_REGEXP, :A1_NOTATION],
       FALSE: [/false/i, :FALSE],
       HEX_COLOR: [::CSVPlusPlus::Color::HEX_STRING_REGEXP, :HEX_COLOR],
       ID: [/[$!\w:]+/, :ID],
@@ -77,6 +77,7 @@ module CSVPlusPlus
       elsif tokenizer.scan_catchall
         @tokens << [tokenizer.last_match, tokenizer.last_match]
       else
+        # TODO: this should raise a modifier_syntax_error if we're on the modifier parser
         runtime.raise_formula_syntax_error("Unable to parse #{parse_subject} starting at", tokenizer.peek)
       end
     end

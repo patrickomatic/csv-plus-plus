@@ -98,6 +98,14 @@ describe ::CSVPlusPlus::Parser::Modifier do
       # TODO: we should have a check somewhere so that you can't have a expand= on a cell modifier (only on a row)
     end
 
+    describe 'format' do
+      let(:value) { '[[format=bold]]foo' }
+
+      subject { cell_modifier }
+
+      it { is_expected.to(be_formatted('bold')) }
+    end
+
     describe 'halign' do
       let(:value) { '[[halign=left]]foo' }
 
@@ -111,7 +119,39 @@ describe ::CSVPlusPlus::Parser::Modifier do
 
       subject { cell_modifier.note }
 
-      it { is_expected.to(eq('this is a note')) }
+      it { is_expected.to(eq("'this is a note'")) }
+    end
+
+    describe 'validate' do
+      subject { cell_modifier.validation }
+
+      context 'with a condition that takes no args' do
+        let(:value) { '[[validate=blank]]=A + B' }
+
+        it 'parses the condition' do
+          expect(subject).to(eq('blank'))
+        end
+      end
+
+      context 'with a condition that takes an argument' do
+        let(:value) { '[[validate=number_eq:1]]=A + B' }
+
+        it 'parses the condition' do
+          expect(subject).to(eq('number_eq:1'))
+        end
+      end
+
+      context 'with a condition that takes multiple arguments' do
+        let(:value) { '[[validate=number_between:10 20]]=A + B' }
+
+        it 'parses the condition' do
+          expect(subject).to(eq('number_between:10 20'))
+        end
+      end
+
+      context "with a condition who's need to be quoted" do
+        let(:value) { "[[validate=date_between:'1/10/22 2/10/22']]=A + B" }
+      end
     end
 
     describe 'var' do

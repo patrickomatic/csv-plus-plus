@@ -16,15 +16,11 @@ module CSVPlusPlus
         super(runtime, wrapped_error:)
       end
 
-      # Create a relevant error message given +@choices+ or +@message+ (one of them must be supplied).
+      # Calls +wrapped_error.error_message+.
       #
       # @return [::String]
       def error_message
-        <<~ERROR_MESSAGE
-          Error parsing modifier: [[#{@wrapped_error.modifier}=...]]
-          Bad input: #{@wrapped_error.bad_input}
-          Reason: #{@wrapped_error.message}
-        ERROR_MESSAGE
+        @wrapped_error.error_message
       end
     end
   end

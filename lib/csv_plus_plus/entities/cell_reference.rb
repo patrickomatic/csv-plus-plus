@@ -11,6 +11,9 @@ module CSVPlusPlus
     class CellReference < Entity
       attr_reader :cell_reference
 
+      A1_NOTATION_REGEXP = /(['\w]+!)?\w+:\w+/
+      public_constant :A1_NOTATION_REGEXP
+
       # Create a +CellReference+ to the given indexes
       #
       # @param cell_index [Integer] The current cell index
@@ -20,8 +23,20 @@ module CSVPlusPlus
       def self.from_index(cell_index:, row_index:)
         return unless row_index || cell_index
 
-        # I can't just extend this class due to circular references
+        # I can't just extend this class due to circular references :(
         ::Class.new.extend(::CSVPlusPlus::Entities::ASTBuilder).ref(cell_index:, row_index:)
+      end
+
+      # Does the given +cell_reference_string+ conform to a valid cell reference?
+      #
+      # {https://developers.google.com/sheets/api/guides/concepts}
+      #
+      # @param cell_reference_string [::String] The string to check if it is a valid cell reference (we assume it's in
+      #   A1 notation but maybe can support R1C1)
+      #
+      # @return [boolean]
+      def self.valid_cell_reference?(cell_reference_string)
+        !(cell_reference_string =~ ::CSVPlusPlus::Entities::CellReference::A1_NOTATION_REGEXP).nil?
       end
 
       # @param cell_reference [String] The cell reference in A1 format
@@ -31,7 +46,7 @@ module CSVPlusPlus
         @cell_reference = cell_reference
       end
 
-      # @return [String]
+      # @return [::String]
       def to_s
         @cell_reference
       end
