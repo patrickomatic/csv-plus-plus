@@ -49,7 +49,7 @@ end
 namespace :docs do
   desc 'Build Yard docs locally'
   task :yard do
-    sh 'bundle exec yard'
+    sh 'bundle exec yard --fail-on-warning'
   end
 end
 
@@ -71,7 +71,7 @@ namespace :gem do
   end
 
   desc 'Build a new release'
-  task :build do
+  task build: 'docs:yard' do
     sh 'gem build csv_plus_plus.gemspec'
   end
 
