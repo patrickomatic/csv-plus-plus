@@ -17,18 +17,24 @@ module CSVPlusPlus
         @infix = infix
       end
 
-      # @return [String]
-      def to_s
+      # @param runtime [Runtime]
+      #
+      # @return [::String]
+      def evaluate(runtime)
+        evaluated_arguments = evaluate_arguments(runtime)
+
         if @infix
-          "(#{arguments.join(" #{@id} ")})"
+          "(#{evaluated_arguments.join(" #{@id} ")})"
         else
-          "#{@id.to_s.upcase}(#{arguments_to_s})"
+          "#{@id.to_s.upcase}(#{evaluated_arguments.join(', ')})"
         end
       end
 
+      # @param other [Entity]
+      #
       # @return [boolean]
       def ==(other)
-        super && @id == other.id
+        super && @id == other.id && @infix == other.infix
       end
     end
   end

@@ -30,7 +30,7 @@ describe ::CSVPlusPlus::Compiler do
   describe '#outputting!' do
     it 'yields control' do
       expect { |b| compiler.outputting!(&b) }
-        .to(yield_control)
+        .to(yield_with_args(runtime))
     end
   end
 
@@ -74,9 +74,5 @@ describe ::CSVPlusPlus::Compiler do
         expect(template.rows[0].modifier).to(be_formatted(:bold))
       end
     end
-  end
-
-  describe '#to_s' do
-    subject { compiler.to_s }
   end
 end

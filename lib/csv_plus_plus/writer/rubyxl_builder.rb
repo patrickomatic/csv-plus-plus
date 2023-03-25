@@ -13,10 +13,12 @@ module CSVPlusPlus
 
       # @param input_filename [String] The file to write to
       # @param rows [Array<Row>] The rows to write
+      # @param runtime [Runtime] The current runtime
       # @param sheet_name [String] The name of the sheet within the workbook to write to
-      def initialize(input_filename:, rows:, sheet_name:)
+      def initialize(input_filename:, rows:, runtime:, sheet_name:)
         @rows = rows
         @input_filename = input_filename
+        @runtime = runtime
         @sheet_name = sheet_name
       end
 
@@ -30,13 +32,11 @@ module CSVPlusPlus
       private
 
       def build_workbook!
-        @rows.each_with_index do |row, x|
-          row.cells.each_with_index do |cell, y|
-            modifier = ::CSVPlusPlus::Writer::RubyXLModifier.new(cell.modifier)
+        @runtime.map_rows(@rows, cells_too: true) do |cell|
+          modifier = ::CSVPlusPlus::Writer::RubyXLModifier.new(cell.modifier)
 
-            @worksheet.add_cell(x, y, cell.to_csv)
-            format_cell!(x, y, modifier)
-          end
+          @worksheet.add_cell(@runtime.row_index, @runtime.cell_index, cell.evaluate(@runtime))
+          format_cell!(@runtime.row_index, @runtime.cell_index, modifier)
         end
       end
 

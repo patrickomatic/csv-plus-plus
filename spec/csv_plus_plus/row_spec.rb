@@ -17,8 +17,27 @@ describe ::CSVPlusPlus::Row do
 
       context 'and the row is offset' do
         let(:index) { 2 }
+
         it { is_expected.to(eq(998)) }
       end
+    end
+  end
+
+  describe '#expand_rows' do
+    let(:modifier) { build(:modifier_with_expand) }
+    let(:row) { build(:row, modifier:, index: 5) }
+    let(:starts_at) { 0 }
+    let(:into) { [] }
+
+    subject { row.expand_rows(starts_at:, into:) }
+
+    it 'fills :into with the expanded rows' do
+      subject
+      expect(into.length).to(eq(2))
+    end
+
+    it 'also returns :into' do
+      expect(subject).to(be(into))
     end
   end
 
@@ -47,19 +66,28 @@ describe ::CSVPlusPlus::Row do
     end
   end
 
-  describe '#to_s' do
-    let(:modifier) { build(:modifier_with_expand) }
-    let(:row) { build(:row, modifier:, index: 0, cells:) }
-    let(:cells) do
-      [
-        build(:cell, row_index: 0, index: 0, value: 'foo'),
-        build(:cell, row_index: 0, index: 1, value: 'bar'),
-        build(:cell, row_index: 0, index: 2, value: 'baz')
-      ]
+  describe '#unexpanded?' do
+    let(:modifier) { build(:modifier) }
+    let(:row) { build(:row, modifier:) }
+
+    subject { row.unexpanded? }
+
+    context 'without an expand modifier' do
+      it { is_expected.to(be(false)) }
     end
 
-    subject { row.to_s }
+    context 'with an expand modifier that has not been expanded' do
+      let(:modifier) { build(:modifier_with_expand) }
 
-    it { is_expected.to(match(/Row\(index: 0, modifier: Modifier\(.+\), cells: .*\)/)) }
+      it { is_expected.to(be(true)) }
+    end
+
+    context 'with an expand modifier that has been expanded' do
+      let(:modifier) { build(:modifier_with_expand) }
+
+      before { modifier.expand.starts_at = 5 }
+
+      it { is_expected.to(be(false)) }
+    end
   end
 end

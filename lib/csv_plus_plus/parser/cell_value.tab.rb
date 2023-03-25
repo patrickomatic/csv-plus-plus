@@ -256,7 +256,7 @@ module_eval(<<'.,.,', 'cell_value.y', 30)
 
 module_eval(<<'.,.,', 'cell_value.y', 31)
   def _reduce_10(val, _values, result)
-     result = cell_reference(val[0])
+     result = cell_reference(ref: val[0])
     result
   end
 .,.,

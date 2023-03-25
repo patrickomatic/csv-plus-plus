@@ -57,6 +57,29 @@ describe ::CSVPlusPlus do
           ::File.delete(backed_up_files[0])
         end
       end
+
+      context 'a template with var= directives in an expand=' do
+        let(:input) do
+          <<~INPUT
+            bar := $$test + 1
+            ---
+            Foo,Bar,Baz
+            ![[expand=3]][[var=test]],=$$test*5,=$$bar
+          INPUT
+        end
+
+        it 'properly resolves variable references in the expanded rows' do
+          subject
+
+          expect(::File.read(output_filename)).to(
+            eq(<<~OUTPUT))
+              Foo,Bar,Baz
+              ,=(A2 * 5),=(A2 + 1)
+              ,=(A3 * 5),=(A3 + 1)
+              ,=(A4 * 5),=(A4 + 1)
+            OUTPUT
+        end
+      end
     end
 
     context 'to Google Sheets', :vcr do

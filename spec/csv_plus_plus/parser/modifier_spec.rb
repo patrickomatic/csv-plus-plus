@@ -2,12 +2,11 @@
 
 describe ::CSVPlusPlus::Parser::Modifier do
   let(:runtime) { build(:runtime) }
-  let(:scope) { build(:scope) }
 
   describe '#parse' do
     let(:row_modifier) { build(:row_modifier) }
     let(:cell_modifier) { build(:modifier) }
-    let(:rest) { described_class.new(cell_modifier:, row_modifier:, scope:).parse(value, runtime) }
+    let(:rest) { described_class.new(cell_modifier:, row_modifier:).parse(value, runtime) }
 
     before(:each) { rest }
 
@@ -173,10 +172,6 @@ describe ::CSVPlusPlus::Parser::Modifier do
       subject { cell_modifier.var }
 
       it { is_expected.to(eq(:foo)) }
-
-      it 'defines a variable' do
-        expect(scope).to(be_defined_variable(:foo))
-      end
     end
   end
 end

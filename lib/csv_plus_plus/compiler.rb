@@ -2,7 +2,6 @@
 
 require_relative 'benchmarked_compiler'
 require_relative 'entities'
-require_relative 'parser/code_section.tab'
 require_relative 'runtime'
 require_relative 'scope'
 
@@ -51,7 +50,7 @@ module CSVPlusPlus
     # Write the compiled results
     def outputting!
       @runtime.start_at_csv!
-      yield
+      yield(@runtime)
     end
 
     # Compile a template and return a +::CSVPlusPlus::Template+ instance ready to be written with a +Writer+
@@ -63,21 +62,15 @@ module CSVPlusPlus
 
       ::CSVPlusPlus::Template.new(rows:, scope: @scope).tap do |t|
         t.validate_infinite_expands(@runtime)
-        expanding { t.expand_rows! }
+        expanding! { t.expand_rows! }
+        bind_all_vars! { t.bind_all_vars!(@runtime) }
         resolve_all_cells!(t)
       end
     end
 
-    # @return [String]
-    def to_s
-      "Compiler(options: #{@options}, runtime: #{@runtime}, scope: #{@scope})"
-    end
-
     protected
 
-    # Parses the input file and returns a +CodeSection+
-    #
-    # @return [CodeSection]
+    # Parses the input file and sets variables on +@scope+ as necessary
     def parse_code_section!
       @runtime.start!
 
@@ -90,7 +83,6 @@ module CSVPlusPlus
         # return the csv_section to the caller because they're gonna re-write input with it
         next csv_section
       end
-      # @scope.code_section
     end
 
     # Parse the CSV section and return an array of +Row+s
@@ -118,7 +110,13 @@ module CSVPlusPlus
     end
 
     # Expanding rows
-    def expanding
+    def expanding!
+      @runtime.start_at_csv!
+      yield
+    end
+
+    # Binding all [[var=]] directives
+    def bind_all_vars!
       @runtime.start_at_csv!
       yield
     end
@@ -145,10 +143,7 @@ module CSVPlusPlus
 
     def parse_cell(value, row_modifier)
       cell_modifier = ::CSVPlusPlus::Modifier.new
-      parsed_value = ::CSVPlusPlus::Parser::Modifier.new(cell_modifier:, row_modifier:, scope: @scope).parse(
-        value,
-        @runtime
-      )
+      parsed_value = ::CSVPlusPlus::Parser::Modifier.new(cell_modifier:, row_modifier:).parse(value, @runtime)
 
       ::CSVPlusPlus::Cell.parse(parsed_value, runtime:, modifier: cell_modifier)
     end

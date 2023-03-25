@@ -10,6 +10,7 @@ module CSVPlusPlus
       attr_reader :arguments, :resolve_fn
 
       # @param resolve_fn [lambda] A lambda that is called when the runtime value is resolved
+      # @param arguments [Any] Arguments to the runtime value call
       def initialize(resolve_fn, arguments: nil)
         super(:runtime_value)
 
@@ -17,9 +18,11 @@ module CSVPlusPlus
         @resolve_fn = resolve_fn
       end
 
+      # @param _runtime [Runtime]
+      #
       # @return [String]
-      def to_s
-        '(runtime_value)'
+      def evaluate(_runtime)
+        '(runtime value)'
       end
     end
   end

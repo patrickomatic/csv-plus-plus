@@ -15,7 +15,7 @@ module CSVPlusPlus
   # rubocop:disable Metrics/ClassLength
   class Scope
     include ::CSVPlusPlus::CanDefineReferences
-    # TODO: split out a CanResolveReferences
+    # TODO: split out a CanResolveReferences and then mix all this into Runtime instead
 
     attr_reader :functions, :runtime, :variables
 
@@ -34,7 +34,7 @@ module CSVPlusPlus
 
       last_round = nil
       loop do
-        refs = ::CSVPlusPlus::References.extract(ast, self)
+        refs = ::CSVPlusPlus::References.extract(ast, self, @runtime)
         return ast if refs.empty?
 
         # TODO: throw an error here instead I think - basically we did a round and didn't make progress
@@ -50,17 +50,29 @@ module CSVPlusPlus
     #
     # @return [CellReference]
     def bind_variable_to_cell(var_id)
-      ::CSVPlusPlus::Entities::CellReference.from_index(
-        cell_index: runtime.cell_index,
-        row_index: runtime.row_index
-      ).tap do |cell_reference|
-        def_variable(var_id, cell_reference)
-      end
+      def_variable(
+        var_id,
+        ::CSVPlusPlus::Entities::CellReference.new(
+          cell_index: @runtime.cell_index,
+          row_index: @runtime.row_index
+        )
+      )
     end
 
-    # @return [String]
-    def to_s
-      "Scope(functions: #{@functions}, runtime: #{@runtime}, variables: #{@variables})"
+    # Bind +var_id+ relative to an ![[expand]] modifier.
+    #
+    # @param var_id [Symbol] The name of the variable to bind the cell reference to
+    # @param expand [Expand] The expand where the variable is accessible (where it will be bound relative to)
+    #
+    # @return [CellReference]
+    def bind_variable_in_expand(var_id, expand)
+      def_variable(
+        var_id,
+        ::CSVPlusPlus::Entities::CellReference.new(
+          scoped_to_expand: expand,
+          cell_index: @runtime.cell_index
+        )
+      )
     end
 
     private

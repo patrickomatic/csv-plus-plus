@@ -1,13 +1,11 @@
 # frozen_string_literal: true
 
-require_relative './entity'
-
 module CSVPlusPlus
   module Entities
     # A function definition
     #
     # @attr_reader body [Entity] The body of the function.  +body+ can contain variable references
-    # from +@arguments+
+    #   from +@arguments+
     class Function < EntityWithArguments
       attr_reader :body
 
@@ -16,14 +14,19 @@ module CSVPlusPlus
       # @param body [Entity]
       def initialize(id, arguments, body)
         super(:function, id:, arguments: arguments.map(&:to_sym))
+
         @body = body
       end
 
-      # @return [String]
-      def to_s
-        "def #{@id.to_s.upcase}(#{arguments_to_s}) #{@body}"
+      # @param runtime [Runtime]
+      #
+      # @return [::String]
+      def evaluate(runtime)
+        "def #{@id.to_s.upcase}(#{arguments.map(&:to_s).join(', ')}) #{@body.evaluate(runtime)}"
       end
 
+      # @param other [Entity]
+      #
       # @return [boolean]
       def ==(other)
         super && @body == other.body

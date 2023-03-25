@@ -147,12 +147,4 @@ describe ::CSVPlusPlus::Scope do
       end
     end
   end
-
-  describe '#to_s' do
-    subject { scope.to_s }
-
-    it do
-      is_expected.to(match(/Scope\(functions: .+, runtime: .+, variables: .+\)/))
-    end
-  end
 end

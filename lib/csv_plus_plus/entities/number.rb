@@ -20,11 +20,15 @@ module CSVPlusPlus
           end
       end
 
-      # @return [String]
-      def to_s
+      # @param _runtime [Runtime]
+      #
+      # @return [::String]
+      def evaluate(_runtime)
         @value.to_s
       end
 
+      # @param other [Entity]
+      #
       # @return [boolean]
       def ==(other)
         super && value == other.value

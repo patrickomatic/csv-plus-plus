@@ -19,6 +19,10 @@ require_relative 'csv_plus_plus/cell'
 require_relative 'csv_plus_plus/cli'
 require_relative 'csv_plus_plus/color'
 
+require_relative 'csv_plus_plus/parser/cell_value.tab'
+require_relative 'csv_plus_plus/parser/code_section.tab'
+require_relative 'csv_plus_plus/parser/modifier.tab'
+
 require_relative 'csv_plus_plus/compiler'
 require_relative 'csv_plus_plus/runtime'
 
@@ -26,7 +30,6 @@ require_relative 'csv_plus_plus/lexer'
 require_relative 'csv_plus_plus/lexer/tokenizer'
 require_relative 'csv_plus_plus/modifier'
 require_relative 'csv_plus_plus/options'
-require_relative 'csv_plus_plus/parser/modifier.tab'
 require_relative 'csv_plus_plus/row'
 require_relative 'csv_plus_plus/template'
 require_relative 'csv_plus_plus/writer'
@@ -45,21 +48,20 @@ module CSVPlusPlus
 
     ::CSVPlusPlus::Compiler.with_compiler(options:, runtime:) do |compiler|
       template = compiler.compile_template
-
       warn(template.verbose_summary) if options.verbose
 
-      write_template(template, compiler, options)
+      write_template(template:, compiler:, options:)
     end
   end
 
   # Write the results (and possibly make a backup) of a compiled +template+
   #
-  # @param template [Template] The compiled template
   # @param compiler [Compiler] The compiler currently in use
   # @param options [Options] The options we're running with
-  def self.write_template(template, compiler, options)
-    compiler.outputting! do
-      output = ::CSVPlusPlus::Writer.writer(options)
+  # @param template [Template] The compiled template
+  def self.write_template(compiler:, options:, template:)
+    compiler.outputting! do |runtime|
+      output = ::CSVPlusPlus::Writer.writer(options, runtime)
       output.write_backup if options.backup
       output.write(template)
     end

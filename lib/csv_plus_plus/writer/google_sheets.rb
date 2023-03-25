@@ -13,8 +13,9 @@ module CSVPlusPlus
       public_constant :SPREADSHEET_INFINITY
 
       # @param options [Options]
-      def initialize(options)
-        super(options)
+      # @param runtime [Runtime]
+      def initialize(options, runtime)
+        super(options, runtime)
 
         @sheet_id = options.google.sheet_id
         @sheet_name = options.sheet_name
@@ -108,6 +109,7 @@ module CSVPlusPlus
 
       def builder(template)
         ::CSVPlusPlus::Writer::GoogleSheetBuilder.new(
+          runtime: @runtime,
           rows: template.rows,
           sheet_id: sheet&.properties&.sheet_id,
           column_index: @options.offset[1],

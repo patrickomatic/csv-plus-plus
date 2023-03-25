@@ -4,20 +4,22 @@ describe ::CSVPlusPlus::BenchmarkedCompiler do
   let(:test_class) do
     ::Class.new do
       def run_one_step
-        expanding
+        expanding!
       end
 
       def run_all_steps
         parse_code_section!
         parse_csv_section!
-        expanding
+        expanding!
+        bind_all_vars!
         resolve_all_cells!(nil)
         outputting!
       end
 
       def parse_code_section!; end
       def parse_csv_section!; end
-      def expanding; end
+      def expanding!; end
+      def bind_all_vars!; end
       def resolve_all_cells!(_template); end
       def outputting!; end
     end
@@ -54,12 +56,12 @@ describe ::CSVPlusPlus::BenchmarkedCompiler do
     end
 
     context 'after running each step' do
-      before { expect(benchmark).to(receive(:report)).exactly(5).times }
+      before { expect(benchmark).to(receive(:report)).exactly(6).times }
 
       before { subject.run_all_steps }
 
       it 'records an entry in @timings for each stage' do
-        expect(subject.timings.length).to(eq(5))
+        expect(subject.timings.length).to(eq(6))
       end
     end
   end

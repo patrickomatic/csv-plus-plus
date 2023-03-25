@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 describe ::CSVPlusPlus::Entities::FunctionCall do
-  let(:function_call) { described_class.new('MINUS', [build(:number_one), build(:variable_foo)]) }
-  subject { function_call }
+  let(:entity) { described_class.new('MINUS', [build(:number_one), build(:variable_foo)]) }
+
+  subject { entity }
 
   describe '#initialize' do
     it 'lowercases and converts the id to a symbol' do
@@ -10,17 +11,28 @@ describe ::CSVPlusPlus::Entities::FunctionCall do
     end
   end
 
+  describe '#==' do
+    it { is_expected.to(eq(build(:fn_call, name: 'minus', arguments: [build(:number_one), build(:variable_foo)]))) }
+
+    it { is_expected.not_to(eq(')')) }
+    it { is_expected.not_to(eq(build(:fn_foo))) }
+    it { is_expected.not_to(eq(build(:number_one))) }
+    it { is_expected.not_to(eq(build(:variable_foo))) }
+  end
+
   describe '#function_call?' do
     it { is_expected.to(be_function_call) }
   end
 
-  describe '#to_s' do
-    subject { function_call.to_s }
+  describe '#evaluate' do
+    let(:runtime) { build(:runtime) }
+
+    subject { entity.evaluate(runtime) }
 
     it { is_expected.to(eq('MINUS(1, $$foo)')) }
 
     context 'with no args' do
-      let(:function_call) do
+      let(:entity) do
         build(
           :fn_call,
           name: :foo,
@@ -36,7 +48,7 @@ describe ::CSVPlusPlus::Entities::FunctionCall do
     end
 
     context 'with an infix function' do
-      let(:function_call) do
+      let(:entity) do
         build(
           :fn_call,
           name: :*,
@@ -50,14 +62,5 @@ describe ::CSVPlusPlus::Entities::FunctionCall do
 
       it { is_expected.to(eq('(A * B)')) }
     end
-  end
-
-  describe '#==' do
-    it { is_expected.to(eq(build(:fn_call, name: 'minus', arguments: [build(:number_one), build(:variable_foo)]))) }
-
-    it { is_expected.not_to(eq(')')) }
-    it { is_expected.not_to(eq(build(:fn_foo))) }
-    it { is_expected.not_to(eq(build(:number_one))) }
-    it { is_expected.not_to(eq(build(:variable_foo))) }
   end
 end

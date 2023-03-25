@@ -2,19 +2,25 @@
 
 describe ::CSVPlusPlus::Error::ModifierSyntaxError do
   let(:runtime) { build(:runtime) }
-  let(:test_class) do
-    ::Class.new do
-      def error_message
-        'test'
-      end
-    end
+
+  describe '.from_validation_error' do
+    # TODO
   end
 
-  let(:error) { described_class.new(runtime, wrapped_error: test_class.new) }
-
   describe '#error_message' do
-    subject { error.error_message }
+    let(:bad_input) { 'bad input' }
+    let(:choices) { nil }
+    let(:message) { 'invalid input' }
 
-    it { is_expected.to(eq('test')) }
+    subject { described_class.new(runtime, bad_input:, message:, modifier: :format).error_message }
+
+    it {
+      is_expected.to(
+        eq(<<~ERROR_MESSAGE))
+          Error parsing modifier: [[format=...]]
+          Bad input: bad input
+          Reason: invalid input
+      ERROR_MESSAGE
+    }
   end
 end

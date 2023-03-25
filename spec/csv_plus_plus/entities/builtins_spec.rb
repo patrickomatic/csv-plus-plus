@@ -15,19 +15,19 @@ describe ::CSVPlusPlus::Entities::Builtins do
     describe 'cellref' do
       let(:variable) { :cellref }
 
-      it { is_expected.to(eq(build(:cell_reference, ref: 'C2'))) }
+      it { is_expected.to(eq(build(:cell_reference, cell_index: 2, row_index: 1))) }
     end
 
     describe 'rowabove' do
       let(:variable) { :rowabove }
 
-      it { is_expected.to(eq(build(:cell_reference, ref: '1'))) }
+      it { is_expected.to(eq(build(:cell_reference, row_index: 0))) }
     end
 
     describe 'rowbelow' do
       let(:variable) { :rowbelow }
 
-      it { is_expected.to(eq(build(:cell_reference, ref: '3'))) }
+      it { is_expected.to(eq(build(:cell_reference, row_index: 2))) }
     end
 
     describe 'rownum' do
@@ -39,7 +39,7 @@ describe ::CSVPlusPlus::Entities::Builtins do
     describe 'rowref' do
       let(:variable) { :rowref }
 
-      it { is_expected.to(eq(build(:cell_reference, ref: '2'))) }
+      it { is_expected.to(eq(build(:cell_reference, row_index: 1))) }
     end
   end
 
@@ -47,21 +47,21 @@ describe ::CSVPlusPlus::Entities::Builtins do
     subject { described_class::FUNCTIONS[function].resolve_fn.call(runtime, args) }
 
     describe 'cellabove' do
-      let(:args) { ['C'] }
+      let(:args) { [build(:cell_reference, cell_index: 2)] }
       let(:function) { :cellabove }
 
       it { is_expected.to(eq(build(:cell_reference, ref: 'C1'))) }
     end
 
     describe 'celladjacent' do
-      let(:args) { ['Z'] }
+      let(:args) { [build(:cell_reference, ref: 'Z')] }
       let(:function) { :celladjacent }
 
       it { is_expected.to(eq(build(:cell_reference, ref: 'Z2'))) }
     end
 
     describe 'cellbelow' do
-      let(:args) { ['B'] }
+      let(:args) { [build(:cell_reference, ref: 'B')] }
       let(:function) { :cellbelow }
 
       it { is_expected.to(eq(build(:cell_reference, ref: 'B3'))) }

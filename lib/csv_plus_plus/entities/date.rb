@@ -25,6 +25,13 @@ module CSVPlusPlus
 
         @value = ::Date.parse(value)
       end
+
+      # @param _runtime [Runtime]
+      #
+      # @return [::String]
+      def evaluate(_runtime)
+        @value
+      end
     end
   end
 end

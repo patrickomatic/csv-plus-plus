@@ -11,11 +11,15 @@ module CSVPlusPlus
         super(:variable, id:)
       end
 
-      # @return [String]
-      def to_s
+      # @param _runtime [Runtime]
+      #
+      # @return [::String]
+      def evaluate(_runtime)
         "$$#{@id}"
       end
 
+      # @param other [Entity]
+      #
       # @return [boolean]
       def ==(other)
         super && id == other.id

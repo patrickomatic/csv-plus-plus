@@ -19,7 +19,7 @@ module CSVPlusPlus
       # @param bad_input [String] The offending input that caused the error to be thrown
       # @param choices [Array<Symbol>, nil] The choices that +value+ must be one of (but violated)
       # @param message [String, nil] A relevant message to show
-      def initialize(modifier, bad_input, choices: nil, message: nil)
+      def initialize(modifier, bad_input:, choices: nil, message: nil)
         @bad_input = bad_input
         @choices = choices
         @modifier = modifier
@@ -32,17 +32,6 @@ module CSVPlusPlus
           end
 
         super(@message)
-      end
-
-      # Create a relevant error message given +@choices+ or +@message+ (one of them must be supplied).
-      #
-      # @return [::String]
-      def error_message
-        <<~ERROR_MESSAGE
-          Error parsing modifier: [[#{@modifier}=...]]
-          Bad input: #{@bad_input}
-          Reason: #{@message}
-        ERROR_MESSAGE
       end
     end
   end

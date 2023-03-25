@@ -43,8 +43,12 @@ module CSVPlusPlus
       time_stage('Parsing CSV section') { super }
     end
 
-    def expanding
+    def expanding!
       time_stage('Expanding rows') { super }
+    end
+
+    def bind_all_vars!
+      time_stage('Binding [[var=]]') { super }
     end
 
     def resolve_all_cells!(template)

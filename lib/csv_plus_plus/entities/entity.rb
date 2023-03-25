@@ -19,6 +19,8 @@ module CSVPlusPlus
         @id = id.downcase.to_sym if id
       end
 
+      # @param other [Entity]
+      #
       # @return [boolean]
       def ==(other)
         self.class == other.class && @type == other.type && @id == other.id
@@ -27,6 +29,7 @@ module CSVPlusPlus
       # Respond to predicates that correspond to types like #boolean?, #string?, etc
       #
       # @param method_name [Symbol] The +method_name+ to respond to
+      # @param *_arguments [Any]
       def method_missing(method_name, *_arguments)
         if method_name =~ /^(\w+)\?$/
           t = ::Regexp.last_match(1)
@@ -39,6 +42,7 @@ module CSVPlusPlus
       # Respond to predicates by type (entity.boolean?, entity.string?, etc)
       #
       # @param method_name [Symbol] The +method_name+ to respond to
+      # @param *_arguments [Any]
       #
       # @return [boolean]
       def respond_to_missing?(method_name, *_arguments)
@@ -67,6 +71,8 @@ module CSVPlusPlus
         @arguments = arguments
       end
 
+      # @param other [Entity]
+      #
       # @return [boolean]
       def ==(other)
         super && @arguments == other.arguments
@@ -76,8 +82,8 @@ module CSVPlusPlus
 
       attr_writer :arguments
 
-      def arguments_to_s
-        @arguments.join(', ')
+      def evaluate_arguments(runtime)
+        @arguments.map { |arg| arg.evaluate(runtime) }
       end
     end
   end

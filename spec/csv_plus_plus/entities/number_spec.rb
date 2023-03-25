@@ -3,7 +3,7 @@
 describe ::CSVPlusPlus::Entities::Number do
   let(:value) { '55' }
 
-  subject { described_class.new(value) }
+  subject(:entity) { described_class.new(value) }
 
   describe '#initialize' do
     it 'has a nil id' do
@@ -27,14 +27,22 @@ describe ::CSVPlusPlus::Entities::Number do
     end
   end
 
-  describe '#number?' do
-    it { is_expected.to(be_number) }
-  end
-
   describe '#==' do
     it { is_expected.to(eq(build(:number, n: 55))) }
 
     it { is_expected.not_to(eq(build(:number_one))) }
     it { is_expected.not_to(eq(build(:variable_foo))) }
+  end
+
+  describe '#evaluate' do
+    let(:runtime) { build(:runtime) }
+
+    subject { entity.evaluate(runtime) }
+
+    it { is_expected.to(eq('55')) }
+  end
+
+  describe '#number?' do
+    it { is_expected.to(be_number) }
   end
 end

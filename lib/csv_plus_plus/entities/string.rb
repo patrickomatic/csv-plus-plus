@@ -15,11 +15,15 @@ module CSVPlusPlus
         @value = value.gsub(/^"|"$/, '')
       end
 
-      # @return [String]
-      def to_s
+      # @param _runtime [Runtime]
+      #
+      # @return [::String]
+      def evaluate(_runtime)
         "\"#{@value}\""
       end
 
+      # @param other [Entity]
+      #
       # @return [boolean]
       def ==(other)
         super && value == other.value

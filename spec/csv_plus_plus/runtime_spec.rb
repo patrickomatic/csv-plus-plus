@@ -45,6 +45,44 @@ foo1,bar1,baz1
     end
   end
 
+  describe '#in_scope' do
+    let(:expand) { build(:expand, repetitions: 10, starts_at: 10) }
+    let(:scope) { build(:scope) }
+
+    subject { runtime }
+
+    context 'when var_id is undefined' do
+      let(:var_id) { :foo }
+
+      it 'raises a SyntaxError' do
+        expect { runtime.in_scope?(var_id, scope) }
+          .to(raise_error(::CSVPlusPlus::Error::SyntaxError))
+      end
+    end
+
+    context 'when it is not scoped to an expand' do
+      let(:var_id) { :foo }
+      let(:scope) { build(:scope, variables: { foo: build(:cell_reference, ref: 'A1') }) }
+
+      it { is_expected.to(be_in_scope(var_id, scope)) }
+    end
+
+    context 'when runtime#cell is outside the expand' do
+      let(:var_id) { :foo }
+      let(:scope) { build(:scope, variables: { foo: build(:cell_reference, cell_index: 0, scoped_to_expand: expand) }) }
+
+      it { is_expected.not_to(be_in_scope(var_id, scope)) }
+    end
+
+    context 'when runtime#cell is within the expand' do
+      let(:var_id) { :foo }
+      let(:row_index) { 15 }
+      let(:scope) { build(:scope, variables: { foo: build(:cell_reference, cell_index: 0, scoped_to_expand: expand) }) }
+
+      it { is_expected.to(be_in_scope(var_id, scope)) }
+    end
+  end
+
   describe '#map_lines' do
     let(:lines) { %w[foo bar baz] }
 
@@ -175,11 +213,5 @@ foo1,bar1,baz1
 
       it { is_expected.not_to(be_runtime_variable(var)) }
     end
-  end
-
-  describe '#to_s' do
-    subject { runtime.to_s }
-
-    it { is_expected.to(eq('Runtime(cell: , row_index: 0, cell_index: 0)')) }
   end
 end

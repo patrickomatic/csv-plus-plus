@@ -29,7 +29,7 @@ rule
      | NUMBER                           { result = number(val[0])                                       }
      | TRUE                             { result = boolean(true)                                        }
      | FALSE                            { result = boolean(false)                                       }
-     | ID                               { result = cell_reference(val[0])                               }
+     | ID                               { result = cell_reference(ref: val[0])                          }
 
   fn_call: ID '(' fn_call_args ')'      { result = function_call(val[0], val[2])                        }
          | ID '(' ')'                   { result = function_call(val[0], [])                            }

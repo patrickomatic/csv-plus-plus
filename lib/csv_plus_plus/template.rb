@@ -15,26 +15,43 @@ module CSVPlusPlus
       @rows = rows
     end
 
-    # @return [String]
-    def to_s
-      "Template(rows: #{@rows}, scope: #{@scope})"
+    # Only run after expanding all rows, now we can bind all [[var=]] modifiers to a variable.  There are two distinct
+    # types of variable bindings here:
+    #
+    # * Binding to a cell: for this we just make a +CellReference+ to the cell itself (A1, B4, etc)
+    # * Binding to a cell within an expand: the variable can only be resolved within that expand and needs to be
+    #   relative to it's row (it can't be an absolute cell reference like above)
+    #
+    # @param runtime [Runtime]
+    def bind_all_vars!(runtime)
+      runtime.map_rows(@rows) do |row|
+        # rubocop:disable Metrics/MissingElse
+        if row.unexpanded?
+          # rubocop:enable Metrics/MissingElse
+          raise(::CSVPlusPlus::Error::Error, 'Template#expand_rows! must be called before Template#bind_all_vars!')
+        end
+
+        runtime.map_row(row.cells) do |cell|
+          bind_vars(cell, row.modifier.expand)
+        end
+      end
     end
 
-    # Apply any expand= modifiers to the parsed template
+    # Apply expand= (adding rows to the results) modifiers to the parsed template. This happens in towards the end of
+    # compilation because expanding rows will change the relative rownums as rows are added, and variables can't be
+    # bound until the rows have been assigned their final rownums.
     #
     # @return [Array<Row>]
     def expand_rows!
-      expanded_rows = []
-      row_index = 0
-      expand_rows(
-        lambda do |new_row|
-          new_row.index = row_index
-          expanded_rows << new_row
-          row_index += 1
+      # TODO: make it so that an infinite expand will not overwrite the rows below it, but instead merge with them
+      @rows =
+        rows.reduce([]) do |expanded_rows, row|
+          if row.modifier.expand
+            row.expand_rows(starts_at: expanded_rows.length, into: expanded_rows)
+          else
+            expanded_rows << row.tap { |r| r.index = expanded_rows.length }
+          end
         end
-      )
-
-      @rows = expanded_rows
     end
 
     # Make sure that the template has a valid amount of infinite expand modifiers
@@ -44,7 +61,7 @@ module CSVPlusPlus
       infinite_expand_rows = @rows.filter { |r| r.modifier.expand&.infinite? }
       return unless infinite_expand_rows.length > 1
 
-      runtime.raise_formula_syntax_error(
+      runtime.raise_modifier_syntax_error(
         'You can only have one infinite expand= (on all others you must specify an amount)',
         infinite_expand_rows[1]
       )
@@ -52,7 +69,7 @@ module CSVPlusPlus
 
     # Provide a summary of the state of the template (and it's +@scope+)
     #
-    # @return [String]
+    # @return [::String]
     def verbose_summary
       # TODO: we can probably include way more stats in here
       <<~SUMMARY
@@ -64,17 +81,14 @@ module CSVPlusPlus
 
     private
 
-    def expand_rows(push_row_fn)
-      # TODO: make it so that an infinite expand will not overwrite the rows below it, but
-      # instead merge with them
-      rows.each do |row|
-        if row.modifier.expand
-          row.expand_amount.times do
-            push_row_fn.call(row.deep_clone)
-          end
-        else
-          push_row_fn.call(row)
-        end
+    def bind_vars(cell, expand)
+      var = cell.modifier.var
+      return unless var
+
+      if expand
+        @scope.bind_variable_in_expand(var, expand)
+      else
+        @scope.bind_variable_to_cell(var)
       end
     end
   end

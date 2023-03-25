@@ -8,7 +8,10 @@ module CSVPlusPlus
     class CSV < ::CSVPlusPlus::Writer::BaseWriter
       include ::CSVPlusPlus::Writer::FileBackerUpper
 
-      # write a +template+ to CSV
+      # Write a +template+ to CSV
+      #
+      # @param template [Template] The template to use as input to be written.  It should have been compiled by calling
+      #   Compiler#compile_template
       def write(template)
         # TODO: also read it and merge the results
         ::CSV.open(@options.output_filename, 'wb') do |csv|
@@ -18,16 +21,10 @@ module CSVPlusPlus
         end
       end
 
-      protected
-
-      def load_requires
-        require('csv')
-      end
-
       private
 
       def build_row(row)
-        row.cells.map(&:to_csv)
+        row.cells.map { |cell| cell.evaluate(@runtime) }
       end
     end
   end

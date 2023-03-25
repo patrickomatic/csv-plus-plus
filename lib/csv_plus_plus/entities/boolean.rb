@@ -10,18 +10,22 @@ module CSVPlusPlus
     class Boolean < Entity
       attr_reader :value
 
-      # @param value [String, Boolean]
+      # @param value [String, boolean]
       def initialize(value)
         super(:boolean)
         # TODO: probably can do a lot better in general on type validation
         @value = value.is_a?(::String) ? (value.downcase == 'true') : value
       end
 
+      # @param _runtime [Runtime]
+      #
       # @return [String]
-      def to_s
+      def evaluate(_runtime)
         @value.to_s.upcase
       end
 
+      # @param other [Entity]
+      #
       # @return [boolean]
       def ==(other)
         super && value == other.value

@@ -5,13 +5,6 @@ describe ::CSVPlusPlus::Cell do
   let(:cell) { described_class.new(row_index: 0, index: 1, value:, modifier:) }
   let(:compiler) { build(:compiler) }
 
-  describe '#to_s' do
-    let(:value) { 'foo' }
-    subject { cell.to_s }
-
-    it { is_expected.to(match(/Cell\(index: 1, row_index: 0, value: foo, modifier: Modifier\(.+\)/)) }
-  end
-
   describe '#value' do
     subject { cell.value }
 
@@ -31,11 +24,12 @@ describe ::CSVPlusPlus::Cell do
     end
   end
 
-  describe '#to_csv' do
+  describe '#evaluate' do
     let(:ast) { nil }
+    let(:runtime) { build(:runtime) }
     let(:cell) { build(:cell, ast:, value:) }
 
-    subject { cell.to_csv }
+    subject { cell.evaluate(runtime) }
 
     context 'with a nil value' do
       let(:value) { nil }

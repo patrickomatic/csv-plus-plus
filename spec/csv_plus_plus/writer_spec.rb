@@ -2,7 +2,9 @@
 
 describe ::CSVPlusPlus::Writer do
   describe '.writer' do
-    subject { described_class.writer(options) }
+    let(:runtime) { build(:runtime) }
+
+    subject { described_class.writer(options, runtime) }
 
     context 'when options.google.sheet_id is set' do
       let(:options) { build(:options, google_sheet_id: 'asdf') }

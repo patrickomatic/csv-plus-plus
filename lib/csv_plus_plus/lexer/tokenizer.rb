@@ -11,7 +11,11 @@ module CSVPlusPlus
     class Tokenizer
       attr_reader :last_token, :scanner
 
-      # @param input [String]
+      # @param tokens [Array<Regexp, String>] The list of tokens to scan
+      # @param catchall [Regexp] A final regexp to try if nothing else matches
+      # @param ignore [Regexp] Ignore anything matching this regexp
+      # @param alter_matches [Object] A map of matches to alter
+      # @param stop_fn [Proc] Stop parsing when this is true
       def initialize(tokens:, catchall: nil, ignore: nil, alter_matches: {}, stop_fn: nil)
         @last_token = nil
 

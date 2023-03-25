@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require_relative 'modifier'
-require_relative 'parser/cell_value.tab'
-
 module CSVPlusPlus
   # A cell of a template
   #
@@ -27,10 +24,10 @@ module CSVPlusPlus
       end
     end
 
-    # @param row_index [Integer] The cell's row index (starts at 0)
     # @param index [Integer] The cell's index (starts at 0)
-    # @param value [String] A string value which should already have been processed through a CSV parser
     # @param modifier [Modifier] A modifier to apply to this cell
+    # @param row_index [Integer] The cell's row index (starts at 0)
+    # @param value [String] A string value which should already have been processed through a CSV parser
     def initialize(row_index:, index:, value:, modifier:)
       @value = value
       @modifier = modifier
@@ -41,27 +38,23 @@ module CSVPlusPlus
     # The +@value+ (cleaned up some)
     #
     # @return [String]
+    # TODO: is this used?
     def value
       return if @value.nil? || @value.strip.empty?
 
       @value.strip
     end
 
-    # @return [String]
-    def to_s
-      "Cell(index: #{@index}, row_index: #{@row_index}, value: #{@value}, modifier: #{@modifier})"
-    end
-
-    # A compiled final representation of the cell.  This can only happen after all cell have had
-    # variables and functions resolved.
+    # A compiled final representation of the cell.  This can only happen after all cell have had variables and functions
+    # resolved.
+    #
+    # @param runtime [Runtime]
     #
     # @return [String]
-    def to_csv
+    def evaluate(runtime)
       return value unless @ast
 
-      # This looks really simple but we're relying on each node of the AST to define #to_s such that calling
-      # this at the top will recursively print the tree (as a well-formatted spreadsheet formula)
-      "=#{@ast}"
+      "=#{@ast.evaluate(runtime)}"
     end
   end
 end

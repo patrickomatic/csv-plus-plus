@@ -64,14 +64,12 @@ require_relative '../lexer'
 
   # @param cell_modifier [Modifier]
   # @param row_modifier [Modifier]
-  # @param scope [Scope]
-  def initialize(cell_modifier:, row_modifier:, scope:)
+  def initialize(cell_modifier:, row_modifier:)
     super()
 
     @parsing_row = false
     @cell_modifier = cell_modifier
     @row_modifier = row_modifier
-    @scope = scope
   end
 
   protected
@@ -126,14 +124,14 @@ require_relative '../lexer'
           /
             (?:
               \w+\s*:\s*'([^'\\]|\\.)*')    # allow for a single-quoted string which can accept any input and also allow 
-                                  # for escaping via backslash (i.e., 'ain\\'t won\\'t something' is valid)
-              |                   # - or -
-            (?:'([^'\\]|\\.)*')    # allow for a single-quoted string which can accept any input and also allow 
+                                            # for escaping via backslash (i.e., 'ain\\'t won\\'t something' is valid)
+              |                             # - or -
+            (?:'([^'\\]|\\.)*')             # allow for a single-quoted string which can accept any input and also allow 
               |
             (?:
-              [\w,_:-]            # something that accepts most basic input if it doesn't need to be quoted
-              [\w\s,_:-]+         # same thing but allow spaces in the middle
-              [\w,_:-]            # no spaces at the end
+              [\w,_:-]                      # something that accepts most basic input if it doesn't need to be quoted
+              [\w\s,_:-]+                   # same thing but allow spaces in the middle
+              [\w,_:-]                      # no spaces at the end
             )
           /x,
           :RIGHT_SIDE,
@@ -169,7 +167,6 @@ require_relative '../lexer'
   end
 
   def define_var(var_id)
-    @scope.bind_variable_to_cell(var_id)
     modifier.var = var_id.to_sym
   end
 

@@ -3,6 +3,14 @@
 describe ::CSVPlusPlus::Template do
   let(:template) { build(:template, rows:) }
 
+  describe '#bind_all_vars!' do
+    before { template.bind_all_vars! }
+
+    xit 'does something' do
+      # XXX
+    end
+  end
+
   describe '#expand_rows!' do
     let(:cells_row0) do
       [
@@ -20,12 +28,16 @@ describe ::CSVPlusPlus::Template do
     end
     let(:rows) do
       [
-        build(:row, index: 0, cells: cells_row0, modifier: build(:modifier_with_expand, repetitions: 2)),
+        build(:row, index: 0, cells: cells_row0, modifier: build(:modifier_with_expand)),
         build(:row, index: 1, cells: cells_row1)
       ]
     end
 
     before { template.expand_rows! }
+
+    it 'expands the rows' do
+      expect(template.rows.length).to(eq(3))
+    end
 
     it 'updates row.index' do
       expect(template.rows[0].index).to(eq(0))
@@ -54,12 +66,6 @@ describe ::CSVPlusPlus::Template do
         expect(template.rows.length).to(eq(1000))
       end
     end
-  end
-
-  describe '#to_s' do
-    subject { build(:template).to_s }
-
-    it { is_expected.to(match(/Template\(rows: .+, scope: .+\)/)) }
   end
 
   describe '#validate_infinite_expands' do
@@ -135,9 +141,9 @@ describe ::CSVPlusPlus::Template do
         ]
       end
 
-      it 'does not raise an exception' do
+      it 'raises an exception' do
         expect { subject }
-          .to(raise_error(::CSVPlusPlus::Error::SyntaxError))
+          .to(raise_error(::CSVPlusPlus::Error::ModifierSyntaxError))
       end
     end
   end

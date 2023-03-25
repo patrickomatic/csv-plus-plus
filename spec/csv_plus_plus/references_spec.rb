@@ -27,10 +27,12 @@ describe ::CSVPlusPlus::References do
 
   describe '.extract' do
     let(:functions) { { foo: build(:fn_foo) } }
-    let(:scope) { build(:scope, functions:) }
+    let(:variables) { { bar: build(:cell_reference, ref: 'A1') } }
+    let(:scope) { build(:scope, functions:, variables:) }
+    let(:runtime) { build(:runtime) }
     let(:ast) { build(:number_one) }
 
-    subject { described_class.extract(ast, scope) }
+    subject { described_class.extract(ast, scope, runtime) }
 
     it 'finds no references' do
       expect(subject.functions).to(be_empty)
@@ -38,7 +40,7 @@ describe ::CSVPlusPlus::References do
     end
 
     context 'with a variable' do
-      let(:ast) { build(:variable_foo) }
+      let(:ast) { build(:variable_bar) }
 
       it 'finds variable references' do
         expect(subject.functions).to(be_empty)
@@ -74,12 +76,6 @@ describe ::CSVPlusPlus::References do
     end
   end
 
-  describe '#to_s' do
-    subject { references.to_s }
-
-    it { is_expected.to(eq('References(functions: [], variables: [])')) }
-  end
-
   describe '#==' do
     let(:a) { described_class.new }
     let(:b) { described_class.new }
@@ -90,6 +86,7 @@ describe ::CSVPlusPlus::References do
 
     context 'when one has references' do
       before { a.variables << build(:variable_foo) }
+
       it { is_expected.to(be(false)) }
     end
 
@@ -98,6 +95,7 @@ describe ::CSVPlusPlus::References do
         a.variables << build(:variable_foo)
         b.variables << build(:variable_bar)
       end
+
       it { is_expected.to(be(false)) }
     end
 
@@ -106,6 +104,7 @@ describe ::CSVPlusPlus::References do
         a.variables << build(:variable_foo)
         b.variables << build(:variable_foo)
       end
+
       it { is_expected.to(be(true)) }
     end
   end

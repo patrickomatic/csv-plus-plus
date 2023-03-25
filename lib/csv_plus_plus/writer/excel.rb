@@ -14,6 +14,7 @@ module CSVPlusPlus
         ::CSVPlusPlus::Writer::RubyXLBuilder.new(
           input_filename: @options.output_filename,
           rows: template.rows,
+          runtime: @runtime,
           sheet_name: @options.sheet_name
         ).build_workbook.write(@options.output_filename)
       end

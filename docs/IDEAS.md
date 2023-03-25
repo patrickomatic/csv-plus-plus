@@ -1,13 +1,20 @@
+# Ruby
+- [ ] Look into using RBS
+- [ ] Make it compatible with older ruby versions - no reason we need the newest (it seems like 2.3 would be reasonable to target)
+
 # Testing/Publishing
 
 - [ ] Homebrew package
 - [ ] Debian package
 - [x] Get the Google API default credentials working with tests
 
-# Spreadsheet Compatibility
+# Spreadsheet Functionality
 
 - [ ] OpenOffice - whatever it's equivalent format is
+- [ ] Charts
+- [ ] Pivot table support - not sure what this would even look like
 - [ ] Apple Numbers - I don't think there are even libraries to do it
+- [ ] Support for vb script?  I don't think it would work anywhere but excel
 - [x] Excel - look into caxlsx, Apache POI or openxml
 - [x] make it output to CSV (loses formatting, but keeps formulas, variables and expansions)
 
@@ -51,10 +58,7 @@
 
 # Other
 
-- [ ] Make it compatible with older ruby versions - no reason we need the newest (it seems like 2.3 would be reasonable to target)
-- [ ] Revise the "how to use" docs
-- [ ] Charts
-- [ ] Pivot table support - not sure what this would even look like
+- [x] Revise the "how to use" docs
 - [x] backups before each write
 - [x] Benchmarks in verbose mode
 - [x] Simplecov

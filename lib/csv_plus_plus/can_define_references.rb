@@ -7,13 +7,15 @@ module CSVPlusPlus
     #
     # @param id [String, Symbol] The identifier for the variable
     # @param entity [Entity] The value (entity) the variable holds
+    #
+    # @return [Entity] The value of the variable (+entity+)
     def def_variable(id, entity)
       variables[id.to_sym] = entity
     end
 
     # Define (or re-define existing) variables
     #
-    # @param variables [Hash<Symbol, Variable>] Variables to define
+    # @param vars [Hash<Symbol, Variable>] Variables to define
     def def_variables(vars)
       vars.each { |id, entity| def_variable(id, entity) }
     end
@@ -22,6 +24,8 @@ module CSVPlusPlus
     #
     # @param id [String, Symbol] The identifier for the function
     # @param entity [Entities::Function] The defined function
+    #
+    # @return [Entities::Function] The defined function
     def def_function(id, entity)
       functions[id.to_sym] = entity
     end

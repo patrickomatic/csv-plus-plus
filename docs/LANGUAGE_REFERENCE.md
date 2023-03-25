@@ -25,7 +25,7 @@ def <function-name> ( <arg1>, <arg2>, ... )
 They can have any number of arguments and will be evaluated in the context of the cell in 
 which they are called.
 
-### Examples
+#### Examples
 ```
 def minus_one(number) number - 1
 
@@ -41,17 +41,18 @@ and underscores), the expression `:=` and followed with a value:
 ```
 <variable-name> := <expression>
 ```
-### Examples
+#### Examples
 
 ```
 foo := A3
 bar := SUM(celladjacent(A), B4)
 ```
+
 ## Built-ins
 
 csv++ comes with a number of builtin functions and variables.  They are all evaluated in the
 context of the cell calling them, which is important to note because they can reference cells
-around them.
+around the calling cell.
 
 ### Variables
 
@@ -70,6 +71,32 @@ around them.
   `C5`, calling `cellabove(A)` will yield `A4`.
 * `celladjacent(C)` - A reference to a cell on the the same row as the current cell.
 * `cellbelow(C)` - Returns a reference to a cell on the row below it.
+
+## Scope Semantics
+
+At this point it's worth mentioning that csv++ has pretty unique variable and function scoping 
+semantics - all functions and variables are dynamically evaluated in the context of the cell in which 
+they are used.  For example you can define a variable (or function) in the code section which 
+references cells relative to the place where they are used:
+
+```
+# $$interest_rate is bound to cell B1 via the var= modifier below.
+# cell_adjacent(A) gives us a reference to the "Amount" value for each row
+interest_on_amount := $$interest_rate * cell_adjacent(A)
+---
+Interest Rate:,[[var=interest_rate]]0.05
+[[format=bold]Amount,Amount with interest
+50000,=$$interest_on_amount
+100000,=$$interest_on_amount
+500000,=$$interest_on_amount
+```
+
+in the above example, `$$interest_on_amount` will be evaluated per the different amount on each
+row.  This gets interesting when combined with the `![[expand=]]` directive:
+
+```
+# TODO: make an example
+```
 
 ## Modifiers
 
@@ -140,7 +167,7 @@ which will apply that modifier to all cells in the row.
 * `var` `=` `VARIABLE_ID`
   - Bind a variable (specified by `VARIABLE_ID`) to reference this cell.
 
-### Examples
+#### Examples
 
 * Align the second cell left, align the last cell to the center and make it bold and italicized:
 

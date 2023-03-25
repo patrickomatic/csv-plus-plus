@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
 describe ::CSVPlusPlus::Writer::RubyXLBuilder do
+  let(:runtime) { build(:runtime) }
   let(:sheet_name) { 'Test Excel Sheet' }
   let(:rows) { [] }
   let(:input_filename) { 'test.xlsx' }
 
-  subject(:rubyxl_builder) { described_class.new(sheet_name:, rows:, input_filename:) }
+  subject(:rubyxl_builder) { described_class.new(input_filename:, runtime:, rows:, sheet_name:) }
 
   describe '#build_workbook' do
     let(:worksheet) { subject.worksheets[0] }

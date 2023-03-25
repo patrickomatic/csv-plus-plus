@@ -36,7 +36,7 @@ module CSVPlusPlus
     rescue ::Racc::ParseError => e
       runtime.raise_formula_syntax_error("Error parsing #{parse_subject}", e.message, wrapped_error: e)
     rescue ::CSVPlusPlus::Error::ModifierValidationError => e
-      raise(::CSVPlusPlus::Error::ModifierSyntaxError.new(runtime, wrapped_error: e))
+      raise(::CSVPlusPlus::Error::ModifierSyntaxError.from_validation_error(runtime, e))
     end
 
     TOKEN_LIBRARY = {
@@ -76,8 +76,11 @@ module CSVPlusPlus
         @tokens << [tokenizer.last_token, tokenizer.last_match]
       elsif tokenizer.scan_catchall
         @tokens << [tokenizer.last_match, tokenizer.last_match]
+      # TODO: checking the +parse_subject+ like this is a little hacky... but we need to know if we're parsing
+      # modifiers or code_section (or formulas in a cell)
+      elsif parse_subject == 'modifier'
+        runtime.raise_modifier_syntax_error("Unable to parse #{parse_subject} starting at", tokenizer.peek)
       else
-        # TODO: this should raise a modifier_syntax_error if we're on the modifier parser
         runtime.raise_formula_syntax_error("Unable to parse #{parse_subject} starting at", tokenizer.peek)
       end
     end

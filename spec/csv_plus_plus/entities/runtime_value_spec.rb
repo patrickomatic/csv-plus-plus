@@ -3,16 +3,12 @@
 describe ::CSVPlusPlus::Entities::RuntimeValue do
   let(:resolve_fn) { -> { build(:number_zero) } }
 
-  subject(:runtime_value) { described_class.new(resolve_fn) }
+  subject(:entity) { described_class.new(resolve_fn) }
 
   describe '#initialize' do
     it 'has a nil id' do
       expect(subject.id).to(be_nil)
     end
-  end
-
-  describe '#runtime_value?' do
-    it { is_expected.to(be_runtime_value) }
   end
 
   describe '#==' do
@@ -22,9 +18,15 @@ describe ::CSVPlusPlus::Entities::RuntimeValue do
     it { is_expected.not_to(eq(build(:variable_foo))) }
   end
 
-  describe '#to_s' do
-    subject { runtime_value.to_s }
+  describe '#evaluate' do
+    let(:runtime) { build(:runtime) }
 
-    it { is_expected.to(eq('(runtime_value)')) }
+    subject { entity.evaluate(runtime) }
+
+    it { is_expected.to(eq('(runtime value)')) }
+  end
+
+  describe '#runtime_value?' do
+    it { is_expected.to(be_runtime_value) }
   end
 end

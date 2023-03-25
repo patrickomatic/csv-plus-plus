@@ -131,7 +131,7 @@ describe ::CSVPlusPlus::Parser::CodeSection do
                   :fn_call,
                   name: 'FOO',
                   arguments: [
-                    build(:fn_call, name: 'BAR', arguments: [build(:cell_reference), build(:number, n: 8)]),
+                    build(:fn_call, name: 'BAR', arguments: [build(:cell_reference, ref: 'C1'), build(:number, n: 8)]),
                     build(:variable, id: 'var')
                   ]
                 )

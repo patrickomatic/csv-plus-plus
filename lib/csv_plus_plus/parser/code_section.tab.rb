@@ -361,7 +361,7 @@ module_eval(<<'.,.,', 'code_section.y', 50)
 
 module_eval(<<'.,.,', 'code_section.y', 51)
   def _reduce_21(val, _values, result)
-     result = cell_reference(val[0])
+     result = cell_reference(ref: val[0])
     result
   end
 .,.,

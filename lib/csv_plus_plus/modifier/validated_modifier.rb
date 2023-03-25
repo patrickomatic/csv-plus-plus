@@ -44,7 +44,7 @@ module CSVPlusPlus
       #
       # @param value [String] The unvalidated user input
       def expand=(value)
-        super(::CSVPlusPlus::Expand.new(positive_integer(:expand, value)))
+        super(::CSVPlusPlus::Expand.new(repetitions: positive_integer(:expand, value)))
       end
 
       # Validates that +fontcolor+ is a hex color.
@@ -104,6 +104,7 @@ module CSVPlusPlus
       # Pretty much based off of the Google Sheets API spec here:
       #
       # @param value [String] The unvalidated user input
+      # TODO: rename this back to just validate so it's error will match what is parsed?
       def validation=(value)
         super(a_data_validation(:validation, value))
       end
@@ -118,7 +119,7 @@ module CSVPlusPlus
 
       private
 
-      # XXX centralize this :(((
+      # XXX centralize this unquoting logic :(((
       def unquote(str)
         # TODO: I'm pretty sure this isn't sufficient and we need to deal with the backslashes
         str.gsub(/^['\s]*|['\s]*$/, '')
@@ -159,7 +160,7 @@ module CSVPlusPlus
       end
 
       def raise_error(modifier, bad_input, choices: nil, message: nil)
-        raise(::CSVPlusPlus::Error::ModifierValidationError.new(modifier, bad_input, choices:, message:))
+        raise(::CSVPlusPlus::Error::ModifierValidationError.new(modifier, bad_input:, choices:, message:))
       end
     end
   end

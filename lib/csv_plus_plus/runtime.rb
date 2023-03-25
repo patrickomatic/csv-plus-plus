@@ -17,6 +17,7 @@ module CSVPlusPlus
   # @attr cell_index [Integer] The index of the current cell being processed (starts at 0)
   # @attr row_index [Integer] The index of the current row being processed (starts at 0)
   # @attr line_number [Integer] The line number of the original csvpp template (starts at 1)
+  # rubocop:disable Metrics/ClassLength
   class Runtime
     attr_reader :filename, :length_of_code_section, :length_of_csv_section, :length_of_original_file
 
@@ -32,7 +33,24 @@ module CSVPlusPlus
       start!
     end
 
-    # Map over an a csvpp file and keep track of line_number and row_index
+    # Clean up the Tempfile we're using for parsing
+    def cleanup!
+      return unless @tmp
+
+      @tmp.close
+      @tmp.unlink
+      @tmp = nil
+    end
+
+    # The currently available input for parsing.  The tmp state will be re-written
+    # between parsing the code section and the CSV section
+    #
+    # @return [::String]
+    def input
+      @tmp
+    end
+
+    # Map over a csvpp file and keep track of line_number and row_index
     #
     # @param lines [Array]
     #
@@ -114,11 +132,6 @@ module CSVPlusPlus
       @line_number = @length_of_code_section || 1
     end
 
-    # @return [String]
-    def to_s
-      "Runtime(cell: #{@cell}, row_index: #{@row_index}, cell_index: #{@cell_index})"
-    end
-
     # Get the current (entity) value of a runtime value
     #
     # @param var_id [String, Symbol] The Variable#id  of the variable being resolved.
@@ -141,8 +154,8 @@ module CSVPlusPlus
       ::CSVPlusPlus::Entities::Builtins::VARIABLES.key?(var_id.to_sym)
     end
 
-    # Called when an error is encoutered during parsing.  It will construct a useful
-    # error with the current +@row/@cell_index+, +@line_number+ and +@filename+
+    # Called when an error is encoutered during parsing formulas (whether in the code section or a cell).  It will
+    # construct a useful error with the current +@row/@cell_index+, +@line_number+ and +@filename+
     #
     # @param message [String] A message relevant to why this error is being raised.
     # @param bad_input [String] The offending input that caused this error to be thrown.
@@ -151,30 +164,38 @@ module CSVPlusPlus
       raise(::CSVPlusPlus::Error::FormulaSyntaxError.new(message, bad_input, self, wrapped_error:))
     end
 
-    # The currently available input for parsing.  The tmp state will be re-written
-    # between parsing the code section and the CSV section
-    #
-    # @return [String]
-    def input
-      @tmp
+    # Called when an error is encountered while parsing a modifier.
+    def raise_modifier_syntax_error(message, bad_input, wrapped_error: nil)
+      raise(::CSVPlusPlus::Error::ModifierSyntaxError.new(self, bad_input:, message:, wrapped_error:))
     end
 
     # We mutate the input over and over. It's ok because it's just a Tempfile
     #
-    # @param data [String] The data to rewrite our input file to
+    # @param data [::String] The data to rewrite our input file to
     def rewrite_input!(data)
       @tmp.truncate(0)
       @tmp.write(data)
       @tmp.rewind
     end
 
-    # Clean up the Tempfile we're using for parsing
-    def cleanup!
-      return unless @tmp
+    # Is the runtime currently processing cells within this expand?
+    #
+    # @param var_id [Symbol] The variable's identifier that we are checking if it's in scope
+    #
+    # @return [boolean]
+    def in_scope?(var_id, scope)
+      value = scope.variables[var_id]
 
-      @tmp.close
-      @tmp.unlink
-      @tmp = nil
+      raise_modifier_syntax_error('Undefined variable reference', var_id.to_s) if value.nil?
+
+      expand = value.cell_reference? && value.scoped_to_expand
+      return true unless expand
+
+      unless expand.starts_at
+        raise(::CSVPlusPlus::Error::Error, 'Must call Template.expand_rows! before checking the scope of expands.')
+      end
+
+      @row_index >= expand.starts_at && (expand.ends_at.nil? || row_index <= expand.ends_at)
     end
 
     private
@@ -196,4 +217,5 @@ module CSVPlusPlus
       rewrite_input!(input)
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

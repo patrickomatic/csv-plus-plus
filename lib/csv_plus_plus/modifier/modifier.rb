@@ -42,17 +42,6 @@ module CSVPlusPlus
       attr_reader :borders, :formats
       attr_writer :borderstyle
 
-      # When instantiating a new object, extend it with our validation functionality.
-      #
-      # I'm not sure why I need to do it this way tbh, using +include ValidatedModifier+ at the
-      # class level didn't seem to have access to the parent methods
-      # def self.new(*args, **kwargs, &)
-      #   allocate.tap do |i|
-      #     i.__send__(:initialize, *args, **kwargs, &)
-      #     i.extend(::CSVPlusPlus::ValidatedModifier)
-      #   end
-      # end
-
       # @param row_level [Boolean] Whether or not this modifier applies to the entire row
       def initialize(row_level: false)
         @row_level = row_level
@@ -70,14 +59,14 @@ module CSVPlusPlus
 
       # Style of border
       #
-      # @return [Symbol]
+      # @return [:hashed, :dotted, :double, :solid, :solid_medium, :solid_thick]
       def borderstyle
         @borderstyle || :solid
       end
 
       # Is this a cell-level modifier?
       #
-      # @return [Boolean]
+      # @return [boolean]
       def cell_level?
         !@row_level
       end
@@ -108,7 +97,7 @@ module CSVPlusPlus
 
       # Set this modifier to expand infinitely
       #
-      # @return [::Expand]
+      # @return [::Expand, nil]
       def expand!
         @expand = ::CSVPlusPlus::Expand.new if row_level?
       end
@@ -124,7 +113,7 @@ module CSVPlusPlus
       #
       # @param type [:bold, :italic, :underline, :strikethrough]
       #
-      # @return [Boolean]
+      # @return [boolean]
       def formatted?(type)
         @formats.include?(type)
       end
@@ -155,13 +144,6 @@ module CSVPlusPlus
       # @return [boolean]
       def row_level?
         @row_level
-      end
-
-      # @return [::String]
-      def to_s
-        # TODO... I dunno, not sure how to manage this
-        "Modifier(row_level: #{@row_level} halign: #{@halign} valign: #{@valign} format: #{@formats} " \
-          "font_size: #{@font_size})"
       end
 
       # Create a new modifier instance, with all values defaulted from +other+

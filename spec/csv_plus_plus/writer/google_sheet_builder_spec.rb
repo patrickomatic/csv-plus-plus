@@ -12,8 +12,9 @@ describe ::CSVPlusPlus::Writer::GoogleSheetBuilder do
   end
   let(:sheet_id) { '#id' }
   let(:rows) { [build(:row), build(:row), build(:row)] }
+  let(:runtime) { build(:runtime) }
 
-  subject(:google_sheet_builder) { described_class.new(current_sheet_values:, sheet_id:, rows:) }
+  subject(:google_sheet_builder) { described_class.new(current_sheet_values:, sheet_id:, rows:, runtime:) }
 
   describe '#batch_update_spreadsheet_request' do
     let(:first_row) { subject.requests[0].update_cells.rows[0].values }

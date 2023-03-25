@@ -44,7 +44,7 @@ module CSVPlusPlus
 
       # The excel-specific number format code
       #
-      # @return [String]
+      # @return [::String]
       def number_format_code
         return unless numberformat
 
