@@ -23,11 +23,11 @@ require_relative 'csv_plus_plus/parser/cell_value.tab'
 require_relative 'csv_plus_plus/parser/code_section.tab'
 require_relative 'csv_plus_plus/parser/modifier.tab'
 
+require_relative 'csv_plus_plus/benchmarked_compiler'
 require_relative 'csv_plus_plus/compiler'
 require_relative 'csv_plus_plus/runtime'
 
 require_relative 'csv_plus_plus/lexer'
-require_relative 'csv_plus_plus/lexer/tokenizer'
 require_relative 'csv_plus_plus/modifier'
 require_relative 'csv_plus_plus/options'
 require_relative 'csv_plus_plus/row'

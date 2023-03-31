@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe ::CSVPlusPlus::Graph do
+describe ::CSVPlusPlus::Runtime::Graph do
   let(:runtime) { build(:runtime) }
 
   describe '#depth_first_search' do
@@ -47,7 +47,7 @@ describe ::CSVPlusPlus::Graph do
 
   describe '#topological_sort' do
     let(:deps) do
-      ::CSVPlusPlus::Graph::DependencyGraph[[['a', %w[b c]], ['b', ['c']], ['c', ['d']], ['d', []]]]
+      ::CSVPlusPlus::Runtime::Graph::DependencyGraph[[['a', %w[b c]], ['b', ['c']], ['c', ['d']], ['d', []]]]
     end
 
     subject { described_class.topological_sort(deps) }
@@ -57,7 +57,7 @@ describe ::CSVPlusPlus::Graph do
     end
 
     context "when it can't be resolved" do
-      let(:deps) { ::CSVPlusPlus::Graph::DependencyGraph[[['a', ['b']], ['b', ['a']]]] }
+      let(:deps) { ::CSVPlusPlus::Runtime::Graph::DependencyGraph[[['a', ['b']], ['b', ['a']]]] }
 
       it 'orders the keys by their required resolution order' do
         expect { subject }

@@ -15,7 +15,7 @@ module CSVPlusPlus
       def write(template)
         # TODO: also read it and merge the results
         ::CSV.open(@options.output_filename, 'wb') do |csv|
-          template.rows.each do |row|
+          @runtime.map_rows(template.rows) do |row|
             csv << build_row(row)
           end
         end
@@ -24,7 +24,7 @@ module CSVPlusPlus
       private
 
       def build_row(row)
-        row.cells.map { |cell| cell.evaluate(@runtime) }
+        @runtime.map_row(row.cells) { |cell, _i| cell.evaluate(@runtime) }
       end
     end
   end

@@ -97,11 +97,11 @@ module CSVPlusPlus
       #
       # @return [::String] An A1-style reference
       def evaluate(runtime)
-        unless in_scope?(runtime)
-          runtime.raise_modifier_syntax_error(message: 'Reference is out of scope', bad_input: runtime.cell.value)
-        end
+        # unless in_scope?(runtime)
+        #   runtime.raise_modifier_syntax_error(message: 'Reference is out of scope', bad_input: runtime.cell.value)
+        # end
 
-        to_a1_ref
+        to_a1_ref(runtime)
       end
 
       # Is the cell_reference a range? - something like A1:D10
@@ -113,25 +113,30 @@ module CSVPlusPlus
 
       private
 
-      # A +CellReference+ can be bound to an expand, and in that case it is only in scope within the rows of that
+      # A +CellReference+ can be bound to an expand and in that case it is only in scope within the rows of that
       # expand.
       #
       # @param runtime [Runtime] The current runtime.
       #
       # @return [boolean]
-      def in_scope?(runtime)
-        @scoped_to_expand.nil? || runtime.in_scope?(@scoped_to_expand)
-      end
+      # def in_scope?(runtime)
+      #   @scoped_to_expand.nil? || runtime.in_scope?(@scoped_to_expand)
+      # end
 
       # Turns index-based/X,Y coordinates into a A1 format
       #
       # @return [::String]
-      def to_a1_ref
-        return unless @row_index || @cell_index
+      def to_a1_ref(runtime)
+        row_index = runtime_row_index(runtime)
+        return unless row_index || @cell_index
 
-        rowref = @row_index ? (@row_index + 1).to_s : ''
+        rowref = row_index ? (row_index + 1).to_s : ''
         cellref = @cell_index ? to_a1_cell_ref : ''
         [cellref, rowref].join
+      end
+
+      def runtime_row_index(runtime)
+        @scoped_to_expand ? runtime.row_index : @row_index
       end
 
       # Turns a cell index into an A1 reference (just the "A" part - for example 0 == 'A', 1 == 'B', 2 == 'C', etc.)

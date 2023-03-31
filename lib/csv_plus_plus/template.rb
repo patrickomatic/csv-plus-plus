@@ -4,14 +4,14 @@ module CSVPlusPlus
   # Contains the data from a parsed csvpp template.
   #
   # @attr_reader rows [Array<Row>] The +Row+s that comprise this +Template+
-  # @attr_reader scope [Scope] The +Scope+ containing all function and variable references
+  # @attr_reader runtime [Runtime] The +Runtime+ containing all function and variable references
   class Template
-    attr_reader :rows, :scope
+    attr_reader :rows, :runtime
 
     # @param rows [Array<Row>] The +Row+s that comprise this +Template+
-    # @param scope [Scope] The +Scope+ containing all function and variable references
-    def initialize(rows:, scope:)
-      @scope = scope
+    # @param runtime [Runtime] The +Runtime+ containing all function and variable references
+    def initialize(rows:, runtime:)
+      @runtime = runtime
       @rows = rows
     end
 
@@ -25,9 +25,9 @@ module CSVPlusPlus
     # @param runtime [Runtime]
     def bind_all_vars!(runtime)
       runtime.map_rows(@rows) do |row|
-        # rubocop:disable Metrics/MissingElse
+        # rubocop:disable Style/MissingElse
         if row.unexpanded?
-          # rubocop:enable Metrics/MissingElse
+          # rubocop:enable Style/MissingElse
           raise(::CSVPlusPlus::Error::Error, 'Template#expand_rows! must be called before Template#bind_all_vars!')
         end
 
@@ -67,13 +67,13 @@ module CSVPlusPlus
       )
     end
 
-    # Provide a summary of the state of the template (and it's +@scope+)
+    # Provide a summary of the state of the template (and it's +@runtime+)
     #
     # @return [::String]
     def verbose_summary
       # TODO: we can probably include way more stats in here
       <<~SUMMARY
-        #{@scope.verbose_summary}
+        #{@runtime.verbose_summary}
 
         > #{@rows.length} rows to be written
       SUMMARY
@@ -86,9 +86,9 @@ module CSVPlusPlus
       return unless var
 
       if expand
-        @scope.bind_variable_in_expand(var, expand)
+        @runtime.bind_variable_in_expand(var, expand)
       else
-        @scope.bind_variable_to_cell(var)
+        @runtime.bind_variable_to_cell(var)
       end
     end
   end

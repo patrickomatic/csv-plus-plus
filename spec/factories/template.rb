@@ -4,9 +4,9 @@
   factory :template, class: ::CSVPlusPlus::Template do
     transient do
       rows { [] }
-      scope { build(:scope) }
+      runtime { build(:runtime) }
     end
 
-    initialize_with { new(rows:, scope:) }
+    initialize_with { new(rows:, runtime:) }
   end
 end

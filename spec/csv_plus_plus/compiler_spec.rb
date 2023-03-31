@@ -3,10 +3,9 @@
 describe ::CSVPlusPlus::Compiler do
   let(:input) { '' }
   let(:key_values) { {} }
-  let(:scope) { build(:scope, runtime:) }
   let(:runtime) { build(:runtime, input:) }
   let(:options) { build(:options, key_values:) }
-  let(:compiler) { build(:compiler, runtime:, options:, scope:) }
+  let(:compiler) { build(:compiler, runtime:, options:) }
 
   describe '.with_compiler' do
     let(:filename) { 'foo.csvpp' }

@@ -9,9 +9,11 @@
       cell { nil }
       filename { 'foo.csvpp' }
       input { '' }
+      functions { {} }
+      variables { {} }
     end
 
-    initialize_with { new(input:, filename:) }
+    initialize_with { new(input:, filename:, functions:, variables:) }
 
     after(:build) do |i, e|
       i.cell = e.cell

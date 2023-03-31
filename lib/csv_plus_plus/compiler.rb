@@ -1,19 +1,13 @@
 # frozen_string_literal: true
 
-require_relative 'benchmarked_compiler'
-require_relative 'entities'
-require_relative 'runtime'
-require_relative 'scope'
-
 module CSVPlusPlus
   # Encapsulates the parsing and building of objects (+Template+ -> +Row+ -> +Cell+). Variable resolution is delegated
   # to the +Scope+
   #
   # @attr_reader options [Options] The +Options+ to compile with
   # @attr_reader runtime [Runtime] The runtime execution
-  # @attr_reader scope [Scope] +Scope+ for variable resolution
   class Compiler
-    attr_reader :options, :runtime, :scope
+    attr_reader :options, :runtime
 
     # Create a compiler and make sure it gets cleaned up
     #
@@ -34,15 +28,13 @@ module CSVPlusPlus
 
     # @param runtime [Runtime]
     # @param options [Options]
-    # @param scope [Scope, nil]
-    def initialize(runtime:, options:, scope: nil)
+    def initialize(runtime:, options:)
       @options = options
       @runtime = runtime
-      @scope = scope || ::CSVPlusPlus::Scope.new(runtime:)
 
       # TODO: infer a type
       # allow user-supplied key/values to override anything global or from the code section
-      @scope.def_variables(
+      @runtime.def_variables(
         options.key_values.transform_values { |v| ::CSVPlusPlus::Entities::String.new(v.to_s) }
       )
     end
@@ -60,7 +52,7 @@ module CSVPlusPlus
       parse_code_section!
       rows = parse_csv_section!
 
-      ::CSVPlusPlus::Template.new(rows:, scope: @scope).tap do |t|
+      ::CSVPlusPlus::Template.new(rows:, runtime: @runtime).tap do |t|
         t.validate_infinite_expands(@runtime)
         expanding! { t.expand_rows! }
         bind_all_vars! { t.bind_all_vars!(@runtime) }
@@ -70,15 +62,14 @@ module CSVPlusPlus
 
     protected
 
-    # Parses the input file and sets variables on +@scope+ as necessary
+    # Parses the input file and sets variables on +@runtime+ as necessary
     def parse_code_section!
       @runtime.start!
 
       # TODO: this flow can probably be refactored, it used to have more needs back when we had to
       # parse and save the code_section
       parsing_code_section do |input|
-        csv_section = ::CSVPlusPlus::Parser::CodeSection.new(@scope).parse(input, @runtime)
-        # TODO: call scope.resolve_static_variables?? or maybe it doesn't matter
+        csv_section = ::CSVPlusPlus::Parser::CodeSection.new(@runtime).parse(input, @runtime)
 
         # return the csv_section to the caller because they're gonna re-write input with it
         next csv_section
@@ -105,7 +96,7 @@ module CSVPlusPlus
     def resolve_all_cells!(template)
       @runtime.start_at_csv!
       @runtime.map_rows(template.rows, cells_too: true) do |cell|
-        cell.ast = @scope.resolve_cell_value if cell.ast
+        cell.ast = @runtime.resolve_cell_value if cell.ast
       end
     end
 

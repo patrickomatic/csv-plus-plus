@@ -1,7 +1,7 @@
-## v0.2.0
+## v0.1.3
 
+- Proper scoping of variables defined within an expand modifier
 - Bugfix: multiple modifiers on the same row weren't being handled 
-- Proper variable scoping of variables defined within an expand modifier
 - Fix broken Yard doc generation
 
 ## v0.1.2

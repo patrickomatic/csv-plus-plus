@@ -3,11 +3,10 @@
 describe ::CSVPlusPlus::Parser::CodeSection do
   describe '#parse' do
     let(:runtime) { build(:runtime) }
-    let(:scope) { build(:scope, runtime:) }
-    let(:csv_section) { described_class.new(scope).parse(input, runtime) }
+    let(:csv_section) { described_class.new(runtime).parse(input, runtime) }
 
     describe 'Scope#variables' do
-      subject { scope.variables }
+      subject { runtime.variables }
 
       context 'with comments' do
         before { csv_section }
@@ -189,7 +188,7 @@ describe ::CSVPlusPlus::Parser::CodeSection do
     describe 'Scope#functions' do
       before { csv_section }
 
-      subject { scope.functions }
+      subject { runtime.functions }
 
       context 'with a single function that takes no args' do
         let(:input) do

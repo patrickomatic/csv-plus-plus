@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe ::CSVPlusPlus::References do
+describe ::CSVPlusPlus::Runtime::References do
   subject(:references) { described_class.new }
 
   describe '#initialize' do
@@ -28,11 +28,10 @@ describe ::CSVPlusPlus::References do
   describe '.extract' do
     let(:functions) { { foo: build(:fn_foo) } }
     let(:variables) { { bar: build(:cell_reference, ref: 'A1') } }
-    let(:scope) { build(:scope, functions:, variables:) }
-    let(:runtime) { build(:runtime) }
+    let(:runtime) { build(:runtime, functions:, variables:) }
     let(:ast) { build(:number_one) }
 
-    subject { described_class.extract(ast, scope, runtime) }
+    subject { described_class.extract(ast, runtime) }
 
     it 'finds no references' do
       expect(subject.functions).to(be_empty)

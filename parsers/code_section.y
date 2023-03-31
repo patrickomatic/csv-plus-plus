@@ -69,9 +69,10 @@ end
   include ::CSVPlusPlus::Lexer
   include ::CSVPlusPlus::Entities::ASTBuilder
 
-  def initialize(scope)
+  def initialize(runtime)
     super()
-    @scope = scope
+
+    @runtime = runtime
   end
 
   protected
@@ -119,9 +120,9 @@ end
 
   def def_function(id, arguments, body)
     fn_def = function(id, arguments, body)
-    @scope.def_function(fn_def.id, fn_def)
+    @runtime.def_function(fn_def.id, fn_def)
   end
 
   def def_variable(id, ast)
-    @scope.def_variable(id, ast)
+    @runtime.def_variable(id, ast)
   end
