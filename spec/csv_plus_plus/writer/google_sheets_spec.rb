@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 # TODO: this should probably be more specific than allowing any paths

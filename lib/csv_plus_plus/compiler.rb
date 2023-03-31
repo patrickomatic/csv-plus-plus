@@ -1,3 +1,4 @@
+# typed: true
 # frozen_string_literal: true
 
 module CSVPlusPlus
@@ -69,7 +70,7 @@ module CSVPlusPlus
       # TODO: this flow can probably be refactored, it used to have more needs back when we had to
       # parse and save the code_section
       parsing_code_section do |input|
-        csv_section = ::CSVPlusPlus::Parser::CodeSection.new(@runtime).parse(input, @runtime)
+        csv_section = ::CSVPlusPlus::Parser::CodeSection.new().yyparse(input, @runtime)
 
         # return the csv_section to the caller because they're gonna re-write input with it
         next csv_section
@@ -134,7 +135,7 @@ module CSVPlusPlus
 
     def parse_cell(value, row_modifier)
       cell_modifier = ::CSVPlusPlus::Modifier.new
-      parsed_value = ::CSVPlusPlus::Parser::Modifier.new(cell_modifier:, row_modifier:).parse(value, @runtime)
+      parsed_value = ::CSVPlusPlus::Parser::Modifier.new().yyparse(value, @runtime)
 
       ::CSVPlusPlus::Cell.parse(parsed_value, runtime:, modifier: cell_modifier)
     end

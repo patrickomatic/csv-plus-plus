@@ -12,6 +12,9 @@ gem 'googleauth', '~> 1.3', require: false
 # for writing xlsx files
 gem 'rubyXL', '~> 3.4'
 
+# type checking
+gem 'sorbet-static-and-runtime', '~> 0.5'
+
 group :development do
   # rake
   gem 'rake', '~> 13'
@@ -19,6 +22,8 @@ group :development do
   gem 'rubocop', '~> 1.4', require: false
   # LSP provider for editor/rubocop support
   gem 'solargraph', '~> 0'
+  # type generation
+  gem 'tapioca', '~> 0.11'
 end
 
 group :test do
