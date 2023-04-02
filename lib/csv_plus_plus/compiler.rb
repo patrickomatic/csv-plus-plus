@@ -156,7 +156,7 @@ module CSVPlusPlus
 
       cells = @runtime.map_row(csv_row) { |value, _cell_index| parse_cell(value, row_modifier) }
 
-      ::CSVPlusPlus::Row.new(cells, @runtime.row_index, row_modifier)
+      ::CSVPlusPlus::Row.new(cells:, index: @runtime.row_index, modifier: row_modifier)
     end
 
     sig { params(value: ::String, row_modifier: ::CSVPlusPlus::Modifier::Modifier).returns(::CSVPlusPlus::Cell) }

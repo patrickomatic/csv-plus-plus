@@ -58,7 +58,7 @@ module CSVPlusPlus
         else
           runtime.raise_modifier_syntax_error(
             "#{node.id} can only be referenced within the ![[expand]] where it was defined.",
-            node.id
+            node.id.to_s
           )
         end
       end
@@ -74,7 +74,7 @@ module CSVPlusPlus
       #
       # @return [boolean]
       def self.function_reference?(node, runtime)
-        node.function_call? && (runtime.defined_function?(node.id) || runtime.builtin_function?(node.id))
+        node.function_call? && (runtime.defined_function?(node.id) || runtime.builtin_function?(::T.must(node.id)))
       end
       private_class_method :function_reference?
 

@@ -31,11 +31,6 @@ module CSVPlusPlus
         @invalid_reason.nil?
       end
 
-      # @return [::String]
-      def to_s
-        "DataValidation(arguments: #{@arguments}, condition: #{@condition}, invalid_reason: #{@invalid_reason})"
-      end
-
       protected
 
       def unquote(str)

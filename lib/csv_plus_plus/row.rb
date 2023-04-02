@@ -25,7 +25,7 @@ module CSVPlusPlus
     # @param cells [Array<Cell>] The cells belonging to this row
     # @param index [Integer] The index of this row (starts at 0)
     # @param modifier [Modifier] The modifier to apply to all cells in this row
-    def initialize(cells, index, modifier)
+    def initialize(cells:, index:, modifier:)
       @cells = cells
       @modifier = modifier
       @index = index

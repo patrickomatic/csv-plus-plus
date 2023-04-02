@@ -20,7 +20,7 @@
       end
 
       factory :modifier_with_infinite_expand do
-        after(:build, &:expand!)
+        after(:build, &:infinite_expand!)
       end
     end
   end

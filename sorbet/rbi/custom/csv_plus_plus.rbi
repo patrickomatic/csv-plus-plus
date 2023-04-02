@@ -4,7 +4,28 @@ module CSVPlusPlus
   module Entities
     class Entity
       sig { returns(T::Boolean) }
+      def boolean?; end
+
+      sig { returns(T::Boolean) }
+      def cell_reference?; end
+
+      sig { returns(T::Boolean) }
+      def date?; end
+
+      sig { returns(T::Boolean) }
+      def function?; end
+
+      sig { returns(T::Boolean) }
       def function_call?; end
+
+      sig { returns(T::Boolean) }
+      def number?; end
+
+      sig { returns(T::Boolean) }
+      def runtime_value?; end
+
+      sig { returns(T::Boolean) }
+      def string?; end
 
       sig { returns(T::Boolean) }
       def variable?; end

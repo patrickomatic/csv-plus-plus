@@ -47,7 +47,7 @@ rule
           | 'halign'       EQ RIGHT_SIDE  { modifier.halign = val[2]        }
           | 'note'         EQ RIGHT_SIDE  { modifier.note = val[2]          }
           | 'numberformat' EQ RIGHT_SIDE  { modifier.numberformat = val[2]  }
-          | 'validate'     EQ RIGHT_SIDE  { modifier.validation = val[2]    }
+          | 'validate'     EQ RIGHT_SIDE  { modifier.validate = val[2]      }
           | 'valign'       EQ RIGHT_SIDE  { modifier.valign = val[2]        }
           | 'var'          EQ RIGHT_SIDE  { define_var(val[2])              }
 end

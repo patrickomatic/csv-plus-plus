@@ -5,27 +5,26 @@ module CSVPlusPlus
   module Modifier
     # A container representing the operations that can be applied to a cell or row
     #
-    # @attr bordercolor [Color]
-    # @attr borders [Array<Symbol>] The borders that will be set
+    # @attr bordercolor [::Color]
     # @attr color [Color] The background color of the cell
-    # @attr expand [Expand] Whether this row expands into multiple rows
+    # @attr expand [Modifier::Expand] Whether this row expands into multiple rows
     # @attr fontcolor [Color] The font color of the cell
     # @attr fontfamily [::String] The font family
-    # @attr fontsize [Integer] The font size
-    # @attr halign [:left, :center, :right] Horizontal alignment
+    # @attr fontsize [Numeric] The font size
+    # @attr halign [Modifier::HorizontalAlign] Horizontal alignment
     # @attr note [::String] A note/comment on the cell
-    # @attr numberformat [Symbol] A number format to apply to the value in the cell
-    # @attr row_level [boolean] Is this a row modifier? If so it's values will apply to all cells in the row
+    # @attr numberformat [Modifier::NumberFormat] A number format to apply to the value in the cell
+    # @attr row_level [::T::Boolean] Is this a row modifier? If so it's values will apply to all cells in the row
     #   (unless overridden by the cell modifier)
-    # @attr validation [Object]
-    # @attr valign [:top, :center, :bottom] Vertical alignment
+    # @attr validate [Modifier::DataValidation]
+    # @attr valign [Modifier::VerticalAlign] Vertical alignment
     # @attr var [Symbol] The variable bound to this cell
     #
-    # @attr_writer borderstyle [:hashed, :dotted, :double, :solid, :solid_medium, :solid_thick]
-    #   The style of border on the cell
+    # @attr_writer borderstyle [Modifier::BorderStyle] The style of border on the cell
     #
-    # @attr_reader borders [Array<Symbol>]
-    # @attr_reader formats [Array<Symbol>] Bold/italics/underline/strikethrough formatting
+    # @attr_reader borders [Set<Modifier::BorderSide>] The sides of the cell where a border will be applied.
+    # @attr_reader formats [Set<Modifier::TextFormat>] Bold/italics/underline and strikethrough formatting.
+    #
     # rubocop:disable Metrics/ClassLength
     class Modifier
       extend ::T::Sig
@@ -64,7 +63,7 @@ module CSVPlusPlus
       attr_accessor :row_level
 
       sig { returns(::T.nilable(::CSVPlusPlus::Modifier::DataValidation)) }
-      attr_accessor :validation
+      attr_accessor :validate
 
       sig { returns(::T.nilable(::CSVPlusPlus::Modifier::VerticalAlign)) }
       attr_accessor :valign

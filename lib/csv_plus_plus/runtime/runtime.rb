@@ -146,6 +146,7 @@ module CSVPlusPlus
         end
       end
 
+      sig { returns(::Integer) }
       # Increment state to the next line
       #
       # @return [Integer]
@@ -154,6 +155,7 @@ module CSVPlusPlus
         @line_number += 1
       end
 
+      sig { returns(::T.nilable(::Integer)) }
       # Return the current spreadsheet row number.  It parallels +@row_index+ but starts at 1.
       #
       # @return [Integer, nil]
@@ -163,61 +165,83 @@ module CSVPlusPlus
         @row_index + 1
       end
 
+      sig { params(cell: ::CSVPlusPlus::Cell, cell_index: ::Integer).returns(::Integer) }
       # Set the current cell and index
       #
       # @param cell [Cell] The current cell
       # @param cell_index [Integer] The index of the cell
+      #
+      # @return [Integer]
       def set_cell!(cell, cell_index)
         @cell = cell
         @cell_index = cell_index
       end
 
+      sig { returns(::Integer) }
       # Each time we run a parse on the input, reset the runtime state starting at the beginning of the file
       def start!
         @row_index = @cell_index = 0
         @line_number = 1
       end
 
+      sig { returns(::Integer) }
       # Reset the runtime state starting at the CSV section
+      #
+      # @return [Integer]
       def start_at_csv!
         # TODO: isn't the input re-written anyway without the code section? why do we need this?
         start!
         @line_number = @length_of_code_section || 1
       end
 
+      sig { params(fn_id: ::Symbol).returns(::T::Boolean) }
       # Is +fn_id+ a builtin function?
       #
-      # @param var_id [::String, Symbol] The Function#id to check if it's a runtime variable
+      # @param var_id [Symbol] The Function#id to check if it's a runtime variable
       #
-      # @return [boolean]
+      # @return [T::Boolean]
       def builtin_function?(fn_id)
-        ::CSVPlusPlus::Entities::Builtins::FUNCTIONS.key?(fn_id.to_sym)
+        ::CSVPlusPlus::Entities::Builtins::FUNCTIONS.key?(fn_id)
       end
 
+      sig { params(var_id: ::Symbol).returns(::T::Boolean) }
       # Is +var_id+ a builtin variable?
       #
-      # @param var_id [::String, Symbol] The Variable#id to check if it's a runtime variable
+      # @param var_id [Symbol] The Variable#id to check if it's a runtime variable
       #
-      # @return [boolean]
+      # @return [T::Boolean]
       def builtin_variable?(var_id)
-        ::CSVPlusPlus::Entities::Builtins::VARIABLES.key?(var_id.to_sym)
+        ::CSVPlusPlus::Entities::Builtins::VARIABLES.key?(var_id)
       end
 
+      sig do
+        params(message: ::String, bad_input: ::String, wrapped_error: ::T.nilable(::StandardError))
+          .returns(::T.noreturn)
+      end
       # Called when an error is encoutered during parsing formulas (whether in the code section or a cell).  It will
       # construct a useful error with the current +@row/@cell_index+, +@line_number+ and +@filename+
       #
-      # @param message [String] A message relevant to why this error is being raised.
-      # @param bad_input [String] The offending input that caused this error to be thrown.
+      # @param message [::String] A message relevant to why this error is being raised.
+      # @param bad_input [::String] The offending input that caused this error to be thrown.
       # @param wrapped_error [StandardError, nil] The underlying error that was raised (if it's not from our own logic)
       def raise_formula_syntax_error(message, bad_input, wrapped_error: nil)
         raise(::CSVPlusPlus::Error::FormulaSyntaxError.new(message, bad_input, self, wrapped_error:))
       end
 
+      sig do
+        params(message: ::String, bad_input: ::String, wrapped_error: ::T.nilable(::StandardError))
+          .returns(::T.noreturn)
+      end
       # Called when an error is encountered while parsing a modifier.
+      #
+      # @param message [::String] A message relevant to why this error is being raised.
+      # @param bad_input [::String] The offending input that caused this error to be thrown.
+      # @param wrapped_error [StandardError, nil] The underlying error that was raised (if it's not from our own logic)
       def raise_modifier_syntax_error(message, bad_input, wrapped_error: nil)
         raise(::CSVPlusPlus::Error::ModifierSyntaxError.new(self, bad_input:, message:, wrapped_error:))
       end
 
+      sig { params(data: ::String).void }
       # We mutate the input over and over. It's ok because it's just a Tempfile
       #
       # @param data [::String] The data to rewrite our input file to

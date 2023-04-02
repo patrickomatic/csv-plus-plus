@@ -88,12 +88,12 @@ describe ::CSVPlusPlus::Modifier::Modifier do
     end
   end
 
-  describe '#expand!' do
+  describe '#infinite_expand!' do
     let(:modifier) { build(:modifier, row_level: true) }
 
     subject { modifier.expand }
 
-    before { modifier.expand! }
+    before { modifier.infinite_expand! }
 
     it { is_expected.to(be_infinite) }
   end

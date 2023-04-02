@@ -74,7 +74,7 @@ module CSVPlusPlus
 
       runtime.raise_modifier_syntax_error(
         'You can only have one infinite expand= (on all others you must specify an amount)',
-        infinite_expand_rows[1]
+        infinite_expand_rows[1].to_s
       )
     end
 
