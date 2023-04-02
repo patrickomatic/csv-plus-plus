@@ -1,8 +1,6 @@
 # typed: true
 # frozen_string_literal: true
 
-require_relative './google_options'
-
 module CSVPlusPlus
   # Individual CLI flags that a user can supply
   #

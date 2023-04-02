@@ -10,6 +10,11 @@ module CSVPlusPlus
       def write(template)
         # TODO
       end
+
+      # write a backup
+      def write_backup
+        # TODO
+      end
     end
   end
 end

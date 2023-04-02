@@ -89,7 +89,7 @@ describe ::CSVPlusPlus::Modifier::ValidatedModifier do
     context '5' do
       before { modifier.expand = '5' }
 
-      it { is_expected.to(be_a(::CSVPlusPlus::Expand)) }
+      it { is_expected.to(be_a(::CSVPlusPlus::Modifier::Expand)) }
     end
 
     context 'with an invalid value' do

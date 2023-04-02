@@ -45,7 +45,7 @@ module CSVPlusPlus
       #
       # @param value [String] The unvalidated user input
       def expand=(value)
-        super(::CSVPlusPlus::Expand.new(repetitions: positive_integer(:expand, value)))
+        super(::CSVPlusPlus::Modifier::Expand.new(repetitions: positive_integer(:expand, value)))
       end
 
       # Validates that +fontcolor+ is a hex color.
@@ -90,7 +90,7 @@ module CSVPlusPlus
       #
       # @param value [String] The unvalidated user input
       def numberformat=(value)
-        super(one_of(:nubmerformat, value, %i[currency date date_time number percent text time scientific]))
+        super(one_of(:numberformat, value, %i[currency date date_time number percent text time scientific]))
       end
 
       # Validates that +valign+ is 'top', 'center' or 'bottom'.

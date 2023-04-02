@@ -69,12 +69,6 @@ end
   include ::CSVPlusPlus::Lexer
   include ::CSVPlusPlus::Entities::ASTBuilder
 
-  def initialize(runtime)
-    super()
-
-    @runtime = runtime
-  end
-
   protected
 
   def anything_to_parse?(input)

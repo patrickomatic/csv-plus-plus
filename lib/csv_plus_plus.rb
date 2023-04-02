@@ -1,4 +1,4 @@
-# typed: true
+# typed: strict
 # frozen_string_literal: true
 
 require 'sorbet-runtime'
@@ -9,12 +9,14 @@ require 'fileutils'
 require 'google/apis/drive_v3'
 require 'google/apis/sheets_v4'
 require 'googleauth'
+require 'optparse'
 require 'pathname'
 require 'rubyXL'
 require 'rubyXL/convenience_methods'
 require 'set'
 require 'tempfile'
 
+require_relative 'csv_plus_plus/cli_flag'
 require_relative 'csv_plus_plus/entities'
 require_relative 'csv_plus_plus/error'
 
@@ -30,6 +32,7 @@ require_relative 'csv_plus_plus/benchmarked_compiler'
 require_relative 'csv_plus_plus/compiler'
 require_relative 'csv_plus_plus/runtime'
 
+require_relative 'csv_plus_plus/google_options'
 require_relative 'csv_plus_plus/lexer'
 require_relative 'csv_plus_plus/modifier'
 require_relative 'csv_plus_plus/options'
@@ -39,6 +42,9 @@ require_relative 'csv_plus_plus/writer'
 
 # A programming language for writing rich CSV files
 module CSVPlusPlus
+  extend ::T::Sig
+
+  sig { params(input: ::String, filename: ::T.nilable(::String), options: ::CSVPlusPlus::Options).void }
   # Parse the input into a +Template+ and write it to the desired format
   #
   # @param input [String] The csvpp input to compile
@@ -57,6 +63,9 @@ module CSVPlusPlus
     end
   end
 
+  sig do
+    params(compiler: ::CSVPlusPlus::Compiler, options: ::CSVPlusPlus::Options, template: ::CSVPlusPlus::Template).void
+  end
   # Write the results (and possibly make a backup) of a compiled +template+
   #
   # @param compiler [Compiler] The compiler currently in use

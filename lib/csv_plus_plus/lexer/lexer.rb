@@ -1,8 +1,6 @@
 # typed: false
 # frozen_string_literal: true
 
-require_relative '../color'
-
 module CSVPlusPlus
   # Common methods to be mixed into the Racc parsers
   #

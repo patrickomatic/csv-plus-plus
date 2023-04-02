@@ -1,4 +1,4 @@
-# typed: true
+# typed: strict
 # frozen_string_literal: true
 
 module CSVPlusPlus
@@ -7,15 +7,23 @@ module CSVPlusPlus
   # @attr_reader rows [Array<Row>] The +Row+s that comprise this +Template+
   # @attr_reader runtime [Runtime] The +Runtime+ containing all function and variable references
   class Template
-    attr_reader :rows, :runtime
+    extend ::T::Sig
 
+    sig { returns(::T::Array[::CSVPlusPlus::Row]) }
+    attr_reader :rows
+
+    sig { returns(::CSVPlusPlus::Runtime::Runtime) }
+    attr_reader :runtime
+
+    sig { params(rows: ::T::Array[::CSVPlusPlus::Row], runtime: ::CSVPlusPlus::Runtime::Runtime).void }
     # @param rows [Array<Row>] The +Row+s that comprise this +Template+
     # @param runtime [Runtime] The +Runtime+ containing all function and variable references
     def initialize(rows:, runtime:)
-      @runtime = runtime
       @rows = rows
+      @runtime = runtime
     end
 
+    sig { params(runtime: ::CSVPlusPlus::Runtime::Runtime).void }
     # Only run after expanding all rows, now we can bind all [[var=]] modifiers to a variable.  There are two distinct
     # types of variable bindings here:
     #
@@ -23,7 +31,7 @@ module CSVPlusPlus
     # * Binding to a cell within an expand: the variable can only be resolved within that expand and needs to be
     #   relative to it's row (it can't be an absolute cell reference like above)
     #
-    # @param runtime [Runtime]
+    # @param runtime [Runtime] The current runtime
     def bind_all_vars!(runtime)
       runtime.map_rows(@rows) do |row|
         # rubocop:disable Style/MissingElse
@@ -38,6 +46,7 @@ module CSVPlusPlus
       end
     end
 
+    sig { returns(::T::Array[::CSVPlusPlus::Row]) }
     # Apply expand= (adding rows to the results) modifiers to the parsed template. This happens in towards the end of
     # compilation because expanding rows will change the relative rownums as rows are added, and variables can't be
     # bound until the rows have been assigned their final rownums.
@@ -55,6 +64,7 @@ module CSVPlusPlus
         end
     end
 
+    sig { params(runtime: ::CSVPlusPlus::Runtime::Runtime).void }
     # Make sure that the template has a valid amount of infinite expand modifiers
     #
     # @param runtime [Runtime] The compiler's current runtime
@@ -68,6 +78,7 @@ module CSVPlusPlus
       )
     end
 
+    sig { returns(::String) }
     # Provide a summary of the state of the template (and it's +@runtime+)
     #
     # @return [::String]
@@ -82,6 +93,7 @@ module CSVPlusPlus
 
     private
 
+    sig { params(cell: ::CSVPlusPlus::Cell, expand: ::T.nilable(::CSVPlusPlus::Modifier::Expand)).void }
     def bind_vars(cell, expand)
       var = cell.modifier.var
       return unless var

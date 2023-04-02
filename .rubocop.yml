@@ -2,6 +2,7 @@ AllCops:
   EnabledByDefault: true
 
   Exclude:
+    - 'bin/tapioca'
     - 'lib/**/*.tab.rb'
     - 'csv_plus_plus.gemspec'
 
@@ -12,6 +13,9 @@ Style/DisableCopsWithinSourceCodeDirective:
   Enabled: false
 
 Style/Copyright:
+  Enabled: false
+
+Style/AccessorGrouping:
   Enabled: false
 
 Metrics/BlockLength:

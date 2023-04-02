@@ -38,7 +38,7 @@ rule
           | 'borderstyle'  EQ RIGHT_SIDE  { modifier.borderstyle = val[2]   }
           | 'color'        EQ HEX_COLOR   { modifier.color = val[2]         }
           | 'expand'       EQ NUMBER      { modifier.expand = val[2]        }
-          | 'expand'                      { modifier.expand!                }
+          | 'expand'                      { modifier.infinite_expand!       }
           | 'fontcolor'    EQ HEX_COLOR   { modifier.fontcolor = val[2]     }
           | 'fontfamily'   EQ RIGHT_SIDE  { modifier.fontfamily = val[2]    }
           | 'fontsize'     EQ NUMBER      { modifier.fontsize = val[2]      }
@@ -54,7 +54,6 @@ end
 
 ---- header
 
-require_relative '../expand'
 require_relative '../lexer'
 
 ---- inner

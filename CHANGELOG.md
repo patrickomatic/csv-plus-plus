@@ -1,6 +1,7 @@
 ## v0.1.3
 
 - Proper scoping of variables defined within an expand modifier
+- Types via Sorbet
 - Bugfix: multiple modifiers on the same row weren't being handled 
 - Fix broken Yard doc generation
 

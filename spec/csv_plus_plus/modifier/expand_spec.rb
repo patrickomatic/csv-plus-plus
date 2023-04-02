@@ -1,7 +1,7 @@
 # typed: false
 # frozen_string_literal: true
 
-describe ::CSVPlusPlus::Expand do
+describe ::CSVPlusPlus::Modifier::Expand do
   let(:repetitions) { 2 }
 
   subject(:expand) { build(:expand, repetitions:) }

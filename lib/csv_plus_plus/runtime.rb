@@ -1,4 +1,4 @@
-# typed: true
+# typed: strict
 # frozen_string_literal: true
 
 require_relative './runtime/can_define_references'
@@ -17,7 +17,17 @@ module CSVPlusPlus
   # - rewriting the input file that's being parsed
   #
   module Runtime
-    # Initialized a runtime instance with all the functionality we need.  A runtime is one-to-one with a file being
+    extend ::T::Sig
+
+    sig do
+      params(
+        input: ::String,
+        filename: ::T.nilable(::String),
+        functions: ::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Function],
+        variables: ::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Entity]
+      ).returns(::CSVPlusPlus::Runtime::Runtime)
+    end
+    # Initialize a runtime instance with all the functionality we need.  A runtime is one-to-one with a file being
     # compiled.
     #
     # @param input [::String] The csv++ source code to be compiled
@@ -26,8 +36,8 @@ module CSVPlusPlus
     # @param variables [Hash<Symbol, Entity>] Pre-defined variables
     #
     # @return [Runtime::Runtime]
-    def self.new(input:, filename:, functions: {}, variables: {})
-      ::CSVPlusPlus::Runtime::Runtime.new(filename:, functions:, input:, variables:)
+    def self.new(input:, filename: nil, functions: {}, variables: {})
+      ::CSVPlusPlus::Runtime::Runtime.new(input:, filename:, functions:, variables:)
     end
   end
 end

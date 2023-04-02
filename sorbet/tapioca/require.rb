@@ -1,4 +1,24 @@
 # typed: true
 # frozen_string_literal: true
 
-# Add your extra requires here (`bin/tapioca require` can be used to bootstrap this list)
+require 'benchmark'
+require 'dotenv/load'
+require 'factory_bot'
+require 'fileutils'
+require 'google/apis/drive_v3'
+require 'google/apis/sheets_v4'
+require 'googleauth'
+require 'optparse'
+require 'pathname'
+require 'racc/parser'
+require 'rubyXL'
+require 'rubyXL/convenience_methods'
+require 'rubygems'
+require 'set'
+require 'simplecov'
+require 'sorbet-runtime'
+require 'strscan'
+require 'tempfile'
+require 'tsort'
+require 'vcr'
+require 'webmock/rspec'

@@ -1,4 +1,4 @@
-# typed: true
+# typed: strict
 # frozen_string_literal: true
 
 module CSVPlusPlus
@@ -7,20 +7,26 @@ module CSVPlusPlus
     #
     # @attr_reader value [Numeric] The parsed number value
     class Number < Entity
+      sig { returns(::Numeric) }
       attr_reader :value
 
+      sig { params(value: ::T.any(::String, ::Numeric)).void }
       # @param value [String, Numeric] Either a +String+ that looks like a number, or an already parsed Numeric
       def initialize(value)
         super(:number)
 
         @value =
-          if value.instance_of?(::String)
-            value.include?('.') ? Float(value) : Integer(value, 10)
-          else
-            value
-          end
+          ::T.let(
+            (if value.is_a?(::String)
+               value.include?('.') ? Float(value) : Integer(value, 10)
+             else
+               value
+             end),
+            ::Numeric
+          )
       end
 
+      sig { override.params(_runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
       # @param _runtime [Runtime]
       #
       # @return [::String]
@@ -28,11 +34,14 @@ module CSVPlusPlus
         @value.to_s
       end
 
+      sig { params(other: ::CSVPlusPlus::Entities::Entity).returns(::T::Boolean) }
       # @param other [Entity]
       #
       # @return [boolean]
       def ==(other)
-        super && value == other.value
+        return false unless super
+
+        other.is_a?(self.class) && @value == other.value
       end
     end
   end

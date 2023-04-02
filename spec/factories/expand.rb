@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 ::FactoryBot.define do
-  factory :expand, class: ::CSVPlusPlus::Expand do
+  factory :expand, class: ::CSVPlusPlus::Modifier::Expand do
     transient do
       repetitions { nil }
       starts_at { nil }

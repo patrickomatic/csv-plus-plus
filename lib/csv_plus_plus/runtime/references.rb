@@ -1,4 +1,4 @@
-# typed: false
+# typed: strict
 # frozen_string_literal: true
 
 module CSVPlusPlus
@@ -7,10 +7,22 @@ module CSVPlusPlus
     #
     # @attr functions [Array<Entities::Function>] Functions references
     # @attr variables [Array<Entities::Variable>] Variable references
+    # TODO: turn this into a CanExtractReferences?
     class References
-      # TODO: turn this into a CanExtractReferences?
-      attr_accessor :functions, :variables
+      extend ::T::Sig
 
+      sig { returns(::T::Array[::CSVPlusPlus::Entities::FunctionCall]) }
+      attr_accessor :functions
+
+      sig { returns(::T::Array[::CSVPlusPlus::Entities::Variable]) }
+      attr_accessor :variables
+
+      sig do
+        params(
+          ast: ::CSVPlusPlus::Entities::Entity,
+          runtime: ::CSVPlusPlus::Runtime::Runtime
+        ).returns(::CSVPlusPlus::Runtime::References)
+      end
       # Extract references from an AST and return them in a new +References+ object
       #
       # @param ast [Entity] An +Entity+ to do a depth first search on for references.  Entities can be
@@ -29,6 +41,9 @@ module CSVPlusPlus
         end
       end
 
+      sig do
+        params(node: ::CSVPlusPlus::Entities::Entity, runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::T::Boolean)
+      end
       # Is the node a resolvable variable reference?
       #
       # @param node [Entity] The node to check if it's resolvable
@@ -42,13 +57,16 @@ module CSVPlusPlus
           true
         else
           runtime.raise_modifier_syntax_error(
-            bad_input: node,
-            message: "#{var_id} can only be referenced within the ![[expand]] where it was defined."
+            "#{node.id} can only be referenced within the ![[expand]] where it was defined.",
+            node.id
           )
         end
       end
       private_class_method :variable_reference?
 
+      sig do
+        params(node: ::CSVPlusPlus::Entities::Entity, runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::T::Boolean)
+      end
       # Is the node a resolvable function reference?
       #
       # @param node [Entity] The node to check if it's resolvable
@@ -60,12 +78,14 @@ module CSVPlusPlus
       end
       private_class_method :function_reference?
 
+      sig { void }
       # Create an object with empty references.  The caller will build them up as it depth-first-searches
       def initialize
-        @functions = []
-        @variables = []
+        @functions = ::T.let([], ::T::Array[::CSVPlusPlus::Entities::FunctionCall])
+        @variables = ::T.let([], ::T::Array[::CSVPlusPlus::Entities::Variable])
       end
 
+      sig { params(other: ::CSVPlusPlus::Runtime::References).returns(::T::Boolean) }
       # @param other [References]
       #
       # @return [boolean]
@@ -73,9 +93,10 @@ module CSVPlusPlus
         @functions == other.functions && @variables == other.variables
       end
 
+      sig { returns(::T::Boolean) }
       # Are there any references to be resolved?
       #
-      # @return [boolean]
+      # @return [::T::Boolean]
       def empty?
         @functions.empty? && @variables.empty?
       end

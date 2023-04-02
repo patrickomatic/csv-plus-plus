@@ -34,6 +34,13 @@ module CSVPlusPlus
 
         super(@message)
       end
+
+      # A user-facing error message
+      #
+      # @return [::String]
+      def error_message
+        @message
+      end
     end
   end
 end

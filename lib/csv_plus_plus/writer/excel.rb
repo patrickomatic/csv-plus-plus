@@ -1,4 +1,4 @@
-# typed: true
+# typed: strict
 # frozen_string_literal: true
 
 require_relative './file_backer_upper'
@@ -8,9 +8,14 @@ module CSVPlusPlus
   module Writer
     # A class that can output a +Template+ to an Excel file
     class Excel < ::CSVPlusPlus::Writer::BaseWriter
+      extend ::T::Sig
+
       include ::CSVPlusPlus::Writer::FileBackerUpper
 
-      # write the +template+ to an Excel file
+      sig { override.params(template: ::CSVPlusPlus::Template).void }
+      # Write the +template+ to an Excel file
+      #
+      # @params template [Template] The template to write
       def write(template)
         ::CSVPlusPlus::Writer::RubyXLBuilder.new(
           input_filename: @options.output_filename,

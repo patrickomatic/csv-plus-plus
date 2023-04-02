@@ -1,8 +1,5 @@
-# typed: true
+# typed: strict
 # frozen_string_literal: true
-
-require_relative './cli_flag'
-require_relative './google_options'
 
 module CSVPlusPlus
   # The options a user can supply (via CLI flags)
@@ -16,18 +13,44 @@ module CSVPlusPlus
   # @attr verbose [boolean] Include extra verbose output?
   # @attr_reader google [GoogleOptions] Options that are specific to the Google Sheets writer
   class Options
-    attr_accessor :backup, :create_if_not_exists, :key_values, :offset, :output_filename, :sheet_name, :verbose
+    extend ::T::Sig
+
+    sig { returns(::T::Boolean) }
+    attr_accessor :backup
+
+    sig { returns(::T::Boolean) }
+    attr_accessor :create_if_not_exists
+
+    sig { returns(::T::Hash[::Symbol, ::String]) }
+    attr_accessor :key_values
+
+    sig { returns(::T::Array[::Integer]) }
+    attr_accessor :offset
+
+    sig { returns(::T.nilable(::String)) }
+    attr_accessor :output_filename
+
+    sig { returns(::T.nilable(::String)) }
+    attr_accessor :sheet_name
+
+    sig { returns(::T::Boolean) }
+    attr_accessor :verbose
+
+    sig { returns(::T.nilable(::CSVPlusPlus::GoogleOptions)) }
     attr_reader :google
 
-    # initialize
+    sig { void }
+    # Initialize a default +Options+ object
     def initialize
-      @offset = [0, 0]
-      @create_if_not_exists = false
-      @key_values = {}
-      @verbose = false
-      @backup = false
+      @offset = ::T.let([0, 0], ::T::Array[::Integer])
+      @create_if_not_exists = ::T.let(false, ::T::Boolean)
+      @key_values = ::T.let({}, ::T::Hash[::Symbol, ::String])
+      @verbose = ::T.let(false, ::T::Boolean)
+      @backup = ::T.let(false, ::T::Boolean)
+      @google = ::T.let(nil, ::T.nilable(::CSVPlusPlus::GoogleOptions))
     end
 
+    sig { params(sheet_id: ::String).returns(::CSVPlusPlus::GoogleOptions) }
     # Set the Google Sheet ID
     #
     # @param sheet_id [String] The identifier used by Google's API to reference the sheet.  You can find it in the URL
@@ -38,6 +61,7 @@ module CSVPlusPlus
       @google = ::CSVPlusPlus::GoogleOptions.new(sheet_id)
     end
 
+    sig { returns(::T.nilable(::String)) }
     # Returns an error string or nil if there are no validation problems
     #
     # @return [String, nil]
@@ -47,6 +71,7 @@ module CSVPlusPlus
       'You must supply either a Google Sheet ID or an output file'
     end
 
+    sig { returns(::String) }
     # Return a string with a verbose description of what we're doing with the options
     #
     # @return [String]
@@ -56,7 +81,6 @@ module CSVPlusPlus
 
         # csv++ Command Options
 
-        > Input filename                      | #{@filename}
         > Sheet name                          | #{@sheet_name}
         > Create sheet if it does not exist?  | #{@create_if_not_exists}
         > Spreadsheet row-offset              | #{@offset[0]}
@@ -74,14 +98,9 @@ module CSVPlusPlus
       SUMMARY
     end
 
-    # @return [String]
-    def to_s
-      "Options(create_if_not_exists: #{@create_if_not_exists}, google: #{@google}, key_values: #{@key_values}, " \
-        "offset: #{@offset}, sheet_name: #{@sheet_name}, verbose: #{@verbose})"
-    end
-
     private
 
+    sig { returns(::String) }
     def summary_divider
       '========================================================================='
     end

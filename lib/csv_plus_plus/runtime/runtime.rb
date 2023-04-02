@@ -19,25 +19,57 @@ module CSVPlusPlus
     # @attr cell_index [Integer] The index of the current cell being processed (starts at 0)
     # @attr row_index [Integer] The index of the current row being processed (starts at 0)
     # @attr line_number [Integer] The line number of the original csvpp template (starts at 1)
+    #
+    # rubocop:disable Metrics/ClassLength
     class Runtime
+      extend ::T::Sig
       include ::CSVPlusPlus::Runtime::CanDefineReferences
       include ::CSVPlusPlus::Runtime::CanResolveReferences
 
-      attr_reader :filename,
-                  :functions,
-                  :length_of_code_section,
-                  :length_of_csv_section,
-                  :length_of_original_file,
-                  :variables
+      sig { returns(::String) }
+      attr_reader :filename
 
-      attr_accessor :cell, :cell_index, :row_index, :line_number
+      sig { returns(::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Function]) }
+      attr_reader :functions
 
+      sig { returns(::T.nilable(::Integer)) }
+      attr_reader :length_of_code_section
+
+      sig { returns(::T.nilable(::Integer)) }
+      attr_reader :length_of_csv_section
+
+      sig { returns(::T.nilable(::Integer)) }
+      attr_reader :length_of_original_file
+
+      sig { returns(::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Entity]) }
+      attr_reader :variables
+
+      sig { returns(::T.nilable(::CSVPlusPlus::Cell)) }
+      attr_accessor :cell
+
+      sig { returns(::Integer) }
+      attr_accessor :cell_index
+
+      sig { returns(::Integer) }
+      attr_accessor :row_index
+
+      sig { returns(::Integer) }
+      attr_accessor :line_number
+
+      sig do
+        params(
+          input: ::String,
+          filename: ::T.nilable(::String),
+          functions: ::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Function],
+          variables: ::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Entity]
+        ).void
+      end
       # @param input [String] The input to be parsed
       # @param filename [String, nil] The filename that the input came from (mostly used for debugging since +filename+
       #   can be +nil+ if it's read from stdin
       # @param functions [Hash<Symbol, Function>] Pre-defined functions
       # @param variables [Hash<Symbol, Entity>] Pre-defined variables
-      def initialize(input:, filename:, functions: {}, variables: {})
+      def initialize(input:, filename: nil, functions: {}, variables: {})
         @filename = filename || 'stdin'
         @functions = functions
         @variables = variables
@@ -46,6 +78,7 @@ module CSVPlusPlus
         start!
       end
 
+      sig { void }
       # Clean up the Tempfile we're using for parsing
       def cleanup!
         return unless @tmp
@@ -55,6 +88,7 @@ module CSVPlusPlus
         @tmp = nil
       end
 
+      sig { returns(::File) }
       # The currently available input for parsing.  The tmp state will be re-written
       # between parsing the code section and the CSV section
       #
@@ -63,6 +97,12 @@ module CSVPlusPlus
         @tmp
       end
 
+      sig do
+        type_parameters(:I, :O).params(
+          lines: ::T::Array[::T.type_parameter(:I)],
+          block: ::T.proc.params(args0: ::T.type_parameter(:I)).returns(::T.all(::T.type_parameter(:O), ::Object))
+        ).returns(::T::Array[::T.type_parameter(:O)])
+      end
       # Map over a csvpp file and keep track of line_number and row_index
       #
       # @param lines [Array]
@@ -134,7 +174,7 @@ module CSVPlusPlus
 
       # Each time we run a parse on the input, reset the runtime state starting at the beginning of the file
       def start!
-        @row_index = @cell_index = nil
+        @row_index = @cell_index = 0
         @line_number = 1
       end
 
@@ -206,5 +246,6 @@ module CSVPlusPlus
         rewrite_input!(input)
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end
