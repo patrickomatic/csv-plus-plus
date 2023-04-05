@@ -1,4 +1,4 @@
-# typed: true
+# typed: strict
 # frozen_string_literal: true
 
 require_relative './rubyxl_modifier'
@@ -9,43 +9,79 @@ module CSVPlusPlus
     #
     # @attr_reader input_filename [String] The filename being written to
     # @attr_reader rows [Array<Row>] The rows being written
+    # rubocop:disable Metrics/ClassLength
     class RubyXLBuilder
-      attr_reader :input_filename, :rows
+      extend ::T::Sig
 
-      # @param input_filename [String] The file to write to
+      RubyXLCell = ::T.type_alias { ::T.all(::RubyXL::Cell, ::RubyXL::CellConvenienceMethods) }
+      public_constant :RubyXLCell
+
+      sig { returns(::T.nilable(::String)) }
+      attr_reader :input_filename
+
+      sig { returns(::T::Array[::CSVPlusPlus::Row]) }
+      attr_reader :rows
+
+      sig do
+        params(
+          input_filename: ::T.nilable(::String),
+          rows: ::T::Array[::CSVPlusPlus::Row],
+          runtime: ::CSVPlusPlus::Runtime::Runtime,
+          sheet_name: ::T.nilable(::String)
+        ).void
+      end
+      # @param input_filename [::String] The file to write to
       # @param rows [Array<Row>] The rows to write
       # @param runtime [Runtime] The current runtime
-      # @param sheet_name [String] The name of the sheet within the workbook to write to
-      def initialize(input_filename:, rows:, runtime:, sheet_name:)
+      # @param sheet_name [::String] The name of the sheet within the workbook to write to
+      def initialize(input_filename:, rows:, runtime:, sheet_name: nil)
         @rows = rows
         @input_filename = input_filename
         @runtime = runtime
         @sheet_name = sheet_name
+        @worksheet = ::T.let(open_worksheet, ::RubyXL::Worksheet)
       end
 
+      sig { returns(::RubyXL::Workbook) }
       # Build a +RubyXL::Workbook+ with the given +@rows+ in +sheet_name+
       #
       # @return [RubyXL::Workbook]
       def build_workbook
-        open_workbook.tap { build_workbook! }
+        build_workbook!
+        @worksheet.workbook
       end
 
       private
 
+      sig { void }
       def build_workbook!
-        @runtime.map_rows(@rows, cells_too: true) do |cell|
-          modifier = ::CSVPlusPlus::Writer::RubyXLModifier.new(cell.modifier)
-
+        @runtime.map_all_cells(@rows) do |cell|
           @worksheet.add_cell(@runtime.row_index, @runtime.cell_index, cell.evaluate(@runtime))
-          format_cell!(@runtime.row_index, @runtime.cell_index, modifier)
+          format_cell!(
+            @runtime.row_index,
+            @runtime.cell_index,
+            ::T.cast(cell.modifier, ::CSVPlusPlus::Modifier::RubyXLModifier)
+          )
         end
       end
 
+      sig do
+        params(
+          cell: ::CSVPlusPlus::Writer::RubyXLBuilder::RubyXLCell,
+          modifier: ::CSVPlusPlus::Modifier::RubyXLModifier
+        ).void
+      end
       def do_alignments!(cell, modifier)
         cell.change_horizontal_alignment(modifier.halign.to_s) if modifier.halign
         cell.change_vertical_alignment(modifier.valign.to_s) if modifier.valign
       end
 
+      sig do
+        params(
+          cell: ::CSVPlusPlus::Writer::RubyXLBuilder::RubyXLCell,
+          modifier: ::CSVPlusPlus::Modifier::RubyXLModifier
+        ).void
+      end
       # rubocop:disable Metrics/MethodLength
       def do_borders!(cell, modifier)
         return unless modifier.any_border?
@@ -66,23 +102,49 @@ module CSVPlusPlus
       end
       # rubocop:enable Metrics/MethodLength
 
+      sig do
+        params(
+          cell: ::CSVPlusPlus::Writer::RubyXLBuilder::RubyXLCell,
+          modifier: ::CSVPlusPlus::Modifier::RubyXLModifier
+        ).void
+      end
       def do_fill!(cell, modifier)
-        cell.change_fill(modifier.color.to_hex) if modifier.color
+        return unless modifier.color
+
+        cell.change_fill(modifier.color)
       end
 
+      sig do
+        params(
+          cell: ::CSVPlusPlus::Writer::RubyXLBuilder::RubyXLCell,
+          modifier: ::CSVPlusPlus::Modifier::RubyXLModifier
+        ).void
+      end
       def do_formats!(cell, modifier)
-        cell.change_font_bold(true) if modifier.formatted?(:bold)
-        cell.change_font_italics(true) if modifier.formatted?(:italic)
-        cell.change_font_underline(true) if modifier.formatted?(:underline)
-        cell.change_font_strikethrough(true) if modifier.formatted?(:strikethrough)
+        cell.change_font_bold(true) if modifier.formatted?(::CSVPlusPlus::Modifier::TextFormat::Bold)
+        cell.change_font_italics(true) if modifier.formatted?(::CSVPlusPlus::Modifier::TextFormat::Italic)
+        cell.change_font_underline(true) if modifier.formatted?(::CSVPlusPlus::Modifier::TextFormat::Underline)
+        cell.change_font_strikethrough(true) if modifier.formatted?(::CSVPlusPlus::Modifier::TextFormat::Strikethrough)
       end
 
+      sig do
+        params(
+          cell: ::CSVPlusPlus::Writer::RubyXLBuilder::RubyXLCell,
+          modifier: ::CSVPlusPlus::Modifier::RubyXLModifier
+        ).void
+      end
       def do_fonts!(cell, modifier)
-        cell.change_font_color(modifier.fontcolor.to_hex) if modifier.fontcolor
+        cell.change_font_color(::T.must(modifier.fontcolor).to_hex) if modifier.fontcolor
         cell.change_font_name(modifier.fontfamily) if modifier.fontfamily
         cell.change_font_size(modifier.fontsize) if modifier.fontsize
       end
 
+      sig do
+        params(
+          cell: ::CSVPlusPlus::Writer::RubyXLBuilder::RubyXLCell,
+          modifier: ::CSVPlusPlus::Modifier::RubyXLModifier
+        ).void
+      end
       def do_number_formats!(cell, modifier)
         return unless modifier.numberformat
 
@@ -91,6 +153,9 @@ module CSVPlusPlus
         cell.change_contents(cell.value)
       end
 
+      sig do
+        params(row_index: ::Integer, cell_index: ::Integer, modifier: ::CSVPlusPlus::Modifier::RubyXLModifier).void
+      end
       def format_cell!(row_index, cell_index, modifier)
         @worksheet.sheet_data[row_index][cell_index].tap do |cell|
           do_alignments!(cell, modifier)
@@ -102,17 +167,19 @@ module CSVPlusPlus
         end
       end
 
-      def open_workbook
-        if ::File.exist?(@input_filename)
+      sig { returns(::RubyXL::Worksheet) }
+      def open_worksheet
+        if @input_filename && ::File.exist?(@input_filename)
           ::RubyXL::Parser.parse(@input_filename).tap do |workbook|
-            @worksheet = workbook[@sheet_name] || workbook.add_worksheet(@sheet_name)
+            workbook[@sheet_name] || workbook.add_worksheet(@sheet_name)
           end
         else
           ::RubyXL::Workbook.new.tap do |workbook|
-            @worksheet = workbook.worksheets[0].tap { |w| w.sheet_name = @sheet_name }
+            workbook.worksheets[0].tap { |w| w.sheet_name = @sheet_name }
           end
         end
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end

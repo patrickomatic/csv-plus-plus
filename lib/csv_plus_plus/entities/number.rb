@@ -13,7 +13,7 @@ module CSVPlusPlus
       sig { params(value: ::T.any(::String, ::Numeric)).void }
       # @param value [String, Numeric] Either a +String+ that looks like a number, or an already parsed Numeric
       def initialize(value)
-        super(:number)
+        super(::CSVPlusPlus::Entities::Type::Number)
 
         @value =
           ::T.let(
@@ -34,7 +34,7 @@ module CSVPlusPlus
         @value.to_s
       end
 
-      sig { params(other: ::CSVPlusPlus::Entities::Entity).returns(::T::Boolean) }
+      sig { override.params(other: ::CSVPlusPlus::Entities::Entity).returns(::T::Boolean) }
       # @param other [Entity]
       #
       # @return [boolean]

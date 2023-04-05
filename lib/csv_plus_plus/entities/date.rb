@@ -27,7 +27,7 @@ module CSVPlusPlus
       sig { params(value: ::String).void }
       # @param value [String] The user-inputted date value
       def initialize(value)
-        super(:date)
+        super(::CSVPlusPlus::Entities::Type::Date)
 
         @value = ::T.let(::Date.parse(value), ::Date)
       end
@@ -38,6 +38,16 @@ module CSVPlusPlus
       # @return [::String]
       def evaluate(_runtime)
         @value.to_s
+      end
+
+      sig { override.params(other: ::CSVPlusPlus::Entities::Entity).returns(::T::Boolean) }
+      # @param other [Entity]
+      #
+      # @return [::T::Boolean]
+      def ==(other)
+        return false unless super
+
+        other.is_a?(self.class) && other.value == @value
       end
     end
   end

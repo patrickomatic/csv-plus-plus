@@ -2,11 +2,14 @@
 # frozen_string_literal: true
 
 module CSVPlusPlus
-  # The Google-specific options a user can supply
+  # The Google-specific options a user can supply.
   #
-  # attr sheet_id [String] The ID of the Google Sheet to write to
+  # @attr sheet_id [String] The ID of the Google Sheet to write to.
   class GoogleOptions
     extend ::T::Sig
+
+    sig { returns(::String) }
+    attr_reader :sheet_id
 
     sig { params(sheet_id: ::String).void }
     # @param sheet_id [String] The unique ID Google uses to reference the sheet

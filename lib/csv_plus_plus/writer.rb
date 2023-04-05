@@ -31,15 +31,24 @@ module CSVPlusPlus
     # @param runtime [Runtime] The current runtime.
     #
     # @return [Writer::CSV | Writer::Excel | Writer::GoogleSheets | Writer::OpenDocument]
+    # rubocop:disable Metrics/MethodLength
     def self.writer(options, runtime)
-      return ::CSVPlusPlus::Writer::GoogleSheets.new(options, runtime) if options.google
-
-      case options.output_filename
-      when /\.csv$/ then ::CSVPlusPlus::Writer::CSV.new(options, runtime)
-      when /\.ods$/ then ::CSVPlusPlus::Writer::OpenDocument.new(options, runtime)
-      when /\.xl(sx|sm|tx|tm)$/ then ::CSVPlusPlus::Writer::Excel.new(options, runtime)
-      else raise(::CSVPlusPlus::Error::Error, "Unsupported file extension: #{options.output_filename}")
+      output_format = options.output_format
+      case output_format
+      when ::CSVPlusPlus::Options::OutputFormat::CSV then ::CSVPlusPlus::Writer::CSV.new(options, runtime)
+      when ::CSVPlusPlus::Options::OutputFormat::Excel then ::CSVPlusPlus::Writer::Excel.new(options, runtime)
+      when ::CSVPlusPlus::Options::OutputFormat::GoogleSheets then ::CSVPlusPlus::Writer::GoogleSheets.new(
+        options,
+        runtime
+      )
+      when ::CSVPlusPlus::Options::OutputFormat::OpenDocument then ::CSVPlusPlus::Writer::OpenDocument.new(
+        options,
+        runtime
+      )
+      else
+        ::T.absurd(output_format)
       end
     end
+    # rubocop:enable Metrics/MethodLength
   end
 end

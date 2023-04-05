@@ -1,4 +1,4 @@
-# typed: true
+# typed: strict
 # frozen_string_literal: true
 
 module CSVPlusPlus
@@ -7,11 +7,15 @@ module CSVPlusPlus
     #
     # A reference to a variable
     class Variable < Entity
+      extend ::T::Sig
+
+      sig { params(id: ::Symbol).void }
       # @param id [Symbol] The identifier of the variable
       def initialize(id)
-        super(:variable, id:)
+        super(::CSVPlusPlus::Entities::Type::Variable, id:)
       end
 
+      sig { override.params(_runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
       # @param _runtime [Runtime]
       #
       # @return [::String]
@@ -19,11 +23,14 @@ module CSVPlusPlus
         "$$#{@id}"
       end
 
+      sig { override.params(other: ::CSVPlusPlus::Entities::Entity).returns(::T::Boolean) }
       # @param other [Entity]
       #
       # @return [boolean]
       def ==(other)
-        super && id == other.id
+        return false unless super
+
+        other.is_a?(self.class) && @id == other.id
       end
     end
   end

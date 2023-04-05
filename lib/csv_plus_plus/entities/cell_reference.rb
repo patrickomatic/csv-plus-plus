@@ -1,8 +1,5 @@
-# typed: true
+# typed: strict
 # frozen_string_literal: true
-
-require_relative './ast_builder'
-require_relative './entity'
 
 module CSVPlusPlus
   module Entities
@@ -24,9 +21,27 @@ module CSVPlusPlus
     #   index of it
     # @attr_reader upper_row_index [Integer, nil] If set, the cell reference is a range and this is the upper row index
     #   of it
+    # rubocop:disable Metrics/ClassLength
     class CellReference < Entity
+      extend ::T::Sig
+
+      sig { returns(::T.nilable(::String)) }
       attr_accessor :sheet_name
-      attr_reader :cell_index, :row_index, :scoped_to_expand, :upper_cell_index, :upper_row_index
+
+      sig { returns(::T.nilable(::Integer)) }
+      attr_reader :cell_index
+
+      sig { returns(::T.nilable(::Integer)) }
+      attr_reader :row_index
+
+      sig { returns(::T.nilable(::CSVPlusPlus::Modifier::Expand)) }
+      attr_reader :scoped_to_expand
+
+      sig { returns(::T.nilable(::Integer)) }
+      attr_reader :upper_cell_index
+
+      sig { returns(::T.nilable(::Integer)) }
+      attr_reader :upper_row_index
 
       # TODO: this is getting gross, maybe define an actual parser
       A1_NOTATION_REGEXP = /
@@ -45,9 +60,10 @@ module CSVPlusPlus
       /x
       public_constant :A1_NOTATION_REGEXP
 
-      ALPHA = ('A'..'Z').to_a.freeze
+      ALPHA = ::T.let(('A'..'Z').to_a.freeze, ::T::Array[::String])
       private_constant :ALPHA
 
+      sig { params(cell_reference_string: ::String).returns(::T::Boolean) }
       # Does the given +cell_reference_string+ conform to a valid cell reference?
       #
       # {https://developers.google.com/sheets/api/guides/concepts}
@@ -55,11 +71,19 @@ module CSVPlusPlus
       # @param cell_reference_string [::String] The string to check if it is a valid cell reference (we assume it's in
       #   A1 notation but maybe can support R1C1)
       #
-      # @return [boolean]
+      # @return [::T::Boolean]
       def self.valid_cell_reference?(cell_reference_string)
         !(cell_reference_string =~ ::CSVPlusPlus::Entities::CellReference::A1_NOTATION_REGEXP).nil?
       end
 
+      sig do
+        params(
+          cell_index: ::T.nilable(::Integer),
+          ref: ::T.nilable(::String),
+          row_index: ::T.nilable(::Integer),
+          scoped_to_expand: ::T.nilable(::CSVPlusPlus::Modifier::Expand)
+        ).void
+      end
       # Either +ref+, +cell_index+ or +row_index+ must be specified.
       #
       # @param cell_index [Integer, nil] The index of the cell being referenced.
@@ -68,30 +92,41 @@ module CSVPlusPlus
       # @param scoped_to_expand [Expand] The [[expand]] that this cell reference will be scoped to. In other words, it
       #   will only be able to be resolved if the runtime is within the bounds of the expand (it can't be referenced
       #   outside of the expand.)
-      def initialize(ref: nil, cell_index: nil, row_index: nil, scoped_to_expand: nil)
+      # rubocop:disable Metrics/MethodLength
+      def initialize(cell_index: nil, ref: nil, row_index: nil, scoped_to_expand: nil)
         raise(::ArgumentError, 'Must specify :ref, :cell_index or :row_index') unless ref || cell_index || row_index
 
-        super(:cell_reference)
+        super(::CSVPlusPlus::Entities::Type::CellReference)
 
         if ref
           from_a1_ref!(ref)
         else
-          @cell_index = cell_index
-          @row_index = row_index
+          @cell_index = ::T.let(cell_index, ::T.nilable(::Integer))
+          @row_index = ::T.let(row_index, ::T.nilable(::Integer))
         end
+
+        @upper_cell_index = ::T.let(nil, ::T.nilable(::Integer))
+        @upper_row_index = ::T.let(nil, ::T.nilable(::Integer))
 
         @scoped_to_expand = scoped_to_expand
       end
+      # rubocop:enable Metrics/MethodLength
 
+      sig { override.params(other: ::CSVPlusPlus::Entities::Entity).returns(::T::Boolean) }
       # @param other [Entity]
       #
       # @return [boolean]
+      # rubocop:disable Metrics/CyclomaticComplexity
       def ==(other)
-        super && @cell_index == other.cell_index && @row_index == other.row_index && @sheet_name == other.sheet_name \
-          && @scoped_to_expand == other.scoped_to_expand && @upper_cell_index == other.upper_cell_index \
-          && @upper_row_index == other.upper_row_index
-      end
+        return false unless super
 
+        other.is_a?(self.class) && @cell_index == other.cell_index && @row_index == other.row_index \
+          && @sheet_name == other.sheet_name && @scoped_to_expand == other.scoped_to_expand \
+          && @upper_cell_index == other.upper_cell_index && @upper_row_index == other.upper_row_index
+      end
+      # rubocop:enable Metrics/CyclomaticComplexity
+
+      sig { override.params(runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
       # Get the A1-style cell reference
       #
       # @param runtime [Runtime] The current runtime
@@ -102,9 +137,10 @@ module CSVPlusPlus
         #   runtime.raise_modifier_syntax_error(message: 'Reference is out of scope', bad_input: runtime.cell.value)
         # end
 
-        to_a1_ref(runtime)
+        to_a1_ref(runtime) || ''
       end
 
+      sig { returns(::T::Boolean) }
       # Is the cell_reference a range? - something like A1:D10
       #
       # @return [boolean]
@@ -124,9 +160,12 @@ module CSVPlusPlus
       #   @scoped_to_expand.nil? || runtime.in_scope?(@scoped_to_expand)
       # end
 
+      sig { params(runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::T.nilable(::String)) }
       # Turns index-based/X,Y coordinates into a A1 format
       #
-      # @return [::String]
+      # @param runtime [Runtime]
+      #
+      # @return [::String, nil]
       def to_a1_ref(runtime)
         row_index = runtime_row_index(runtime)
         return unless row_index || @cell_index
@@ -136,10 +175,12 @@ module CSVPlusPlus
         [cellref, rowref].join
       end
 
+      sig { params(runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::T.nilable(::Integer)) }
       def runtime_row_index(runtime)
         @scoped_to_expand ? runtime.row_index : @row_index
       end
 
+      sig { returns(::String) }
       # Turns a cell index into an A1 reference (just the "A" part - for example 0 == 'A', 1 == 'B', 2 == 'C', etc.)
       #
       # @return [::String]
@@ -149,7 +190,7 @@ module CSVPlusPlus
 
         while c >= 0
           # rubocop:disable Lint/ConstantResolution
-          ref += ALPHA[c % 26]
+          ref += ::T.must(ALPHA[c % 26])
           # rubocop:enable Lint/ConstantResolution
           c = (c / 26).floor - 1
         end
@@ -157,37 +198,44 @@ module CSVPlusPlus
         ref.reverse
       end
 
+      sig { params(ref: ::String).void }
       def from_a1_ref!(ref)
-        quoted_sheet_name, unquoted_sheet_name, lower_range, upper_range = ref.strip.match(
-          ::CSVPlusPlus::Entities::CellReference::A1_NOTATION_REGEXP
+        quoted_sheet_name, unquoted_sheet_name, lower_range, upper_range = ::T.must(
+          ref.strip.match(
+            ::CSVPlusPlus::Entities::CellReference::A1_NOTATION_REGEXP
+          )
         ).captures
 
         @sheet_name = quoted_sheet_name || unquoted_sheet_name
 
-        parse_lower_range!(lower_range)
+        parse_lower_range!(lower_range) if lower_range
         parse_upper_range!(upper_range) if upper_range
       end
 
+      sig { params(lower_range: ::String).void }
       def parse_lower_range!(lower_range)
-        cell_ref, row_ref = lower_range.match(/^([a-zA-Z]+)?(\d+)?$/).captures
+        cell_ref, row_ref = ::T.must(lower_range.match(/^([a-zA-Z]+)?(\d+)?$/)).captures
         @cell_index = from_a1_cell_ref!(cell_ref) if cell_ref
         @row_index = Integer(row_ref, 10) - 1 if row_ref
       end
 
+      sig { params(upper_range: ::String).void }
       # TODO: make this less redundent with the above function
       def parse_upper_range!(upper_range)
-        cell_ref, row_ref = upper_range.match(/^([a-zA-Z]+)?(\d+)?$/).captures
+        cell_ref, row_ref = ::T.must(upper_range.match(/^([a-zA-Z]+)?(\d+)?$/)).captures
         @upper_cell_index = from_a1_cell_ref!(cell_ref) if cell_ref
         @upper_row_index = Integer(row_ref, 10) - 1 if row_ref
       end
 
+      sig { params(cell_ref: ::String).returns(::Integer) }
       def from_a1_cell_ref!(cell_ref)
         (cell_ref.upcase.chars.reduce(0) do |cell_index, letter|
           # rubocop:disable Lint/ConstantResolution
-          (cell_index * 26) + ALPHA.find_index(letter) + 1
+          (cell_index * 26) + ::T.must(ALPHA.find_index(letter)) + 1
           # rubocop:enable Lint/ConstantResolution
         end) - 1
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end

@@ -53,10 +53,10 @@ module CSVPlusPlus
     sig { params(starts_at: ::Integer, into: ::T::Array[::CSVPlusPlus::Row]).returns(::T::Array[::CSVPlusPlus::Row]) }
     # Starting at +starts_at+, do a deep copy of this row into the +Array+ referenced by +into+.
     #
+    # @param starts_at [Integer] The +row_index+ where this row was expanded.
     # @param into [Array<Row>] An array where the expanded rows will be accumulated.
-    # @param start_at [Integer] The +row_index+ where this row was expanded.
     #
-    # @return [Integer] The amount of rows expanded
+    # @return [Array<Row>] The rows expanded
     def expand_rows(starts_at:, into: [])
       return into unless @modifier.expand
 

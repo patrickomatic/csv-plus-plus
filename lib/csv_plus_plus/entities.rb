@@ -1,10 +1,12 @@
-# typed: true
+# typed: strict
 # frozen_string_literal: true
+
+require_relative 'entities/entity'
+require_relative 'entities/entity_with_arguments'
 
 require_relative 'entities/boolean'
 require_relative 'entities/cell_reference'
 require_relative 'entities/date'
-require_relative 'entities/entity'
 require_relative 'entities/function'
 require_relative 'entities/function_call'
 require_relative 'entities/number'
@@ -13,20 +15,24 @@ require_relative 'entities/string'
 require_relative 'entities/variable'
 
 module CSVPlusPlus
+  # The entities that form abstract syntax trees which make up the language
   module Entities
-    TYPES = {
-      boolean: ::CSVPlusPlus::Entities::Boolean,
-      cell_reference: ::CSVPlusPlus::Entities::CellReference,
-      date: ::CSVPlusPlus::Entities::Date,
-      function: ::CSVPlusPlus::Entities::Function,
-      function_call: ::CSVPlusPlus::Entities::FunctionCall,
-      number: ::CSVPlusPlus::Entities::Number,
-      runtime_value: ::CSVPlusPlus::Entities::RuntimeValue,
-      string: ::CSVPlusPlus::Entities::String,
-      variable: ::CSVPlusPlus::Entities::Variable
-    }.freeze
+    extend ::T::Sig
 
-    public_constant :TYPES
+    # A primitive type.  These all correspond to an implementation of the same name in the CSVPlusPlus::Entities module.
+    class Type < ::T::Enum
+      enums do
+        Boolean = new
+        CellReference = new
+        Date = new
+        Function = new
+        FunctionCall = new
+        Number = new
+        RuntimeValue = new
+        String = new
+        Variable = new
+      end
+    end
   end
 end
 

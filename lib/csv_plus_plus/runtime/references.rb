@@ -33,7 +33,11 @@ module CSVPlusPlus
       def self.extract(ast, runtime)
         new.tap do |refs|
           ::CSVPlusPlus::Runtime::Graph.depth_first_search(ast) do |node|
-            next unless node.function_call? || node.variable?
+            unless node.type == ::CSVPlusPlus::Entities::Type::FunctionCall \
+                || node.type == ::CSVPlusPlus::Entities::Type::Variable
+
+              next
+            end
 
             refs.functions << node if function_reference?(node, runtime)
             refs.variables << node if variable_reference?(node, runtime)
@@ -51,7 +55,7 @@ module CSVPlusPlus
       #
       # @return [boolean]
       def self.variable_reference?(node, runtime)
-        return false unless node.variable?
+        return false unless node.type == ::CSVPlusPlus::Entities::Type::Variable
 
         if runtime.in_scope?(node.id)
           true
@@ -74,7 +78,8 @@ module CSVPlusPlus
       #
       # @return [boolean]
       def self.function_reference?(node, runtime)
-        node.function_call? && (runtime.defined_function?(node.id) || runtime.builtin_function?(::T.must(node.id)))
+        node.type == ::CSVPlusPlus::Entities::Type::FunctionCall \
+          && (runtime.defined_function?(node.id) || runtime.builtin_function?(::T.must(node.id)))
       end
       private_class_method :function_reference?
 

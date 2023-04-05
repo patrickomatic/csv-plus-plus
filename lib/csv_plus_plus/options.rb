@@ -15,6 +15,16 @@ module CSVPlusPlus
   class Options
     extend ::T::Sig
 
+    # The supported output formats.  We use this to dispatch flow in several places
+    class OutputFormat < ::T::Enum
+      enums do
+        CSV = new
+        Excel = new
+        GoogleSheets = new
+        OpenDocument = new
+      end
+    end
+
     sig { returns(::T::Boolean) }
     attr_accessor :backup
 
@@ -53,12 +63,27 @@ module CSVPlusPlus
     sig { params(sheet_id: ::String).returns(::CSVPlusPlus::GoogleOptions) }
     # Set the Google Sheet ID
     #
-    # @param sheet_id [String] The identifier used by Google's API to reference the sheet.  You can find it in the URL
+    # @param sheet_id [::String] The identifier used by Google's API to reference the sheet.  You can find it in the URL
     #   for the sheet
     #
-    # @return [String]
+    # @return [::String]
     def google_sheet_id=(sheet_id)
       @google = ::CSVPlusPlus::GoogleOptions.new(sheet_id)
+    end
+
+    sig { returns(::CSVPlusPlus::Options::OutputFormat) }
+    # Given the options, figure out which type of +OutputFormat+ we'll be writing to
+    #
+    # @return [Options::OutputFormat]
+    def output_format
+      return ::CSVPlusPlus::Options::OutputFormat::GoogleSheets if @google
+
+      case @output_filename
+      when /\.csv$/ then ::CSVPlusPlus::Options::OutputFormat::CSV
+      when /\.ods$/ then ::CSVPlusPlus::Options::OutputFormat::OpenDocument
+      when /\.xl(sx|sm|tx|tm)$/ then ::CSVPlusPlus::Options::OutputFormat::Excel
+      else raise(::CSVPlusPlus::Error::Error, "Unsupported file extension: #{@output_filename}")
+      end
     end
 
     sig { returns(::T.nilable(::String)) }

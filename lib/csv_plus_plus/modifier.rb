@@ -4,7 +4,9 @@
 require_relative './modifier/conditional_formatting'
 require_relative './modifier/data_validation'
 require_relative './modifier/expand'
+require_relative './modifier/google_sheet_modifier'
 require_relative './modifier/modifier'
+require_relative './modifier/rubyxl_modifier'
 require_relative './modifier/validated_modifier'
 
 module CSVPlusPlus
@@ -62,8 +64,9 @@ module CSVPlusPlus
     class TextFormat < ::T::Enum
       enums do
         Bold = new
-        Underline = new
+        Italic = new
         Strikethrough = new
+        Underline = new
       end
     end
 
@@ -76,14 +79,24 @@ module CSVPlusPlus
       end
     end
 
-    sig { params(row_level: ::T::Boolean).returns(::CSVPlusPlus::Modifier::Modifier) }
-    # Return a +Modifier+ with the proper validation and helper functions attached
+    sig { params(options: ::CSVPlusPlus::Options, row_level: ::T::Boolean).returns(::CSVPlusPlus::Modifier::Modifier) }
+    # Return a +Modifier+ with the proper validation and helper functions attached for the given output
     #
+    # @param options [boolean] is this a row level modifier? (otherwise cell-level)
     # @param row_level [boolean] is this a row level modifier? (otherwise cell-level)
     #
     # @return [ValidatedModifier]
-    def self.new(row_level: false)
-      ::CSVPlusPlus::Modifier::ValidatedModifier.new(row_level:)
+    def self.new(options, row_level: false)
+      output_format = options.output_format
+      case output_format
+      when ::CSVPlusPlus::Options::OutputFormat::CSV, ::CSVPlusPlus::Options::OutputFormat::OpenDocument
+        ::CSVPlusPlus::Modifier::ValidatedModifier.new(row_level:)
+      when ::CSVPlusPlus::Options::OutputFormat::Excel
+        ::CSVPlusPlus::Modifier::RubyXLModifier.new(row_level:)
+      when ::CSVPlusPlus::Options::OutputFormat::GoogleSheets
+        ::CSVPlusPlus::Modifier::GoogleSheetModifier.new(row_level:)
+      else ::T.absurd(output_format)
+      end
     end
   end
 end

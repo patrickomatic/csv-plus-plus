@@ -4,6 +4,7 @@
 require_relative './runtime/can_define_references'
 require_relative './runtime/can_resolve_references'
 require_relative './runtime/graph'
+require_relative './runtime/position_tracker'
 require_relative './runtime/references'
 require_relative './runtime/runtime'
 

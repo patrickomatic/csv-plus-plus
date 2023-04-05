@@ -2,33 +2,51 @@
 
 module CSVPlusPlus
   module Entities
-    class Entity
-      sig { returns(T::Boolean) }
-      def boolean?; end
+    module ASTBuilder
+      sig { params(value: T.any(String, T::Boolean)).returns(CSVPlusPlus::Entities::Boolean) }
+      def boolean(value); end
 
-      sig { returns(T::Boolean) }
-      def cell_reference?; end
+      sig do
+        params(
+          cell_index: T.nilable(::Integer),
+          ref: T.nilable(::String),
+          row_index: T.nilable(::Integer),
+          scoped_to_expand: T.nilable(::CSVPlusPlus::Modifier::Expand)
+        ).returns(CSVPlusPlus::Entities::CellReference)
+      end
+      def cell_reference(cell_index: nil, ref: nil, row_index: nil, scoped_to_expand: nil); end
 
-      sig { returns(T::Boolean) }
-      def date?; end
+      sig { params(value: String).returns(CSVPlusPlus::Entities::Date) }
+      def date(value); end
 
-      sig { returns(T::Boolean) }
-      def function?; end
+      sig do
+        params(
+          id: Symbol, 
+          arguments: T::Array[::Symbol], 
+          body: CSVPlusPlus::Entities::Entity
+        ).returns(CSVPlusPlus::Entities::Function)
+      end
+      def function(id, arguments, body); end
 
-      sig { returns(T::Boolean) }
-      def function_call?; end
+      sig { params(id: String, arguments: T::Array[CSVPlusPlus::Entities::Entity], infix: T::Boolean).void }
+      def function_call(id, arguments, infix = false); end
 
-      sig { returns(T::Boolean) }
-      def number?; end
+      sig { params(value: T.any(String, Numeric)).returns(CSVPlusPlus::Entities::Number) }
+      def number(value); end
 
-      sig { returns(T::Boolean) }
-      def runtime_value?; end
+      sig do
+        params(
+          resolve_fn: T.proc.params(arg0: CSVPlusPlus::Runtime::Runtime).returns(CSVPlusPlus::Entities::Entity),
+          arguments: T::Array[T.untyped]
+        ).returns(CSVPlusPlus::Entities::RuntimeValue)
+      end
+      def runtime_value(resolve_fn, arguments); end
 
-      sig { returns(T::Boolean) }
-      def string?; end
+      sig { params(value: String).returns(CSVPlusPlus::Entities::String) }
+      def string(value); end
 
-      sig { returns(T::Boolean) }
-      def variable?; end
+      sig { params(id: Symbol).returns(CSVPlusPlus::Entities::Variable) }
+      def variable(id); end
     end
   end
 

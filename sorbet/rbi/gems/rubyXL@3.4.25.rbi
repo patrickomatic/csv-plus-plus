@@ -9,6 +9,8 @@
 #
 # source://rubyXL//lib/rubyXL/objects/reference.rb#1
 module RubyXL
+  include ::RubyXL::ColorConvenienceClasses
+
   class << self
     # Convert any path passed to absolute path (within the XLSX file).
     #
@@ -5334,6 +5336,7 @@ end
 # source://rubyXL//lib/rubyXL/objects/sheet_data.rb#32
 class RubyXL::Cell < ::RubyXL::OOXMLObject
   include ::RubyXL::LegacyCell
+  include ::RubyXL::CellConvenienceMethods
 
   # source://rubyXL//lib/rubyXL/objects/ooxml_object.rb#54
   def cm; end
@@ -5451,6 +5454,140 @@ end
 
 # source://rubyXL//lib/rubyXL/objects/sheet_data.rb#33
 RubyXL::Cell::NUMBER_REGEXP = T.let(T.unsafe(nil), Regexp)
+
+# source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#2
+module RubyXL::CellConvenienceMethods
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#256
+  def add_hyperlink(url, tooltip = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#71
+  def change_border(direction, weight); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#76
+  def change_border_color(direction, color); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#3
+  def change_contents(data, formula_expression = T.unsafe(nil)); end
+
+  # Changes fill color of cell
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#165
+  def change_fill(rgb = T.unsafe(nil)); end
+
+  # Changes font bold settings of cell
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#210
+  def change_font_bold(bolded = T.unsafe(nil)); end
+
+  # Changes font color of cell
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#191
+  def change_font_color(font_color = T.unsafe(nil)); end
+
+  # Changes font italics settings of cell
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#201
+  def change_font_italics(italicized = T.unsafe(nil)); end
+
+  # Changes font name of cell
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#172
+  def change_font_name(new_font_name = T.unsafe(nil)); end
+
+  # Changes font size of cell
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#181
+  def change_font_size(font_size = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#227
+  def change_font_strikethrough(struckthrough = T.unsafe(nil)); end
+
+  # Changes font underline settings of cell
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#219
+  def change_font_underline(underlined = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#41
+  def change_horizontal_alignment(alignment = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#56
+  def change_shrink_to_fit(shrink_to_fit = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#66
+  def change_text_indent(indent); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#61
+  def change_text_rotation(rot); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#51
+  def change_text_wrap(wrap = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#46
+  def change_vertical_alignment(alignment = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#117
+  def fill_color; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#112
+  def font_color; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#102
+  def font_name; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#107
+  def font_size; end
+
+  # Performs correct modification based on what type of change_type is specified
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#243
+  def font_switch(change_type, arg); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#31
+  def get_border(direction); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#36
+  def get_border_color(direction); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#122
+  def horizontal_alignment; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#87
+  def is_bolded; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#82
+  def is_italicized; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#97
+  def is_struckthrough; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#92
+  def is_underlined; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#21
+  def remove_formula; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#157
+  def set_number_format(format_code); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#150
+  def text_indent; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#143
+  def text_rotation; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#136
+  def text_wrap; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#129
+  def vertical_alignment; end
+
+  private
+
+  # Helper method to update the font array and xf array
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/cell.rb#236
+  def update_font_references(modified_font); end
+end
 
 # http://www.datypic.com/sc/ooxml/e-ssml_cell-1.html
 #
@@ -6045,6 +6182,8 @@ end
 #
 # source://rubyXL//lib/rubyXL/objects/color.rb#6
 class RubyXL::Color < ::RubyXL::OOXMLObject
+  include ::RubyXL::ColorConvenienceMethods
+
   # source://rubyXL//lib/rubyXL/objects/ooxml_object.rb#54
   def auto; end
 
@@ -6085,6 +6224,141 @@ end
 
 # source://rubyXL//lib/rubyXL/objects/color.rb#7
 RubyXL::Color::COLOR_REGEXP = T.let(T.unsafe(nil), Regexp)
+
+# source://rubyXL//lib/rubyXL/convenience_methods/color.rb#17
+module RubyXL::ColorConvenienceClasses; end
+
+# source://rubyXL//lib/rubyXL/convenience_methods/color.rb#81
+class RubyXL::ColorConvenienceClasses::HlsColor
+  # Returns the value of attribute a.
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#82
+  def a; end
+
+  # Sets the attribute a
+  #
+  # @param value the value to set the attribute a to.
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#82
+  def a=(_arg0); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#140
+  def apply_tint(tint); end
+
+  # Returns the value of attribute h.
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#82
+  def h; end
+
+  # Sets the attribute h
+  #
+  # @param value the value to set the attribute h to.
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#82
+  def h=(_arg0); end
+
+  # Returns the value of attribute l.
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#82
+  def l; end
+
+  # Sets the attribute l
+  #
+  # @param value the value to set the attribute l to.
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#82
+  def l=(_arg0); end
+
+  # Returns the value of attribute s.
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#82
+  def s; end
+
+  # Sets the attribute s
+  #
+  # @param value the value to set the attribute s to.
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#82
+  def s=(_arg0); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#84
+  def to_rgb; end
+
+  private
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#120
+  def set_color(t1, t2, t3); end
+end
+
+# https://ciintelligence.blogspot.com/2012/02/converting-excel-theme-color-and-tint.html
+#
+# source://rubyXL//lib/rubyXL/convenience_methods/color.rb#19
+class RubyXL::ColorConvenienceClasses::RgbColor
+  # Returns the value of attribute a.
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#20
+  def a; end
+
+  # Sets the attribute a
+  #
+  # @param value the value to set the attribute a to.
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#20
+  def a=(_arg0); end
+
+  # Returns the value of attribute b.
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#20
+  def b; end
+
+  # Sets the attribute b
+  #
+  # @param value the value to set the attribute b to.
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#20
+  def b=(_arg0); end
+
+  # Returns the value of attribute g.
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#20
+  def g; end
+
+  # Sets the attribute g
+  #
+  # @param value the value to set the attribute g to.
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#20
+  def g=(_arg0); end
+
+  # Returns the value of attribute r.
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#20
+  def r; end
+
+  # Sets the attribute r
+  #
+  # @param value the value to set the attribute r to.
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#20
+  def r=(_arg0); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#22
+  def to_hls; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#72
+  def to_s; end
+
+  class << self
+    # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#60
+    def parse(str); end
+  end
+end
+
+# source://rubyXL//lib/rubyXL/convenience_methods/color.rb#2
+module RubyXL::ColorConvenienceMethods
+  # source://rubyXL//lib/rubyXL/convenience_methods/color.rb#3
+  def get_rgb(workbook); end
+end
 
 # http://www.datypic.com/sc/ooxml/e-ssml_colorFilter-1.html
 #
@@ -8620,6 +8894,8 @@ end
 #
 # source://rubyXL//lib/rubyXL/objects/font.rb#8
 class RubyXL::Font < ::RubyXL::OOXMLObject
+  include ::RubyXL::FontConvenienceMethods
+
   # source://rubyXL//lib/rubyXL/objects/ooxml_object.rb#95
   def b; end
 
@@ -8720,6 +8996,54 @@ end
 #
 # source://rubyXL//lib/rubyXL/objects/font.rb#9
 RubyXL::Font::MAX_DIGIT_WIDTH = T.let(T.unsafe(nil), Integer)
+
+# source://rubyXL//lib/rubyXL/convenience_methods/font.rb#2
+module RubyXL::FontConvenienceMethods
+  # source://rubyXL//lib/rubyXL/convenience_methods/font.rb#21
+  def get_name; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/font.rb#29
+  def get_rgb_color; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/font.rb#25
+  def get_size; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/font.rb#9
+  def is_bold; end
+
+  # Funny enough, but presence of <i> without value (equivalent to `val == nul`) means "italic = true"!
+  # Same is true for bold, strikethrough, etc
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/font.rb#5
+  def is_italic; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/font.rb#17
+  def is_strikethrough; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/font.rb#13
+  def is_underlined; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/font.rb#37
+  def set_bold(val); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/font.rb#33
+  def set_italic(val); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/font.rb#49
+  def set_name(val); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/font.rb#57
+  def set_rgb_color(font_color); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/font.rb#53
+  def set_size(val); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/font.rb#45
+  def set_strikethrough(val); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/font.rb#41
+  def set_underline(val); end
+end
 
 # http://www.datypic.com/sc/ooxml/e-a_fontScheme-1.html
 #
@@ -13777,6 +14101,7 @@ end
 class RubyXL::Workbook < ::RubyXL::OOXMLTopLevelObject
   include ::RubyXL::RelationshipSupport
   include ::Enumerable
+  include ::RubyXL::WorkbookConvenienceMethods
   extend ::RubyXL::RelationshipSupport::ClassMehods
 
   # @return [Workbook] a new instance of Workbook
@@ -14107,6 +14432,76 @@ RubyXL::Workbook::SHEET_NAME_FORBIDDEN_NAMES = T.let(T.unsafe(nil), Array)
 
 # source://rubyXL//lib/rubyXL/objects/workbook.rb#476
 RubyXL::Workbook::SHEET_NAME_TEMPLATE = T.let(T.unsafe(nil), String)
+
+# source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#2
+module RubyXL::WorkbookConvenienceMethods
+  # Stylesheet should be pre-filled with defaults on initialize()
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#19
+  def borders; end
+
+  # Stylesheet should be pre-filled with defaults on initialize()
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#7
+  def cell_xfs; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#122
+  def define_new_name(name, reference); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#3
+  def each; end
+
+  # Stylesheet should be pre-filled with defaults on initialize()
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#15
+  def fills; end
+
+  # Stylesheet should be pre-filled with defaults on initialize()
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#11
+  def fonts; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#127
+  def get_defined_name(name); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#23
+  def get_fill_color(xf); end
+
+  # @yield [new_xf.alignment]
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#56
+  def modify_alignment(style_index, &block); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#79
+  def modify_border(style_index, direction, weight); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#96
+  def modify_border_color(style_index, direction, color); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#71
+  def modify_fill(style_index, rgb); end
+
+  # Calculate password hash from string for use in 'password' fields.
+  # https://www.openoffice.org/sc/excelfileformat.pdf
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#111
+  def password_hash(pwd); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#31
+  def register_new_fill(new_fill, old_xf); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#40
+  def register_new_font(new_font, old_xf); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#49
+  def register_new_xf(new_xf); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#131
+  def title; end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/workbook.rb#135
+  def title=(v); end
+end
 
 # http://www.datypic.com/sc/ooxml/e-ssml_workbookPr-1.html
 #
@@ -14454,6 +14849,7 @@ class RubyXL::Worksheet < ::RubyXL::OOXMLTopLevelObject
   include ::RubyXL::RelationshipSupport
   include ::Enumerable
   include ::RubyXL::LegacyWorksheet
+  include ::RubyXL::WorksheetConvenienceMethods
   extend ::RubyXL::RelationshipSupport::ClassMehods
 
   # source://rubyXL//lib/rubyXL/objects/ooxml_object.rb#95
@@ -14793,6 +15189,268 @@ RubyXL::Worksheet::CONTENT_TYPE = T.let(T.unsafe(nil), String)
 
 # source://rubyXL//lib/rubyXL/objects/worksheet.rb#617
 RubyXL::Worksheet::REL_TYPE = T.let(T.unsafe(nil), String)
+
+# source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#2
+module RubyXL::WorksheetConvenienceMethods
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#700
+  def add_validation_list(ref, list_arr); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#675
+  def change_column_alignment(column_index, &block); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#606
+  def change_column_bold(column_index, bolded = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#635
+  def change_column_border(column_index, direction, weight); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#649
+  def change_column_border_color(column_index, direction, color); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#401
+  def change_column_fill(column_index, color_code = T.unsafe(nil)); end
+
+  # Helper method to update the fonts and cell styles array
+  # main method to change font, called from each separate font mutator method
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#563
+  def change_column_font(column_index, change_type, arg, font, xf); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#590
+  def change_column_font_color(column_index, font_color = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#576
+  def change_column_font_name(column_index = T.unsafe(nil), font_name = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#583
+  def change_column_font_size(column_index, font_size = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#627
+  def change_column_horizontal_alignment(column_index, alignment = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#599
+  def change_column_italics(column_index, italicized = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#620
+  def change_column_strikethrough(column_index, struckthrough = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#613
+  def change_column_underline(column_index, underlined = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#631
+  def change_column_vertical_alignment(column_index, alignment = T.unsafe(nil)); end
+
+  # Get column width measured in number of digits, as per
+  # http://msdn.microsoft.com/en-us/library/documentformat.openxml.spreadsheet.column%28v=office.14%29.aspx
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#384
+  def change_column_width(column_index, width_in_chars = T.unsafe(nil)); end
+
+  # Set raw column width value
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#374
+  def change_column_width_raw(column_index, width); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#662
+  def change_row_alignment(row, &block); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#531
+  def change_row_bold(row = T.unsafe(nil), bolded = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#457
+  def change_row_border(row, direction, weight); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#468
+  def change_row_border_color(row, direction, color = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#480
+  def change_row_fill(row_index = T.unsafe(nil), rgb = T.unsafe(nil)); end
+
+  # Helper method to update the row styles array
+  # change_type - NAME or SIZE or COLOR etc
+  # main method to change font, called from each separate font mutator method
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#492
+  def change_row_font(row_index, change_type, arg, font); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#516
+  def change_row_font_color(row = T.unsafe(nil), font_color = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#502
+  def change_row_font_name(row = T.unsafe(nil), font_name = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#509
+  def change_row_font_size(row = T.unsafe(nil), font_size = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#552
+  def change_row_height(row = T.unsafe(nil), height = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#445
+  def change_row_horizontal_alignment(row = T.unsafe(nil), alignment = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#524
+  def change_row_italics(row = T.unsafe(nil), italicized = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#545
+  def change_row_strikethrough(row = T.unsafe(nil), struckthrough = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#538
+  def change_row_underline(row = T.unsafe(nil), underlined = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#451
+  def change_row_vertical_alignment(row = T.unsafe(nil), alignment = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#432
+  def column_font(col); end
+
+  # by default, only sets cell to nil
+  # if :left is specified, method will shift row contents to the right of the deleted cell to the left
+  # if :up is specified, method will shift column contents below the deleted cell upward
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#40
+  def delete_cell(row_index = T.unsafe(nil), column_index = T.unsafe(nil), shift = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#204
+  def delete_column(column_index = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#126
+  def delete_row(row_index = T.unsafe(nil)); end
+
+  # Helper method to get the style index for a column
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#389
+  def get_col_style(column_index); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#315
+  def get_cols_style_index(column_index); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#438
+  def get_column_alignment(col, type); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#416
+  def get_column_border(col, border_direction); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#424
+  def get_column_border_color(col, border_direction); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#394
+  def get_column_fill(col = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#331
+  def get_column_font_color(col = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#321
+  def get_column_font_name(col = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#326
+  def get_column_font_size(col = T.unsafe(nil)); end
+
+  # Get column width measured in number of digits, as per
+  # http://msdn.microsoft.com/en-us/library/documentformat.openxml.spreadsheet.column%28v=office.14%29.aspx
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#367
+  def get_column_width(column_index = T.unsafe(nil)); end
+
+  # Get raw column width value as stored in the file
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#357
+  def get_column_width_raw(column_index = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#304
+  def get_row_alignment(row, is_horizontal); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#286
+  def get_row_border(row, border_direction); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#293
+  def get_row_border_color(row, border_direction); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#245
+  def get_row_fill(row = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#257
+  def get_row_font_color(row = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#249
+  def get_row_font_name(row = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#253
+  def get_row_font_size(row = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#279
+  def get_row_height(row = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#240
+  def get_row_style(row_index); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#11
+  def insert_cell(row = T.unsafe(nil), col = T.unsafe(nil), data = T.unsafe(nil), formula = T.unsafe(nil), shift = T.unsafe(nil)); end
+
+  # Inserts column at +column_index+, pushes everything right, takes styles from column to left
+  # NOTE: use of this method will break formulas which reference cells which are being "pushed right"
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#160
+  def insert_column(column_index = T.unsafe(nil)); end
+
+  # Inserts row at row_index, pushes down, copies style from the row above (that's what Excel 2013 does!)
+  # NOTE: use of this method will break formulas which reference cells which are being "pushed down"
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#73
+  def insert_row(row_index = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#341
+  def is_column_bolded(col = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#336
+  def is_column_italicized(col = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#351
+  def is_column_struckthrough(col = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#346
+  def is_column_underlined(col = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#267
+  def is_row_bolded(row = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#263
+  def is_row_italicized(row = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#275
+  def is_row_struckthrough(row = T.unsafe(nil)); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#271
+  def is_row_underlined(row = T.unsafe(nil)); end
+
+  # Merges cells within a rectangular area
+  #
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#692
+  def merge_cells(start_row, start_col, end_row, end_col); end
+
+  # source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#300
+  def row_font(row); end
+end
+
+# source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#7
+RubyXL::WorksheetConvenienceMethods::BOLD = T.let(T.unsafe(nil), Integer)
+
+# source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#5
+RubyXL::WorksheetConvenienceMethods::COLOR = T.let(T.unsafe(nil), Integer)
+
+# source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#6
+RubyXL::WorksheetConvenienceMethods::ITALICS = T.let(T.unsafe(nil), Integer)
+
+# source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#3
+RubyXL::WorksheetConvenienceMethods::NAME = T.let(T.unsafe(nil), Integer)
+
+# source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#4
+RubyXL::WorksheetConvenienceMethods::SIZE = T.let(T.unsafe(nil), Integer)
+
+# source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#9
+RubyXL::WorksheetConvenienceMethods::STRIKETHROUGH = T.let(T.unsafe(nil), Integer)
+
+# source://rubyXL//lib/rubyXL/convenience_methods/worksheet.rb#8
+RubyXL::WorksheetConvenienceMethods::UNDERLINE = T.let(T.unsafe(nil), Integer)
 
 # http://www.datypic.com/sc/ooxml/e-ssml_dimension-3.html
 #

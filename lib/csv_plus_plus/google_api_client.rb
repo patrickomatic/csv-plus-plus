@@ -1,10 +1,13 @@
-# typed: true
+# typed: strict
 # frozen_string_literal: true
 
 module CSVPlusPlus
   # A convenience wrapper around Google's REST API client
   module GoogleApiClient
-    # Get a +::Google::Apis::SheetsV4::SheetsService+ instance connected to the sheets API
+    extend ::T::Sig
+
+    sig { returns(::Google::Apis::SheetsV4::SheetsService) }
+    # Get a +Google::Apis::SheetsV4::SheetsService+ instance configured to connect to the sheets API
     #
     # @return [Google::Apis::SheetsV4::SheetsService]
     def self.sheets_client
@@ -13,7 +16,8 @@ module CSVPlusPlus
       end
     end
 
-    # Get a +::Google::Apis::DriveV3::DriveService+ instance connected to the drive API
+    sig { returns(::Google::Apis::DriveV3::DriveService) }
+    # Get a +Google::Apis::DriveV3::DriveService+ instance connected to the drive API
     #
     # @return [Google::Apis::DriveV3::DriveService]
     def self.drive_client

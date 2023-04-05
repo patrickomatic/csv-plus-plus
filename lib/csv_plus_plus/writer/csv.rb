@@ -27,7 +27,7 @@ module CSVPlusPlus
 
       private
 
-      sig { params(row: ::CSVPlusPlus::Row).returns(::T::Array[::String]) }
+      sig { params(row: ::CSVPlusPlus::Row).returns(::T::Array[::T.nilable(::String)]) }
       def build_row(row)
         @runtime.map_row(row.cells) { |cell, _i| cell.evaluate(@runtime) }
       end

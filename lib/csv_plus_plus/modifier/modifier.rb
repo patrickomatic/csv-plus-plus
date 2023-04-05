@@ -5,20 +5,20 @@ module CSVPlusPlus
   module Modifier
     # A container representing the operations that can be applied to a cell or row
     #
-    # @attr bordercolor [::Color]
-    # @attr color [Color] The background color of the cell
-    # @attr expand [Modifier::Expand] Whether this row expands into multiple rows
-    # @attr fontcolor [Color] The font color of the cell
-    # @attr fontfamily [::String] The font family
-    # @attr fontsize [Numeric] The font size
-    # @attr halign [Modifier::HorizontalAlign] Horizontal alignment
-    # @attr note [::String] A note/comment on the cell
-    # @attr numberformat [Modifier::NumberFormat] A number format to apply to the value in the cell
-    # @attr row_level [::T::Boolean] Is this a row modifier? If so it's values will apply to all cells in the row
+    # @attr bordercolor [Color, nil]
+    # @attr color [Color, nil] The background color of the cell
+    # @attr expand [Modifier::Expand, nil] Whether this row expands into multiple rows
+    # @attr fontcolor [Color, nil] The font color of the cell
+    # @attr fontfamily [::String, nil] The font family
+    # @attr fontsize [Numeric, nil] The font size
+    # @attr halign [Modifier::HorizontalAlign, nil] Horizontal alignment
+    # @attr note [::String, nil] A note/comment on the cell
+    # @attr numberformat [Modifier::NumberFormat, nil] A number format to apply to the value in the cell
+    # @attr row_level [T::Boolean] Is this a row modifier? If so it's values will apply to all cells in the row
     #   (unless overridden by the cell modifier)
-    # @attr validate [Modifier::DataValidation]
-    # @attr valign [Modifier::VerticalAlign] Vertical alignment
-    # @attr var [Symbol] The variable bound to this cell
+    # @attr validate [Modifier::DataValidation, nil]
+    # @attr valign [Modifier::VerticalAlign, nil] Vertical alignment
+    # @attr var [Symbol, nil] The variable bound to this cell
     #
     # @attr_writer borderstyle [Modifier::BorderStyle] The style of border on the cell
     #

@@ -454,7 +454,7 @@ module_eval(<<'.,.,', 'modifier.y', 48)
 
 module_eval(<<'.,.,', 'modifier.y', 49)
   def _reduce_24(val, _values, result)
-     modifier.validation = val[2]
+     modifier.validate = val[2]
     result
   end
 .,.,

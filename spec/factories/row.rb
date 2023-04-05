@@ -9,6 +9,6 @@
       modifier { build(:modifier) }
     end
 
-    initialize_with { new(cells, index, modifier) }
+    initialize_with { new(cells:, index:, modifier:) }
   end
 end
