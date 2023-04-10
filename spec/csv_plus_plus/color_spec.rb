@@ -37,16 +37,9 @@ describe ::CSVPlusPlus::Color do
     context 'with an invalid hex string' do
       let(:hex_string) { 'invalid' }
 
-      it 'sets @red_hex component to 0' do
-        expect(color.red_hex).to(be_nil)
-      end
-
-      it 'sets @green_hex component to 0' do
-        expect(color.green_hex).to(be_nil)
-      end
-
-      it 'sets @blue_hex component to 0' do
-        expect(color.blue_hex).to(be_nil)
+      it 'raises an error' do
+        expect { color }
+          .to(raise_error(::CSVPlusPlus::Error::Error))
       end
     end
   end
@@ -70,12 +63,6 @@ describe ::CSVPlusPlus::Color do
     subject { color.to_hex }
 
     it { is_expected.to(eq('FF0001')) }
-  end
-
-  describe '#to_s' do
-    subject { color.to_s }
-
-    it { is_expected.to(eq('Color(r: FF, g: 00, b: 01)')) }
   end
 
   describe '#==' do

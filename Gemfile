@@ -31,6 +31,8 @@ group :test do
   gem 'factory_bot', '~> 6'
   # the chosen testing framework
   gem 'rspec', '~> 3'
+  # fixes some oddities with doubles disagreeing with runtime types
+  gem 'rspec-sorbet', '~> 1'
   # code coverage
   gem 'simplecov', '~> 0.2', require: false
   # testing external APIS

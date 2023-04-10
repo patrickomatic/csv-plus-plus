@@ -1,8 +1,6 @@
 # typed: strict
 # frozen_string_literal: true
 
-require_relative './rubyxl_modifier'
-
 module CSVPlusPlus
   module Writer
     # Build a RubyXL workbook formatted according to the given +rows+
@@ -72,8 +70,8 @@ module CSVPlusPlus
         ).void
       end
       def do_alignments!(cell, modifier)
-        cell.change_horizontal_alignment(modifier.halign.to_s) if modifier.halign
-        cell.change_vertical_alignment(modifier.valign.to_s) if modifier.valign
+        cell.change_horizontal_alignment(modifier.horizontal_alignment) if modifier.halign
+        cell.change_vertical_alignment(modifier.vertical_alignment) if modifier.valign
       end
 
       sig do
@@ -170,13 +168,11 @@ module CSVPlusPlus
       sig { returns(::RubyXL::Worksheet) }
       def open_worksheet
         if @input_filename && ::File.exist?(@input_filename)
-          ::RubyXL::Parser.parse(@input_filename).tap do |workbook|
-            workbook[@sheet_name] || workbook.add_worksheet(@sheet_name)
-          end
+          workbook = ::RubyXL::Parser.parse(@input_filename)
+          workbook[@sheet_name] || workbook.add_worksheet(@sheet_name)
         else
-          ::RubyXL::Workbook.new.tap do |workbook|
-            workbook.worksheets[0].tap { |w| w.sheet_name = @sheet_name }
-          end
+          workbook = ::RubyXL::Workbook.new
+          workbook.worksheets[0].tap { |w| w.sheet_name = @sheet_name }
         end
       end
     end

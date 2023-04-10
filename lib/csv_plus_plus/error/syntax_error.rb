@@ -51,11 +51,8 @@ module CSVPlusPlus
 
       sig { returns(::String) }
       def cell_index
-        row_index = @runtime.row_index
-        if @runtime.cell_index
-          "[#{row_index},#{@runtime.cell_index}]"
-        elsif row_index
-          "[#{row_index}]"
+        if @runtime.parsing_csv_section?
+          "[#{@runtime.row_index},#{@runtime.cell_index}]"
         else
           ''
         end
@@ -64,10 +61,8 @@ module CSVPlusPlus
       sig { returns(::String) }
       def message_prefix
         line_number = @runtime.line_number
-        filename = @runtime.filename
+        filename = @runtime.source_code.filename
 
-        # TODO: use the runtime's dirty state here since line_number is always set
-        # line_str = line_number ? ":#{line_number}" : ''
         line_str = ":#{line_number}"
         "#{filename}#{line_str}"
       end

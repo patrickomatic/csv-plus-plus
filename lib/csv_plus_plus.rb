@@ -16,6 +16,10 @@ require 'rubyXL/convenience_methods'
 require 'set'
 require 'tempfile'
 
+require_relative 'csv_plus_plus/source_code'
+
+require_relative 'csv_plus_plus/runtime'
+
 require_relative 'csv_plus_plus/cli_flag'
 require_relative 'csv_plus_plus/entities'
 require_relative 'csv_plus_plus/error'
@@ -23,22 +27,22 @@ require_relative 'csv_plus_plus/error'
 require_relative 'csv_plus_plus/cell'
 require_relative 'csv_plus_plus/cli'
 require_relative 'csv_plus_plus/color'
+require_relative 'csv_plus_plus/modifier'
 
 require_relative 'csv_plus_plus/parser/cell_value.tab'
 require_relative 'csv_plus_plus/parser/code_section.tab'
 require_relative 'csv_plus_plus/parser/modifier.tab'
 
-require_relative 'csv_plus_plus/benchmarked_compiler'
 require_relative 'csv_plus_plus/compiler'
-require_relative 'csv_plus_plus/runtime'
 
 require_relative 'csv_plus_plus/google_options'
 require_relative 'csv_plus_plus/lexer'
-require_relative 'csv_plus_plus/modifier'
 require_relative 'csv_plus_plus/options'
 require_relative 'csv_plus_plus/row'
 require_relative 'csv_plus_plus/template'
 require_relative 'csv_plus_plus/writer'
+
+require_relative 'csv_plus_plus/benchmarked_compiler'
 
 # A programming language for writing rich CSV files
 module CSVPlusPlus
@@ -53,7 +57,7 @@ module CSVPlusPlus
   def self.apply_template_to_sheet!(input, filename, options)
     warn(options.verbose_summary) if options.verbose
 
-    runtime = ::CSVPlusPlus::Runtime.new(input:, filename:)
+    runtime = ::CSVPlusPlus::Runtime.new(source_code: ::CSVPlusPlus::SourceCode.new(input:, filename:))
 
     ::CSVPlusPlus::Compiler.with_compiler(options:, runtime:) do |compiler|
       template = compiler.compile_template

@@ -103,10 +103,10 @@ module CSVPlusPlus
         else
           @cell_index = ::T.let(cell_index, ::T.nilable(::Integer))
           @row_index = ::T.let(row_index, ::T.nilable(::Integer))
-        end
 
-        @upper_cell_index = ::T.let(nil, ::T.nilable(::Integer))
-        @upper_row_index = ::T.let(nil, ::T.nilable(::Integer))
+          @upper_cell_index = ::T.let(nil, ::T.nilable(::Integer))
+          @upper_row_index = ::T.let(nil, ::T.nilable(::Integer))
+        end
 
         @scoped_to_expand = scoped_to_expand
       end
@@ -220,7 +220,7 @@ module CSVPlusPlus
       end
 
       sig { params(upper_range: ::String).void }
-      # TODO: make this less redundent with the above function
+      # TODO: make this less redundant with the above function
       def parse_upper_range!(upper_range)
         cell_ref, row_ref = ::T.must(upper_range.match(/^([a-zA-Z]+)?(\d+)?$/)).captures
         @upper_cell_index = from_a1_cell_ref!(cell_ref) if cell_ref

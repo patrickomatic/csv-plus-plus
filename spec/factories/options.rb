@@ -6,12 +6,13 @@
     transient do
       create_if_not_exists { false }
       google_sheet_id { nil }
-      output_filename { nil }
+      output_filename { 'text.xlsx' }
       sheet_name { 'Test' }
     end
 
     trait :with_google_sheet_id do
-      google_sheet_id { ::ENV.fetch('GOOGLE_SHEET_ID', 'skcksk1lw1ocks01xkskcls10paxl1cpslskdk20alxw') }
+      google_sheet_id { ::ENV.fetch('GOOGLE_SHEET_ID', 'skcksk1lw1ocks01xkskcls10paxl1cpslskdk20alxw') || 'abcedfg' }
+      output_filename { nil }
     end
 
     after(:build) do |i, e|

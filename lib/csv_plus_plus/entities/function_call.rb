@@ -12,7 +12,7 @@ module CSVPlusPlus
       sig { returns(::T::Boolean) }
       attr_reader :infix
 
-      sig { params(id: ::String, arguments: ::T::Array[::CSVPlusPlus::Entities::Entity], infix: ::T::Boolean).void }
+      sig { params(id: ::Symbol, arguments: ::T::Array[::CSVPlusPlus::Entities::Entity], infix: ::T::Boolean).void }
       # @param id [::String] The name of the function
       # @param arguments [Array<Entity>] The arguments to the function
       # @param infix [T::Boolean] Whether the function is infix

@@ -54,6 +54,8 @@ module CSVPlusPlus
       end
     end
 
+    private
+
     sig { void }
     # Handle the supplied command line options, setting +@options+ or throw an error if anything is invalid
     def parse_options!
@@ -62,8 +64,6 @@ module CSVPlusPlus
     rescue ::OptionParser::InvalidOption => e
       raise(::CSVPlusPlus::Error::Error, e.message)
     end
-
-    private
 
     sig { params(error: ::StandardError).void }
     # An error was thrown that we weren't planning on

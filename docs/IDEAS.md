@@ -1,6 +1,6 @@
 # Ruby
-- [ ] Look into using RBS
 - [ ] Make it compatible with older ruby versions - no reason we need the newest (it seems like 2.3 would be reasonable to target)
+- [x] Look into using Sorbet
 
 # Testing/Publishing
 
@@ -39,6 +39,7 @@
 
 # Language
 
+- [ ] make the code section (and `---`) optional
 - [ ] can I get rid of $$ syntax and just resolve the functions and runtime vars it knows about?
 - [ ] a way to not show a function if it's dependent cells are blank (make it less ugly when expanded out)
 - [ ] turn it into a lisp???

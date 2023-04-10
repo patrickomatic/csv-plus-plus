@@ -4,10 +4,7 @@
 require_relative './modifier/conditional_formatting'
 require_relative './modifier/data_validation'
 require_relative './modifier/expand'
-require_relative './modifier/google_sheet_modifier'
 require_relative './modifier/modifier'
-require_relative './modifier/rubyxl_modifier'
-require_relative './modifier/validated_modifier'
 
 module CSVPlusPlus
   # All modifier-specific logic is hidden in this module and callers should just call +#new+ on this module.
@@ -90,7 +87,7 @@ module CSVPlusPlus
       output_format = options.output_format
       case output_format
       when ::CSVPlusPlus::Options::OutputFormat::CSV, ::CSVPlusPlus::Options::OutputFormat::OpenDocument
-        ::CSVPlusPlus::Modifier::ValidatedModifier.new(row_level:)
+        ::CSVPlusPlus::Modifier::Modifier.new(row_level:)
       when ::CSVPlusPlus::Options::OutputFormat::Excel
         ::CSVPlusPlus::Modifier::RubyXLModifier.new(row_level:)
       when ::CSVPlusPlus::Options::OutputFormat::GoogleSheets
@@ -100,3 +97,7 @@ module CSVPlusPlus
     end
   end
 end
+
+require_relative './modifier/google_sheet_modifier'
+require_relative './modifier/modifier_validator'
+require_relative './modifier/rubyxl_modifier'

@@ -8,6 +8,18 @@ module CSVPlusPlus
     module PositionTracker
       extend ::T::Sig
 
+      sig { params(cell: ::T.nilable(::CSVPlusPlus::Cell)).returns(::T.nilable(::CSVPlusPlus::Cell)) }
+      attr_writer :cell
+
+      sig { params(cell_index: ::T.nilable(::Integer)).returns(::T.nilable(::Integer)) }
+      attr_writer :cell_index
+
+      sig { params(line_number: ::T.nilable(::Integer)).returns(::T.nilable(::Integer)) }
+      attr_writer :line_number
+
+      sig { params(row_index: ::T.nilable(::Integer)).returns(::T.nilable(::Integer)) }
+      attr_writer :row_index
+
       sig { returns(::CSVPlusPlus::Cell) }
       # The current cell index.  This will only be set when processing the CSV section
       #
@@ -18,7 +30,11 @@ module CSVPlusPlus
       end
 
       sig { returns(::Integer) }
-      # The current CSV cell index.  This will only be set when processing the CSV section
+      # The current CSV cell index.
+      #
+      # This will only be set when processing the CSV section and will throw an exception otherwise.  It is up to the
+      # caller (the compiler) to make sure it's called in the context of a compilation stage and/or a
+      # +#map_row+/+#map_rows+/+#map_lines+
       #
       # @return [Integer]
       def cell_index
@@ -29,6 +45,10 @@ module CSVPlusPlus
       sig { returns(::Integer) }
       # The current CSV row index.  This will only be set when processing the CSV section
       #
+      # This will only be set when processing the CSV section and will throw an exception otherwise.  It is up to the
+      # caller (the compiler) to make sure it's called in the context of a compilation stage and/or a
+      # +#map_row+/+#map_rows+/+#map_lines+
+      #
       # @return [Integer]
       def row_index
         @row_index ||= ::T.let(nil, ::T.nilable(::Integer))
@@ -38,6 +58,10 @@ module CSVPlusPlus
       sig { returns(::Integer) }
       # The current line number being processed.  The line number is based on the entire file, irregardless of if it's
       # parsing the code section or the CSV section
+      #
+      # This will only be set when processing the csvpp file and will throw an exception otherwise.  It is up to the
+      # caller (the compiler) to make sure it's called in the context of a compilation stage and/or a
+      # +#map_row+/+#map_rows+/+#map_lines+
       #
       # @return [Integer]
       def line_number
@@ -73,7 +97,7 @@ module CSVPlusPlus
       #
       # @return [Array]
       def map_lines(lines, &block)
-        line_number!(1)
+        self.line_number = 1
         lines.map do |line|
           ret = block.call(line)
           next_line!
@@ -99,7 +123,8 @@ module CSVPlusPlus
       # @return [Array]
       def map_row(row, &block)
         row.map.with_index do |cell, index|
-          set_cell!(cell, index) if cell.is_a?(::CSVPlusPlus::Cell)
+          self.cell_index = index
+          self.cell = cell if cell.is_a?(::CSVPlusPlus::Cell)
           block.call(cell, index)
         end
       end
@@ -116,7 +141,7 @@ module CSVPlusPlus
       #
       # @return [Array]
       def map_rows(rows, &block)
-        row_index!(0)
+        self.row_index = 0
         map_lines(rows) do |row|
           block.call(row)
         end
@@ -135,7 +160,7 @@ module CSVPlusPlus
       # @return [Array<Array>]
       # rubocop:disable Naming/BlockForwarding
       def map_all_cells(rows, &block)
-        row_index!(0)
+        self.row_index = 0
         map_lines(rows) { |row| map_row(row.cells, &block) }
       end
       # rubocop:enable Naming/BlockForwarding
@@ -154,24 +179,12 @@ module CSVPlusPlus
       # Each time we run a parse on the input, reset the runtime state starting at the beginning of the file
       def start!(&block)
         @row_index = @cell_index = 0
-        line_number!(1)
+        self.line_number = 1
 
         ret = block.call
         finish!
         ret
       end
-
-      sig do
-        type_parameters(:R).params(block: ::T.proc.returns(::T.type_parameter(:R))).returns(::T.type_parameter(:R))
-      end
-      # Reset the runtime state starting at the CSV section
-      # rubocop:disable Naming/BlockForwarding
-      def start_at_csv!(&block)
-        # TODO: isn't the input re-written anyway without the code section? why do we need this?
-        line_number!(@length_of_code_section || 1)
-        start!(&block)
-      end
-      # rubocop:enable Naming/BlockForwarding
 
       sig { params(data: ::String).void }
       # We mutate the input over and over. It's ok because it's just a Tempfile
@@ -181,23 +194,6 @@ module CSVPlusPlus
         input&.truncate(0)
         input&.write(data)
         input&.rewind
-      end
-
-      protected
-
-      sig { params(input: ::String).void }
-      def init_input!(input)
-        lines = input.split(/\s*\n\s*/)
-        @length_of_original_file = ::T.let(lines.length, ::T.nilable(::Integer))
-        @length_of_code_section = ::T.let(count_code_section_lines(lines), ::T.nilable(::Integer))
-        @length_of_csv_section = ::T.let(
-          ::T.must(@length_of_original_file) - ::T.must(@length_of_code_section),
-          ::T.nilable(::Integer)
-        )
-
-        # we're gonna take our input file, write it to a tmp file then each
-        # step is gonna mutate that tmp file
-        rewrite_input!(input)
       end
 
       private
@@ -212,13 +208,8 @@ module CSVPlusPlus
         end
       end
 
-      sig { params(lines: ::T::Array[::String]).returns(::Integer) }
-      def count_code_section_lines(lines)
-        eoc = ::CSVPlusPlus::Lexer::END_OF_CODE_SECTION
-        lines.include?(eoc) ? (lines.take_while { |l| l != eoc }).length + 1 : 0
-      end
-
       sig { void }
+      # Called to mark the trackers dirty.  It should be an error to use them outside of an initialized context.
       def finish!
         @line_number = nil
         @row_index = nil
@@ -226,43 +217,13 @@ module CSVPlusPlus
         @cell = nil
       end
 
-      sig { params(line_number: ::Integer).returns(::Integer) }
-      # @param line_number [Integer]
-      #
-      # @return [Integer]
-      def line_number!(line_number)
-        @line_number = ::T.let(line_number, ::T.nilable(::Integer))
-        line_number
-      end
-
       sig { returns(::Integer) }
       # Increment state to the next line
       #
       # @return [Integer]
       def next_line!
-        row_index!(row_index + 1)
-        line_number!(line_number + 1)
-      end
-
-      sig { params(row_index: ::Integer).returns(::Integer) }
-      # @param row_index [Integer]
-      #
-      # @return [Integer]
-      def row_index!(row_index)
-        @row_index = ::T.let(row_index, ::T.nilable(::Integer))
-        row_index
-      end
-
-      sig { params(cell: ::CSVPlusPlus::Cell, cell_index: ::Integer).returns(::Integer) }
-      # Set the current cell and index
-      #
-      # @param cell [Cell] The current cell
-      # @param cell_index [Integer] The index of the cell
-      #
-      # @return [Integer]
-      def set_cell!(cell, cell_index)
-        @cell = cell
-        @cell_index = cell_index
+        self.row_index += 1
+        self.line_number += 1
       end
     end
     # rubocop:enable Metrics/ModuleLength

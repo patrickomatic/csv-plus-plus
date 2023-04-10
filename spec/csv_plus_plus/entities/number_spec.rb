@@ -7,6 +7,10 @@ describe ::CSVPlusPlus::Entities::Number do
   subject(:entity) { described_class.new(value) }
 
   describe '#initialize' do
+    it 'sets @type' do
+      expect(subject.type).to(eq(::CSVPlusPlus::Entities::Type::Number))
+    end
+
     it 'has a nil id' do
       expect(subject.id).to(be_nil)
     end
@@ -41,9 +45,5 @@ describe ::CSVPlusPlus::Entities::Number do
     subject { entity.evaluate(runtime) }
 
     it { is_expected.to(eq('55')) }
-  end
-
-  describe '#number?' do
-    it { is_expected.to(be_number) }
   end
 end

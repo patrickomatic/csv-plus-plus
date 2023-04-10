@@ -2,17 +2,25 @@
 # frozen_string_literal: true
 
 describe ::CSVPlusPlus::Row do
+  let(:modifier) { build(:modifier, expand:) }
+  let(:expand) { nil }
+
   describe '#expand_amount' do
     let(:index) { 0 }
-    let(:modifier) { build(:modifier_with_expand) }
     let(:row) { build(:row, modifier:, index:) }
 
     subject { row.expand_amount }
 
-    it { is_expected.to(eq(2)) }
+    it { is_expected.to(eq(0)) }
+
+    context 'when amount is finite' do
+      let(:expand) { build(:expand, repetitions: 2) }
+
+      it { is_expected.to(eq(2)) }
+    end
 
     context 'when no amount is set' do
-      let(:modifier) { build(:modifier_with_infinite_expand) }
+      let(:expand) { build(:expand) }
 
       it { is_expected.to(eq(1000)) }
 
@@ -25,7 +33,7 @@ describe ::CSVPlusPlus::Row do
   end
 
   describe '#expand_rows' do
-    let(:modifier) { build(:modifier_with_expand) }
+    let(:expand) { build(:expand, repetitions: 2) }
     let(:row) { build(:row, modifier:, index: 5) }
     let(:starts_at) { 0 }
     let(:into) { [] }
@@ -51,8 +59,7 @@ describe ::CSVPlusPlus::Row do
         build(:cell, row_index:, index: 2, value: 'baz')
       ]
     end
-    let(:modifier) { build(:modifier) }
-    let(:row) { described_class.new(row_index, cells, modifier) }
+    let(:row) { described_class.new(index: row_index, cells:, modifier:) }
 
     before { row.index = 10 }
 
@@ -60,7 +67,7 @@ describe ::CSVPlusPlus::Row do
       expect(row.index).to(eq(10))
     end
 
-    it 'propagates the change to each cell.row_index' do
+    it 'propagates the change to each cell' do
       expect(row.cells[0].row_index).to(eq(10))
       expect(row.cells[1].row_index).to(eq(10))
       expect(row.cells[2].row_index).to(eq(10))
@@ -68,7 +75,6 @@ describe ::CSVPlusPlus::Row do
   end
 
   describe '#unexpanded?' do
-    let(:modifier) { build(:modifier) }
     let(:row) { build(:row, modifier:) }
 
     subject { row.unexpanded? }
@@ -78,13 +84,13 @@ describe ::CSVPlusPlus::Row do
     end
 
     context 'with an expand modifier that has not been expanded' do
-      let(:modifier) { build(:modifier_with_expand) }
+      let(:expand) { build(:expand, repetitions: 2) }
 
       it { is_expected.to(be(true)) }
     end
 
     context 'with an expand modifier that has been expanded' do
-      let(:modifier) { build(:modifier_with_expand) }
+      let(:expand) { build(:expand, repetitions: 2) }
 
       before { modifier.expand.starts_at = 5 }
 

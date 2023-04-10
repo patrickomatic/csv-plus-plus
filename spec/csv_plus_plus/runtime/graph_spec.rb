@@ -80,7 +80,7 @@ describe ::CSVPlusPlus::Runtime::Graph do
             ]
           ),
           build(:variable_bar),
-          build(:variable, id: 'rownum')
+          build(:variable, id: :rownum)
         ]
       )
     end

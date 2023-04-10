@@ -4,24 +4,14 @@
 ::FactoryBot.define do
   factory :modifier, class: ::CSVPlusPlus::Modifier do
     transient do
-      repetitions { nil }
+      options { build(:options) }
       row_level { false }
     end
 
-    initialize_with { new(row_level:) }
+    initialize_with { new(options, row_level:) }
 
     factory :row_modifier do
       row_level { true }
-
-      factory :modifier_with_expand do
-        after(:build) do |m|
-          m.expand = '2'
-        end
-      end
-
-      factory :modifier_with_infinite_expand do
-        after(:build, &:infinite_expand!)
-      end
     end
   end
 end

@@ -10,17 +10,17 @@ module CSVPlusPlus
 
       sig do
         params(
-          current_sheet_values: ::T.untyped,
+          current_sheet_values: ::T::Array[::T::Array[::T.nilable(::String)]],
           runtime: ::CSVPlusPlus::Runtime::Runtime,
-          sheet_id: ::String,
+          sheet_id: ::T.nilable(::String),
           rows: ::T::Array[::CSVPlusPlus::Row],
           column_index: ::T.nilable(::Integer),
           row_index: ::T.nilable(::Integer)
         ).void
       end
       # @param column_index [Integer] Offset the results by +column_index+
-      # @param current_sheet_values
-      # @param sheet_id [String] The sheet ID referencing the sheet in Google
+      # @param current_sheet_values [Array<Array<::String, nil>>]
+      # @param sheet_id [::String] The sheet ID referencing the sheet in Google
       # @param row_index [Integer] Offset the results by +row_index+
       # @param rows [Array<Row>] The rows to render
       # @param runtime [Runtime] The current runtime.
@@ -65,10 +65,10 @@ module CSVPlusPlus
         ::Google::Apis::SheetsV4::CellFormat.new.tap do |cf|
           cf.text_format = mod.text_format
 
-          cf.horizontal_alignment = mod.halign
-          cf.vertical_alignment = mod.valign
-          cf.background_color = mod.color
-          cf.number_format = mod.numberformat
+          cf.horizontal_alignment = mod.horizontal_alignment
+          cf.vertical_alignment = mod.vertical_alignment
+          cf.background_color = mod.background_color
+          cf.number_format = mod.number_format
         end
       end
 
@@ -85,7 +85,7 @@ module CSVPlusPlus
 
       sig { params(row_index: ::Integer, cell_index: ::Integer).returns(::T.nilable(::String)) }
       def current_value(row_index, cell_index)
-        @current_sheet_values[row_index][cell_index]
+        ::T.must(@current_sheet_values[row_index])[cell_index]
       rescue ::StandardError
         nil
       end

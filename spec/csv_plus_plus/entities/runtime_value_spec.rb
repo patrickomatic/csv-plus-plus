@@ -7,7 +7,11 @@ describe ::CSVPlusPlus::Entities::RuntimeValue do
   subject(:entity) { described_class.new(resolve_fn) }
 
   describe '#initialize' do
-    it 'has a nil id' do
+    it 'sets @type' do
+      expect(subject.type).to(eq(::CSVPlusPlus::Entities::Type::RuntimeValue))
+    end
+
+    it 'has a nil @id' do
       expect(subject.id).to(be_nil)
     end
   end
@@ -25,9 +29,5 @@ describe ::CSVPlusPlus::Entities::RuntimeValue do
     subject { entity.evaluate(runtime) }
 
     it { is_expected.to(eq('(runtime value)')) }
-  end
-
-  describe '#runtime_value?' do
-    it { is_expected.to(be_runtime_value) }
   end
 end

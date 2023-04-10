@@ -45,7 +45,7 @@ module CSVPlusPlus
     #
     # @return [Integer]
     def expand_amount
-      return 0 if @modifier.expand&.repetitions.nil?
+      return 0 if @modifier.expand.nil?
 
       ::T.must(@modifier.expand).repetitions || (1000 - @index)
     end
@@ -58,7 +58,7 @@ module CSVPlusPlus
     #
     # @return [Array<Row>] The rows expanded
     def expand_rows(starts_at:, into: [])
-      return into unless @modifier.expand
+      return into if @modifier.expand.nil?
 
       ::T.must(@modifier.expand).starts_at = starts_at
 
@@ -71,9 +71,9 @@ module CSVPlusPlus
     sig { returns(::T::Boolean) }
     # Does the row have an ![[expand]] modifier but is yet to be expanded?
     #
-    # @return [boolean]
+    # @return [T::Boolean]
     def unexpanded?
-      return true unless @modifier.expand
+      return false if @modifier.expand.nil?
 
       !::T.must(@modifier.expand).expanded?
     end

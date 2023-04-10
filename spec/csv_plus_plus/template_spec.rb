@@ -2,6 +2,8 @@
 # frozen_string_literal: true
 
 describe ::CSVPlusPlus::Template do
+  let(:modifier_with_expand) { build(:modifier, expand: build(:expand, repetitions: 2)) }
+  let(:modifier_with_infinite_expand) { build(:modifier, expand: build(:expand)) }
   let(:template) { build(:template, rows:) }
 
   describe '#bind_all_vars!' do
@@ -29,7 +31,7 @@ describe ::CSVPlusPlus::Template do
     end
     let(:rows) do
       [
-        build(:row, index: 0, cells: cells_row0, modifier: build(:modifier_with_expand)),
+        build(:row, index: 0, cells: cells_row0, modifier: modifier_with_expand),
         build(:row, index: 1, cells: cells_row1)
       ]
     end
@@ -59,7 +61,7 @@ describe ::CSVPlusPlus::Template do
       let(:rows) do
         [
           build(:row, index: 0, cells: cells_row1),
-          build(:row, index: 1, cells: cells_row0, modifier: build(:modifier_with_infinite_expand))
+          build(:row, index: 1, cells: cells_row0, modifier: modifier_with_infinite_expand)
         ]
       end
 
@@ -91,7 +93,7 @@ describe ::CSVPlusPlus::Template do
     context 'with a single bounded expand' do
       let(:rows) do
         [
-          build(:row, index: 0, cells:, modifier: build(:modifier_with_expand)),
+          build(:row, index: 0, cells:, modifier: modifier_with_expand),
           build(:row, index: 1, cells:),
           build(:row, index: 2, cells:)
         ]
@@ -106,8 +108,8 @@ describe ::CSVPlusPlus::Template do
     context 'with multiple bounded expands' do
       let(:rows) do
         [
-          build(:row, index: 0, cells:, modifier: build(:modifier_with_expand)),
-          build(:row, index: 1, cells:, modifier: build(:modifier_with_expand)),
+          build(:row, index: 0, cells:, modifier: modifier_with_expand),
+          build(:row, index: 1, cells:, modifier: modifier_with_expand),
           build(:row, index: 2, cells:)
         ]
       end
@@ -121,7 +123,7 @@ describe ::CSVPlusPlus::Template do
     context 'with one infinite expand' do
       let(:rows) do
         [
-          build(:row, index: 0, cells:, modifier: build(:modifier_with_infinite_expand)),
+          build(:row, index: 0, cells:, modifier: modifier_with_infinite_expand),
           build(:row, index: 1, cells:),
           build(:row, index: 2, cells:)
         ]
@@ -136,8 +138,8 @@ describe ::CSVPlusPlus::Template do
     context 'with multiple infinite expands' do
       let(:rows) do
         [
-          build(:row, index: 0, cells:, modifier: build(:modifier_with_infinite_expand)),
-          build(:row, index: 1, cells:, modifier: build(:modifier_with_infinite_expand)),
+          build(:row, index: 0, cells:, modifier: modifier_with_infinite_expand),
+          build(:row, index: 1, cells:, modifier: modifier_with_infinite_expand),
           build(:row, index: 2, cells:)
         ]
       end

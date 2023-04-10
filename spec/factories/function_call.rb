@@ -18,7 +18,7 @@
     end
 
     factory :fn_call_foo do
-      name { 'foo' }
+      name { :foo }
       arguments { [build(:variable_bar)] }
     end
   end

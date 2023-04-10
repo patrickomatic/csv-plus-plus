@@ -66,7 +66,7 @@ module CSVPlusPlus
 
         raise_modifier_syntax_error('Undefined variable reference', var_id.to_s) if value.nil?
 
-        expand = value.cell_reference? && value.scoped_to_expand
+        expand = value.type == ::CSVPlusPlus::Entities::Type::CellReference && value.scoped_to_expand
         return true unless expand
 
         unless expand.starts_at
@@ -110,9 +110,9 @@ module CSVPlusPlus
       # Make a copy of the AST represented by +node+ and replace +fn_id+ with +replacement+ throughout
       # rubocop:disable Metrics/MethodLength
       def function_replace(node, fn_id, replacement)
-        if node.function_call? && node.id == fn_id
+        if node.type == ::CSVPlusPlus::Entities::Type::FunctionCall && node.id == fn_id
           call_function_or_builtin(replacement, node)
-        elsif node.function_call?
+        elsif node.type == ::CSVPlusPlus::Entities::Type::FunctionCall
           # not our function, but continue our depth first search on it
           ::CSVPlusPlus::Entities::FunctionCall.new(
             node.id,
@@ -133,7 +133,7 @@ module CSVPlusPlus
       end
 
       def call_function_or_builtin(function_or_builtin, function_call)
-        if function_or_builtin.function?
+        if function_or_builtin.type == ::CSVPlusPlus::Entities::Type::Function
           call_function(function_or_builtin, function_call)
         else
           function_or_builtin.resolve_fn.call(self, function_call.arguments)
@@ -151,11 +151,11 @@ module CSVPlusPlus
 
       # Make a copy of the AST represented by +node+ and replace +var_id+ with +replacement+ throughout
       def variable_replace(node, var_id, replacement)
-        if node.function_call?
+        if node.type == ::CSVPlusPlus::Entities::Type::FunctionCall
           arguments = node.arguments.map { |n| variable_replace(n, var_id, replacement) }
           # TODO: refactor these places where we copy functions... it's brittle with the kwargs
           ::CSVPlusPlus::Entities::FunctionCall.new(node.id, arguments, infix: node.infix)
-        elsif node.variable? && node.id == var_id
+        elsif node.type == ::CSVPlusPlus::Entities::Type::Variable && node.id == var_id
           replacement
         else
           node

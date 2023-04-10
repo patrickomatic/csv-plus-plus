@@ -24,8 +24,8 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 60)
     super()
 
     @parsing_row = false
-    @cell_modifier = cell_modifier
-    @row_modifier = row_modifier
+    @cell_modifier = ::CSVPlusPlus::Modifier::ModifierValidator.new(cell_modifier)
+    @row_modifier = ::CSVPlusPlus::Modifier::ModifierValidator.new(row_modifier)
   end
 
   protected
@@ -106,7 +106,7 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 60)
   private
 
   def assign_defaults!
-    @cell_modifier.take_defaults_from!(@row_modifier)
+    @cell_modifier.modifier.take_defaults_from!(@row_modifier.modifier)
   end
 
   def parsing_row!
@@ -120,10 +120,6 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 60)
   def parsing_cell!
     @parsing_row = false
     assign_defaults!
-  end
-
-  def define_var(var_id)
-    modifier.var = var_id.to_sym
   end
 
   def modifier
@@ -468,7 +464,7 @@ module_eval(<<'.,.,', 'modifier.y', 50)
 
 module_eval(<<'.,.,', 'modifier.y', 51)
   def _reduce_26(val, _values, result)
-     define_var(val[2])
+     modifier.var = val[2]
     result
   end
 .,.,

@@ -50,18 +50,34 @@ module CSVPlusPlus
         # rubocop:enable Lint/ConstantResolution
       end
 
-      sig { returns(::T.nilable(::Integer)) }
+      sig { returns(::T.nilable(::String)) }
+      # The horizontal alignment, formatted for the RubyXL API
+      #
+      # @return [::String, nil]
+      def horizontal_alignment
+        @halign&.serialize
+      end
+
+      sig { returns(::T.nilable(::String)) }
       # The excel-specific number format code
       #
       # @return [::String]
       def number_format_code
-        return unless numberformat
+        return unless @numberformat
 
         ::RubyXL::NumberFormats::DEFAULT_NUMBER_FORMATS.find_by_format_id(
           # rubocop:disable Lint/ConstantResolution
-          NUM_FMT_IDS[::T.must(numberformat)]
+          NUM_FMT_IDS[@numberformat]
           # rubocop:enable Lint/ConstantResolution
         ).format_code
+      end
+
+      sig { returns(::T.nilable(::String)) }
+      # The vertical alignment, formatted for the RubyXL API
+      #
+      # @return [::String, nil]
+      def vertical_alignment
+        @valign&.serialize
       end
     end
   end

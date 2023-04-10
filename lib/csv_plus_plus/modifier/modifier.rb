@@ -47,9 +47,6 @@ module CSVPlusPlus
       sig { returns(::T.nilable(::Numeric)) }
       attr_accessor :fontsize
 
-      sig { returns(::T::Boolean) }
-      attr_accessor :frozen
-
       sig { returns(::T.nilable(::CSVPlusPlus::Modifier::HorizontalAlign)) }
       attr_accessor :halign
 
@@ -164,6 +161,7 @@ module CSVPlusPlus
 
       sig { params(format: ::CSVPlusPlus::Modifier::TextFormat).returns(::T::Boolean) }
       # Is the given format set?
+      #
       # @param format [TextFormat]
       #
       # @return [T::Boolean]
@@ -172,11 +170,19 @@ module CSVPlusPlus
       end
 
       sig { returns(::T::Boolean) }
-      # Freeze the row from edits
+      # Freeze the row or cell from edits
       #
       # @return [true]
       def freeze!
         @frozen = true
+      end
+
+      sig { returns(::T::Boolean) }
+      # Is the cell or row frozen from edits?
+      #
+      # @return [T::Boolean]
+      def frozen?
+        @frozen
       end
 
       sig { returns(::T::Boolean) }

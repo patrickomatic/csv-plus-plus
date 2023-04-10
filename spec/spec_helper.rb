@@ -3,17 +3,21 @@
 
 require 'dotenv/load'
 require 'factory_bot'
+require 'rspec/sorbet'
 require 'rubygems'
 require 'simplecov'
 require 'vcr'
 require 'webmock/rspec'
 
+# SimpleCov must run first
 ::SimpleCov.start
 ::SimpleCov.minimum_coverage(90)
 
 require_relative '../lib/csv_plus_plus'
 
 ::WebMock.enable!
+
+::RSpec::Sorbet.allow_doubles!
 
 ::VCR.configure do |c|
   c.cassette_library_dir = 'spec/cassettes'

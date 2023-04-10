@@ -49,7 +49,7 @@ rule
           | 'numberformat' EQ RIGHT_SIDE  { modifier.numberformat = val[2]  }
           | 'validate'     EQ RIGHT_SIDE  { modifier.validate = val[2]      }
           | 'valign'       EQ RIGHT_SIDE  { modifier.valign = val[2]        }
-          | 'var'          EQ RIGHT_SIDE  { define_var(val[2])              }
+          | 'var'          EQ RIGHT_SIDE  { modifier.var = val[2]           }
 end
 
 ---- header
@@ -67,8 +67,8 @@ require_relative '../lexer'
     super()
 
     @parsing_row = false
-    @cell_modifier = cell_modifier
-    @row_modifier = row_modifier
+    @cell_modifier = ::CSVPlusPlus::Modifier::ModifierValidator.new(cell_modifier)
+    @row_modifier = ::CSVPlusPlus::Modifier::ModifierValidator.new(row_modifier)
   end
 
   protected
@@ -149,7 +149,7 @@ require_relative '../lexer'
   private
 
   def assign_defaults!
-    @cell_modifier.take_defaults_from!(@row_modifier)
+    @cell_modifier.modifier.take_defaults_from!(@row_modifier.modifier)
   end
 
   def parsing_row!
@@ -163,10 +163,6 @@ require_relative '../lexer'
   def parsing_cell!
     @parsing_row = false
     assign_defaults!
-  end
-
-  def define_var(var_id)
-    modifier.var = var_id.to_sym
   end
 
   def modifier

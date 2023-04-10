@@ -14,11 +14,11 @@ describe ::CSVPlusPlus::Error::ModifierValidationError do
     end
 
     context 'with choices' do
-      let(:choices) { %w[one two three] }
+      let(:choices) { ::CSVPlusPlus::Modifier::VerticalAlign }
       let(:message) { nil }
 
       it 'sets @message based on choices' do
-        expect(subject.message).to(eq('must be one of (one, two, three)'))
+        expect(subject.message).to(eq('must be one of (top, bottom, center)'))
       end
     end
   end

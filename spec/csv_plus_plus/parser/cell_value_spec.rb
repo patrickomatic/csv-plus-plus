@@ -21,7 +21,7 @@ describe ::CSVPlusPlus::Parser::CellValue do
           eq(
             build(
               :fn_call,
-              name: 'MULTIPLY',
+              name: :multiply,
               arguments: [
                 build(:number, n: 5),
                 build(:number, n: 5)
@@ -40,7 +40,7 @@ describe ::CSVPlusPlus::Parser::CellValue do
           eq(
             build(
               :fn_call,
-              name: 'SUM',
+              name: :sum,
               arguments: [
                 build(:cell_reference, ref: 'A1'),
                 build(:cell_reference, ref: 'A2'),
@@ -95,7 +95,7 @@ describe ::CSVPlusPlus::Parser::CellValue do
     describe 'a variable' do
       let(:cell_value) { '=$$foo' }
 
-      it { is_expected.to(eq(build(:variable, id: 'foo'))) }
+      it { is_expected.to(eq(build(:variable, id: :foo))) }
     end
 
     describe 'a double quoted string' do

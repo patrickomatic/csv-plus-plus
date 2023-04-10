@@ -44,17 +44,17 @@ rule
   exp: fn_call
      | infix_fn_call
      | '(' exp ')'                            { result = val[1] }
-     | VAR_REF ID                             { result = variable(val[1])                           }
+     | VAR_REF ID                             { result = variable(val[1].to_sym)                    }
      | STRING                                 { result = string(val[0])                             }
      | NUMBER                                 { result = number(val[0])                             }
      | TRUE                                   { result = boolean(true)                              }
      | FALSE                                  { result = boolean(false)                             }
      | ID                                     { result = cell_reference(ref: val[0])                }
      
-  infix_fn_call: exp INFIX_OP exp             { result = function_call(val[1], [val[0], val[2]], infix: true) }
+  infix_fn_call: exp INFIX_OP exp             { result = function_call(val[1].to_sym, [val[0], val[2]], infix: true) }
 
-  fn_call: ID '(' fn_call_args ')'            { result = function_call(val[0], val[2])              }
-         | ID '(' ')'                         { result = function_call(val[0], [])                  }
+  fn_call: ID '(' fn_call_args ')'            { result = function_call(val[0].to_sym, val[2])              }
+         | ID '(' ')'                         { result = function_call(val[0].to_sym, [])                  }
 
   fn_call_args: fn_call_args ',' exp          { result = val[0] << val[2]                           }
               | exp                           { result = [val[0]]                                   }
@@ -113,10 +113,10 @@ end
   private
 
   def def_function(id, arguments, body)
-    fn_def = function(id, arguments, body)
+    fn_def = function(id.to_sym, arguments, body)
     @runtime.def_function(fn_def.id, fn_def)
   end
 
   def def_variable(id, ast)
-    @runtime.def_variable(id, ast)
+    @runtime.def_variable(id.to_sym, ast)
   end

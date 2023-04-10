@@ -25,12 +25,12 @@ describe ::CSVPlusPlus::Writer::RubyXLBuilder do
           build(
             :row,
             cells: [
-              build(:cell, modifier: build(:modifier, halign: 'left')),
-              build(:cell, modifier: build(:modifier, halign: 'center')),
-              build(:cell, modifier: build(:modifier, halign: 'right')),
-              build(:cell, modifier: build(:modifier, valign: 'top')),
-              build(:cell, modifier: build(:modifier, valign: 'center')),
-              build(:cell, modifier: build(:modifier, valign: 'bottom'))
+              build(:cell, modifier: build(:modifier, halign: ::CSVPlusPlus::Modifier::HorizontalAlign::Left)),
+              build(:cell, modifier: build(:modifier, halign: ::CSVPlusPlus::Modifier::HorizontalAlign::Center)),
+              build(:cell, modifier: build(:modifier, halign: ::CSVPlusPlus::Modifier::HorizontalAlign::Right)),
+              build(:cell, modifier: build(:modifier, valign: ::CSVPlusPlus::Modifier::VerticalAlign::Top)),
+              build(:cell, modifier: build(:modifier, valign: ::CSVPlusPlus::Modifier::VerticalAlign::Center)),
+              build(:cell, modifier: build(:modifier, valign: ::CSVPlusPlus::Modifier::VerticalAlign::Bottom))
             ]
           )
         ]
@@ -52,11 +52,11 @@ describe ::CSVPlusPlus::Writer::RubyXLBuilder do
           build(
             :row,
             cells: [
-              build(:cell, modifier: build(:modifier, border: 'top')),
-              build(:cell, modifier: build(:modifier, border: 'left')),
-              build(:cell, modifier: build(:modifier, border: 'right')),
-              build(:cell, modifier: build(:modifier, border: 'bottom')),
-              build(:cell, modifier: build(:modifier, border: 'all'))
+              build(:cell, modifier: build(:modifier, border: ::CSVPlusPlus::Modifier::BorderSide::Top)),
+              build(:cell, modifier: build(:modifier, border: ::CSVPlusPlus::Modifier::BorderSide::Left)),
+              build(:cell, modifier: build(:modifier, border: ::CSVPlusPlus::Modifier::BorderSide::Right)),
+              build(:cell, modifier: build(:modifier, border: ::CSVPlusPlus::Modifier::BorderSide::Bottom)),
+              build(:cell, modifier: build(:modifier, border: ::CSVPlusPlus::Modifier::BorderSide::All))
             ]
           )
         ]
@@ -75,8 +75,8 @@ describe ::CSVPlusPlus::Writer::RubyXLBuilder do
           build(
             :row,
             cells: [
-              build(:cell, modifier: build(:modifier, color: '#FF00FF')),
-              build(:cell, modifier: build(:modifier, fontcolor: '#00FFFF'))
+              build(:cell, modifier: build(:modifier, color: ::CSVPlusPlus::Color.new('#FF00FF'))),
+              build(:cell, modifier: build(:modifier, fontcolor: ::CSVPlusPlus::Color.new('#00FFFF')))
             ]
           )
         ]
@@ -111,10 +111,10 @@ describe ::CSVPlusPlus::Writer::RubyXLBuilder do
           build(
             :row,
             cells: [
-              build(:cell, modifier: build(:modifier, format: 'bold')),
-              build(:cell, modifier: build(:modifier, format: 'italic')),
-              build(:cell, modifier: build(:modifier, format: 'strikethrough')),
-              build(:cell, modifier: build(:modifier, format: 'underline'))
+              build(:cell, modifier: build(:modifier, format: ::CSVPlusPlus::Modifier::TextFormat::Bold)),
+              build(:cell, modifier: build(:modifier, format: ::CSVPlusPlus::Modifier::TextFormat::Italic)),
+              build(:cell, modifier: build(:modifier, format: ::CSVPlusPlus::Modifier::TextFormat::Strikethrough)),
+              build(:cell, modifier: build(:modifier, format: ::CSVPlusPlus::Modifier::TextFormat::Underline))
             ]
           )
         ]

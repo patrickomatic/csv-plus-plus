@@ -56,6 +56,10 @@ describe ::CSVPlusPlus::Entities::CellReference do
     context 'when ref = A1' do
       let(:ref) { 'A1' }
 
+      it 'sets @type' do
+        expect(subject.type).to(eq(::CSVPlusPlus::Entities::Type::CellReference))
+      end
+
       it 'parses into cell_index and row_index' do
         expect(subject.cell_index).to(eq(0))
         expect(subject.row_index).to(eq(0))
@@ -211,9 +215,5 @@ describe ::CSVPlusPlus::Entities::CellReference do
 
       it { is_expected.to(eq('CC')) }
     end
-  end
-
-  describe '#variable?' do
-    it { is_expected.not_to(be_variable) }
   end
 end

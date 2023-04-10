@@ -46,7 +46,7 @@ describe ::CSVPlusPlus::Cell do
     context 'with a function' do
       let(:value) { '=MULTIPLY(5, 5)' }
       let(:ast) do
-        build(:fn_call, name: 'MULTIPLY', arguments: [build(:number, n: 5), build(:number, n: 5)])
+        build(:fn_call, name: :multiply, arguments: [build(:number, n: 5), build(:number, n: 5)])
       end
 
       it { is_expected.to(eq(value)) }
@@ -54,7 +54,7 @@ describe ::CSVPlusPlus::Cell do
 
     context 'with a variable' do
       let(:value) { '=$$foo' }
-      let(:ast) { build(:variable, id: 'foo') }
+      let(:ast) { build(:variable, id: :foo) }
 
       it { is_expected.to(eq(value)) }
     end
@@ -85,10 +85,10 @@ describe ::CSVPlusPlus::Cell do
       let(:ast) do
         build(
           :fn_call,
-          name: 'MULTIPLY',
+          name: :multiply,
           arguments: [
             build(:number, n: 5),
-            build(:fn_call, name: 'foo', arguments: [build(:number_one), build(:number_two)])
+            build(:fn_call, name: :foo, arguments: [build(:number_one), build(:number_two)])
           ]
         )
       end

@@ -1,7 +1,5 @@
-# typed: true
+# typed: strict
 # frozen_string_literal: true
-
-require_relative './syntax_error'
 
 module CSVPlusPlus
   module Error
@@ -12,29 +10,54 @@ module CSVPlusPlus
     # @attr_reader choices [Array<Symbol>, nil] The choices that +value+ must be one of (but violated)
     # @attr_reader message [String, nil] A relevant message to show
     class ModifierValidationError < ::CSVPlusPlus::Error::Error
-      attr_reader :bad_input, :choices, :message, :modifier
+      extend ::T::Sig
 
+      sig { returns(::String) }
+      attr_reader :bad_input
+
+      sig { returns(::T.nilable(::T.class_of(::T::Enum))) }
+      attr_reader :choices
+
+      sig { returns(::String) }
+      attr_reader :message
+
+      sig { returns(::Symbol) }
+      attr_reader :modifier
+
+      sig do
+        params(
+          modifier: ::Symbol,
+          bad_input: ::String,
+          choices: ::T.nilable(::T.class_of(::T::Enum)),
+          message: ::T.nilable(::String)
+        ).void
+      end
       # You must supply either a +choices+ or +message+
       #
       # @param modifier [Symbol] The modifier being parsed when the bad input was encountered
       # @param bad_input [String] The offending input that caused the error to be thrown
       # @param choices [Array<Symbol>, nil] The choices that +value+ must be one of (but violated)
       # @param message [String, nil] A relevant message to show
+      # rubocop:disable Metrics/MethodLength
       def initialize(modifier, bad_input:, choices: nil, message: nil)
         @bad_input = bad_input
         @choices = choices
         @modifier = modifier
 
-        @message =
+        @message = ::T.let(
           if @choices
-            "must be one of (#{@choices.map(&:to_s).join(', ')})"
+            "must be one of (#{@choices.values.map(&:serialize).join(', ')})"
           else
-            message
-          end
+            ::T.must(message)
+          end,
+          ::String
+        )
 
         super(@message)
       end
+      # rubocop:enable Metrics/MethodLength
 
+      sig { returns(::String) }
       # A user-facing error message
       #
       # @return [::String]

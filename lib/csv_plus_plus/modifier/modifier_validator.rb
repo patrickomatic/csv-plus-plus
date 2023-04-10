@@ -1,27 +1,38 @@
 # typed: strict
 # frozen_string_literal: true
 
-require_relative 'data_validation'
-require_relative 'modifier'
-
 module CSVPlusPlus
   module Modifier
-    # Validates and coerces modifier values as they are parsed.
+    # Validates and coerces modifier user inputs as they are parsed.
     #
     # Previously this logic was handled in the parser's grammar, but with the introduction of variable binding the
     # grammar is no longer context free so we need the parser to be a little looser on what it accepts and validate it
     # here.  Having this layer is also nice because we can provide better error messages to the user for what went
     # wrong during the parse.
     # rubocop:disable Metrics/ClassLength
-    class ValidatedModifier < ::CSVPlusPlus::Modifier::Modifier
+    class ModifierValidator
       extend ::T::Sig
+
+      sig { returns(::CSVPlusPlus::Modifier::Modifier) }
+      attr_reader :modifier
+
+      sig { params(modifier: ::CSVPlusPlus::Modifier::Modifier).void }
+      # @param modifier [Modifier::Modifier] The modifier to set the validated attributes on.
+      def initialize(modifier)
+        @modifier = modifier
+      end
 
       sig { params(border_side: ::String).void }
       # Validates that +border_side+ is 'all', 'top', 'bottom', 'left' or 'right'.
       #
-      # @param border_side [::String] The unvalidated user input
+      # @param border_side [::String, Modifier::BorderSide] The unvalidated user input
+      #
+      # @return [Set<Modifier::BorderSide>]
       def border=(border_side)
-        super(one_of(:border, border_side, ::CSVPlusPlus::Modifier::BorderSide))
+        @modifier.border = ::T.cast(
+          one_of(:border, border_side, ::CSVPlusPlus::Modifier::BorderSide),
+          ::CSVPlusPlus::Modifier::BorderSide
+        )
       end
 
       sig { params(border_color: ::String).void }
@@ -29,7 +40,7 @@ module CSVPlusPlus
       #
       # @param border_color [::String] The unvalidated user input
       def bordercolor=(border_color)
-        super(color_value(:bordercolor, border_color))
+        @modifier.bordercolor = color_value(:bordercolor, border_color)
       end
 
       sig { params(border_style: ::String).void }
@@ -37,7 +48,10 @@ module CSVPlusPlus
       #
       # @param border_style [::String] The unvalidated user input
       def borderstyle=(border_style)
-        super(one_of(:borderstyle, border_style, ::CSVPlusPlus::Modifier::BorderStyle))
+        @modifier.borderstyle = ::T.cast(
+          one_of(:borderstyle, border_style, ::CSVPlusPlus::Modifier::BorderStyle),
+          ::CSVPlusPlus::Modifier::BorderStyle
+        )
       end
 
       sig { params(color: ::String).void }
@@ -45,7 +59,7 @@ module CSVPlusPlus
       #
       # @param color [::String] The unvalidated user input
       def color=(color)
-        super(color_value(:color, color))
+        @modifier.color = color_value(:color, color)
       end
 
       sig { params(repetitions: ::String).void }
@@ -53,7 +67,7 @@ module CSVPlusPlus
       #
       # @param repetitions [String] The unvalidated user input
       def expand=(repetitions)
-        super(::CSVPlusPlus::Modifier::Expand.new(repetitions: positive_integer(:expand, repetitions)))
+        @modifier.expand = ::CSVPlusPlus::Modifier::Expand.new(repetitions: positive_integer(:expand, repetitions))
       end
 
       sig { params(font_color: ::String).void }
@@ -61,7 +75,7 @@ module CSVPlusPlus
       #
       # @param font_color [::String] The unvalidated user input
       def fontcolor=(font_color)
-        super(color_value(:fontcolor, font_color))
+        @modifier.fontcolor = color_value(:fontcolor, font_color)
       end
 
       sig { params(font_family: ::String).void }
@@ -70,7 +84,12 @@ module CSVPlusPlus
       #
       # @param font_family [::String] The unvalidated user input
       def fontfamily=(font_family)
-        super(matches_regexp(:fontfamily, unquote(font_family), /^[\w\s]+$/, 'It is not a valid font family.'))
+        @modifier.fontfamily = matches_regexp(
+          :fontfamily,
+          unquote(font_family),
+          /^[\w\s]+$/,
+          'It is not a valid font family.'
+        )
       end
 
       sig { params(font_size: ::String).void }
@@ -78,7 +97,7 @@ module CSVPlusPlus
       #
       # @param font_size [::String] The unvalidated user input
       def fontsize=(font_size)
-        super(positive_integer(:fontsize, font_size))
+        @modifier.fontsize = positive_integer(:fontsize, font_size)
       end
 
       sig { params(text_format: ::String).void }
@@ -86,7 +105,22 @@ module CSVPlusPlus
       #
       # @param text_format [::String] The unvalidated user input
       def format=(text_format)
-        super(one_of(:format, text_format, ::CSVPlusPlus::Modifier::TextFormat))
+        @modifier.format = ::T.cast(
+          one_of(:format, text_format, ::CSVPlusPlus::Modifier::TextFormat),
+          ::CSVPlusPlus::Modifier::TextFormat
+        )
+      end
+
+      sig { void }
+      # Sets the row or cell to be frozen
+      def freeze!
+        @modifier.freeze!
+      end
+
+      sig { void }
+      # Sets an infinite +Expand+ on the +Modifier+.
+      def infinite_expand!
+        @modifier.infinite_expand!
       end
 
       sig { params(halign: ::String).void }
@@ -94,16 +128,19 @@ module CSVPlusPlus
       #
       # @param value [String] The unvalidated user input
       def halign=(halign)
-        super(one_of(:halign, halign, ::CSVPlusPlus::Modifier::HorizontalAlign))
+        @modifier.halign = ::T.cast(
+          one_of(:halign, halign, ::CSVPlusPlus::Modifier::HorizontalAlign),
+          ::CSVPlusPlus::Modifier::HorizontalAlign
+        )
       end
 
-      # sig { params(note: ::String).void }
+      sig { params(note: ::String).void }
       # Validates that +note+ is a quoted string.
       #
       # @param note [::String] The unvalidated user input
-      # def note=(note)
-      #   super(note)
-      # end
+      def note=(note)
+        @modifier.note = note
+      end
 
       sig { params(number_format: ::String).void }
       # Validates that +number_format+ is 'currency', 'date', 'date_time', 'number', 'percent', 'text', 'time' or
@@ -111,7 +148,10 @@ module CSVPlusPlus
       #
       # @param value [String] The unvalidated user input
       def numberformat=(number_format)
-        super(one_of(:numberformat, number_format, ::CSVPlusPlus::Modifier::NumberFormat))
+        @modifier.numberformat = ::T.cast(
+          one_of(:numberformat, number_format, ::CSVPlusPlus::Modifier::NumberFormat),
+          ::CSVPlusPlus::Modifier::NumberFormat
+        )
       end
 
       sig { params(valign: ::String).void }
@@ -119,7 +159,10 @@ module CSVPlusPlus
       #
       # @param valign [String] The unvalidated user input
       def valign=(valign)
-        super(one_of(:valign, valign, ::CSVPlusPlus::Modifier::VerticalAlign))
+        @modifier.valign = ::T.cast(
+          one_of(:valign, valign, ::CSVPlusPlus::Modifier::VerticalAlign),
+          ::CSVPlusPlus::Modifier::VerticalAlign
+        )
       end
 
       sig { params(rule: ::String).void }
@@ -130,7 +173,7 @@ module CSVPlusPlus
       #
       # @param rule [String] The validation rule to apply to this row or cell
       def validate=(rule)
-        super(a_data_validation(:validate, rule))
+        @modifier.validate = a_data_validation(:validate, rule)
       end
 
       sig { params(var: ::String).void }
@@ -139,7 +182,7 @@ module CSVPlusPlus
       # @param var [::String] The unvalidated user input
       def var=(var)
         # TODO: I need a shared definition of what a variable can be (I guess the :ID token)
-        super(matches_regexp(:var, var, /^\w+$/, 'It must be a sequence of letters, numbers and _.').to_sym)
+        @modifier.var = matches_regexp(:var, var, /^\w+$/, 'It must be a sequence of letters, numbers and _.').to_sym
       end
 
       private
@@ -176,7 +219,7 @@ module CSVPlusPlus
 
       sig { params(modifier: ::Symbol, value: ::String, choices: ::T.class_of(::T::Enum)).returns(::T::Enum) }
       def one_of(modifier, value, choices)
-        choices.deserialize(value.gsub('_', ''))
+        choices.deserialize(value.downcase.gsub('_', ''))
       rescue ::KeyError
         raise_error(modifier, value, choices:)
       end

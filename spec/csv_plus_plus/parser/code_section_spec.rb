@@ -4,7 +4,7 @@
 describe ::CSVPlusPlus::Parser::CodeSection do
   describe '#parse' do
     let(:runtime) { build(:runtime) }
-    let(:csv_section) { described_class.new(runtime).parse(input, runtime) }
+    let(:csv_section) { described_class.new.parse(input, runtime) }
 
     describe 'Scope#variables' do
       subject { runtime.variables }
@@ -129,10 +129,10 @@ describe ::CSVPlusPlus::Parser::CodeSection do
               {
                 foo: build(
                   :fn_call,
-                  name: 'FOO',
+                  name: :foo,
                   arguments: [
-                    build(:fn_call, name: 'BAR', arguments: [build(:cell_reference, ref: 'C1'), build(:number, n: 8)]),
-                    build(:variable, id: 'var')
+                    build(:fn_call, name: :bar, arguments: [build(:cell_reference, ref: 'C1'), build(:number, n: 8)]),
+                    build(:variable, id: :var)
                   ]
                 )
               }
@@ -158,7 +158,7 @@ describe ::CSVPlusPlus::Parser::CodeSection do
             eq(
               {
                 foo: build(:number_one),
-                bar: build(:fn_call, name: 'FOO', arguments: [build(:variable, id: 'foo'), build(:number_two)])
+                bar: build(:fn_call, name: :foo, arguments: [build(:variable, id: :foo), build(:number_two)])
               }
             )
           )

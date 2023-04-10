@@ -11,6 +11,7 @@ describe ::CSVPlusPlus::Writer::GoogleSheetBuilder do
       ['=add(1, 2)', 'foo', 3]
     ]
   end
+  let(:options) { build(:options, :with_google_sheet_id) }
   let(:sheet_id) { '#id' }
   let(:rows) { [build(:row), build(:row), build(:row)] }
   let(:runtime) { build(:runtime) }
@@ -29,12 +30,27 @@ describe ::CSVPlusPlus::Writer::GoogleSheetBuilder do
           build(
             :row,
             cells: [
-              build(:cell, modifier: build(:modifier, halign: :left)),
-              build(:cell, modifier: build(:modifier, halign: :center)),
-              build(:cell, modifier: build(:modifier, halign: :right)),
-              build(:cell, modifier: build(:modifier, valign: :top)),
-              build(:cell, modifier: build(:modifier, valign: :center)),
-              build(:cell, modifier: build(:modifier, valign: :bottom))
+              build(
+                :cell,
+                modifier: build(:modifier, options:, halign: ::CSVPlusPlus::Modifier::HorizontalAlign::Left)
+              ),
+              build(
+                :cell,
+                modifier: build(:modifier, options:, halign: ::CSVPlusPlus::Modifier::HorizontalAlign::Center)
+              ),
+              build(
+                :cell,
+                modifier: build(:modifier, options:, halign: ::CSVPlusPlus::Modifier::HorizontalAlign::Right)
+              ),
+              build(:cell, modifier: build(:modifier, options:, valign: ::CSVPlusPlus::Modifier::VerticalAlign::Top)),
+              build(
+                :cell,
+                modifier: build(:modifier, options:, valign: ::CSVPlusPlus::Modifier::VerticalAlign::Center)
+              ),
+              build(
+                :cell,
+                modifier: build(:modifier, options:, valign: ::CSVPlusPlus::Modifier::VerticalAlign::Bottom)
+              )
             ]
           )
         ]
@@ -57,27 +73,27 @@ describe ::CSVPlusPlus::Writer::GoogleSheetBuilder do
           build(
             :row,
             cells: [
-              build(:cell, modifier: build(:modifier, border: :top)),
-              build(:cell, modifier: build(:modifier, border: :left)),
-              build(:cell, modifier: build(:modifier, border: :right)),
-              build(:cell, modifier: build(:modifier, border: :bottom)),
-              build(:cell, modifier: build(:modifier, border: :all))
+              build(:cell, modifier: build(:modifier, options:, border: ::CSVPlusPlus::Modifier::BorderSide::Top)),
+              build(:cell, modifier: build(:modifier, options:, border: ::CSVPlusPlus::Modifier::BorderSide::Left)),
+              build(:cell, modifier: build(:modifier, options:, border: ::CSVPlusPlus::Modifier::BorderSide::Right)),
+              build(:cell, modifier: build(:modifier, options:, border: ::CSVPlusPlus::Modifier::BorderSide::Bottom)),
+              build(:cell, modifier: build(:modifier, options:, border: ::CSVPlusPlus::Modifier::BorderSide::All))
             ]
           )
         ]
       end
 
       it 'sets the borders' do
-        expect(subject.requests[1].update_borders.top.style).to(eq('solid'))
-        expect(subject.requests[1].update_borders.top.color).to(eq('#000000'))
-        expect(subject.requests[2].update_borders.left.style).to(eq('solid'))
-        expect(subject.requests[3].update_borders.right.style).to(eq('solid'))
-        expect(subject.requests[4].update_borders.bottom.style).to(eq('solid'))
+        expect(subject.requests[1].update_borders.top.style).to(eq('SOLID'))
+        expect(subject.requests[1].update_borders.top.color).to(be_a(::Google::Apis::SheetsV4::Color))
+        expect(subject.requests[2].update_borders.left.style).to(eq('SOLID'))
+        expect(subject.requests[3].update_borders.right.style).to(eq('SOLID'))
+        expect(subject.requests[4].update_borders.bottom.style).to(eq('SOLID'))
 
-        expect(subject.requests[5].update_borders.top.style).to(eq('solid'))
-        expect(subject.requests[5].update_borders.left.style).to(eq('solid'))
-        expect(subject.requests[5].update_borders.right.style).to(eq('solid'))
-        expect(subject.requests[5].update_borders.bottom.style).to(eq('solid'))
+        expect(subject.requests[5].update_borders.top.style).to(eq('SOLID'))
+        expect(subject.requests[5].update_borders.left.style).to(eq('SOLID'))
+        expect(subject.requests[5].update_borders.right.style).to(eq('SOLID'))
+        expect(subject.requests[5].update_borders.bottom.style).to(eq('SOLID'))
       end
 
       # TODO: test weights
@@ -89,8 +105,8 @@ describe ::CSVPlusPlus::Writer::GoogleSheetBuilder do
           build(
             :row,
             cells: [
-              build(:cell, modifier: build(:modifier, color: '#FF00FF')),
-              build(:cell, modifier: build(:modifier, fontcolor: '#00FFFF'))
+              build(:cell, modifier: build(:modifier, options:, color: ::CSVPlusPlus::Color.new('#FF00FF'))),
+              build(:cell, modifier: build(:modifier, options:, fontcolor: ::CSVPlusPlus::Color.new('#00FFFF')))
             ]
           )
         ]
@@ -107,8 +123,8 @@ describe ::CSVPlusPlus::Writer::GoogleSheetBuilder do
           build(
             :row,
             cells: [
-              build(:cell, modifier: build(:modifier, fontfamily: 'Helvetica')),
-              build(:cell, modifier: build(:modifier, fontsize: 40))
+              build(:cell, modifier: build(:modifier, options:, fontfamily: 'Helvetica')),
+              build(:cell, modifier: build(:modifier, options:, fontsize: 40))
             ]
           )
         ]
@@ -126,10 +142,13 @@ describe ::CSVPlusPlus::Writer::GoogleSheetBuilder do
           build(
             :row,
             cells: [
-              build(:cell, modifier: build(:modifier, format: :bold)),
-              build(:cell, modifier: build(:modifier, format: :italic)),
-              build(:cell, modifier: build(:modifier, format: :strikethrough)),
-              build(:cell, modifier: build(:modifier, format: :underline))
+              build(:cell, modifier: build(:modifier, options:, format: ::CSVPlusPlus::Modifier::TextFormat::Bold)),
+              build(:cell, modifier: build(:modifier, options:, format: ::CSVPlusPlus::Modifier::TextFormat::Italic)),
+              build(
+                :cell,
+                modifier: build(:modifier, options:, format: ::CSVPlusPlus::Modifier::TextFormat::Strikethrough)
+              ),
+              build(:cell, modifier: build(:modifier, options:, format: ::CSVPlusPlus::Modifier::TextFormat::Underline))
             ]
           )
         ]

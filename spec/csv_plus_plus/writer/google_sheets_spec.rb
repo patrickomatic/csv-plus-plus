@@ -28,10 +28,30 @@ describe ::CSVPlusPlus::Writer::GoogleSheets do
           build(
             :row,
             cells: [
-              build(:cell, index: 0, value: 'foo', modifier: build(:modifier, format: 'bold')),
-              build(:cell, index: 1, value: 'bar', modifier: build(:modifier, format: 'strikethrough')),
-              build(:cell, index: 2, value: 'foo1', modifier: build(:modifier, format: 'underline')),
-              build(:cell, index: 3, value: 'bar1', modifier: build(:modifier, format: 'italic'))
+              build(
+                :cell,
+                index: 0,
+                value: 'foo',
+                modifier: build(:modifier, options:, format: ::CSVPlusPlus::Modifier::TextFormat::Bold)
+              ),
+              build(
+                :cell,
+                index: 1,
+                value: 'bar',
+                modifier: build(:modifier, options:, format: ::CSVPlusPlus::Modifier::TextFormat::Strikethrough)
+              ),
+              build(
+                :cell,
+                index: 2,
+                value: 'foo1',
+                modifier: build(:modifier, options:, format: ::CSVPlusPlus::Modifier::TextFormat::Underline)
+              ),
+              build(
+                :cell,
+                index: 3,
+                value: 'bar1',
+                modifier: build(:modifier, options:, format: ::CSVPlusPlus::Modifier::TextFormat::Italic)
+              )
             ]
           )
         end

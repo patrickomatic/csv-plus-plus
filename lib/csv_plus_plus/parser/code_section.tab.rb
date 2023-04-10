@@ -61,12 +61,12 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 69)
   private
 
   def def_function(id, arguments, body)
-    fn_def = function(id, arguments, body)
+    fn_def = function(id.to_sym, arguments, body)
     @runtime.def_function(fn_def.id, fn_def)
   end
 
   def def_variable(id, ast)
-    @runtime.def_variable(id, ast)
+    @runtime.def_variable(id.to_sym, ast)
   end
 ...end code_section.y/module_eval...
 ##### State transition tables begin ###
@@ -321,7 +321,7 @@ module_eval(<<'.,.,', 'code_section.y', 45)
 
 module_eval(<<'.,.,', 'code_section.y', 46)
   def _reduce_16(val, _values, result)
-     result = variable(val[1])
+     result = variable(val[1].to_sym)
     result
   end
 .,.,
@@ -363,21 +363,21 @@ module_eval(<<'.,.,', 'code_section.y', 51)
 
 module_eval(<<'.,.,', 'code_section.y', 53)
   def _reduce_22(val, _values, result)
-     result = function_call(val[1], [val[0], val[2]], infix: true)
+     result = function_call(val[1].to_sym, [val[0], val[2]], infix: true)
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 55)
   def _reduce_23(val, _values, result)
-     result = function_call(val[0], val[2])
+     result = function_call(val[0].to_sym, val[2])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'code_section.y', 56)
   def _reduce_24(val, _values, result)
-     result = function_call(val[0], [])
+     result = function_call(val[0].to_sym, [])
     result
   end
 .,.,

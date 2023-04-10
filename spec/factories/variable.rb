@@ -10,11 +10,11 @@
     initialize_with { new id }
 
     factory :variable_foo do
-      id { 'foo' }
+      id { :foo }
     end
 
     factory :variable_bar do
-      id { 'bar' }
+      id { :bar }
     end
   end
 end

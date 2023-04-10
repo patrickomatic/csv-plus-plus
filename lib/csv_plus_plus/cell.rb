@@ -25,7 +25,7 @@ module CSVPlusPlus
 
     sig do
       params(
-        value: ::String,
+        value: ::T.nilable(::String),
         runtime: ::CSVPlusPlus::Runtime::Runtime,
         modifier: ::CSVPlusPlus::Modifier::Modifier
       ).returns(::CSVPlusPlus::Cell)
@@ -44,7 +44,12 @@ module CSVPlusPlus
     end
 
     sig do
-      params(index: ::Integer, modifier: ::CSVPlusPlus::Modifier::Modifier, row_index: ::Integer, value: ::String).void
+      params(
+        index: ::Integer,
+        modifier: ::CSVPlusPlus::Modifier::Modifier,
+        row_index: ::Integer,
+        value: ::T.nilable(::String)
+      ).void
     end
     # @param index [Integer] The cell's index (starts at 0)
     # @param modifier [Modifier] A modifier to apply to this cell
@@ -60,12 +65,12 @@ module CSVPlusPlus
     sig { returns(::T.nilable(::String)) }
     # The +@value+ (cleaned up some)
     #
-    # @return [String]
+    # @return [::String]
     # TODO: is this used?
     def value
-      return if @value.strip.empty?
+      stripped = @value&.strip
 
-      @value.strip
+      stripped.blank? ? nil : stripped
     end
 
     sig { params(runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::T.nilable(::String)) }

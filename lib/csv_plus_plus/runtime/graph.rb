@@ -11,7 +11,7 @@ module CSVPlusPlus
       # TODO: this is only used in one place - refactor it
       def self.variable_references(ast, runtime, include_runtime_variables: false)
         depth_first_search(ast) do |node|
-          next unless node.variable?
+          next unless node.type == ::CSVPlusPlus::Entities::Type::Variable
 
           node.id if !runtime.builtin_variable?(node.id) || include_runtime_variables
         end
@@ -47,7 +47,7 @@ module CSVPlusPlus
         ret = yield(node)
         accum << ret unless ret.nil?
 
-        return accum unless node.function_call?
+        return accum unless node.type == ::CSVPlusPlus::Entities::Type::FunctionCall
 
         node.arguments.each { |n| depth_first_search(n, accum, &) }
         accum

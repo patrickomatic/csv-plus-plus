@@ -22,8 +22,7 @@ module CSVPlusPlus
 
     sig do
       params(
-        input: ::String,
-        filename: ::T.nilable(::String),
+        source_code: ::CSVPlusPlus::SourceCode,
         functions: ::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Function],
         variables: ::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Entity]
       ).returns(::CSVPlusPlus::Runtime::Runtime)
@@ -31,14 +30,13 @@ module CSVPlusPlus
     # Initialize a runtime instance with all the functionality we need.  A runtime is one-to-one with a file being
     # compiled.
     #
-    # @param input [::String] The csv++ source code to be compiled
-    # @param filename [::String] The name of the file the input was read from (useful for error messages and debugging).
+    # @param source_code [SourceCode] The csv++ source code to be compiled
     # @param functions [Hash<Symbol, Function>] Pre-defined functions
     # @param variables [Hash<Symbol, Entity>] Pre-defined variables
     #
     # @return [Runtime::Runtime]
-    def self.new(input:, filename: nil, functions: {}, variables: {})
-      ::CSVPlusPlus::Runtime::Runtime.new(input:, filename:, functions:, variables:)
+    def self.new(source_code:, functions: {}, variables: {})
+      ::CSVPlusPlus::Runtime::Runtime.new(source_code:, functions:, variables:)
     end
   end
 end

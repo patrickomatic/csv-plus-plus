@@ -8,13 +8,13 @@ module CSVPlusPlus
       extend ::T::Sig
       extend ::T::Helpers
 
-      abstract!
-
-      sig { abstract.returns(::String) }
+      sig { returns(::String) }
       # Return an error message for display to a command-line user.
       #
       # @return [::String]
-      def error_message; end
+      def error_message
+        message
+      end
     end
   end
 end

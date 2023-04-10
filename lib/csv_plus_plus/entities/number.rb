@@ -37,7 +37,7 @@ module CSVPlusPlus
       sig { override.params(other: ::CSVPlusPlus::Entities::Entity).returns(::T::Boolean) }
       # @param other [Entity]
       #
-      # @return [boolean]
+      # @return [::T::Boolean]
       def ==(other)
         return false unless super
 

@@ -4,7 +4,8 @@
 describe ::CSVPlusPlus::Compiler do
   let(:input) { '' }
   let(:key_values) { {} }
-  let(:runtime) { build(:runtime, input:) }
+  let(:source_code) { build(:source_code, input:) }
+  let(:runtime) { build(:runtime, source_code:) }
   let(:options) { build(:options, key_values:) }
   let(:compiler) { build(:compiler, runtime:, options:) }
 
@@ -52,8 +53,8 @@ describe ::CSVPlusPlus::Compiler do
       let(:input) { 'foo,[[halign=right/format=bold]]bar,baz' }
 
       it 'creates cells with the modifiers' do
-        expect(template.rows[0].cells[1].modifier.halign).to(eq(:right))
-        expect(template.rows[0].cells[1].modifier).to(be_formatted(:bold))
+        expect(template.rows[0].cells[1].modifier.halign).to(eq(::CSVPlusPlus::Modifier::HorizontalAlign::Right))
+        expect(template.rows[0].cells[1].modifier).to(be_formatted(::CSVPlusPlus::Modifier::TextFormat::Bold))
       end
     end
 
@@ -61,8 +62,8 @@ describe ::CSVPlusPlus::Compiler do
       let(:input) { 'foo,[[halign=right/format=bold/format=italic]]bar,baz' }
 
       it 'creates cells with the modifiers' do
-        expect(template.rows[0].cells[1].modifier).to(be_formatted(:bold))
-        expect(template.rows[0].cells[1].modifier).to(be_formatted(:italic))
+        expect(template.rows[0].cells[1].modifier).to(be_formatted(::CSVPlusPlus::Modifier::TextFormat::Bold))
+        expect(template.rows[0].cells[1].modifier).to(be_formatted(::CSVPlusPlus::Modifier::TextFormat::Italic))
       end
     end
 
@@ -70,8 +71,8 @@ describe ::CSVPlusPlus::Compiler do
       let(:input) { '![[halign=center/format=bold]]foo,bar,baz' }
 
       it 'creates rows with the modifiers' do
-        expect(template.rows[0].modifier.halign).to(eq(:center))
-        expect(template.rows[0].modifier).to(be_formatted(:bold))
+        expect(template.rows[0].modifier.halign).to(eq(::CSVPlusPlus::Modifier::HorizontalAlign::Center))
+        expect(template.rows[0].modifier).to(be_formatted(::CSVPlusPlus::Modifier::TextFormat::Bold))
       end
     end
   end

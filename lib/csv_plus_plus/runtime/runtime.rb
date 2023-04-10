@@ -21,37 +21,31 @@ module CSVPlusPlus
       include ::CSVPlusPlus::Runtime::CanResolveReferences
       include ::CSVPlusPlus::Runtime::PositionTracker
 
-      sig { returns(::String) }
-      attr_reader :filename
-
       sig { returns(::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Function]) }
       attr_reader :functions
 
       sig { returns(::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Entity]) }
       attr_reader :variables
 
-      sig { returns(::T.nilable(::CSVPlusPlus::Cell)) }
-      attr_accessor :cell
+      sig { returns(::CSVPlusPlus::SourceCode) }
+      attr_reader :source_code
 
       sig do
         params(
-          input: ::String,
-          filename: ::T.nilable(::String),
+          source_code: ::CSVPlusPlus::SourceCode,
           functions: ::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Function],
           variables: ::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Entity]
         ).void
       end
-      # @param input [String] The input to be parsed
-      # @param filename [String, nil] The filename that the input came from (mostly used for debugging since +filename+
-      #   can be +nil+ if it's read from stdin
+      # @param source_code [SourceCode] The source code being compiled
       # @param functions [Hash<Symbol, Function>] Pre-defined functions
       # @param variables [Hash<Symbol, Entity>] Pre-defined variables
-      def initialize(input:, filename: nil, functions: {}, variables: {})
-        @filename = ::T.let(filename || 'stdin', ::String)
+      def initialize(source_code:, functions: {}, variables: {})
         @functions = functions
         @variables = variables
+        @source_code = source_code
 
-        init_input!(input)
+        rewrite_input!(source_code.input)
       end
 
       sig { params(fn_id: ::Symbol).returns(::T::Boolean) }
@@ -72,6 +66,22 @@ module CSVPlusPlus
       # @return [T::Boolean]
       def builtin_variable?(var_id)
         ::CSVPlusPlus::Entities::Builtins::VARIABLES.key?(var_id)
+      end
+
+      sig { returns(::T::Boolean) }
+      # Is the parser currently inside of the code section? (includes the `---`)
+      #
+      # @return [T::Boolean]
+      def parsing_code_section?
+        source_code.in_code_section?(line_number)
+      end
+
+      sig { returns(::T::Boolean) }
+      # Is the parser currently inside of the CSV section?
+      #
+      # @return [T::Boolean]
+      def parsing_csv_section?
+        source_code.in_csv_section?(line_number)
       end
 
       sig do
@@ -100,6 +110,17 @@ module CSVPlusPlus
       def raise_modifier_syntax_error(message, bad_input, wrapped_error: nil)
         raise(::CSVPlusPlus::Error::ModifierSyntaxError.new(self, bad_input:, message:, wrapped_error:))
       end
+
+      sig do
+        type_parameters(:R).params(block: ::T.proc.returns(::T.type_parameter(:R))).returns(::T.type_parameter(:R))
+      end
+      # Reset the runtime state starting at the CSV section
+      # rubocop:disable Naming/BlockForwarding
+      def start_at_csv!(&block)
+        self.line_number = source_code.length_of_code_section + 1
+        start!(&block)
+      end
+      # rubocop:enable Naming/BlockForwarding
     end
   end
 end

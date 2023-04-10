@@ -1,9 +1,8 @@
 # typed: false
 # frozen_string_literal: true
 
-describe ::CSVPlusPlus::Writer::RubyXLModifier do
-  let(:modifier) { build(:modifier) }
-  let(:rubyxl_modifier) { described_class.new(modifier) }
+describe ::CSVPlusPlus::Modifier::RubyXLModifier do
+  let(:rubyxl_modifier) { described_class.new }
 
   describe '#border_weight' do
     subject { rubyxl_modifier.border_weight }
@@ -17,9 +16,11 @@ describe ::CSVPlusPlus::Writer::RubyXLModifier do
     it { is_expected.to(be_nil) }
 
     context 'with a valid number format' do
-      let(:modifier) { build(:modifier, numberformat: 'number') }
+      before do
+        rubyxl_modifier.numberformat = ::CSVPlusPlus::Modifier::NumberFormat::DateTime
+      end
 
-      it { is_expected.to(eq('0')) }
+      it { is_expected.to(eq('m/d/yyyy h:mm')) }
     end
   end
 end

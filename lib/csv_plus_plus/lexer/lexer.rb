@@ -29,6 +29,8 @@ module CSVPlusPlus
 
       return return_value unless anything_to_parse?(input)
 
+      @runtime = runtime
+
       tokenize(input, runtime)
       do_parse
       return_value

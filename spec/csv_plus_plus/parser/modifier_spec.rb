@@ -27,9 +27,9 @@ describe ::CSVPlusPlus::Parser::Modifier do
       it { is_expected.to(eq('=A + B')) }
 
       it 'updates cell_modifier' do
-        expect(cell_modifier).to(be_formatted(:bold))
-        expect(cell_modifier).to(be_formatted(:underline))
-        expect(cell_modifier.halign).to(eq(:left))
+        expect(cell_modifier).to(be_formatted(::CSVPlusPlus::Modifier::TextFormat::Bold))
+        expect(cell_modifier).to(be_formatted(::CSVPlusPlus::Modifier::TextFormat::Underline))
+        expect(cell_modifier.halign).to(eq(::CSVPlusPlus::Modifier::HorizontalAlign::Left))
       end
     end
 
@@ -41,8 +41,8 @@ describe ::CSVPlusPlus::Parser::Modifier do
       it { is_expected.to(eq('Stocks')) }
 
       it 'updates row_modifier' do
-        expect(row_modifier).to(be_formatted(:bold))
-        expect(row_modifier.valign).to(eq(:center))
+        expect(row_modifier).to(be_formatted(::CSVPlusPlus::Modifier::TextFormat::Bold))
+        expect(row_modifier.valign).to(eq(::CSVPlusPlus::Modifier::VerticalAlign::Center))
       end
     end
 
@@ -54,14 +54,14 @@ describe ::CSVPlusPlus::Parser::Modifier do
       it { is_expected.to(eq('Stocks')) }
 
       it 'parses the row modifier' do
-        expect(row_modifier).to(be_formatted(:bold))
-        expect(row_modifier.valign).to(eq(:center))
+        expect(row_modifier).to(be_formatted(::CSVPlusPlus::Modifier::TextFormat::Bold))
+        expect(row_modifier.valign).to(eq(::CSVPlusPlus::Modifier::VerticalAlign::Center))
       end
 
       it 'also parses the cell modifier and applies the row modifier' do
-        expect(cell_modifier).to(be_formatted(:bold))
-        expect(cell_modifier).to(be_formatted(:underline))
-        expect(cell_modifier.valign).to(eq(:center))
+        expect(cell_modifier).to(be_formatted(::CSVPlusPlus::Modifier::TextFormat::Bold))
+        expect(cell_modifier).to(be_formatted(::CSVPlusPlus::Modifier::TextFormat::Underline))
+        expect(cell_modifier.valign).to(eq(::CSVPlusPlus::Modifier::VerticalAlign::Center))
       end
     end
 
@@ -70,8 +70,8 @@ describe ::CSVPlusPlus::Parser::Modifier do
 
       subject { cell_modifier.borders }
 
-      it { is_expected.to(include(:top)) }
-      it { is_expected.to(include(:bottom)) }
+      it { is_expected.to(include(::CSVPlusPlus::Modifier::BorderSide::Top)) }
+      it { is_expected.to(include(::CSVPlusPlus::Modifier::BorderSide::Bottom)) }
     end
 
     describe 'color' do
@@ -109,7 +109,7 @@ describe ::CSVPlusPlus::Parser::Modifier do
 
       subject { cell_modifier }
 
-      it { is_expected.to(be_formatted(:bold)) }
+      it { is_expected.to(be_formatted(::CSVPlusPlus::Modifier::TextFormat::Bold)) }
     end
 
     describe 'halign' do
@@ -117,7 +117,7 @@ describe ::CSVPlusPlus::Parser::Modifier do
 
       subject { cell_modifier.halign }
 
-      it { is_expected.to(eq(:left)) }
+      it { is_expected.to(eq(::CSVPlusPlus::Modifier::HorizontalAlign::Left)) }
     end
 
     describe 'note' do
@@ -129,7 +129,7 @@ describe ::CSVPlusPlus::Parser::Modifier do
     end
 
     describe 'validate' do
-      subject { cell_modifier.validation }
+      subject { cell_modifier.validate }
 
       context 'with a condition that takes no args' do
         let(:value) { '[[validate=blank]]=A + B' }

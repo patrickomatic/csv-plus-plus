@@ -8,13 +8,12 @@
       cell_index { nil }
       line_number { 1 }
       cell { nil }
-      filename { 'foo.csvpp' }
-      input { '' }
       functions { {} }
       variables { {} }
+      source_code { build(:source_code) }
     end
 
-    initialize_with { new(input:, filename:, functions:, variables:) }
+    initialize_with { new(source_code:, functions:, variables:) }
 
     after(:build) do |i, e|
       i.cell = e.cell

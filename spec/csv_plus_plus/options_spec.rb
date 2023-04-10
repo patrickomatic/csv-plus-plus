@@ -22,18 +22,6 @@ describe ::CSVPlusPlus::Options do
     end
   end
 
-  describe '#to_s' do
-    subject { options.to_s }
-
-    it do
-      is_expected.to(
-        eq(
-          'Options(create_if_not_exists: false, google: , key_values: {}, offset: [0, 0], sheet_name: , verbose: false)'
-        )
-      )
-    end
-  end
-
   describe '#validate' do
     subject { options.validate }
 
