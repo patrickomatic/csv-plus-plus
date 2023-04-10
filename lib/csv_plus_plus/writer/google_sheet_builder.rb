@@ -12,7 +12,7 @@ module CSVPlusPlus
         params(
           current_sheet_values: ::T::Array[::T::Array[::T.nilable(::String)]],
           runtime: ::CSVPlusPlus::Runtime::Runtime,
-          sheet_id: ::T.nilable(::String),
+          sheet_id: ::T.nilable(::Integer),
           rows: ::T::Array[::CSVPlusPlus::Row],
           column_index: ::T.nilable(::Integer),
           row_index: ::T.nilable(::Integer)

@@ -12,7 +12,7 @@ describe ::CSVPlusPlus::Writer::GoogleSheetBuilder do
     ]
   end
   let(:options) { build(:options, :with_google_sheet_id) }
-  let(:sheet_id) { '#id' }
+  let(:sheet_id) { 1_028_392 }
   let(:rows) { [build(:row), build(:row), build(:row)] }
   let(:runtime) { build(:runtime) }
 

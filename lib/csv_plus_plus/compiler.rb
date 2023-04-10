@@ -151,7 +151,7 @@ module CSVPlusPlus
       @runtime.rewrite_input!(csv_section)
     end
 
-    sig { params(csv_row: ::T::Array[::String]).returns(::CSVPlusPlus::Row) }
+    sig { params(csv_row: ::T::Array[::T.nilable(::String)]).returns(::CSVPlusPlus::Row) }
     # Using the current +@runtime+ and the given +csv_row+ parse it into a +Row+ of +Cell+s
     # +csv_row+ should have already been run through a CSV parser and is an array of strings
     #
@@ -161,7 +161,7 @@ module CSVPlusPlus
     def parse_row(csv_row)
       row_modifier = ::CSVPlusPlus::Modifier.new(@options, row_level: true)
 
-      cells = @runtime.map_row(csv_row) { |value, _cell_index| parse_cell(value, row_modifier) }
+      cells = @runtime.map_row(csv_row) { |value, _cell_index| parse_cell(value || '', row_modifier) }
 
       ::CSVPlusPlus::Row.new(cells:, index: @runtime.row_index, modifier: row_modifier)
     end

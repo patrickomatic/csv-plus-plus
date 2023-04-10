@@ -52,7 +52,7 @@ module CSVPlusPlus
       @timings = ::T.let([], ::T::Array[::Benchmark::Tms])
     end
 
-    sig { params(block: ::T.proc.params(runtime: ::CSVPlusPlus::Runtime::Runtime).void).void }
+    sig { override.params(block: ::T.proc.params(runtime: ::CSVPlusPlus::Runtime::Runtime).void).void }
     # Time the Compiler#outputting! stage
     # rubocop:disable Naming/BlockForwarding
     def outputting!(&block)
@@ -62,27 +62,35 @@ module CSVPlusPlus
 
     protected
 
-    sig { void }
+    sig { override.void }
     def parse_code_section!
       time_stage('Parsing code section') { super }
     end
 
-    sig { void }
+    sig { override.returns(::T::Array[::CSVPlusPlus::Row]) }
     def parse_csv_section!
       time_stage('Parsing CSV section') { super }
     end
 
-    sig { void }
-    def expanding!
-      time_stage('Expanding rows') { super }
+    sig { override.params(block: ::T.proc.void).void }
+    # rubocop:disable Naming/BlockForwarding
+    def expanding!(&block)
+      time_stage('Expanding rows') { super(&block) }
     end
+    # rubocop:enable Naming/BlockForwarding
 
-    sig { void }
-    def bind_all_vars!
-      time_stage('Binding [[var=]]') { super }
+    sig { override.params(block: ::T.proc.void).void }
+    # rubocop:disable Naming/BlockForwarding
+    def bind_all_vars!(&block)
+      time_stage('Binding [[var=]]') { super(&block) }
     end
+    # rubocop:enable Naming/BlockForwarding
 
-    sig { params(template: ::CSVPlusPlus::Template).void }
+    sig do
+      override
+        .params(template: ::CSVPlusPlus::Template)
+        .returns(::T::Array[::T::Array[::CSVPlusPlus::Entities::Entity]])
+    end
     def resolve_all_cells!(template)
       time_stage('Resolving each cell') { super(template) }
     end

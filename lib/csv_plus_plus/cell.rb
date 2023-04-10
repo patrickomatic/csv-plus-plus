@@ -70,7 +70,7 @@ module CSVPlusPlus
     def value
       stripped = @value&.strip
 
-      stripped.blank? ? nil : stripped
+      stripped&.empty? ? nil : stripped
     end
 
     sig { params(runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::T.nilable(::String)) }

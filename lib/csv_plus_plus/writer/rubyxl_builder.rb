@@ -94,7 +94,7 @@ module CSVPlusPlus
           end
         else
           modifier.borders.each do |direction|
-            cell.change_border(direction, color || weight)
+            cell.change_border(direction.serialize, color || weight)
           end
         end
       end
@@ -109,7 +109,7 @@ module CSVPlusPlus
       def do_fill!(cell, modifier)
         return unless modifier.color
 
-        cell.change_fill(modifier.color)
+        cell.change_fill(modifier.color&.to_hex)
       end
 
       sig do
