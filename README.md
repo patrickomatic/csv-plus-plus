@@ -29,7 +29,6 @@ And can be compiled into a `.xlsx` file by:
 $ csv++ -n 'My Stock Tracker' -o mystocks.xlsx mystocks.csvpp
 ```
 
-
 See the [Language Reference](./docs/LANGUAGE_REFERENCE.md) for a full explanation of features.
 
 ## Installing
@@ -38,7 +37,7 @@ Just install it via rubygems (homebrew and debian packages are in the works):
 
 `$ gem install csv_plus_plus`
 
-or if you want the very latest changes, clone the repository and run:
+or if you want the very latest changes, clone this repository and run:
 
 `$ rake gem:install`
 

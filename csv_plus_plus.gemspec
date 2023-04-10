@@ -25,7 +25,7 @@ require 'rake'
     'github_repo' => 'git://github.com/patrickomatic/csv-plus-plus',
     'homepage_uri' => 'https://github.com/patrickomatic/csv-plus-plus',
     'source_code_uri' => 'https://github.com/patrickomatic/csv-plus-plus',
-    'changelog_uri' => 'https://github.com/patrickomatic/csv-plus-plus/blob/main/CHANGELOG.md',
+    'changelog_uri' => 'https://github.com/patrickomatic/csv-plus-plus/blob/main/docs/CHANGELOG.md',
     'rubygems_mfa_required' => 'true'
   }
 
