@@ -16,6 +16,7 @@ RACC_FILES = {
 
 task default: ::RACC_FILES.keys.map(&:to_sym) + %i[
   rubocop:autocorrect_all
+  sorbet:typecheck
   spec
   test:csv:all_features
   test:excel:all_features
@@ -84,6 +85,13 @@ namespace :gem do
   task publish: :install do
     git_tag_version
     sh "gem push #{gem_file}"
+  end
+end
+
+namespace :sorbet do
+  desc 'Run a typecheck with Sorbet'
+  task :typecheck do
+    sh 'bundle exec srb tc'
   end
 end
 
