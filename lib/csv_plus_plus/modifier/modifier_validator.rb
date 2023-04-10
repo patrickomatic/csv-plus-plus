@@ -86,7 +86,7 @@ module CSVPlusPlus
       def fontfamily=(font_family)
         @modifier.fontfamily = matches_regexp(
           :fontfamily,
-          unquote(font_family),
+          ::CSVPlusPlus::Lexer.unquote(font_family),
           /^[\w\s]+$/,
           'It is not a valid font family.'
         )
@@ -186,13 +186,6 @@ module CSVPlusPlus
       end
 
       private
-
-      sig { params(str: ::String).returns(::String) }
-      # XXX centralize this unquoting logic :(((
-      def unquote(str)
-        # TODO: I'm pretty sure this isn't sufficient and we need to deal with the backslashes
-        str.gsub(/^['\s]*|['\s]*$/, '')
-      end
 
       sig { params(modifier: ::Symbol, value: ::String).returns(::CSVPlusPlus::Modifier::DataValidation) }
       def a_data_validation(modifier, value)

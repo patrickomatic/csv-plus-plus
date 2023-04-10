@@ -112,7 +112,7 @@ module CSVPlusPlus
           cd.user_entered_format = build_cell_format(::T.cast(mod, ::CSVPlusPlus::Modifier::GoogleSheetModifier))
           cd.note = mod.note if mod.note
 
-          # XXX apply data validation
+          # TODO: apply data validation
           cd.user_entered_value = build_cell_value(cell)
         end
       end

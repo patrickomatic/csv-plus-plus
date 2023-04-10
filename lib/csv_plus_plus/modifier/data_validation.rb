@@ -4,9 +4,9 @@
 module CSVPlusPlus
   module Modifier
     # A validation on a cell value.  Used to support the `validate=` modifier directive.  This is mostly based on the
-    # Google Sheets API spec which can be seen here:
+    # Google Sheets API spec:
     #
-    # {https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/other#ConditionType}
+    # @see https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/other#ConditionType
     #
     # @attr_reader arguments [Array<::String>] The parsed arguments as required by the condition.
     # @attr_reader condition [Symbol] The condition (:blank, :text_eq, :date_before, etc.)
@@ -17,7 +17,7 @@ module CSVPlusPlus
       # @param value [::String] The value to parse as a data validation
       def initialize(value)
         condition, args = value.split(/\s*:\s*/)
-        @arguments = unquote(args || '').split(/\s+/)
+        @arguments = ::CSVPlusPlus::Lexer.unquote(args || '').split(/\s+/)
         @condition = condition.to_sym
 
         validate!
@@ -32,11 +32,6 @@ module CSVPlusPlus
       end
 
       protected
-
-      def unquote(str)
-        # TODO: I'm pretty sure this isn't sufficient and we need to deal with the backslashes
-        str.gsub(/^['\s]*|['\s]*$/, '')
-      end
 
       def invalid!(reason)
         @invalid_reason = reason
