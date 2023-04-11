@@ -21,15 +21,24 @@ module CSVPlusPlus
       #
       # @param date_string [::String]
       def self.valid_date?(date_string)
-        !(date_string.strip =~ ::CSVPlusPlus::Entities::Date::DATE_STRING_REGEXP).nil?
+        new(date_string)
+        true
+      rescue ::Date::Error
+        false
       end
 
       sig { params(value: ::String).void }
-      # @param value [String] The user-inputted date value
+      # @param value [::String] The user-inputted date value
       def initialize(value)
         super(::CSVPlusPlus::Entities::Type::Date)
 
-        @value = ::T.let(::Date.parse(value), ::Date)
+        parsed =
+          begin
+            ::Date.parse(value)
+          rescue ::Date::Error
+            ::Date.strptime(value, '%d/%m/%yyyy')
+          end
+        @value = ::T.let(parsed, ::Date)
       end
 
       sig { override.params(_runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
@@ -37,13 +46,13 @@ module CSVPlusPlus
       #
       # @return [::String]
       def evaluate(_runtime)
-        @value.to_s
+        @value.strftime('%m/%d/%y')
       end
 
       sig { override.params(other: ::CSVPlusPlus::Entities::Entity).returns(::T::Boolean) }
       # @param other [Entity]
       #
-      # @return [::T::Boolean]
+      # @return [T::Boolean]
       def ==(other)
         return false unless super
 
