@@ -43,6 +43,8 @@
 - [ ] can I get rid of $$ syntax and just resolve the functions and runtime vars it knows about?
 - [ ] a way to not show a function if it's dependent cells are blank (make it less ugly when expanded out)
 - [ ] turn it into a lisp???
+- [x] maybe a RuntimeValue doesn't belong as an entity - it doesn't output itself, it only needs to exist
+      during function resolution
 - [x] ROWABOVE - given 2 (or 2A, $2A, etc) returns 1
 - [x] ROWBELOW - given 2 (or 2A, $2A, etc) returns 3
 - [x] CELLABOVE - given 2B returns 1B

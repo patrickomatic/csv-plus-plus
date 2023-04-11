@@ -1,11 +1,12 @@
 # typed: false
 # frozen_string_literal: true
 
-describe ::CSVPlusPlus::Entities::Builtins do
+describe ::CSVPlusPlus::Runtime::Builtins do
+  let(:args) { [] }
   let(:runtime) { build(:runtime, row_index: 1, cell_index: 2) }
 
   describe '.VARIABLES' do
-    subject { described_class::VARIABLES[variable].resolve_fn.call(runtime) }
+    subject { described_class::VARIABLES[variable].call(runtime, args) }
 
     describe 'cellnum' do
       let(:variable) { :cellnum }
@@ -45,7 +46,7 @@ describe ::CSVPlusPlus::Entities::Builtins do
   end
 
   describe '.FUNCTIONS' do
-    subject { described_class::FUNCTIONS[function].resolve_fn.call(runtime, args) }
+    subject { described_class::FUNCTIONS[function].call(runtime, args) }
 
     describe 'cellabove' do
       let(:args) { [build(:cell_reference, cell_index: 2)] }

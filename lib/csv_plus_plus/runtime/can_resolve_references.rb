@@ -129,14 +129,14 @@ module CSVPlusPlus
         id = fn_id.to_sym
         return @functions[id] if defined_function?(id)
 
-        ::CSVPlusPlus::Entities::Builtins::FUNCTIONS[id]
+        ::CSVPlusPlus::Runtime::Builtins::FUNCTIONS[id]
       end
 
       def call_function_or_builtin(function_or_builtin, function_call)
-        if function_or_builtin.type == ::CSVPlusPlus::Entities::Type::Function
-          call_function(function_or_builtin, function_call)
+        if function_or_builtin.is_a?(::CSVPlusPlus::Runtime::Value)
+          function_or_builtin.call(self, function_call.arguments)
         else
-          function_or_builtin.resolve_fn.call(self, function_call.arguments)
+          call_function(function_or_builtin, function_call)
         end
       end
 
@@ -168,7 +168,7 @@ module CSVPlusPlus
 
         raise_formula_syntax_error('Undefined variable', var_id) unless builtin_variable?(var_id)
 
-        ::CSVPlusPlus::Entities::Builtins::VARIABLES[var_id.to_sym].resolve_fn.call(self)
+        ::CSVPlusPlus::Runtime::Builtins::VARIABLES[var_id.to_sym].evaluate(self)
       end
 
       #       def check_unbound_vars(dependencies, variables)

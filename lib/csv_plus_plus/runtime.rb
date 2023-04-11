@@ -7,6 +7,7 @@ require_relative './runtime/graph'
 require_relative './runtime/position_tracker'
 require_relative './runtime/references'
 require_relative './runtime/runtime'
+require_relative './runtime/value'
 
 module CSVPlusPlus
   # All functionality needed to keep track of the runtime AKA execution context.  This module has a lot of
@@ -40,3 +41,5 @@ module CSVPlusPlus
     end
   end
 end
+
+require_relative './runtime/builtins'

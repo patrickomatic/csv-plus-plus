@@ -55,7 +55,7 @@ module CSVPlusPlus
       #
       # @return [T::Boolean]
       def builtin_function?(fn_id)
-        ::CSVPlusPlus::Entities::Builtins::FUNCTIONS.key?(fn_id)
+        ::CSVPlusPlus::Runtime::Builtins::FUNCTIONS.key?(fn_id)
       end
 
       sig { params(var_id: ::Symbol).returns(::T::Boolean) }
@@ -65,7 +65,7 @@ module CSVPlusPlus
       #
       # @return [T::Boolean]
       def builtin_variable?(var_id)
-        ::CSVPlusPlus::Entities::Builtins::VARIABLES.key?(var_id)
+        ::CSVPlusPlus::Runtime::Builtins::VARIABLES.key?(var_id)
       end
 
       sig { returns(::T::Boolean) }

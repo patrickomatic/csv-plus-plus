@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 ::FactoryBot.define do
-  factory :runtime_value, class: ::CSVPlusPlus::Entities::RuntimeValue do
+  factory :runtime_value, class: ::CSVPlusPlus::Runtime::Value do
     transient do
       resolve_fn { -> { build(:number_one) } }
     end

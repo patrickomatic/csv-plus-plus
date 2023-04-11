@@ -10,7 +10,6 @@ require_relative 'entities/date'
 require_relative 'entities/function'
 require_relative 'entities/function_call'
 require_relative 'entities/number'
-require_relative 'entities/runtime_value'
 require_relative 'entities/string'
 require_relative 'entities/variable'
 
@@ -28,7 +27,6 @@ module CSVPlusPlus
         Function = new
         FunctionCall = new
         Number = new
-        RuntimeValue = new
         String = new
         Variable = new
       end
@@ -37,4 +35,3 @@ module CSVPlusPlus
 end
 
 require_relative 'entities/ast_builder'
-require_relative 'entities/builtins'

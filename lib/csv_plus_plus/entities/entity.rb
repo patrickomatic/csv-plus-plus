@@ -38,13 +38,13 @@ module CSVPlusPlus
         self.class == other.class && @type == other.type && @id == other.id
       end
 
-      sig { abstract.params(_runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
+      sig { abstract.params(runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
       # Uses the given +runtime+ to evaluate itself in the current context
       #
-      # @param _runtime [Runtime] The current runtime
+      # @param runtime [Runtime] The current runtime
       #
       # @return [::String]
-      def evaluate(_runtime); end
+      def evaluate(runtime); end
     end
   end
 end

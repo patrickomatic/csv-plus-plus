@@ -76,10 +76,16 @@ describe ::CSVPlusPlus::Writer::RubyXLBuilder do
       end
 
       it 'sets the borders' do
-        # TODO
+        expect(first_row[0].get_border('top')).to(eq('thin'))
+        expect(first_row[1].get_border('left')).to(eq('thin'))
+        expect(first_row[2].get_border('right')).to(eq('thin'))
+        expect(first_row[3].get_border('bottom')).to(eq('thin'))
+        # we set 'all' on the last one:
+        expect(first_row[4].get_border('top')).to(eq('thin'))
+        expect(first_row[4].get_border('left')).to(eq('thin'))
+        expect(first_row[4].get_border('right')).to(eq('thin'))
+        expect(first_row[4].get_border('bottom')).to(eq('thin'))
       end
-
-      # TODO: test weights
     end
 
     describe 'colors' do

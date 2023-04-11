@@ -18,7 +18,9 @@ module CSVPlusPlus
         @value = ::T.let(value.is_a?(::String) ? (value.downcase == 'true') : value, ::T::Boolean)
       end
 
-      sig { override.params(_runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
+      sig do
+        override.params(_runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String)
+      end
       # @param _runtime [Runtime]
       #
       # @return [::String]

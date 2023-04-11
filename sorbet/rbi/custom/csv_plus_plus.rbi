@@ -34,14 +34,6 @@ module CSVPlusPlus
       sig { params(value: T.any(String, Numeric)).returns(CSVPlusPlus::Entities::Number) }
       def number(value); end
 
-      sig do
-        params(
-          resolve_fn: T.proc.params(arg0: CSVPlusPlus::Runtime::Runtime).returns(CSVPlusPlus::Entities::Entity),
-          arguments: T::Array[T.untyped]
-        ).returns(CSVPlusPlus::Entities::RuntimeValue)
-      end
-      def runtime_value(resolve_fn, arguments); end
-
       sig { params(value: String).returns(CSVPlusPlus::Entities::String) }
       def string(value); end
 

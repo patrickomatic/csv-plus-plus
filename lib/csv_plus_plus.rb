@@ -18,11 +18,11 @@ require 'tempfile'
 
 require_relative 'csv_plus_plus/source_code'
 
-require_relative 'csv_plus_plus/runtime'
-
 require_relative 'csv_plus_plus/cli_flag'
 require_relative 'csv_plus_plus/entities'
 require_relative 'csv_plus_plus/error'
+
+require_relative 'csv_plus_plus/runtime'
 
 require_relative 'csv_plus_plus/cell'
 require_relative 'csv_plus_plus/cli'
