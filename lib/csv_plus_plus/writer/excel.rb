@@ -15,7 +15,7 @@ module CSVPlusPlus
       sig { override.params(template: ::CSVPlusPlus::Template).void }
       # Write the +template+ to an Excel file
       #
-      # @params template [Template] The template to write
+      # @param template [Template] The template to write
       def write(template)
         ::CSVPlusPlus::Writer::RubyXLBuilder.new(
           input_filename: ::T.must(@options.output_filename),

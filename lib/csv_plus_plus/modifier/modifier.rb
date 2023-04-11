@@ -154,7 +154,7 @@ module CSVPlusPlus
       sig { params(format: ::CSVPlusPlus::Modifier::TextFormat).returns(::T::Set[::CSVPlusPlus::Modifier::TextFormat]) }
       # Set a text format (bolid, italic, underline or strikethrough)
       #
-      # @param value [TextFormat]
+      # @param format [TextFormat]
       def format=(format)
         @formats << format
       end

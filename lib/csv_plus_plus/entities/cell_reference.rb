@@ -150,16 +150,6 @@ module CSVPlusPlus
 
       private
 
-      # A +CellReference+ can be bound to an expand and in that case it is only in scope within the rows of that
-      # expand.
-      #
-      # @param runtime [Runtime] The current runtime.
-      #
-      # @return [boolean]
-      # def in_scope?(runtime)
-      #   @scoped_to_expand.nil? || runtime.in_scope?(@scoped_to_expand)
-      # end
-
       sig { params(runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::T.nilable(::String)) }
       # Turns index-based/X,Y coordinates into a A1 format
       #

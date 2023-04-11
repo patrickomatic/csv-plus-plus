@@ -41,7 +41,7 @@ module CSVPlusPlus
       sig { abstract.params(_runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
       # Uses the given +runtime+ to evaluate itself in the current context
       #
-      # @param runtime [Runtime] The current runtime
+      # @param _runtime [Runtime] The current runtime
       #
       # @return [::String]
       def evaluate(_runtime); end

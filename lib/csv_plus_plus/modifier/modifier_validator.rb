@@ -124,9 +124,9 @@ module CSVPlusPlus
       end
 
       sig { params(halign: ::String).void }
-      # Validates that +halign+ is 'left', 'center' or 'right'.
+      # Validates that +halign+ is a string representation of +Modifier::HorizontalAlign+
       #
-      # @param value [String] The unvalidated user input
+      # @param halign [::String] The unvalidated user input
       def halign=(halign)
         @modifier.halign = ::T.cast(
           one_of(:halign, halign, ::CSVPlusPlus::Modifier::HorizontalAlign),
@@ -143,10 +143,9 @@ module CSVPlusPlus
       end
 
       sig { params(number_format: ::String).void }
-      # Validates that +number_format+ is 'currency', 'date', 'date_time', 'number', 'percent', 'text', 'time' or
-      # 'scientific'.
+      # Validates that +number_format+ is a string version of a +Modifier::NumberFormat+
       #
-      # @param value [String] The unvalidated user input
+      # @param number_format [::String] The unvalidated user input
       def numberformat=(number_format)
         @modifier.numberformat = ::T.cast(
           one_of(:numberformat, number_format, ::CSVPlusPlus::Modifier::NumberFormat),
@@ -155,9 +154,9 @@ module CSVPlusPlus
       end
 
       sig { params(valign: ::String).void }
-      # Validates that +valign+ is 'top', 'center' or 'bottom'.
+      # Validates that +valign+ is a string representation of +Modifier::VerticalAlign+
       #
-      # @param valign [String] The unvalidated user input
+      # @param valign [::String] The unvalidated user input
       def valign=(valign)
         @modifier.valign = ::T.cast(
           one_of(:valign, valign, ::CSVPlusPlus::Modifier::VerticalAlign),
@@ -171,7 +170,7 @@ module CSVPlusPlus
       # Pretty much based off of the Google Sheets API spec here:
       # @see https://developers.google.com/sheets/api/samples/data#apply_data_validation_to_a_range
       #
-      # @param rule [String] The validation rule to apply to this row or cell
+      # @param rule [::String] The validation rule to apply to this row or cell
       def validate=(rule)
         @modifier.validate = a_data_validation(:validate, rule)
       end

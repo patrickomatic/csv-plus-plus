@@ -51,7 +51,7 @@ module CSVPlusPlus
       sig { params(fn_id: ::Symbol).returns(::T::Boolean) }
       # Is +fn_id+ a builtin function?
       #
-      # @param var_id [Symbol] The Function#id to check if it's a runtime variable
+      # @param fn_id [Symbol] The Function#id to check if it's a runtime variable
       #
       # @return [T::Boolean]
       def builtin_function?(fn_id)
