@@ -1,3 +1,4 @@
+# typed: true
 # frozen_string_literal: true
 
 require_relative 'lib/csv_plus_plus/version'
@@ -14,7 +15,7 @@ require 'rake'
   s.email       = 'patrick@patrickomatic.com'
   s.version     = ::CSVPlusPlus::VERSION
   s.license     = 'MIT'
-  s.files       = ::FileList['bin/csv++', 'lib/**/*.rb', 'README.md', 'CHANGELOG.md']
+  s.files       = ::FileList['bin/csv++', 'bin/csvpp', 'lib/**/*.rb', 'README.md', 'docs/CHANGELOG.md']
   s.homepage    = 'https://github.com/patrickomatic/csv-plus-plus'
 
   s.executables = %w[csv++ csvpp]
