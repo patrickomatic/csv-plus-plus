@@ -19,6 +19,19 @@ describe ::CSVPlusPlus::Writer::RubyXLBuilder do
       expect(worksheet.sheet_name).to(eq(sheet_name))
     end
 
+    describe 'cell contents' do
+      let(:rows) do
+        [
+          build(:row, cells: [build(:cell, value: 'test'), build(:cell, value: 'foo', ast: build(:number, n: 42))])
+        ]
+      end
+
+      it 'sets cell values and formulas' do
+        expect(first_row[0].value).to(eq('test'))
+        expect(first_row[1].formula.expression).to(eq('42'))
+      end
+    end
+
     describe 'alignments' do
       let(:rows) do
         [
@@ -76,7 +89,7 @@ describe ::CSVPlusPlus::Writer::RubyXLBuilder do
             :row,
             cells: [
               build(:cell, modifier: build(:modifier, color: ::CSVPlusPlus::Color.new('#FF00FF'))),
-              build(:cell, modifier: build(:modifier, fontcolor: ::CSVPlusPlus::Color.new('#00FFFF')))
+              build(:cell, modifier: build(:modifier, fontcolor: ::CSVPlusPlus::Color.new('#00FFAA')))
             ]
           )
         ]

@@ -7,8 +7,8 @@ module CSVPlusPlus
     class RubyXLModifier < ::CSVPlusPlus::Modifier::Modifier
       extend ::T::Sig
 
-      # https://www.rubydoc.info/gems/rubyXL/RubyXL/NumberFormats
-      # https://support.microsoft.com/en-us/office/number-format-codes-5026bbd6-04bc-48cd-bf33-80f18b4eae68
+      # @see https://www.rubydoc.info/gems/rubyXL/RubyXL/NumberFormats
+      # @see https://support.microsoft.com/en-us/office/number-format-codes-5026bbd6-04bc-48cd-bf33-80f18b4eae68
       NUM_FMT_IDS = ::T.let(
         {
           ::CSVPlusPlus::Modifier::NumberFormat::Currency => 5,
@@ -24,7 +24,7 @@ module CSVPlusPlus
       )
       private_constant :NUM_FMT_IDS
 
-      # https://www.rubydoc.info/gems/rubyXL/2.3.0/RubyXL
+      # @see http://www.datypic.com/sc/ooxml/t-ssml_ST_BorderStyle.html
       # ST_BorderStyle = %w{ none thin medium dashed dotted thick double hair mediumDashed dashDot mediumDashDot
       #                      dashDotDot slantDashDot }
       BORDER_STYLES = ::T.let(

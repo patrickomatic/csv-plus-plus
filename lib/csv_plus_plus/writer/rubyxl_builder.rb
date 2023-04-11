@@ -52,9 +52,16 @@ module CSVPlusPlus
       private
 
       sig { void }
+      # rubocop:disable Metrics/MethodLength
       def build_workbook!
         @runtime.map_all_cells(@rows) do |cell|
-          @worksheet.add_cell(@runtime.row_index, @runtime.cell_index, cell.evaluate(@runtime))
+          value = cell.evaluate(@runtime)
+          if value&.start_with?('=')
+            @worksheet.add_cell(@runtime.row_index, @runtime.cell_index, '', value.gsub(/^=/, ''))
+          else
+            @worksheet.add_cell(@runtime.row_index, @runtime.cell_index, value)
+          end
+
           format_cell!(
             @runtime.row_index,
             @runtime.cell_index,
@@ -62,6 +69,7 @@ module CSVPlusPlus
           )
         end
       end
+      # rubocop:enable Metrics/MethodLength
 
       sig do
         params(
@@ -94,6 +102,7 @@ module CSVPlusPlus
           end
         else
           modifier.borders.each do |direction|
+            # TODO: move direction.serialize into the RubyXLModifier
             cell.change_border(direction.serialize, color || weight)
           end
         end

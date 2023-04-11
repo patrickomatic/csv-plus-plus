@@ -2,9 +2,10 @@
 
 - Proper scoping of variables defined within an expand modifier
 - Types via Sorbet
-- Bugfix: multiple modifiers on the same row weren't being handled 
+- Fix formula insertion on Excel
 - Fix modifier string quoting
 - Fix broken Yard doc generation
+- Fix: multiple modifiers on the same row weren't being handled 
 
 ## v0.1.2
 
