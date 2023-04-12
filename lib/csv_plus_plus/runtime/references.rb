@@ -55,7 +55,7 @@ module CSVPlusPlus
       #
       # @return [boolean]
       def self.variable_reference?(node, runtime)
-        return false unless node.type == ::CSVPlusPlus::Entities::Type::Variable
+        return false unless node.is_a?(::CSVPlusPlus::Entities::Variable)
 
         if runtime.in_scope?(node.id)
           true
@@ -78,7 +78,7 @@ module CSVPlusPlus
       #
       # @return [boolean]
       def self.function_reference?(node, runtime)
-        node.type == ::CSVPlusPlus::Entities::Type::FunctionCall \
+        node.is_a?(::CSVPlusPlus::Entities::FunctionCall) \
           && (runtime.defined_function?(node.id) || runtime.builtin_function?(::T.must(node.id)))
       end
       private_class_method :function_reference?

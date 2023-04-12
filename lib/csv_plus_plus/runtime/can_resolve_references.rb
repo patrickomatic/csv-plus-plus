@@ -1,4 +1,4 @@
-# typed: false
+# typed: strict
 # frozen_string_literal: true
 
 module CSVPlusPlus
@@ -6,6 +6,9 @@ module CSVPlusPlus
     # Methods for resolving functions and variables.  These should be included onto a class that has +@variables+ and
     # +@functions+ instance variables.
     module CanResolveReferences
+      extend ::T::Sig
+
+      sig { void }
       # Resolve all values in the ast of the current cell being processed
       #
       # @return [Entity]
@@ -13,7 +16,7 @@ module CSVPlusPlus
         return unless (ast = @cell&.ast)
 
         last_round = nil
-        loop do
+        ::Kernel.loop do
           refs = ::CSVPlusPlus::Runtime::References.extract(ast, self)
           return ast if refs.empty?
 
@@ -24,37 +27,7 @@ module CSVPlusPlus
         end
       end
 
-      # Bind +var_id+ to the current cell
-      #
-      # @param var_id [Symbol] The name of the variable to bind the cell reference to
-      #
-      # @return [CellReference]
-      def bind_variable_to_cell(var_id)
-        def_variable(
-          var_id,
-          ::CSVPlusPlus::Entities::CellReference.new(
-            cell_index: @cell_index,
-            row_index: @row_index
-          )
-        )
-      end
-
-      # Bind +var_id+ relative to an ![[expand]] modifier.
-      #
-      # @param var_id [Symbol] The name of the variable to bind the cell reference to
-      # @param expand [Expand] The expand where the variable is accessible (where it will be bound relative to)
-      #
-      # @return [CellReference]
-      def bind_variable_in_expand(var_id, expand)
-        def_variable(
-          var_id,
-          ::CSVPlusPlus::Entities::CellReference.new(
-            scoped_to_expand: expand,
-            cell_index: @cell_index
-          )
-        )
-      end
-
+      sig { params(var_id: ::Symbol).returns(::T::Boolean) }
       # Variables outside of an ![[expand=...] are always in scope.  If it's defined within an expand then things
       # get trickier because the variable is only in scope while we're processing cells within that expand.
       #
@@ -70,31 +43,23 @@ module CSVPlusPlus
         return true unless expand
 
         unless expand.starts_at
-          raise(::CSVPlusPlus::Error::Error, 'Must call Template.expand_rows! before checking the scope of expands.')
+          ::Kernel.raise(
+            ::CSVPlusPlus::Error::Error,
+            'Must call Template.expand_rows! before checking the scope of expands.'
+          )
         end
 
-        @row_index >= expand.starts_at && (expand.ends_at.nil? || row_index <= expand.ends_at)
+        row_index >= expand.starts_at && (expand.ends_at.nil? || row_index <= expand.ends_at)
       end
 
       private
 
-      # Resolve all variable references defined statically in the code section
-      #     def resolve_static_variables!
-      #       last_var_dependencies = {}
-      #       loop do
-      #         var_dependencies, resolution_order = variable_resolution_order(only_static_vars(variables))
-      #         return if var_dependencies == last_var_dependencies
-      #
-      #         # TODO: make the contract better here
-      #         @variables = resolve_dependencies(var_dependencies, resolution_order, variables)
-      #         last_var_dependencies = var_dependencies.clone
-      #       end
-      #     end
-      #
-      #     def only_static_vars(var_dependencies)
-      #       var_dependencies.reject { |k| @runtime.builtin_variable?(k) }
-      #     end
-
+      sig do
+        params(
+          ast: ::CSVPlusPlus::Entities::Entity,
+          refs: ::T::Array[::CSVPlusPlus::Entities::FunctionCall]
+        ).returns(::CSVPlusPlus::Entities::Entity)
+      end
       def resolve_functions(ast, refs)
         refs.reduce(ast.dup) do |acc, elem|
           function_replace(acc, elem.id, resolve_function(elem.id))
@@ -125,13 +90,22 @@ module CSVPlusPlus
       end
       # rubocop:enable Metrics/MethodLength
 
+      sig { params(fn_id: ::Symbol).returns(::T.any(::CSVPlusPlus::Runtime::Value, ::CSVPlusPlus::Entities::Function)) }
       def resolve_function(fn_id)
-        id = fn_id.to_sym
-        return @functions[id] if defined_function?(id)
+        return @functions[fn_id] if defined_function?(fn_id)
 
-        ::CSVPlusPlus::Runtime::Builtins::FUNCTIONS[id]
+        builtin = ::CSVPlusPlus::Runtime::Builtins::FUNCTIONS[fn_id]
+        raise_formula_syntax_error('Undefined function', fn_id.to_s) unless builtin
+
+        builtin
       end
 
+      sig do
+        params(
+          function_or_builtin: ::T.any(::CSVPlusPlus::Runtime::Value, ::CSVPlusPlus::Entities::Function),
+          function_call: ::CSVPlusPlus::Entities::FunctionCall
+        ).returns(::CSVPlusPlus::Entities::Entity)
+      end
       def call_function_or_builtin(function_or_builtin, function_call)
         if function_or_builtin.is_a?(::CSVPlusPlus::Runtime::Value)
           function_or_builtin.call(self, function_call.arguments)
@@ -140,6 +114,12 @@ module CSVPlusPlus
         end
       end
 
+      sig do
+        params(
+          function: ::CSVPlusPlus::Entities::Function,
+          function_call: ::CSVPlusPlus::Entities::FunctionCall
+        ).returns(::CSVPlusPlus::Entities::Entity)
+      end
       def call_function(function, function_call)
         i = 0
         function.arguments.reduce(function.body.dup) do |ast, argument|
@@ -149,9 +129,16 @@ module CSVPlusPlus
         end
       end
 
+      sig do
+        params(
+          node: ::CSVPlusPlus::Entities::Entity,
+          var_id: ::Symbol,
+          replacement: ::CSVPlusPlus::Entities::Entity
+        ).returns(::CSVPlusPlus::Entities::Entity)
+      end
       # Make a copy of the AST represented by +node+ and replace +var_id+ with +replacement+ throughout
       def variable_replace(node, var_id, replacement)
-        if node.type == ::CSVPlusPlus::Entities::Type::FunctionCall
+        if node.is_a?(::CSVPlusPlus::Entities::FunctionCall)
           arguments = node.arguments.map { |n| variable_replace(n, var_id, replacement) }
           # TODO: refactor these places where we copy functions... it's brittle with the kwargs
           ::CSVPlusPlus::Entities::FunctionCall.new(node.id, arguments, infix: node.infix)
@@ -162,13 +149,13 @@ module CSVPlusPlus
         end
       end
 
+      sig { params(var_id: ::Symbol).returns(::T.any(::CSVPlusPlus::Runtime::Value, ::CSVPlusPlus::Entities::Entity)) }
       def resolve_variable(var_id)
-        id = var_id.to_sym
         return @variables[id] if defined_variable?(id)
 
         raise_formula_syntax_error('Undefined variable', var_id) unless builtin_variable?(var_id)
 
-        ::CSVPlusPlus::Runtime::Builtins::VARIABLES[var_id.to_sym].evaluate(self)
+        ::CSVPlusPlus::Runtime::Builtins::VARIABLES[var_id].evaluate(self)
       end
 
       #       def check_unbound_vars(dependencies, variables)

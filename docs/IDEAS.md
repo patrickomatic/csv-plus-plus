@@ -20,10 +20,10 @@
 
 # Modifiers 
 
-- [ ] make var= work better with expand=.  if it's on a row that then it should just bind relative to the current row... (use celladjacent?)
 - [ ] conditional formatting
 - [ ] implement freeze
 - [ ] data validation
+- [x] make var= work better with expand=.  if it's on a row that then it should just bind relative to the current row... (use celladjacent?)
 - [x] bind - assign this cell to a variable (you can't do this in an expand)
 - [x] make horizontal and vertical alignments different things. right now it's ambiguous that they share 'center'.  also maybe add 'justified' and 'distributed'
 - [x] make cell-level modifiers override row-level
@@ -43,8 +43,7 @@
 - [ ] can I get rid of $$ syntax and just resolve the functions and runtime vars it knows about?
 - [ ] a way to not show a function if it's dependent cells are blank (make it less ugly when expanded out)
 - [ ] turn it into a lisp???
-- [x] maybe a RuntimeValue doesn't belong as an entity - it doesn't output itself, it only needs to exist
-      during function resolution
+- [x] maybe a RuntimeValue doesn't belong as an entity - it doesn't output itself, it only needs to exist during function resolution
 - [x] ROWABOVE - given 2 (or 2A, $2A, etc) returns 1
 - [x] ROWBELOW - given 2 (or 2A, $2A, etc) returns 3
 - [x] CELLABOVE - given 2B returns 1B
