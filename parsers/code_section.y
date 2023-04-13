@@ -62,11 +62,11 @@ rule
 end
 
 ---- header
-  require_relative '../lexer'
+  require_relative '../lexer/racc_lexer'
   require_relative '../entities/ast_builder'
 
 ---- inner
-  include ::CSVPlusPlus::Lexer
+  include ::CSVPlusPlus::Lexer::RaccLexer
   include ::CSVPlusPlus::Entities::ASTBuilder
 
   protected
@@ -93,15 +93,15 @@ end
         true
       end,
       tokens: [
-        [/:=/, :ASSIGN],
-        [/def/, :FN_DEF],
-        TOKEN_LIBRARY[:TRUE],
-        TOKEN_LIBRARY[:FALSE],
-        TOKEN_LIBRARY[:NUMBER],
-        TOKEN_LIBRARY[:STRING],
-        TOKEN_LIBRARY[:INFIX_OP],
-        TOKEN_LIBRARY[:VAR_REF],
-        TOKEN_LIBRARY[:ID]
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /:=/, token: :ASSIGN),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bdef\b/, token: :FN_DEF),
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:TRUE],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:FALSE],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:NUMBER],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:STRING],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:INFIX_OP],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:VAR_REF],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:ID]
       ],
     )
   end

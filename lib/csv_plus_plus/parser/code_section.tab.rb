@@ -6,7 +6,7 @@
 
 require 'racc/parser.rb'
 
-  require_relative '../lexer'
+  require_relative '../lexer/racc_lexer'
   require_relative '../entities/ast_builder'
 
 module CSVPlusPlus
@@ -14,7 +14,7 @@ module CSVPlusPlus
     class CodeSection < Racc::Parser
 
 module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 69)
-  include ::CSVPlusPlus::Lexer
+  include ::CSVPlusPlus::Lexer::RaccLexer
   include ::CSVPlusPlus::Entities::ASTBuilder
 
   protected
@@ -41,15 +41,15 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 69)
         true
       end,
       tokens: [
-        [/:=/, :ASSIGN],
-        [/def/, :FN_DEF],
-        TOKEN_LIBRARY[:TRUE],
-        TOKEN_LIBRARY[:FALSE],
-        TOKEN_LIBRARY[:NUMBER],
-        TOKEN_LIBRARY[:STRING],
-        TOKEN_LIBRARY[:INFIX_OP],
-        TOKEN_LIBRARY[:VAR_REF],
-        TOKEN_LIBRARY[:ID]
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /:=/, token: :ASSIGN),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bdef\b/, token: :FN_DEF),
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:TRUE],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:FALSE],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:NUMBER],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:STRING],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:INFIX_OP],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:VAR_REF],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:ID]
       ],
     )
   end

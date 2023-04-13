@@ -1,7 +1,7 @@
 # typed: strict
 # frozen_string_literal: true
 
-require_relative './lexer/lexer'
+require_relative './lexer/racc_lexer'
 require_relative './lexer/tokenizer'
 
 module CSVPlusPlus
@@ -9,11 +9,40 @@ module CSVPlusPlus
   module Lexer
     extend ::T::Sig
 
+    # A token that's matched by +regexp+ and presented with +token+
+    class Token < ::T::Struct
+      const :regexp, ::Regexp
+      const :token, ::T.any(::String, ::Symbol)
+    end
+
     END_OF_CODE_SECTION = '---'
     public_constant :END_OF_CODE_SECTION
 
     VARIABLE_REF = '$$'
     public_constant :VARIABLE_REF
+
+    # @see https://github.com/ruby/racc/blob/master/lib/racc/parser.rb#L121
+    TOKEN_LIBRARY = ::T.let(
+      {
+        A1_NOTATION: ::CSVPlusPlus::Lexer::Token.new(
+          regexp: ::CSVPlusPlus::Entities::CellReference::A1_NOTATION_REGEXP, token: :A1_NOTATION
+        ),
+        FALSE: ::CSVPlusPlus::Lexer::Token.new(regexp: /false/i, token: :FALSE),
+        HEX_COLOR: ::CSVPlusPlus::Lexer::Token.new(regexp: ::CSVPlusPlus::Color::HEX_STRING_REGEXP, token: :HEX_COLOR),
+        ID: ::CSVPlusPlus::Lexer::Token.new(regexp: /[$!\w:]+/, token: :ID),
+        INFIX_OP: ::CSVPlusPlus::Lexer::Token.new(regexp: %r{\^|\+|-|\*|/|&|<|>|<=|>=|<>}, token: :INFIX_OP),
+        NUMBER: ::CSVPlusPlus::Lexer::Token.new(regexp: /-?[\d.]+/, token: :NUMBER),
+        STRING: ::CSVPlusPlus::Lexer::Token.new(
+          regexp: %r{"(?:[^"\\]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*"},
+          token: :STRING
+        ),
+        TRUE: ::CSVPlusPlus::Lexer::Token.new(regexp: /true/i, token: :TRUE),
+        VAR_REF: ::CSVPlusPlus::Lexer::Token.new(regexp: /\$\$/, token: :VAR_REF)
+        # EOF: ::CSVPlusPlus::Lexer::Token.new(false, false)
+      }.freeze,
+      ::T::Hash[::Symbol, ::CSVPlusPlus::Lexer::Token]
+    )
+    public_constant :TOKEN_LIBRARY
 
     sig { params(str: ::String).returns(::String) }
     # When parsing a modifier with a quoted string field, we need a way to unescape.  Some examples of quoted and

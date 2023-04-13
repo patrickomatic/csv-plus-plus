@@ -7,42 +7,49 @@
 require 'racc/parser.rb'
 
   require_relative '../lexer'
+  require_relative '../lexer/racc_lexer'
   require_relative '../entities/ast_builder'
 
 module CSVPlusPlus
   module Parser
     class CellValue < Racc::Parser
 
-module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 49)
+module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 50)
+  extend ::T::Sig
+
   include ::CSVPlusPlus::Entities::ASTBuilder
-  include ::CSVPlusPlus::Lexer
+  include ::CSVPlusPlus::Lexer::RaccLexer
 
   protected
 
+  sig { override.params(input: ::String).returns(::T::Boolean) }
   def anything_to_parse?(input)
     input.strip.start_with?('=')
   end
 
+  sig { override.returns(::String) }
   def parse_subject
     'cell value'
   end
 
+  sig { override.returns(::T.nilable(::CSVPlusPlus::Entities::Entity)) }
   def return_value
     @ast
   end
 
+  sig { override.returns(::CSVPlusPlus::Lexer::Tokenizer) }
   def tokenizer
     ::CSVPlusPlus::Lexer::Tokenizer.new(
       catchall: /[\{\}\(\),=]/,
       ignore: /\s+/,
       tokens: [
-        TOKEN_LIBRARY[:TRUE],
-        TOKEN_LIBRARY[:FALSE],
-        TOKEN_LIBRARY[:NUMBER],
-        TOKEN_LIBRARY[:STRING],
-        TOKEN_LIBRARY[:INFIX_OP],
-        TOKEN_LIBRARY[:VAR_REF],
-        TOKEN_LIBRARY[:ID]
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:TRUE],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:FALSE],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:NUMBER],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:STRING],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:INFIX_OP],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:VAR_REF],
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:ID]
       ]
     )
   end

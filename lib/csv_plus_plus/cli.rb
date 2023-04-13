@@ -115,7 +115,7 @@ module CSVPlusPlus
           exit
         end
 
-        ::SUPPORTED_CSVPP_FLAGS.each do |f|
+        ::CSVPlusPlus::SUPPORTED_CSVPP_FLAGS.each do |f|
           parser.on(f.short_flag, f.long_flag, f.description) { |v| f.handler.call(@options, v) }
         end
       end

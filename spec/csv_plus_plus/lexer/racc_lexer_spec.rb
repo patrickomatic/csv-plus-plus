@@ -2,7 +2,8 @@
 # frozen_string_literal: true
 
 class TestParser
-  include ::CSVPlusPlus::Lexer
+  include ::CSVPlusPlus::Lexer::RaccLexer
+
   attr_accessor :anything_to_parse
 
   def anything_to_parse?(_input)
@@ -18,7 +19,7 @@ class TestParser
   end
 
   def tokenizer
-    ::CSVPlusPlus::Lexer::Tokenizer.new(tokens: [[/\d+/, :number]])
+    ::CSVPlusPlus::Lexer::Tokenizer.new(tokens: [::CSVPlusPlus::Lexer::Token.new(regexp: /\d+/, token: :number)])
   end
 
   def do_parse; end
@@ -30,7 +31,7 @@ class TestParserThatThrowsParseError < TestParser
   end
 end
 
-describe ::CSVPlusPlus::Lexer do
+describe ::CSVPlusPlus::Lexer::RaccLexer do
   describe '#initialize' do
     let(:lexer) { ::TestParser.new }
 
@@ -40,12 +41,12 @@ describe ::CSVPlusPlus::Lexer do
   end
 
   describe '#next_token' do
-    let(:lexer) { ::TestParser.new(tokens: [1, 2, 3]) }
+    let(:lexer) { ::TestParser.new(tokens: [[:foo, 'bar'], [:foo1, 'bar1'], [:foo2, 'bar2']]) }
 
     it 'shifts each token' do
-      expect(lexer.next_token).to(eq(1))
-      expect(lexer.next_token).to(eq(2))
-      expect(lexer.next_token).to(eq(3))
+      expect(lexer.next_token).to(eq([:foo, 'bar']))
+      expect(lexer.next_token).to(eq([:foo1, 'bar1']))
+      expect(lexer.next_token).to(eq([:foo2, 'bar2']))
       expect(lexer.next_token).to(be_nil)
     end
   end

@@ -14,18 +14,20 @@ require 'pathname'
 require 'rubyXL'
 require 'rubyXL/convenience_methods'
 require 'set'
+require 'strscan'
 require 'tempfile'
 
+require_relative 'csv_plus_plus/options'
 require_relative 'csv_plus_plus/source_code'
 
 require_relative 'csv_plus_plus/cli_flag'
 require_relative 'csv_plus_plus/entities'
 require_relative 'csv_plus_plus/error'
 
+require_relative 'csv_plus_plus/cli'
 require_relative 'csv_plus_plus/runtime'
 
 require_relative 'csv_plus_plus/cell'
-require_relative 'csv_plus_plus/cli'
 require_relative 'csv_plus_plus/color'
 require_relative 'csv_plus_plus/modifier'
 
@@ -37,7 +39,6 @@ require_relative 'csv_plus_plus/compiler'
 
 require_relative 'csv_plus_plus/google_options'
 require_relative 'csv_plus_plus/lexer'
-require_relative 'csv_plus_plus/options'
 require_relative 'csv_plus_plus/row'
 require_relative 'csv_plus_plus/template'
 require_relative 'csv_plus_plus/writer'

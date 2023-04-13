@@ -188,6 +188,14 @@ describe ::CSVPlusPlus::Modifier::ModifierValidator do
     end
   end
 
+  describe '#freeze!' do
+    subject { modifier }
+
+    before { modifier_validator.freeze! }
+
+    it { is_expected.to(be_frozen) }
+  end
+
   describe '#halign=' do
     subject { modifier.halign }
 
@@ -291,6 +299,13 @@ describe ::CSVPlusPlus::Modifier::ModifierValidator do
       before { modifier_validator.validate = 'one_of_list: 1 2 3' }
 
       it { is_expected.to(be_a(::CSVPlusPlus::Modifier::DataValidation)) }
+    end
+
+    context 'an invalid validation' do
+      it 'raises an error' do
+        expect { modifier_validator.validate = 'foo: bar' }
+          .to(raise_error(::CSVPlusPlus::Error::ModifierValidationError))
+      end
     end
   end
 

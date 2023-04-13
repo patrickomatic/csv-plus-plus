@@ -10,7 +10,7 @@ module CSVPlusPlus
       sig { override.returns(::String) }
       # @return [::String]
       def error_message
-        "Error writing template: #{message}"
+        "Error writing csvpp template: #{message}"
       end
     end
   end

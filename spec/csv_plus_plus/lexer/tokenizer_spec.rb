@@ -39,10 +39,10 @@ describe ::CSVPlusPlus::Lexer::Tokenizer do
     end
 
     context 'when it matches a token' do
-      let(:tokens) { [[/\bthis\b/, :THIS]] }
+      let(:tokens) { [::CSVPlusPlus::Lexer::Token.new(regexp: /\bthis\b/, token: :THIS)] }
 
       it 'sets last_token and last_match' do
-        expect(subject.last_token).to(eq(:THIS))
+        expect(subject.last_token.token).to(eq(:THIS))
         expect(subject.last_match).to(eq('this'))
       end
 

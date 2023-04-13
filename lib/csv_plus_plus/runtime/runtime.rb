@@ -69,14 +69,6 @@ module CSVPlusPlus
       end
 
       sig { returns(::T::Boolean) }
-      # Is the parser currently inside of the code section? (includes the `---`)
-      #
-      # @return [T::Boolean]
-      def parsing_code_section?
-        source_code.in_code_section?(line_number)
-      end
-
-      sig { returns(::T::Boolean) }
       # Is the parser currently inside of the CSV section?
       #
       # @return [T::Boolean]

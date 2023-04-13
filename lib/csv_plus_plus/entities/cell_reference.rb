@@ -140,14 +140,6 @@ module CSVPlusPlus
         to_a1_ref(runtime) || ''
       end
 
-      sig { returns(::T::Boolean) }
-      # Is the cell_reference a range? - something like A1:D10
-      #
-      # @return [boolean]
-      def range?
-        !upper_row_index.nil? || !upper_cell_index.nil?
-      end
-
       private
 
       sig { params(runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::T.nilable(::String)) }

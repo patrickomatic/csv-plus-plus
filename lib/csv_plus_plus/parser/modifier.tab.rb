@@ -7,7 +7,7 @@
 require 'racc/parser.rb'
 
 
-require_relative '../lexer'
+require_relative '../lexer/racc_lexer'
 
 module CSVPlusPlus
   module Parser
@@ -16,7 +16,7 @@ module CSVPlusPlus
 module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 60)
   attr_reader :return_value
 
-  include ::CSVPlusPlus::Lexer
+  include ::CSVPlusPlus::Lexer::RaccLexer
 
   # @param cell_modifier [Modifier]
   # @param row_modifier [Modifier]
@@ -58,26 +58,26 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 60)
         @modifiers_to_parse == 0
       end,
       tokens: [
-        [/\bborder\b/, 'border'],
-        [/\bbordercolor\b/, 'bordercolor'],
-        [/\bborderstyle\b/, 'borderstyle'],
-        [/\bcolor\b/, 'color'],
-        [/\bexpand\b/, 'expand'],
-        [/\bfontcolor\b/, 'fontcolor'],
-        [/\bfontfamily\b/, 'fontfamily'],
-        [/\bfontsize\b/, 'fontsize'],
-        [/\bformat\b/, 'format'],
-        [/\bfreeze\b/, 'freeze'],
-        [/\bhalign\b/, 'halign'],
-        [/\bnote\b/, 'note'],
-        [/\bnumberformat\b/, 'numberformat'],
-        [/\bvalidate\b/, 'validate'],
-        [/\bvalign\b/, 'valign'],
-        [/\bvar\b/, 'var'],
-        [/-?[\d.]+/, :NUMBER],
-        TOKEN_LIBRARY[:HEX_COLOR],
-        [
-          /
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bborder\b/, token: 'border'),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bbordercolor\b/, token: 'bordercolor'),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bborderstyle\b/, token: 'borderstyle'),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bcolor\b/, token: 'color'),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bexpand\b/, token: 'expand'),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bfontcolor\b/, token: 'fontcolor'),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bfontfamily\b/, token: 'fontfamily'),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bfontsize\b/, token: 'fontsize'),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bformat\b/, token: 'format'),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bfreeze\b/, token: 'freeze'),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bhalign\b/, token: 'halign'),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bnote\b/, token: 'note'),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bnumberformat\b/, token: 'numberformat'),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bvalidate\b/, token: 'validate'),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bvalign\b/, token: 'valign'),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\bvar\b/, token: 'var'),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /-?[\d.]+/, token: :NUMBER),
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:HEX_COLOR],
+        ::CSVPlusPlus::Lexer::Token.new(
+          regexp: /
             (?:
               \w+\s*:\s*'([^'\\]|\\.)*')    # allow for a single-quoted string which can accept any input and also allow 
                                             # for escaping via backslash (i.e., 'ain\\'t won\\'t something' is valid)
@@ -90,12 +90,12 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 60)
               [\w,_:-]                      # no spaces at the end
             )
           /x,
-          :RIGHT_SIDE,
-        ],
-        [/\[\[/, :START_CELL_MODIFIERS],
-        [/!\[\[/, :START_ROW_MODIFIERS],
-        [/\//, :MODIFIER_SEPARATOR],
-        [/=/, :EQ],
+          token: :RIGHT_SIDE,
+        ),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\[\[/, token: :START_CELL_MODIFIERS),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /!\[\[/, token: :START_ROW_MODIFIERS),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /\//, token: :MODIFIER_SEPARATOR),
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /=/, token: :EQ),
       ],
       alter_matches: {
         STRING: ->(s) { s.gsub(/^'|'$/, '') }

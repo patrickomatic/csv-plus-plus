@@ -42,6 +42,13 @@ module CSVPlusPlus
     end
   end
 
+  module Lexer
+    module RaccLexer
+      sig { void }
+      def do_parse; end
+    end
+  end
+
   module Parser
     class CellValue
       sig { void }
