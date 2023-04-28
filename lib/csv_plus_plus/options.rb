@@ -4,13 +4,13 @@
 module CSVPlusPlus
   # The options a user can supply (via CLI flags)
   #
-  # @attr backup [boolean] Create a backup of the spreadsheet before writing
-  # @attr create_if_not_exists [boolean] Create the spreadsheet if it does not exist?
+  # @attr backup [Boolean] Create a backup of the spreadsheet before writing
+  # @attr create_if_not_exists [Boolean] Create the spreadsheet if it does not exist?
   # @attr key_values [Hash] Additional variables that can be supplied to the template
   # @attr offset [Array<Integer>] An [x, y] offset (array with two integers)
   # @attr output_filename [String] The file to write our compiled results to
   # @attr sheet_name [String] The name of the spreadsheet to write to
-  # @attr verbose [boolean] Include extra verbose output?
+  # @attr verbose [Boolean] Include extra verbose output?
   # @attr_reader google [GoogleOptions] Options that are specific to the Google Sheets writer
   class Options
     extend ::T::Sig
@@ -31,7 +31,7 @@ module CSVPlusPlus
     sig { returns(::T::Boolean) }
     attr_accessor :create_if_not_exists
 
-    sig { returns(::T::Hash[::Symbol, ::String]) }
+    sig { returns(::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Entity]) }
     attr_accessor :key_values
 
     sig { returns(::T::Array[::Integer]) }
@@ -54,7 +54,7 @@ module CSVPlusPlus
     def initialize
       @offset = ::T.let([0, 0], ::T::Array[::Integer])
       @create_if_not_exists = ::T.let(false, ::T::Boolean)
-      @key_values = ::T.let({}, ::T::Hash[::Symbol, ::String])
+      @key_values = ::T.let({}, ::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Entity])
       @verbose = ::T.let(false, ::T::Boolean)
       @backup = ::T.let(false, ::T::Boolean)
       @google = ::T.let(nil, ::T.nilable(::CSVPlusPlus::GoogleOptions))
@@ -82,7 +82,7 @@ module CSVPlusPlus
       when /\.csv$/ then ::CSVPlusPlus::Options::OutputFormat::CSV
       when /\.ods$/ then ::CSVPlusPlus::Options::OutputFormat::OpenDocument
       when /\.xl(sx|sm|tx|tm)$/ then ::CSVPlusPlus::Options::OutputFormat::Excel
-      else raise(::CSVPlusPlus::Error::Error, "Unsupported file extension: #{@output_filename}")
+      else raise(::CSVPlusPlus::Error::CLIError, "Unsupported file extension: #{@output_filename}")
       end
     end
 

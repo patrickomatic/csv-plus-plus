@@ -81,9 +81,8 @@ describe ::CSVPlusPlus::Template do
         build(:cell, row_index: 0, index: 2, value: 'foo')
       ]
     end
-    let(:runtime) { build(:runtime) }
 
-    subject { template.validate_infinite_expands(runtime) }
+    subject { template.validate_infinite_expands }
 
     it 'does not raise an exception' do
       expect { subject }

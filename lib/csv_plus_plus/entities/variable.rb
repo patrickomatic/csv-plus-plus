@@ -6,31 +6,41 @@ module CSVPlusPlus
     # TODO: get rid of this I think - everything will just be References
     #
     # A reference to a variable
-    class Variable < Entity
+    class Variable < ::CSVPlusPlus::Entities::Entity
       extend ::T::Sig
+      include ::CSVPlusPlus::Entities::HasIdentifier
+
+      sig { returns(::Symbol) }
+      attr_reader :id
 
       sig { params(id: ::Symbol).void }
       # @param id [Symbol] The identifier of the variable
       def initialize(id)
-        super(::CSVPlusPlus::Entities::Type::Variable, id:)
+        super()
+
+        @id = ::T.let(identifier(id), ::Symbol)
       end
 
-      sig { override.params(_runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
-      # @param _runtime [Runtime]
+      sig { override.params(_position: ::CSVPlusPlus::Runtime::Position).returns(::String) }
+      # @param _position [Position]
       #
       # @return [::String]
-      def evaluate(_runtime)
+      def evaluate(_position)
         "$$#{@id}"
       end
 
-      sig { override.params(other: ::CSVPlusPlus::Entities::Entity).returns(::T::Boolean) }
+      sig { override.params(other: ::BasicObject).returns(::T::Boolean) }
       # @param other [Entity]
       #
       # @return [boolean]
       def ==(other)
-        return false unless super
-
-        other.is_a?(self.class) && @id == other.id
+        case other
+        when self.class
+          # XXX move this into HasIdentifier
+          @id == other.id
+        else
+          false
+        end
       end
     end
   end

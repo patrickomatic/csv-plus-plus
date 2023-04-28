@@ -18,11 +18,13 @@ require 'strscan'
 require 'tempfile'
 
 require_relative 'csv_plus_plus/options'
+require_relative 'csv_plus_plus/runtime/position'
 require_relative 'csv_plus_plus/source_code'
 
 require_relative 'csv_plus_plus/cli_flag'
 require_relative 'csv_plus_plus/entities'
 require_relative 'csv_plus_plus/error'
+require_relative 'csv_plus_plus/error_formatter'
 
 require_relative 'csv_plus_plus/cli'
 require_relative 'csv_plus_plus/runtime'
@@ -55,10 +57,10 @@ module CSVPlusPlus
   # @param input [String] The csvpp input to compile
   # @param filename [String, nil] The filename the input was read from.  +nil+ if it is read from stdin.
   # @param options [Options] The various options to compile with
-  def self.apply_template_to_sheet!(input, filename, options)
-    warn(options.verbose_summary) if options.verbose
-
+  def self.cli_compile(input, filename, options)
     runtime = ::CSVPlusPlus::Runtime.new(source_code: ::CSVPlusPlus::SourceCode.new(input:, filename:))
+
+    warn(options.verbose_summary) if options.verbose
 
     ::CSVPlusPlus::Compiler.with_compiler(options:, runtime:) do |compiler|
       template = compiler.compile_template
@@ -66,6 +68,10 @@ module CSVPlusPlus
 
       write_template(template:, compiler:, options:)
     end
+  rescue ::StandardError => e
+    ::CSVPlusPlus::ErrorFormatter.new(runtime: ::T.must(runtime), options:).handle_error(e)
+    # the caller will exit(1)
+    raise(e)
   end
 
   sig do
@@ -77,8 +83,8 @@ module CSVPlusPlus
   # @param options [Options] The options we're running with
   # @param template [Template] The compiled template
   def self.write_template(compiler:, options:, template:)
-    compiler.outputting! do |runtime|
-      output = ::CSVPlusPlus::Writer.writer(options, runtime)
+    compiler.outputting! do |position|
+      output = ::CSVPlusPlus::Writer.writer(options, position)
       output.write_backup if options.backup
       output.write(template)
     end

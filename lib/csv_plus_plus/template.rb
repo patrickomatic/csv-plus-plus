@@ -32,19 +32,24 @@ module CSVPlusPlus
     #   relative to it's row (it can't be an absolute cell reference like above)
     #
     # @param runtime [Runtime] The current runtime
+    # rubocop:disable Metrics/MethodLength
     def bind_all_vars!(runtime)
-      runtime.map_rows(@rows) do |row|
+      runtime.position.map_rows(@rows) do |row|
         # rubocop:disable Style/MissingElse
         if row.unexpanded?
           # rubocop:enable Style/MissingElse
-          raise(::CSVPlusPlus::Error::Error, 'Template#expand_rows! must be called before Template#bind_all_vars!')
+          raise(
+            ::CSVPlusPlus::Error::CompilerError,
+            'Template#expand_rows! must be called before Template#bind_all_vars!'
+          )
         end
 
-        runtime.map_row(row.cells) do |cell|
+        runtime.position.map_row(row.cells) do |cell|
           bind_vars(cell, row.modifier.expand)
         end
       end
     end
+    # rubocop:enable Metrics/MethodLength
 
     sig { returns(::T::Array[::CSVPlusPlus::Row]) }
     # Apply expand= (adding rows to the results) modifiers to the parsed template. This happens in towards the end of
@@ -64,17 +69,17 @@ module CSVPlusPlus
         end
     end
 
-    sig { params(runtime: ::CSVPlusPlus::Runtime::Runtime).void }
+    sig { void }
     # Make sure that the template has a valid amount of infinite expand modifiers
-    #
-    # @param runtime [Runtime] The compiler's current runtime
-    def validate_infinite_expands(runtime)
+    def validate_infinite_expands
       infinite_expand_rows = @rows.filter { |r| r.modifier.expand&.infinite? }
       return unless infinite_expand_rows.length > 1
 
-      runtime.raise_modifier_syntax_error(
-        'You can only have one infinite expand= (on all others you must specify an amount)',
-        infinite_expand_rows[1].to_s
+      raise(
+        ::CSVPlusPlus::Error::ModifierSyntaxError.new(
+          'You can only have one infinite expand= (on all others you must specify an amount)',
+          bad_input: infinite_expand_rows[1].to_s
+        )
       )
     end
 
@@ -85,7 +90,7 @@ module CSVPlusPlus
     def verbose_summary
       # TODO: we can probably include way more stats in here
       <<~SUMMARY
-        #{@runtime.verbose_summary}
+        #{@runtime.scope.verbose_summary}
 
         > #{@rows.length} rows to be written
       SUMMARY

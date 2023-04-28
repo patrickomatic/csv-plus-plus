@@ -4,7 +4,7 @@
 module CSVPlusPlus
   # A cell of a template
   #
-  # @attr ast [Entity]
+  # @attr ast [Entity, nil] The AST of the formula in the cell (if there is one)
   # @attr row_index [Integer] The cell's row index (starts at 0)
   # @attr_reader index [Integer] The cell's index (starts at 0)
   # @attr_reader modifier [Modifier] The modifier for this cell
@@ -22,26 +22,6 @@ module CSVPlusPlus
 
     sig { returns(::CSVPlusPlus::Modifier::Modifier) }
     attr_reader :modifier
-
-    sig do
-      params(
-        value: ::T.nilable(::String),
-        runtime: ::CSVPlusPlus::Runtime::Runtime,
-        modifier: ::CSVPlusPlus::Modifier::Modifier
-      ).returns(::CSVPlusPlus::Cell)
-    end
-    # Parse a +value+ into a Cell object.
-    #
-    # @param value [String] A string value which should already have been processed through a CSV parser
-    # @param runtime [Runtime]
-    # @param modifier [Modifier]
-    #
-    # @return [Cell]
-    def self.parse(value, runtime:, modifier:)
-      new(value:, row_index: runtime.row_index, index: runtime.cell_index, modifier:).tap do |c|
-        c.ast = ::T.unsafe(::CSVPlusPlus::Parser::CellValue.new).parse(value, runtime)
-      end
-    end
 
     sig do
       params(
@@ -73,17 +53,17 @@ module CSVPlusPlus
       stripped&.empty? ? nil : stripped
     end
 
-    sig { params(runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::T.nilable(::String)) }
+    sig { params(position: ::CSVPlusPlus::Runtime::Position).returns(::T.nilable(::String)) }
     # A compiled final representation of the cell.  This can only happen after all cell have had variables and functions
     # resolved.
     #
-    # @param runtime [Runtime]
+    # @param position [Position]
     #
     # @return [::String]
-    def evaluate(runtime)
+    def evaluate(position)
       return value unless @ast
 
-      "=#{@ast.evaluate(runtime)}"
+      "=#{@ast.evaluate(position)}"
     end
   end
 end

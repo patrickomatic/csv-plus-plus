@@ -3,37 +3,43 @@
 
 module CSVPlusPlus
   module Lexer
+    # TODO: ugh clean this up
+    RaccToken =
+      ::T.type_alias do
+        ::T.any(
+          [::String, ::Symbol],
+          [::Symbol, ::String],
+          [::String, ::String],
+          [::Symbol, ::Symbol],
+          [::FalseClass, ::FalseClass]
+        )
+      end
+    public_constant :RaccToken
+
     # Common methods to be mixed into the Racc parsers
     #
     # @attr_reader tokens [Array]
     module RaccLexer
       extend ::T::Sig
       extend ::T::Helpers
+      extend ::T::Generic
+      include ::Kernel
 
       abstract!
 
-      RaccToken =
-        ::T.type_alias do
-          ::T.any(
-            [::String, ::Symbol],
-            [::Symbol, ::String],
-            [::String, ::String],
-            [::Symbol, ::Symbol],
-            [::FalseClass, ::FalseClass]
-          )
-        end
-      public_constant :RaccToken
+      ReturnType = type_member
+      public_constant :ReturnType
 
-      sig { returns(::T::Array[::CSVPlusPlus::Lexer::RaccLexer::RaccToken]) }
+      sig { returns(::T::Array[::CSVPlusPlus::Lexer::RaccToken]) }
       attr_reader :tokens
 
-      sig { params(tokens: ::T::Array[::CSVPlusPlus::Lexer::RaccLexer::RaccToken]).void }
+      sig { params(tokens: ::T::Array[::CSVPlusPlus::Lexer::RaccToken]).void }
       # Initialize a lexer instance with an empty +@tokens+
       def initialize(tokens: [])
-        @tokens = ::T.let(tokens, ::T::Array[::CSVPlusPlus::Lexer::RaccLexer::RaccToken])
+        @tokens = ::T.let(tokens, ::T::Array[::CSVPlusPlus::Lexer::RaccToken])
       end
 
-      sig { returns(::T.nilable(::CSVPlusPlus::Lexer::RaccLexer::RaccToken)) }
+      sig { returns(::T.nilable(::CSVPlusPlus::Lexer::RaccToken)) }
       # Used by racc to iterate each token
       #
       # @return [Array<(Regexp, Symbol) | (false, false)>]
@@ -41,26 +47,28 @@ module CSVPlusPlus
         @tokens.shift
       end
 
-      sig { params(input: ::T.nilable(::String), runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::T.untyped) }
+      sig { params(input: ::String).returns(::CSVPlusPlus::Lexer::RaccLexer::ReturnType) }
       # Orchestate the tokenizing, parsing and error handling of parsing input.  Each instance will implement their own
       # +#tokenizer+ method
       #
-      # @return [Lexer#return_value] Each instance will define it's own +return_value+ with the result of parsing
-      def parse(input, runtime)
-        return if input.nil?
-
+      # @return [RaccLexer#] Each instance will define it's own +return_value+ with the result of parsing
+      # rubocop:disable Metrics/MethodLength
+      def parse(input)
         return return_value unless anything_to_parse?(input)
 
-        @runtime = ::T.let(runtime, ::T.nilable(::CSVPlusPlus::Runtime::Runtime))
-
-        tokenize(input, runtime)
+        tokenize(input)
         do_parse
         return_value
       rescue ::Racc::ParseError => e
-        runtime.raise_formula_syntax_error("Error parsing #{parse_subject}", e.message, wrapped_error: e)
-      rescue ::CSVPlusPlus::Error::ModifierValidationError => e
-        ::Kernel.raise(::CSVPlusPlus::Error::ModifierSyntaxError.from_validation_error(runtime, e))
+        raise(
+          ::CSVPlusPlus::Error::FormulaSyntaxError.new(
+            "Error parsing #{parse_subject}",
+            bad_input: e.message,
+            wrapped_error: e
+          )
+        )
       end
+      # rubocop:enable Metrics/MethodLength
 
       protected
 
@@ -77,7 +85,7 @@ module CSVPlusPlus
       # Used for error messages, what is the thing being parsed? ("cell value", "modifier", "code section")
       def parse_subject; end
 
-      sig { abstract.returns(::T.untyped) }
+      sig { abstract.returns(::CSVPlusPlus::Lexer::RaccLexer::ReturnType) }
       # The output of the parser
       def return_value; end
 
@@ -87,8 +95,8 @@ module CSVPlusPlus
 
       private
 
-      sig { params(input: ::String, runtime: ::CSVPlusPlus::Runtime::Runtime).void }
-      def tokenize(input, runtime)
+      sig { params(input: ::String).void }
+      def tokenize(input)
         return if input.nil?
 
         t = tokenizer.scan(input)
@@ -99,15 +107,15 @@ module CSVPlusPlus
           return if t.stop?
 
           t.scan_tokens!
-          consume_token(t, runtime)
+          consume_token(t)
         end
 
         @tokens << %i[EOL EOL]
       end
 
-      sig { params(tokenizer: ::CSVPlusPlus::Lexer::Tokenizer, runtime: ::CSVPlusPlus::Runtime::Runtime).void }
-      # rubocop:disable Metrics/AbcSize
-      def consume_token(tokenizer, runtime)
+      sig { params(tokenizer: ::CSVPlusPlus::Lexer::Tokenizer).void }
+      # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+      def consume_token(tokenizer)
         if tokenizer.last_token&.token && tokenizer.last_match
           @tokens << [::T.must(tokenizer.last_token).token, ::T.must(tokenizer.last_match)]
         elsif tokenizer.scan_catchall
@@ -115,12 +123,22 @@ module CSVPlusPlus
         # TODO: checking the +parse_subject+ like this is a little hacky... but we need to know if we're parsing
         # modifiers or code_section (or formulas in a cell)
         elsif parse_subject == 'modifier'
-          runtime.raise_modifier_syntax_error("Unable to parse #{parse_subject} starting at", tokenizer.peek)
+          raise(
+            ::CSVPlusPlus::Error::ModifierSyntaxError.new(
+              "Unable to parse #{parse_subject} starting at",
+              bad_input: tokenizer.peek
+            )
+          )
         else
-          runtime.raise_formula_syntax_error("Unable to parse #{parse_subject} starting at", tokenizer.peek)
+          raise(
+            ::CSVPlusPlus::Error::FormulaSyntaxError.new(
+              "Unable to parse #{parse_subject} starting at",
+              bad_input: tokenizer.peek
+            )
+          )
         end
       end
-      # rubocop:enable Metrics/AbcSize
+      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
     end
   end
 end

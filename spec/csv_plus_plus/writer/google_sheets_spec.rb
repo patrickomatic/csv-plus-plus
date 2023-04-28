@@ -8,8 +8,8 @@ google_sheets_path_matcher =
   end
 
 describe ::CSVPlusPlus::Writer::GoogleSheets do
-  let(:writer) { described_class.new(options, runtime) }
-  let(:runtime) { build(:runtime) }
+  let(:position) { build(:position) }
+  let(:writer) { described_class.new(options, position) }
 
   before do
     allow(::Google::Auth).to(receive(:get_application_default).and_return({}))

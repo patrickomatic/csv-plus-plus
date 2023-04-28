@@ -4,8 +4,8 @@
 describe ::CSVPlusPlus::Writer::CSV do
   let(:output_filename) { 'foo.csv' }
   let(:options) { build(:options, output_filename:) }
-  let(:runtime) { build(:runtime) }
-  let(:writer) { described_class.new(options, runtime) }
+  let(:position) { build(:position) }
+  let(:writer) { described_class.new(options, position) }
 
   after { ::File.delete(output_filename) if ::File.exist?(output_filename) }
 

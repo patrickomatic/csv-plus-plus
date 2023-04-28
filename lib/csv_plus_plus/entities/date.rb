@@ -6,7 +6,7 @@ module CSVPlusPlus
     # A date value
     #
     # @attr_reader value [Date] The parsed date
-    class Date < Entity
+    class Date < ::CSVPlusPlus::Entities::Entity
       extend ::T::Sig
 
       sig { returns(::Date) }
@@ -30,7 +30,7 @@ module CSVPlusPlus
       sig { params(value: ::String).void }
       # @param value [::String] The user-inputted date value
       def initialize(value)
-        super(::CSVPlusPlus::Entities::Type::Date)
+        super()
 
         parsed =
           begin
@@ -41,22 +41,25 @@ module CSVPlusPlus
         @value = ::T.let(parsed, ::Date)
       end
 
-      sig { override.params(_runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
-      # @param _runtime [Runtime]
+      sig { override.params(_position: ::CSVPlusPlus::Runtime::Position).returns(::String) }
+      # @param _position [Position]
       #
       # @return [::String]
-      def evaluate(_runtime)
+      def evaluate(_position)
         @value.strftime('%m/%d/%y')
       end
 
-      sig { override.params(other: ::CSVPlusPlus::Entities::Entity).returns(::T::Boolean) }
-      # @param other [Entity]
+      sig { override.params(other: ::BasicObject).returns(::T::Boolean) }
+      # @param other [BasicObject]
       #
-      # @return [T::Boolean]
+      # @return [Boolean]
       def ==(other)
-        return false unless super
-
-        other.is_a?(self.class) && other.value == @value
+        case other
+        when self.class
+          other.value == @value
+        else
+          false
+        end
       end
     end
   end

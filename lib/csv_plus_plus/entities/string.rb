@@ -6,7 +6,7 @@ module CSVPlusPlus
     # A string value
     #
     # @attr_reader value [String]
-    class String < Entity
+    class String < ::CSVPlusPlus::Entities::Entity
       extend ::T::Sig
 
       sig { returns(::String) }
@@ -15,27 +15,30 @@ module CSVPlusPlus
       sig { params(value: ::String).void }
       # @param value [String] The string that has been parsed out of the template
       def initialize(value)
-        super(::CSVPlusPlus::Entities::Type::String)
+        super()
 
         @value = ::T.let(value.gsub(/^"|"$/, ''), ::String)
       end
 
-      sig { override.params(_runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
-      # @param _runtime [Runtime]
+      sig { override.params(_position: ::CSVPlusPlus::Runtime::Position).returns(::String) }
+      # @param _position [Position]
       #
       # @return [::String]
-      def evaluate(_runtime)
+      def evaluate(_position)
         "\"#{@value}\""
       end
 
-      sig { override.params(other: ::CSVPlusPlus::Entities::Entity).returns(::T::Boolean) }
-      # @param other [Entity]
+      sig { override.params(other: ::BasicObject).returns(::T::Boolean) }
+      # @param other [BasicObject]
       #
       # @return [T::Boolean]
       def ==(other)
-        return false unless super
-
-        other.is_a?(self.class) && @value == other.value
+        case other
+        when self.class
+          @value == other.value
+        else
+          false
+        end
       end
     end
   end

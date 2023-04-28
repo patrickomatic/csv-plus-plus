@@ -55,7 +55,9 @@ module CSVPlusPlus
       def scanner
         # The caller needs to initialize this class with a call to #scan before we can do anything.  it sets up the
         # +@scanner+ with it's necessary input.
-        raise(::CSVPlusPlus::Error::Error, 'Called Tokenizer#scanner without calling #scan first') unless @scanner
+        unless @scanner
+          raise(::CSVPlusPlus::Error::CompilerError, 'Called Tokenizer#scanner without calling #scan first')
+        end
 
         @scanner
       end

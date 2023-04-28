@@ -22,7 +22,7 @@ module CSVPlusPlus
     # @attr_reader upper_row_index [Integer, nil] If set, the cell reference is a range and this is the upper row index
     #   of it
     # rubocop:disable Metrics/ClassLength
-    class CellReference < Entity
+    class CellReference < ::CSVPlusPlus::Entities::Entity
       extend ::T::Sig
 
       sig { returns(::T.nilable(::String)) }
@@ -90,13 +90,13 @@ module CSVPlusPlus
       # @param ref [Integer, nil] An A1-style cell reference (that will be parsed into it's row/cell indexes).
       # @param row_index [Integer, nil] The index of the row being referenced.
       # @param scoped_to_expand [Expand] The [[expand]] that this cell reference will be scoped to. In other words, it
-      #   will only be able to be resolved if the runtime is within the bounds of the expand (it can't be referenced
+      #   will only be able to be resolved if the position is within the bounds of the expand (it can't be referenced
       #   outside of the expand.)
       # rubocop:disable Metrics/MethodLength
       def initialize(cell_index: nil, ref: nil, row_index: nil, scoped_to_expand: nil)
-        raise(::ArgumentError, 'Must specify :ref, :cell_index or :row_index') unless ref || cell_index || row_index
+        super()
 
-        super(::CSVPlusPlus::Entities::Type::CellReference)
+        raise(::ArgumentError, 'Must specify :ref, :cell_index or :row_index') unless ref || cell_index || row_index
 
         if ref
           from_a1_ref!(ref)
@@ -112,44 +112,46 @@ module CSVPlusPlus
       end
       # rubocop:enable Metrics/MethodLength
 
-      sig { override.params(other: ::CSVPlusPlus::Entities::Entity).returns(::T::Boolean) }
-      # @param other [Entity]
+      sig { override.params(other: ::BasicObject).returns(::T::Boolean) }
+      # @param other [BasicObject]
       #
       # @return [boolean]
-      # rubocop:disable Metrics/CyclomaticComplexity
       def ==(other)
-        return false unless super
-
-        other.is_a?(self.class) && @cell_index == other.cell_index && @row_index == other.row_index \
-          && @sheet_name == other.sheet_name && @scoped_to_expand == other.scoped_to_expand \
-          && @upper_cell_index == other.upper_cell_index && @upper_row_index == other.upper_row_index
+        case other
+        when self.class
+          @cell_index == other.cell_index && @row_index == other.row_index && @sheet_name == other.sheet_name \
+            && @scoped_to_expand == other.scoped_to_expand && @upper_cell_index == other.upper_cell_index \
+            && @upper_row_index == other.upper_row_index
+        else
+          false
+        end
       end
-      # rubocop:enable Metrics/CyclomaticComplexity
-
-      sig { override.params(runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
+      sig { override.params(position: ::CSVPlusPlus::Runtime::Position).returns(::String) }
       # Get the A1-style cell reference
       #
-      # @param runtime [Runtime] The current runtime
+      # @param position [Position] The current position
       #
       # @return [::String] An A1-style reference
-      def evaluate(runtime)
-        # unless in_scope?(runtime)
-        #   runtime.raise_modifier_syntax_error(message: 'Reference is out of scope', bad_input: runtime.cell.value)
+      def evaluate(position)
+        # unless in_scope?(position)
+        #   raise(::CSVPlusPlus::Error::ModifierSyntaxError.new(
+        #     'Reference is out of scope',
+        #     bad_input: position.cell.value)
         # end
 
-        to_a1_ref(runtime) || ''
+        to_a1_ref(position) || ''
       end
 
       private
 
-      sig { params(runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::T.nilable(::String)) }
+      sig { params(position: ::CSVPlusPlus::Runtime::Position).returns(::T.nilable(::String)) }
       # Turns index-based/X,Y coordinates into a A1 format
       #
-      # @param runtime [Runtime]
+      # @param position [Position]
       #
       # @return [::String, nil]
-      def to_a1_ref(runtime)
-        row_index = runtime_row_index(runtime)
+      def to_a1_ref(position)
+        row_index = position_row_index(position)
         return unless row_index || @cell_index
 
         rowref = row_index ? (row_index + 1).to_s : ''
@@ -157,9 +159,9 @@ module CSVPlusPlus
         [cellref, rowref].join
       end
 
-      sig { params(runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::T.nilable(::Integer)) }
-      def runtime_row_index(runtime)
-        @scoped_to_expand ? runtime.row_index : @row_index
+      sig { params(position: ::CSVPlusPlus::Runtime::Position).returns(::T.nilable(::Integer)) }
+      def position_row_index(position)
+        @scoped_to_expand ? position.row_index : @row_index
       end
 
       sig { returns(::String) }

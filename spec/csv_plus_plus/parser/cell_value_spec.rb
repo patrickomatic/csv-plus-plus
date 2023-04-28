@@ -2,10 +2,8 @@
 # frozen_string_literal: true
 
 describe ::CSVPlusPlus::Parser::CellValue do
-  let(:runtime) { build(:runtime) }
-
   describe '#parse' do
-    subject { described_class.new.parse(cell_value, runtime) }
+    subject { described_class.new.parse(cell_value) }
 
     describe 'without a formula' do
       let(:cell_value) { 'just a value' }
@@ -33,6 +31,7 @@ describe ::CSVPlusPlus::Parser::CellValue do
     end
 
     describe 'a function call with 3 arguments' do
+      # XXX need to make sure all id setters lowercase it (make it case-insensitive)
       let(:cell_value) { '=SUM(A1, A2, A3)' }
 
       it do

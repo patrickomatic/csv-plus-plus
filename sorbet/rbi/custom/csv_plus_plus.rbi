@@ -34,6 +34,9 @@ module CSVPlusPlus
       sig { params(value: T.any(String, Numeric)).returns(CSVPlusPlus::Entities::Number) }
       def number(value); end
 
+      sig { params(resolve_fn: CSVPlusPlus::Entities::RuntimeValue::ResolveFn).void }
+      def runtime_value(resolve_fn); end
+
       sig { params(value: String).returns(CSVPlusPlus::Entities::String) }
       def string(value); end
 
@@ -54,24 +57,24 @@ module CSVPlusPlus
       sig { void }
       def initialize; end
 
-      sig { params(input: ::String, runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
-      def parse(input, runtime); end
+      sig { params(input: ::String).returns(::String) }
+      def parse(input); end
     end
 
     class CodeSection
-      sig { void }
-      def initialize; end
+      sig { params(scope: ::CSVPlusPlus::Runtime::Scope).void }
+      def initialize(scope); end
 
-      sig { params(input: ::String, runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
-      def parse(input, runtime); end
+      sig { params(input: ::String).returns(::String) }
+      def parse(input); end
     end
 
     class Modifier
       sig { params(cell_modifier: CSVPlusPlus::Modifier::Modifier, row_modifier: CSVPlusPlus::Modifier::Modifier).void }
       def initialize(cell_modifier:, row_modifier:); end
 
-      sig { params(input: ::String, runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
-      def parse(input, runtime); end
+      sig { params(input: ::String).returns(::String) }
+      def parse(input); end
     end
   end
 end

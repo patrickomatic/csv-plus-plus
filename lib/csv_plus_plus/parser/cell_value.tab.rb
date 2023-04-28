@@ -16,9 +16,11 @@ module CSVPlusPlus
 
 module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 50)
   extend ::T::Sig
-
+  extend ::T::Generic
   include ::CSVPlusPlus::Entities::ASTBuilder
   include ::CSVPlusPlus::Lexer::RaccLexer
+
+  ReturnType = type_member {{ fixed: ::T.nilable(::CSVPlusPlus::Entities::Entity) }}
 
   protected
 
@@ -32,7 +34,7 @@ module_eval(<<'...end cell_value.y/module_eval...', 'cell_value.y', 50)
     'cell value'
   end
 
-  sig { override.returns(::T.nilable(::CSVPlusPlus::Entities::Entity)) }
+  sig { override.returns(ReturnType) }
   def return_value
     @ast
   end

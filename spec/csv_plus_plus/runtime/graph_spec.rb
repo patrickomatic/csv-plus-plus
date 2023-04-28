@@ -2,8 +2,6 @@
 # frozen_string_literal: true
 
 describe ::CSVPlusPlus::Runtime::Graph do
-  let(:runtime) { build(:runtime) }
-
   describe '#depth_first_search' do
     let(:number5) { build(:number, n: 5) }
     let(:ast) { build(:fn_call, name: :multiply, arguments: [number5, number5]) }
@@ -41,7 +39,7 @@ describe ::CSVPlusPlus::Runtime::Graph do
       }
     end
 
-    subject { described_class.dependency_graph(variables, runtime) }
+    subject { described_class.dependency_graph(variables) }
 
     it { is_expected.to(eq({ bar: [], dep: %i[bar foo], foo: [] })) }
   end
@@ -86,7 +84,7 @@ describe ::CSVPlusPlus::Runtime::Graph do
     end
     let(:include_runtime_variables) { false }
 
-    subject { described_class.variable_references(ast, runtime, include_runtime_variables:) }
+    subject { described_class.variable_references(ast, include_runtime_variables:) }
 
     it { is_expected.to(eq(%i[foo bar])) }
 

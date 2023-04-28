@@ -17,8 +17,8 @@ describe ::CSVPlusPlus do
     INPUT
   end
 
-  describe '.apply_template_to_sheet!' do
-    subject { described_class.apply_template_to_sheet!(input, filename, options) }
+  describe '.cli_compile' do
+    subject { described_class.cli_compile(input, filename, options) }
 
     context 'to CSV' do
       let(:output_filename) { 'bar.csv' }

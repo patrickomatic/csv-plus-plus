@@ -8,26 +8,40 @@ module CSVPlusPlus
     # @attr_reader infix [boolean] Whether or not this function call is infix (X * Y, A + B, etc)
     class FunctionCall < EntityWithArguments
       extend ::T::Sig
+      include ::CSVPlusPlus::Entities::HasIdentifier
+
+      ArgumentsType = type_member { { fixed: ::CSVPlusPlus::Entities::Entity } }
+      public_constant :ArgumentsType
 
       sig { returns(::T::Boolean) }
       attr_reader :infix
 
-      sig { params(id: ::Symbol, arguments: ::T::Array[::CSVPlusPlus::Entities::Entity], infix: ::T::Boolean).void }
+      sig { returns(::Symbol) }
+      attr_reader :id
+
+      sig do
+        params(
+          id: ::Symbol,
+          arguments: ::T::Array[::CSVPlusPlus::Entities::FunctionCall::ArgumentsType],
+          infix: ::T::Boolean
+        ).void
+      end
       # @param id [::String] The name of the function
       # @param arguments [Array<Entity>] The arguments to the function
       # @param infix [T::Boolean] Whether the function is infix
       def initialize(id, arguments, infix: false)
-        super(::CSVPlusPlus::Entities::Type::FunctionCall, id:, arguments:)
+        super(arguments:)
 
+        @id = ::T.let(identifier(id), ::Symbol)
         @infix = infix
       end
 
-      sig { override.params(runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
-      # @param runtime [Runtime]
+      sig { override.params(position: ::CSVPlusPlus::Runtime::Position).returns(::String) }
+      # @param position [Position]
       #
       # @return [::String]
-      def evaluate(runtime)
-        evaluated_arguments = evaluate_arguments(runtime)
+      def evaluate(position)
+        evaluated_arguments = evaluate_arguments(position)
 
         if @infix
           "(#{evaluated_arguments.join(" #{@id} ")})"
@@ -36,14 +50,24 @@ module CSVPlusPlus
         end
       end
 
-      sig { override.params(other: ::CSVPlusPlus::Entities::Entity).returns(::T::Boolean) }
-      # @param other [Entity]
+      sig { override.params(other: ::BasicObject).returns(::T::Boolean) }
+      # @param other [BasicObject]
       #
-      # @return [boolean]
+      # @return [Boolean]
       def ==(other)
-        return false unless super
+        case other
+        when self.class
+          @id == other.id && @infix == other.infix
+        else
+          false
+        end
+      end
 
-        other.is_a?(self.class) && @id == other.id && @infix == other.infix
+      private
+
+      sig { params(position: ::CSVPlusPlus::Runtime::Position).returns(::T::Array[::String]) }
+      def evaluate_arguments(position)
+        @arguments.map { |arg| arg.evaluate(position) }
       end
     end
   end

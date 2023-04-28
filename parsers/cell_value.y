@@ -48,9 +48,11 @@ end
 
 ---- inner
   extend ::T::Sig
-
+  extend ::T::Generic
   include ::CSVPlusPlus::Entities::ASTBuilder
   include ::CSVPlusPlus::Lexer::RaccLexer
+
+  ReturnType = type_member {{ fixed: ::T.nilable(::CSVPlusPlus::Entities::Entity) }}
 
   protected
 
@@ -64,7 +66,7 @@ end
     'cell value'
   end
 
-  sig { override.returns(::T.nilable(::CSVPlusPlus::Entities::Entity)) }
+  sig { override.returns(ReturnType) }
   def return_value
     @ast
   end

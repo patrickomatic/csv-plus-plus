@@ -27,10 +27,10 @@ describe ::CSVPlusPlus::Cell do
 
   describe '#evaluate' do
     let(:ast) { nil }
-    let(:runtime) { build(:runtime) }
+    let(:position) { build(:position) }
     let(:cell) { build(:cell, ast:, value:) }
 
-    subject { cell.evaluate(runtime) }
+    subject { cell.evaluate(position) }
 
     context 'with a nil value' do
       let(:value) { nil }

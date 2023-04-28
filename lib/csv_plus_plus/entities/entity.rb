@@ -3,48 +3,30 @@
 
 module CSVPlusPlus
   module Entities
-    # A basic building block of the abstract syntax tree (AST)
-    #
-    # @attr_reader id [Symbol] The identifier of the entity.  For functions this is the function name,
-    #   for variables it's the variable name
-    # @attr_reader type [Entities::Type] The type of the entity. Each type should have a corresponding class definition
-    #   in CSVPlusPlus::Entities
+    # All classes that are a part of an AST must implement this interface
     class Entity
       extend ::T::Sig
       extend ::T::Helpers
 
       abstract!
 
-      sig { returns(::T.nilable(::Symbol)) }
-      attr_reader :id
-
-      sig { returns(::CSVPlusPlus::Entities::Type) }
-      attr_reader :type
-
-      sig { params(type: ::CSVPlusPlus::Entities::Type, id: ::T.nilable(::Symbol)).void }
-      # @param type [Entities::Type]
-      # @param id [Symbol, nil]
-      def initialize(type, id: nil)
-        @type = type
-        @id = ::T.let(id&.downcase&.to_sym || nil, ::T.nilable(::Symbol))
-      end
-
-      sig { overridable.params(other: ::CSVPlusPlus::Entities::Entity).returns(::T::Boolean) }
-      # Each class should define it's own version of #==
+      sig { abstract.params(other: ::BasicObject).returns(::T::Boolean) }
+      # Each node in the AST needs to implement #== so we can compare entities for equality
+      #
       # @param other [Entity]
       #
       # @return [boolean]
-      def ==(other)
-        self.class == other.class && @type == other.type && @id == other.id
-      end
+      def ==(other); end
 
-      sig { abstract.params(runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String) }
-      # Uses the given +runtime+ to evaluate itself in the current context
+      sig do
+        abstract.params(position: ::CSVPlusPlus::Runtime::Position).returns(::String)
+      end
+      # Uses the given +position+ to evaluate itself in the current context
       #
-      # @param runtime [Runtime] The current runtime
+      # @param position [Position] The current runtime
       #
       # @return [::String]
-      def evaluate(runtime); end
+      def evaluate(position); end
     end
   end
 end

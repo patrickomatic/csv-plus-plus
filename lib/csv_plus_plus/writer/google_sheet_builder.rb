@@ -11,7 +11,7 @@ module CSVPlusPlus
       sig do
         params(
           current_sheet_values: ::T::Array[::T::Array[::T.nilable(::String)]],
-          runtime: ::CSVPlusPlus::Runtime::Runtime,
+          position: ::CSVPlusPlus::Runtime::Position,
           sheet_id: ::T.nilable(::Integer),
           rows: ::T::Array[::CSVPlusPlus::Row],
           column_index: ::T.nilable(::Integer),
@@ -23,17 +23,17 @@ module CSVPlusPlus
       # @param sheet_id [::String] The sheet ID referencing the sheet in Google
       # @param row_index [Integer] Offset the results by +row_index+
       # @param rows [Array<Row>] The rows to render
-      # @param runtime [Runtime] The current runtime.
+      # @param position [Position] The current position.
       #
       # rubocop:disable Metrics/ParameterLists
-      def initialize(current_sheet_values:, runtime:, sheet_id:, rows:, column_index: 0, row_index: 0)
+      def initialize(current_sheet_values:, position:, sheet_id:, rows:, column_index: 0, row_index: 0)
         # rubocop:enable Metrics/ParameterLists
         @current_sheet_values = current_sheet_values
         @sheet_id = sheet_id
         @rows = rows
         @column_index = column_index
         @row_index = row_index
-        @runtime = runtime
+        @position = position
       end
 
       sig { returns(::Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest) }
@@ -97,7 +97,7 @@ module CSVPlusPlus
             if cell.value.nil?
               current_value(cell.row_index, cell.index)
             else
-              cell.evaluate(@runtime)
+              cell.evaluate(@position)
             end
 
           set_extended_value_type!(xv, value)
@@ -159,7 +159,7 @@ module CSVPlusPlus
       def chunked_requests(rows)
         accum = []
         [].tap do |chunked|
-          @runtime.map_rows(rows) do |row|
+          @position.map_rows(rows) do |row|
             accum << build_row_data(row)
             next unless accum.length == 1000
 
@@ -181,7 +181,7 @@ module CSVPlusPlus
         ::Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest.new.tap do |bu|
           bu.requests = chunked_requests(rows)
 
-          @runtime.map_rows(rows) do |row|
+          @position.map_rows(rows) do |row|
             row.cells.filter { |c| c.modifier.any_border? }
                .each do |cell|
                  bu.requests << build_update_borders_request(cell)

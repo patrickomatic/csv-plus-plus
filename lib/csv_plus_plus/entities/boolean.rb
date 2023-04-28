@@ -6,36 +6,41 @@ module CSVPlusPlus
     # A boolean value
     #
     # @attr_reader value [true, false]
-    class Boolean < Entity
+    class Boolean < ::CSVPlusPlus::Entities::Entity
+      extend ::T::Sig
+
       sig { returns(::T::Boolean) }
       attr_reader :value
 
       sig { params(value: ::T.any(::String, ::T::Boolean)).void }
       # @param value [::String, boolean]
       def initialize(value)
-        super(::CSVPlusPlus::Entities::Type::Boolean)
+        super()
         # TODO: probably can do a lot better in general on type validation
         @value = ::T.let(value.is_a?(::String) ? (value.downcase == 'true') : value, ::T::Boolean)
       end
 
       sig do
-        override.params(_runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::String)
+        override.params(_position: ::CSVPlusPlus::Runtime::Position).returns(::String)
       end
-      # @param _runtime [Runtime]
+      # @param _position [Position]
       #
       # @return [::String]
-      def evaluate(_runtime)
+      def evaluate(_position)
         @value.to_s.upcase
       end
 
-      sig { override.params(other: ::CSVPlusPlus::Entities::Entity).returns(::T::Boolean) }
+      sig { override.params(other: ::BasicObject).returns(::T::Boolean) }
       # @param other [Entity]
       #
       # @return [::T::Boolean]
       def ==(other)
-        return false unless super
-
-        other.is_a?(self.class) && value == other.value
+        case other
+        when self.class
+          value == other.value
+        else
+          false
+        end
       end
     end
   end

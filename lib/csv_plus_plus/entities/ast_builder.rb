@@ -25,8 +25,7 @@ module CSVPlusPlus
       # @return [Entity, #super]
       # rubocop:disable Naming/BlockForwarding
       def method_missing(method_name, *args, **kwargs, &block)
-        entity_class_name = method_name.to_s.split('_').map(&:capitalize).join.to_sym
-        ::CSVPlusPlus::Entities.const_get(entity_class_name).new(*args, **kwargs, &block)
+        ::CSVPlusPlus::Entities.const_get(snake_case_to_class_name(method_name)).new(*args, **kwargs, &block)
       rescue ::NameError
         super
       end
@@ -41,9 +40,17 @@ module CSVPlusPlus
       #
       # @return [::T::Boolean, #super]
       def respond_to_missing?(method_name, *_args)
-        !::CSVPlusPlus::Entities::Type.deserialize(method_name.to_s.gsub('_', '')).nil?
-      rescue ::KeyError
+        ::CSVPlusPlus::Entities.const_get(snake_case_to_class_name(method_name))
+        true
+      rescue ::NameError
         super
+      end
+
+      private
+
+      sig { params(method_name: ::Symbol).returns(::Symbol) }
+      def snake_case_to_class_name(method_name)
+        method_name.to_s.split('_').map(&:capitalize).join.to_sym
       end
     end
   end

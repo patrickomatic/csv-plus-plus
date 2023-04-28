@@ -14,9 +14,11 @@ module CSVPlusPlus
     class Modifier < Racc::Parser
 
 module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 60)
-  attr_reader :return_value
-
+  extend ::T::Sig
+  extend ::T::Generic
   include ::CSVPlusPlus::Lexer::RaccLexer
+
+  ReturnType = type_member {{ fixed: ::T.nilable(::String) }}
 
   # @param cell_modifier [Modifier]
   # @param row_modifier [Modifier]
@@ -30,6 +32,7 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 60)
 
   protected
 
+  sig { override.params(input: ::String).returns(::T::Boolean) }
   def anything_to_parse?(input)
     @modifiers_to_parse = input.scan(/!?\[\[/).count
 
@@ -41,10 +44,18 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 60)
     @modifiers_to_parse > 0
   end
 
+  sig { override.returns(::String) }
   def parse_subject
     'modifier'
   end
 
+  sig { override.returns(ReturnType) }
+  # The output of the parser
+  def return_value
+    @return_value
+  end
+
+  sig { override.returns(::CSVPlusPlus::Lexer::Tokenizer) }
   def tokenizer
     ::CSVPlusPlus::Lexer::Tokenizer.new(
       ignore: /\s+/,

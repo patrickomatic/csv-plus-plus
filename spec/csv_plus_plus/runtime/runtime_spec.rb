@@ -2,59 +2,65 @@
 # frozen_string_literal: true
 
 describe ::CSVPlusPlus::Runtime::Runtime do
-  let(:row_index) { 0 }
-  let(:cell_index) { 0 }
   let(:variables) { {} }
-  let(:runtime) { build(:runtime, cell_index:, row_index:, variables:) }
+  let(:functions) { {} }
+  let(:position) { build(:position, cell:) }
+  let(:scope) { build(:scope, functions:, variables:) }
+  let(:runtime) { build(:runtime, position:, scope:) }
 
-  describe '#in_scope' do
-    let(:expand) { build(:expand, repetitions: 10, starts_at: 10) }
+  describe '#resolve_cell_value' do
+    let(:variables) { { foo: build(:number_one) } }
+    let(:fn_call_celladjacent) { build(:fn_call, name: :celladjacent, arguments: [build(:cell_reference, ref: 'A')]) }
 
-    subject { runtime }
+    subject { runtime.resolve_cell_value(cell.ast) }
 
-    context 'when var_id is undefined' do
-      let(:var_id) { :foo }
+    context 'with a variable reference' do
+      let(:cell) { build(:cell, value: '=$$foo', ast: build(:variable, id: :foo)) }
 
-      it 'raises a SyntaxError' do
-        expect { runtime.in_scope?(var_id) }
-          .to(raise_error(::CSVPlusPlus::Error::SyntaxError))
+      it 'returns a copy of the ast with the value inserted' do
+        expect(subject).to(eq(build(:number_one)))
       end
     end
 
-    context 'when it is not scoped to an expand' do
-      let(:var_id) { :foo }
-      let(:variables) { { foo: build(:cell_reference, ref: 'A1') } }
+    context 'with an undefined variable' do
+      let(:cell) { build(:cell, value: '=$$itdoesnotexist', ast: build(:variable, id: :itdoesnotexist)) }
 
-      it { is_expected.to(be_in_scope(var_id)) }
+      it 'should raise a SyntaxError' do
+        expect { subject }
+          .to(raise_error(::CSVPlusPlus::Error::ModifierSyntaxError))
+      end
     end
 
-    context 'when runtime#cell is outside the expand' do
-      let(:var_id) { :foo }
-      let(:variables) { { foo: build(:cell_reference, cell_index: 0, scoped_to_expand: expand) } }
+    context 'with a function reference' do
+      let(:fn_body) { build(:fn_call, name: :add, arguments: [build(:variable, id: :a), build(:variable, id: :b)]) }
+      let(:functions) { { foo: build(:fn, name: :foo, arguments: %i[a b], body: fn_body) } }
 
-      it { is_expected.not_to(be_in_scope(var_id)) }
+      let(:ast) { build(:fn_call, name: :foo, arguments: [build(:number_one), build(:number_two)]) }
+      let(:cell) { build(:cell, value: '=$$foo', ast:) }
+
+      it 'replaces the function and resolves the arguments' do
+        expect(subject).to(eq(build(:fn_call, name: :add, arguments: [build(:number_one), build(:number_two)])))
+      end
     end
 
-    context 'when runtime#cell is within the expand' do
-      let(:var_id) { :foo }
-      let(:row_index) { 15 }
-      let(:variables) { { foo: build(:cell_reference, cell_index: 0, scoped_to_expand: expand) } }
+    context 'with a builtin function reference (celladjacent)' do
+      let(:ast) { fn_call_celladjacent }
+      let(:cell) { build(:cell, value: '=CELLADJACENT(A)', ast:) }
 
-      it { is_expected.to(be_in_scope(var_id)) }
+      it 'replaces the function call with the builtin function' do
+        expect(subject).to(eq(build(:cell_reference, ref: 'A1')))
+      end
     end
-  end
 
-  describe '#builtin_variable?' do
-    let(:var) { :rownum }
+    context 'with a defined function that references a builtin' do
+      let(:functions) { { foo: build(:fn, name: :foo, arguments: %i[], body: fn_call_celladjacent) } }
 
-    subject { runtime }
+      let(:ast) { build(:fn_call, name: :foo, arguments: []) }
+      let(:cell) { build(:cell, value: '=FOO()', ast:) }
 
-    it { is_expected.to(be_builtin_variable(var)) }
-
-    context 'with a non-runtime var' do
-      let(:var) { :foo }
-
-      it { is_expected.not_to(be_builtin_variable(var)) }
+      it 'resolves all the way down' do
+        expect(subject).to(eq(build(:cell_reference, ref: 'A1')))
+      end
     end
   end
 end

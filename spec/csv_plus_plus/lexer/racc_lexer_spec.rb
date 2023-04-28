@@ -2,7 +2,12 @@
 # frozen_string_literal: true
 
 class TestParser
+  extend ::T::Sig
+  extend ::T::Generic
   include ::CSVPlusPlus::Lexer::RaccLexer
+
+  ReturnType = type_member { { fixed: ::String } }
+  public_constant :ReturnType
 
   attr_accessor :anything_to_parse
 
@@ -26,6 +31,12 @@ class TestParser
 end
 
 class TestParserThatThrowsParseError < TestParser
+  extend ::T::Sig
+  extend ::T::Generic
+
+  ReturnType = type_member { { fixed: ::String } }
+  public_constant :ReturnType
+
   def do_parse
     raise(::Racc::ParseError)
   end
@@ -53,17 +64,12 @@ describe ::CSVPlusPlus::Lexer::RaccLexer do
 
   describe '#parse' do
     let(:lexer) { ::TestParser.new }
-    let(:runtime) { build(:runtime) }
     let(:anything_to_parse) { false }
     let(:input) { nil }
 
     before { lexer.anything_to_parse = anything_to_parse }
 
-    subject { lexer.parse(input, runtime) }
-
-    context 'input is nil' do
-      it { is_expected.to(be_nil) }
-    end
+    subject { lexer.parse(input) }
 
     context 'when nothing to parse' do
       let(:input) { '1' }
@@ -84,7 +90,7 @@ describe ::CSVPlusPlus::Lexer::RaccLexer do
 
       it 'raises a syntax error' do
         expect { subject }
-          .to(raise_error(::CSVPlusPlus::Error::SyntaxError))
+          .to(raise_error(::CSVPlusPlus::Error::FormulaSyntaxError))
       end
     end
 
@@ -95,7 +101,7 @@ describe ::CSVPlusPlus::Lexer::RaccLexer do
 
       it 'raises a syntax error' do
         expect { subject }
-          .to(raise_error(::CSVPlusPlus::Error::SyntaxError))
+          .to(raise_error(::CSVPlusPlus::Error::FormulaSyntaxError))
       end
     end
   end

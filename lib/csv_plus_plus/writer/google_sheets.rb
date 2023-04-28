@@ -22,11 +22,11 @@ module CSVPlusPlus
       SPREADSHEET_INFINITY = 1000
       public_constant :SPREADSHEET_INFINITY
 
-      sig { params(options: ::CSVPlusPlus::Options, runtime: ::CSVPlusPlus::Runtime::Runtime).void }
+      sig { params(options: ::CSVPlusPlus::Options, position: ::CSVPlusPlus::Runtime::Position).void }
       # @param options [Options]
       # @param runtime [Runtime]
-      def initialize(options, runtime)
-        super(options, runtime)
+      def initialize(options, position)
+        super(options, position)
 
         # @current_values = ::T.let(nil, ::T.nilable(::T::Array
         @sheet_id = ::T.let(::T.must(options.google).sheet_id, ::String)
@@ -156,7 +156,7 @@ module CSVPlusPlus
       sig { params(template: ::CSVPlusPlus::Template).returns(::CSVPlusPlus::Writer::GoogleSheetBuilder) }
       def builder(template)
         ::CSVPlusPlus::Writer::GoogleSheetBuilder.new(
-          runtime: @runtime,
+          position: @position,
           rows: template.rows,
           sheet_id: sheet&.properties&.sheet_id,
           column_index: @options.offset[1],

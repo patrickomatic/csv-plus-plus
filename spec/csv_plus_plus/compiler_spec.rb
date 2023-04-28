@@ -5,7 +5,8 @@ describe ::CSVPlusPlus::Compiler do
   let(:input) { '' }
   let(:key_values) { {} }
   let(:source_code) { build(:source_code, input:) }
-  let(:runtime) { build(:runtime, source_code:) }
+  let(:position) { build(:position, input:) }
+  let(:runtime) { build(:runtime, source_code:, position:) }
   let(:options) { build(:options, key_values:) }
   let(:compiler) { build(:compiler, runtime:, options:) }
 
@@ -31,7 +32,7 @@ describe ::CSVPlusPlus::Compiler do
   describe '#outputting!' do
     it 'yields control' do
       expect { |b| compiler.outputting!(&b) }
-        .to(yield_with_args(runtime))
+        .to(yield_with_args(runtime.position))
     end
   end
 

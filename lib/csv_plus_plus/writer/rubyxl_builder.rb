@@ -23,19 +23,19 @@ module CSVPlusPlus
       sig do
         params(
           input_filename: ::T.nilable(::String),
+          position: ::CSVPlusPlus::Runtime::Position,
           rows: ::T::Array[::CSVPlusPlus::Row],
-          runtime: ::CSVPlusPlus::Runtime::Runtime,
           sheet_name: ::T.nilable(::String)
         ).void
       end
       # @param input_filename [::String] The file to write to
+      # @param position [Position] The current position
       # @param rows [Array<Row>] The rows to write
-      # @param runtime [Runtime] The current runtime
       # @param sheet_name [::String] The name of the sheet within the workbook to write to
-      def initialize(input_filename:, rows:, runtime:, sheet_name: nil)
+      def initialize(input_filename:, position:, rows:, sheet_name: nil)
         @rows = rows
         @input_filename = input_filename
-        @runtime = runtime
+        @position = position
         @sheet_name = sheet_name
         @worksheet = ::T.let(open_worksheet, ::RubyXL::Worksheet)
       end
@@ -54,17 +54,17 @@ module CSVPlusPlus
       sig { void }
       # rubocop:disable Metrics/MethodLength
       def build_workbook!
-        @runtime.map_all_cells(@rows) do |cell|
-          value = cell.evaluate(@runtime)
+        @position.map_all_cells(@rows) do |cell|
+          value = cell.evaluate(@position)
           if value&.start_with?('=')
-            @worksheet.add_cell(@runtime.row_index, @runtime.cell_index, '', value.gsub(/^=/, ''))
+            @worksheet.add_cell(@position.row_index, @position.cell_index, '', value.gsub(/^=/, ''))
           else
-            @worksheet.add_cell(@runtime.row_index, @runtime.cell_index, value)
+            @worksheet.add_cell(@position.row_index, @position.cell_index, value)
           end
 
           format_cell!(
-            @runtime.row_index,
-            @runtime.cell_index,
+            @position.row_index,
+            @position.cell_index,
             ::T.cast(cell.modifier, ::CSVPlusPlus::Modifier::RubyXLModifier)
           )
         end

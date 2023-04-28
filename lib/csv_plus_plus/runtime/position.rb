@@ -3,9 +3,15 @@
 
 module CSVPlusPlus
   module Runtime
-    # Functions needed to track all of the runtime pointers: current line number, current row number, current cell, etc.
-    # rubocop:disable Metrics/ModuleLength
-    module PositionTracker
+    # Keeps track of the position in a file where the parser is.  The parser makes various passes over the input but
+    # it always needs to track the same things (line number, cell/row index, current cell)
+    #
+    # @attr cell [Cell] The current cell being processed
+    # @attr cell_index [Integer] The index of the current cell being processed (starts at 0)
+    # @attr row_index [Integer] The index of the current row being processed (starts at 0)
+    # @attr line_number [Integer] The line number of the original csvpp template (starts at 1)
+    # rubocop:disable Metrics/ClassLength
+    class Position
       extend ::T::Sig
 
       sig { params(cell: ::T.nilable(::CSVPlusPlus::Cell)).returns(::T.nilable(::CSVPlusPlus::Cell)) }
@@ -19,6 +25,12 @@ module CSVPlusPlus
 
       sig { params(row_index: ::T.nilable(::Integer)).returns(::T.nilable(::Integer)) }
       attr_writer :row_index
+
+      sig { params(input: ::String).void }
+      # @param input [String]
+      def initialize(input)
+        rewrite_input!(input)
+      end
 
       sig { returns(::CSVPlusPlus::Cell) }
       # The current cell index.  This will only be set when processing the CSV section
@@ -179,7 +191,6 @@ module CSVPlusPlus
       # Each time we run a parse on the input, reset the runtime state starting at the beginning of the file
       def start!(&block)
         @row_index = @cell_index = 0
-        self.line_number = 1
 
         ret = block.call
         finish!
@@ -226,6 +237,6 @@ module CSVPlusPlus
         self.line_number += 1
       end
     end
-    # rubocop:enable Metrics/ModuleLength
+    # rubocop:enable Metrics/ClassLength
   end
 end

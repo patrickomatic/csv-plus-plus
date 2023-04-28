@@ -4,16 +4,6 @@
 describe ::CSVPlusPlus::Entities::String do
   subject(:entity) { described_class.new('foo') }
 
-  describe '#initialize' do
-    it 'sets @type' do
-      expect(entity.type).to(eq(::CSVPlusPlus::Entities::Type::String))
-    end
-
-    it 'has a nil id' do
-      expect(entity.id).to(be_nil)
-    end
-  end
-
   describe '#==' do
     it { is_expected.to(eq(build(:string, s: 'foo'))) }
 
@@ -22,9 +12,9 @@ describe ::CSVPlusPlus::Entities::String do
   end
 
   describe '#evaluate' do
-    let(:runtime) { build(:runtime) }
+    let(:position) { build(:position) }
 
-    subject { entity.evaluate(runtime) }
+    subject { entity.evaluate(position) }
 
     it { is_expected.to(eq('"foo"')) }
   end

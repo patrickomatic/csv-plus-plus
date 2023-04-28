@@ -19,10 +19,6 @@ describe ::CSVPlusPlus::Entities::Date do
   end
 
   describe '#initialize' do
-    it 'sets @type' do
-      expect(subject.type).to(eq(::CSVPlusPlus::Entities::Type::Date))
-    end
-
     it 'converts to a ::Date' do
       expect(subject.value).to(be_a(::Date))
     end
@@ -36,9 +32,9 @@ describe ::CSVPlusPlus::Entities::Date do
   end
 
   describe '#evaluate' do
-    let(:runtime) { build(:runtime) }
+    let(:position) { build(:position) }
 
-    subject { entity.evaluate(runtime) }
+    subject { entity.evaluate(position) }
 
     it { is_expected.to(eq('04/25/23')) }
   end

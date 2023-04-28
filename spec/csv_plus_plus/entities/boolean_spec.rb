@@ -5,10 +5,6 @@ describe ::CSVPlusPlus::Entities::Boolean do
   subject(:entity) { described_class.new('true') }
 
   describe '#initialize' do
-    it 'sets @type' do
-      expect(subject.type).to(eq(::CSVPlusPlus::Entities::Type::Boolean))
-    end
-
     it 'converts to a boolean' do
       expect(subject.value).to(be(true))
     end
@@ -22,9 +18,9 @@ describe ::CSVPlusPlus::Entities::Boolean do
   end
 
   describe '#evaluate' do
-    let(:runtime) { build(:runtime) }
+    let(:position) { build(:position) }
 
-    subject { entity.evaluate(runtime) }
+    subject { entity.evaluate(position) }
 
     it { is_expected.to(eq('TRUE')) }
   end

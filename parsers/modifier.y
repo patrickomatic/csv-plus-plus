@@ -57,9 +57,11 @@ end
 require_relative '../lexer/racc_lexer'
 
 ---- inner
-  attr_reader :return_value
-
+  extend ::T::Sig
+  extend ::T::Generic
   include ::CSVPlusPlus::Lexer::RaccLexer
+
+  ReturnType = type_member {{ fixed: ::T.nilable(::String) }}
 
   # @param cell_modifier [Modifier]
   # @param row_modifier [Modifier]
@@ -73,6 +75,7 @@ require_relative '../lexer/racc_lexer'
 
   protected
 
+  sig { override.params(input: ::String).returns(::T::Boolean) }
   def anything_to_parse?(input)
     @modifiers_to_parse = input.scan(/!?\[\[/).count
 
@@ -84,10 +87,18 @@ require_relative '../lexer/racc_lexer'
     @modifiers_to_parse > 0
   end
 
+  sig { override.returns(::String) }
   def parse_subject
     'modifier'
   end
 
+  sig { override.returns(ReturnType) }
+  # The output of the parser
+  def return_value
+    @return_value
+  end
+
+  sig { override.returns(::CSVPlusPlus::Lexer::Tokenizer) }
   def tokenizer
     ::CSVPlusPlus::Lexer::Tokenizer.new(
       ignore: /\s+/,

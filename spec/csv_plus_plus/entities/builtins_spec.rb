@@ -1,12 +1,12 @@
 # typed: false
 # frozen_string_literal: true
 
-describe ::CSVPlusPlus::Runtime::Builtins do
+describe ::CSVPlusPlus::Entities::Builtins do
   let(:args) { [] }
-  let(:runtime) { build(:runtime, row_index: 1, cell_index: 2) }
+  let(:position) { build(:position, row_index: 1, cell_index: 2) }
 
   describe '.VARIABLES' do
-    subject { described_class::VARIABLES[variable].call(runtime, args) }
+    subject { described_class::VARIABLES[variable].call(position, args) }
 
     describe 'cellnum' do
       let(:variable) { :cellnum }
@@ -46,7 +46,7 @@ describe ::CSVPlusPlus::Runtime::Builtins do
   end
 
   describe '.FUNCTIONS' do
-    subject { described_class::FUNCTIONS[function].call(runtime, args) }
+    subject { described_class::FUNCTIONS[function].call(position, args) }
 
     describe 'cellabove' do
       let(:args) { [build(:cell_reference, cell_index: 2)] }
@@ -67,6 +67,20 @@ describe ::CSVPlusPlus::Runtime::Builtins do
       let(:function) { :cellbelow }
 
       it { is_expected.to(eq(build(:cell_reference, ref: 'B3'))) }
+    end
+  end
+
+  describe '#builtin_variable?' do
+    let(:var) { :rownum }
+
+    subject { described_class }
+
+    it { is_expected.to(be_builtin_variable(var)) }
+
+    context 'with a non-runtime var' do
+      let(:var) { :foo }
+
+      it { is_expected.not_to(be_builtin_variable(var)) }
     end
   end
 end

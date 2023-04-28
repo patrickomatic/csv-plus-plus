@@ -6,7 +6,8 @@ module CSVPlusPlus
     # Some shared functionality that all Writers should build on
     #
     # @attr_reader options [Options] The supplied options - some of which are relevant for our writer instance
-    # @attr_reader runtime [Runtime] The current runtime - needed to resolve variables and display useful error messages
+    # @attr_reader position [Position] The current position - needed to resolve variables and display useful error
+    #   messages
     class BaseWriter
       extend ::T::Sig
       extend ::T::Helpers
@@ -16,19 +17,19 @@ module CSVPlusPlus
       sig { returns(::CSVPlusPlus::Options) }
       attr_reader :options
 
-      sig { returns(::CSVPlusPlus::Runtime::Runtime) }
-      attr_reader :runtime
+      sig { returns(::CSVPlusPlus::Runtime::Position) }
+      attr_reader :position
 
       protected
 
-      sig { params(options: ::CSVPlusPlus::Options, runtime: ::CSVPlusPlus::Runtime::Runtime).void }
+      sig { params(options: ::CSVPlusPlus::Options, position: ::CSVPlusPlus::Runtime::Position).void }
       # Open a CSV outputter to the +output_filename+ specified by the +Options+
       #
       # @param options [Options] The supplied options.
-      # @param runtime [Runtime] The current runtime.
-      def initialize(options, runtime)
+      # @param position [Position] The current position.
+      def initialize(options, position)
         @options = options
-        @runtime = runtime
+        @position = position
       end
 
       sig { abstract.params(template: ::CSVPlusPlus::Template).void }

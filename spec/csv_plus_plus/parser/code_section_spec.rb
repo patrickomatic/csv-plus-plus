@@ -3,11 +3,11 @@
 
 describe ::CSVPlusPlus::Parser::CodeSection do
   describe '#parse' do
-    let(:runtime) { build(:runtime) }
-    let(:csv_section) { described_class.new.parse(input, runtime) }
+    let(:scope) { build(:scope) }
+    let(:csv_section) { described_class.new(scope).parse(input) }
 
     describe 'Scope#variables' do
-      subject { runtime.variables }
+      subject { scope.variables }
 
       context 'with comments' do
         before { csv_section }
@@ -59,7 +59,7 @@ describe ::CSVPlusPlus::Parser::CodeSection do
 
         it 'raises an error' do
           expect { csv_section }
-            .to(raise_error(::CSVPlusPlus::Error::SyntaxError))
+            .to(raise_error(::CSVPlusPlus::Error::FormulaSyntaxError))
         end
       end
 
@@ -189,7 +189,7 @@ describe ::CSVPlusPlus::Parser::CodeSection do
     describe 'Scope#functions' do
       before { csv_section }
 
-      subject { runtime.functions }
+      subject { scope.functions }
 
       context 'with a single function that takes no args' do
         let(:input) do

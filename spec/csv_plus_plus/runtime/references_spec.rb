@@ -27,12 +27,13 @@ describe ::CSVPlusPlus::Runtime::References do
   end
 
   describe '.extract' do
+    let(:position) { build(:position) }
     let(:functions) { { foo: build(:fn_foo) } }
     let(:variables) { { bar: build(:cell_reference, ref: 'A1') } }
-    let(:runtime) { build(:runtime, functions:, variables:) }
+    let(:scope) { build(:scope, functions:, variables:) }
     let(:ast) { build(:number_one) }
 
-    subject { described_class.extract(ast, runtime) }
+    subject { described_class.extract(ast, position, scope) }
 
     it 'finds no references' do
       expect(subject.functions).to(be_empty)

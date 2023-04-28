@@ -9,18 +9,18 @@ module CSVPlusPlus
     module Graph
       # Get a list of all variables references in a given +ast+
       # TODO: this is only used in one place - refactor it
-      def self.variable_references(ast, runtime, include_runtime_variables: false)
+      def self.variable_references(ast, include_runtime_variables: false)
         depth_first_search(ast) do |node|
-          next unless node.type == ::CSVPlusPlus::Entities::Type::Variable
+          next unless node.is_a?(::CSVPlusPlus::Entities::Variable)
 
-          node.id if !runtime.builtin_variable?(node.id) || include_runtime_variables
+          node.id if !::CSVPlusPlus::Entities::Builtins.builtin_variable?(node.id) || include_runtime_variables
         end
       end
 
       # Create a dependency graph of +variables+
-      def self.dependency_graph(variables, runtime)
+      def self.dependency_graph(variables)
         ::CSVPlusPlus::Runtime::Graph::DependencyGraph[
-          variables.map { |var_id, ast| [var_id, variable_references(ast, runtime)] }
+          variables.map { |var_id, ast| [var_id, variable_references(ast)] }
         ]
       end
 
@@ -47,7 +47,7 @@ module CSVPlusPlus
         ret = yield(node)
         accum << ret unless ret.nil?
 
-        return accum unless node.type == ::CSVPlusPlus::Entities::Type::FunctionCall
+        return accum unless node.is_a?(::CSVPlusPlus::Entities::FunctionCall)
 
         node.arguments.each { |n| depth_first_search(n, accum, &) }
         accum

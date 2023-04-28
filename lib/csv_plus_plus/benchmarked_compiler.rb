@@ -52,7 +52,7 @@ module CSVPlusPlus
       @timings = ::T.let([], ::T::Array[::Benchmark::Tms])
     end
 
-    sig { override.params(block: ::T.proc.params(runtime: ::CSVPlusPlus::Runtime::Runtime).void).void }
+    sig { params(block: ::T.proc.params(position: ::CSVPlusPlus::Runtime::Position).void).void }
     # Time the Compiler#outputting! stage
     # rubocop:disable Naming/BlockForwarding
     def outputting!(&block)

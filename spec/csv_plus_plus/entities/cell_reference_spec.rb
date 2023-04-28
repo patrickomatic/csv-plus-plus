@@ -56,10 +56,6 @@ describe ::CSVPlusPlus::Entities::CellReference do
     context 'when ref = A1' do
       let(:ref) { 'A1' }
 
-      it 'sets @type' do
-        expect(subject.type).to(eq(::CSVPlusPlus::Entities::Type::CellReference))
-      end
-
       it 'parses into cell_index and row_index' do
         expect(subject.cell_index).to(eq(0))
         expect(subject.row_index).to(eq(0))
@@ -155,10 +151,10 @@ describe ::CSVPlusPlus::Entities::CellReference do
   describe '#evaluate' do
     let(:entity) { described_class.new(cell_index:, row_index:) }
     let(:cell_index) { nil }
-    let(:runtime) { build(:runtime) }
+    let(:position) { build(:position) }
     let(:row_index) { nil }
 
-    subject { entity.evaluate(runtime) }
+    subject { entity.evaluate(position) }
 
     context 'with a row_index' do
       let(:row_index) { 0 }

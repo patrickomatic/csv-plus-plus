@@ -6,16 +6,6 @@ describe ::CSVPlusPlus::Entities::FunctionCall do
 
   subject { entity }
 
-  describe '#initialize' do
-    it 'sets @type' do
-      expect(subject.type).to(eq(::CSVPlusPlus::Entities::Type::FunctionCall))
-    end
-
-    it 'sets @id' do
-      expect(subject.id).to(eq(:minus))
-    end
-  end
-
   describe '#==' do
     it { is_expected.to(eq(build(:fn_call, name: :minus, arguments: [build(:number_one), build(:variable_foo)]))) }
 
@@ -25,9 +15,9 @@ describe ::CSVPlusPlus::Entities::FunctionCall do
   end
 
   describe '#evaluate' do
-    let(:runtime) { build(:runtime) }
+    let(:position) { build(:position) }
 
-    subject { entity.evaluate(runtime) }
+    subject { entity.evaluate(position) }
 
     it { is_expected.to(eq('MINUS(1, $$foo)')) }
 

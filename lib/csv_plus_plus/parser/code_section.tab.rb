@@ -14,21 +14,34 @@ module CSVPlusPlus
     class CodeSection < Racc::Parser
 
 module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 69)
+  extend ::T::Sig
+  extend ::T::Generic
   include ::CSVPlusPlus::Lexer::RaccLexer
   include ::CSVPlusPlus::Entities::ASTBuilder
 
+  ReturnType = type_member {{ fixed: ::T.nilable(::String) }}
+
+  sig { params(scope: ::CSVPlusPlus::Runtime::Scope).void }
+  def initialize(scope)
+    super()
+    @scope = scope
+  end
+
   protected
 
+  sig { override.params(input: ::String).returns(::T::Boolean) }
   def anything_to_parse?(input)
     @rest = input.strip
 
     return !@rest.index(::CSVPlusPlus::Lexer::END_OF_CODE_SECTION).nil?
   end
 
+  sig { override.returns(::String) }
   def parse_subject
     'code section'
   end
 
+  sig { override.returns(::CSVPlusPlus::Lexer::Tokenizer) }
   def tokenizer
     ::CSVPlusPlus::Lexer::Tokenizer.new(
       catchall: /[\{\}\(\),]/, # TODO: do I even need this (oh I think brackets are for arrays
@@ -54,19 +67,27 @@ module_eval(<<'...end code_section.y/module_eval...', 'code_section.y', 69)
     )
   end
 
+  sig { override.returns(ReturnType) }
   def return_value
     @rest
   end
 
   private
 
+  sig do
+    params(id: ::Symbol, arguments: ::T::Array[::Symbol], body: ::CSVPlusPlus::Entities::Entity)
+      .returns(::CSVPlusPlus::Entities::Entity)
+  end
   def def_function(id, arguments, body)
-    fn_def = function(id.to_sym, arguments, body)
-    @runtime.def_function(fn_def.id, fn_def)
+    @scope.def_function(id, function(id, arguments, body))
   end
 
+  sig do
+    params(id: ::Symbol, ast: ::CSVPlusPlus::Entities::Entity)
+      .returns(::CSVPlusPlus::Entities::Entity)
+  end
   def def_variable(id, ast)
-    @runtime.def_variable(id.to_sym, ast)
+    @scope.def_variable(id, ast)
   end
 ...end code_section.y/module_eval...
 ##### State transition tables begin ###
@@ -268,7 +289,7 @@ Racc_debug_parser = false
 
 module_eval(<<'.,.,', 'code_section.y', 33)
   def _reduce_7(val, _values, result)
-     def_function(val[1], val[2], val[3])
+     def_function(val[1].to_sym, val[2], val[3])
     result
   end
 .,.,
@@ -303,7 +324,7 @@ module_eval(<<'.,.,', 'code_section.y', 39)
 
 module_eval(<<'.,.,', 'code_section.y', 41)
   def _reduce_12(val, _values, result)
-     def_variable(val[0], val[2])
+     def_variable(val[0].to_sym, val[2])
     result
   end
 .,.,

@@ -15,7 +15,7 @@ module CSVPlusPlus
     sig do
       params(
         options: ::CSVPlusPlus::Options,
-        runtime: ::CSVPlusPlus::Runtime::Runtime
+        position: ::CSVPlusPlus::Runtime::Position
       ).returns(
         ::T.any(
           ::CSVPlusPlus::Writer::CSV,
@@ -28,22 +28,22 @@ module CSVPlusPlus
     # Return an instance of a writer depending on the given +options+
     #
     # @param options [Options] The supplied options.
-    # @param runtime [Runtime] The current runtime.
+    # @param position [Position] The current position.
     #
     # @return [Writer::CSV | Writer::Excel | Writer::GoogleSheets | Writer::OpenDocument]
     # rubocop:disable Metrics/MethodLength
-    def self.writer(options, runtime)
+    def self.writer(options, position)
       output_format = options.output_format
       case output_format
-      when ::CSVPlusPlus::Options::OutputFormat::CSV then ::CSVPlusPlus::Writer::CSV.new(options, runtime)
-      when ::CSVPlusPlus::Options::OutputFormat::Excel then ::CSVPlusPlus::Writer::Excel.new(options, runtime)
+      when ::CSVPlusPlus::Options::OutputFormat::CSV then ::CSVPlusPlus::Writer::CSV.new(options, position)
+      when ::CSVPlusPlus::Options::OutputFormat::Excel then ::CSVPlusPlus::Writer::Excel.new(options, position)
       when ::CSVPlusPlus::Options::OutputFormat::GoogleSheets then ::CSVPlusPlus::Writer::GoogleSheets.new(
         options,
-        runtime
+        position
       )
       when ::CSVPlusPlus::Options::OutputFormat::OpenDocument then ::CSVPlusPlus::Writer::OpenDocument.new(
         options,
-        runtime
+        position
       )
       else
         ::T.absurd(output_format)

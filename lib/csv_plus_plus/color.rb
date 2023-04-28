@@ -42,7 +42,7 @@ module CSVPlusPlus
       red_hex, green_hex, blue_hex = hex_string.strip.match(::CSVPlusPlus::Color::HEX_STRING_REGEXP)
                                         &.captures
                                         &.map { |s| s.length == 1 ? s + s : s }
-      raise(::CSVPlusPlus::Error::Error, "Invalid color: #{hex_string}") unless red_hex && green_hex && blue_hex
+      raise(::CSVPlusPlus::Error::CompilerError, "Invalid color: #{hex_string}") unless red_hex && green_hex && blue_hex
 
       @red_hex = ::T.let(red_hex, ::String)
       @green_hex = ::T.let(green_hex, ::String)

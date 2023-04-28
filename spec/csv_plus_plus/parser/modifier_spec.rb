@@ -2,12 +2,10 @@
 # frozen_string_literal: true
 
 describe ::CSVPlusPlus::Parser::Modifier do
-  let(:runtime) { build(:runtime) }
-
   describe '#parse' do
     let(:row_modifier) { build(:row_modifier) }
     let(:cell_modifier) { build(:modifier) }
-    let(:rest) { described_class.new(cell_modifier:, row_modifier:).parse(value, runtime) }
+    let(:rest) { described_class.new(cell_modifier:, row_modifier:).parse(value) }
 
     before(:each) { rest }
 

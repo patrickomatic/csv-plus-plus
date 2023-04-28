@@ -7,50 +7,37 @@ module CSVPlusPlus
     # are function calls and function definitions
     #
     # @attr_reader arguments [Array<Entity>] The arguments supplied to this entity.
-    class EntityWithArguments < Entity
+    class EntityWithArguments < ::CSVPlusPlus::Entities::Entity
       extend ::T::Sig
+      extend ::T::Helpers
+      extend ::T::Generic
 
       abstract!
 
-      sig { returns(::T::Array[::CSVPlusPlus::Entities::Entity]) }
+      ArgumentsType = type_member
+      public_constant :ArgumentsType
+
+      sig { returns(::T::Array[::CSVPlusPlus::Entities::EntityWithArguments::ArgumentsType]) }
       attr_reader :arguments
 
-      sig do
-        params(
-          type: ::CSVPlusPlus::Entities::Type,
-          id: ::T.nilable(::Symbol),
-          arguments: ::T::Array[::CSVPlusPlus::Entities::Entity]
-        ).void
-      end
-      # @param type [Entities::Type]
-      # @param id [::String]
-      # @param arguments [Array<Entity>]
-      def initialize(type, id: nil, arguments: [])
-        super(type, id:)
+      sig { params(arguments: ::T::Array[::CSVPlusPlus::Entities::EntityWithArguments::ArgumentsType]).void }
+      # @param arguments [Array<ArgumentsType>]
+      def initialize(arguments: [])
+        super()
         @arguments = arguments
       end
 
-      sig { override.params(other: ::CSVPlusPlus::Entities::Entity).returns(::T::Boolean) }
+      sig { override.params(other: ::BasicObject).returns(::T::Boolean) }
       # @param other [Entity]
       #
       # @return [boolean]
       def ==(other)
-        return false unless other.is_a?(self.class)
-
-        @arguments == other.arguments && super
-      end
-
-      protected
-
-      sig do
-        params(arguments: ::T::Array[::CSVPlusPlus::Entities::Entity])
-          .returns(::T::Array[::CSVPlusPlus::Entities::Entity])
-      end
-      attr_writer :arguments
-
-      sig { params(runtime: ::CSVPlusPlus::Runtime::Runtime).returns(::T::Array[::String]) }
-      def evaluate_arguments(runtime)
-        @arguments.map { |arg| arg.evaluate(runtime) }
+        case other
+        when self.class
+          @arguments == other.arguments
+        else
+          false
+        end
       end
     end
   end
