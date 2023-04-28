@@ -38,9 +38,9 @@ module CSVPlusPlus
       # @param template [Template]
       def write(template); end
 
-      sig { abstract.void }
+      sig { abstract.params(options: ::CSVPlusPlus::Options).void }
       # Write a backup of the current spreadsheet.
-      def write_backup; end
+      def write_backup(options); end
     end
   end
 end

@@ -18,15 +18,7 @@ describe ::CSVPlusPlus::SourceCode do
 
   describe '#initialize' do
     it 'sets @filename' do
-      expect(source_code.filename).to(eq('test.csvpp'))
-    end
-
-    context 'when filename is nil' do
-      let(:filename) { nil }
-
-      it 'defaults to "stdin"' do
-        expect(source_code.filename).to(eq('stdin'))
-      end
+      expect(source_code.filename).to(eq(::Pathname.new('test.csvpp')))
     end
 
     it 'sets @length_of_file' do

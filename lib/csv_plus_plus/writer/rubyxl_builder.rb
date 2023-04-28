@@ -5,7 +5,7 @@ module CSVPlusPlus
   module Writer
     # Build a RubyXL workbook formatted according to the given +rows+
     #
-    # @attr_reader input_filename [String] The filename being written to
+    # @attr_reader input_filename [Pathname, nil] The filename being written to
     # @attr_reader rows [Array<Row>] The rows being written
     # rubocop:disable Metrics/ClassLength
     class RubyXLBuilder
@@ -14,7 +14,7 @@ module CSVPlusPlus
       RubyXLCell = ::T.type_alias { ::T.all(::RubyXL::Cell, ::RubyXL::CellConvenienceMethods) }
       public_constant :RubyXLCell
 
-      sig { returns(::T.nilable(::String)) }
+      sig { returns(::T.nilable(::Pathname)) }
       attr_reader :input_filename
 
       sig { returns(::T::Array[::CSVPlusPlus::Row]) }
@@ -22,7 +22,7 @@ module CSVPlusPlus
 
       sig do
         params(
-          input_filename: ::T.nilable(::String),
+          input_filename: ::T.nilable(::Pathname),
           position: ::CSVPlusPlus::Runtime::Position,
           rows: ::T::Array[::CSVPlusPlus::Row],
           sheet_name: ::T.nilable(::String)

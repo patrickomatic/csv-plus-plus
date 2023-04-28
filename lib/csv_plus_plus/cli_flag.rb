@@ -89,7 +89,7 @@ module CSVPlusPlus
         '-o OUTPUT_FILE',
         '--output OUTPUT_FILE',
         'The file to write to (must be .csv, .ods, .xls)',
-        ->(options, v) { options.output_filename = v }
+        ->(options, v) { options.output_filename = ::Pathname.new(v) }
       ),
       ::CSVPlusPlus::CLIFlag.new(
         '-v',

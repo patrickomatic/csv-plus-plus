@@ -85,7 +85,7 @@ module CSVPlusPlus
   def self.write_template(compiler:, options:, template:)
     compiler.outputting! do |position|
       output = ::CSVPlusPlus::Writer.writer(options, position)
-      output.write_backup if options.backup
+      output.write_backup(options) if options.backup
       output.write(template)
     end
   end

@@ -9,7 +9,7 @@ module CSVPlusPlus
     sig { returns(::String) }
     attr_reader :input
 
-    sig { returns(::String) }
+    sig { returns(::T.nilable(::Pathname)) }
     attr_reader :filename
 
     sig { returns(::Integer) }
@@ -27,7 +27,7 @@ module CSVPlusPlus
     #   from stdin
     def initialize(input:, filename: nil)
       @input = input
-      @filename = ::T.let(filename || 'stdin', ::String)
+      @filename = ::T.let(filename ? ::Pathname.new(filename) : nil, ::T.nilable(::Pathname))
 
       lines = input.split(/[\r\n]/)
       @length_of_file = ::T.let(lines.length, ::Integer)

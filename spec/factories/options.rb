@@ -6,7 +6,7 @@
     transient do
       create_if_not_exists { false }
       google_sheet_id { nil }
-      output_filename { 'text.xlsx' }
+      output_filename { ::Pathname.new('text.xlsx') }
       sheet_name { 'Test' }
     end
 
@@ -18,7 +18,7 @@
     after(:build) do |i, e|
       i.create_if_not_exists = e.create_if_not_exists
       i.google_sheet_id = e.google_sheet_id if e.google_sheet_id
-      i.output_filename = e.output_filename
+      i.output_filename = ::Pathname.new(e.output_filename) if e.output_filename
       i.sheet_name = e.sheet_name
     end
   end

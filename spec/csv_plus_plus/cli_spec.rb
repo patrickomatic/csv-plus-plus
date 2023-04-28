@@ -15,7 +15,7 @@ describe ::CSVPlusPlus::CLI do
 
     it 'validates the CLI flags' do
       subject
-      expect(cli.options.output_filename).to(eq('foo.xls'))
+      expect(cli.options.output_filename).to(eq(::Pathname.new('foo.xls')))
       expect(cli.options.verbose).to(be(true))
     end
 

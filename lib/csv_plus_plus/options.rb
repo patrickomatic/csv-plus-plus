@@ -37,7 +37,7 @@ module CSVPlusPlus
     sig { returns(::T::Array[::Integer]) }
     attr_accessor :offset
 
-    sig { returns(::T.nilable(::String)) }
+    sig { returns(::T.nilable(::Pathname)) }
     attr_accessor :output_filename
 
     sig { returns(::T.nilable(::String)) }
@@ -78,9 +78,9 @@ module CSVPlusPlus
     def output_format
       return ::CSVPlusPlus::Options::OutputFormat::GoogleSheets if @google
 
-      case @output_filename
-      when /\.csv$/ then ::CSVPlusPlus::Options::OutputFormat::CSV
-      when /\.ods$/ then ::CSVPlusPlus::Options::OutputFormat::OpenDocument
+      case @output_filename&.extname
+      when '.csv' then ::CSVPlusPlus::Options::OutputFormat::CSV
+      when '.ods' then ::CSVPlusPlus::Options::OutputFormat::OpenDocument
       when /\.xl(sx|sm|tx|tm)$/ then ::CSVPlusPlus::Options::OutputFormat::Excel
       else raise(::CSVPlusPlus::Error::CLIError, "Unsupported file extension: #{@output_filename}")
       end

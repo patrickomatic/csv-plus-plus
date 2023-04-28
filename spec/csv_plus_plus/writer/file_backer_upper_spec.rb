@@ -19,20 +19,20 @@ describe ::CSVPlusPlus::Writer::FileBackerUpper do
       f.write('foo,bar,baz')
     end
   end
-  let(:output_filename) { output_file.path }
+  let(:output_filename) { ::Pathname.new(output_file.path) }
 
   after do
     output_file.unlink
   end
 
   describe '#write_backup' do
-    subject { writer.write_backup }
+    subject { writer.write_backup(options) }
 
     after { subject.unlink }
 
     context 'when the first backup file is taken' do
       it 'creates the backup file' do
-        expect(::File.exist?(subject)).to(be(true))
+        expect(subject).to(be_exist)
       end
     end
 

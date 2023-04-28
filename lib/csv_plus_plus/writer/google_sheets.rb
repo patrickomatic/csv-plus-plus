@@ -47,9 +47,9 @@ module CSVPlusPlus
         update_cells!(template)
       end
 
-      sig { override.void }
+      sig { override.params(_options: ::CSVPlusPlus::Options).void }
       # write a backup of the google sheet
-      def write_backup
+      def write_backup(_options)
         drive_client = ::CSVPlusPlus::GoogleApiClient.drive_client
         drive_client.copy_file(@sheet_id)
       end

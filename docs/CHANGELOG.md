@@ -1,3 +1,7 @@
+## main/upcoming
+
+- More type coverage
+
 ## v0.1.3
 
 - Proper scoping of variables defined within an expand modifier
