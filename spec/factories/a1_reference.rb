@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 ::FactoryBot.define do
-  factory :cell_reference, class: ::CSVPlusPlus::Entities::CellReference do
+  factory :a1_reference, class: ::CSVPlusPlus::A1Reference do
     transient do
       cell_index { nil }
       ref { nil }

@@ -19,8 +19,8 @@ quantity := celladjacent(D)
 def profit() (price * quantity) - fees
 
 ---
-![[format=bold/align=center]]Date,Ticker,Price,Quantity,Total,Fees
-![[expand]],[[format=bold]],,,"=profit()",$$fees
+![[format=bold/align=center]]Date   ,Ticker             ,Price  ,Quantity   ,Profit       ,Fees
+![[expand]]                         ,[[format=italic]]  ,       ,           ,"=profit()"  ,=fees
 ```
 
 And can be compiled into a `.xlsx` file by:

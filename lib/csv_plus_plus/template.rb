@@ -27,7 +27,7 @@ module CSVPlusPlus
     # Only run after expanding all rows, now we can bind all [[var=]] modifiers to a variable.  There are two distinct
     # types of variable bindings here:
     #
-    # * Binding to a cell: for this we just make a +CellReference+ to the cell itself (A1, B4, etc)
+    # * Binding to a cell: for this we just make an +A1Reference+ to the cell itself (A1, B4, etc)
     # * Binding to a cell within an expand: the variable can only be resolved within that expand and needs to be
     #   relative to it's row (it can't be an absolute cell reference like above)
     #

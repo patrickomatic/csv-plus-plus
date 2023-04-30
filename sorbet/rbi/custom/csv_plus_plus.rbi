@@ -6,16 +6,6 @@ module CSVPlusPlus
       sig { params(value: T.any(String, T::Boolean)).returns(CSVPlusPlus::Entities::Boolean) }
       def boolean(value); end
 
-      sig do
-        params(
-          cell_index: T.nilable(::Integer),
-          ref: T.nilable(::String),
-          row_index: T.nilable(::Integer),
-          scoped_to_expand: T.nilable(::CSVPlusPlus::Modifier::Expand)
-        ).returns(CSVPlusPlus::Entities::CellReference)
-      end
-      def cell_reference(cell_index: nil, ref: nil, row_index: nil, scoped_to_expand: nil); end
-
       sig { params(value: String).returns(CSVPlusPlus::Entities::Date) }
       def date(value); end
 
@@ -34,14 +24,14 @@ module CSVPlusPlus
       sig { params(value: T.any(String, Numeric)).returns(CSVPlusPlus::Entities::Number) }
       def number(value); end
 
+      sig { params(ref: ::T.nilable(::String), a1_ref: ::T.nilable(::CSVPlusPlus::A1Reference)).void }
+      def reference(ref: nil, a1_ref: nil); end
+
       sig { params(resolve_fn: CSVPlusPlus::Entities::RuntimeValue::ResolveFn).void }
       def runtime_value(resolve_fn); end
 
       sig { params(value: String).returns(CSVPlusPlus::Entities::String) }
       def string(value); end
-
-      sig { params(id: Symbol).returns(CSVPlusPlus::Entities::Variable) }
-      def variable(id); end
     end
   end
 

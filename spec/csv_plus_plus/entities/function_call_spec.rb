@@ -19,7 +19,7 @@ describe ::CSVPlusPlus::Entities::FunctionCall do
 
     subject { entity.evaluate(position) }
 
-    it { is_expected.to(eq('MINUS(1, $$foo)')) }
+    it { is_expected.to(eq('MINUS(1, foo)')) }
 
     context 'with no args' do
       let(:entity) do
@@ -27,9 +27,9 @@ describe ::CSVPlusPlus::Entities::FunctionCall do
           :fn_call,
           name: :foo,
           arguments: [
-            build(:cell_reference, ref: 'A'),
-            build(:cell_reference, ref: 'B'),
-            build(:cell_reference, ref: 'C')
+            build(:reference, ref: 'A'),
+            build(:reference, ref: 'B'),
+            build(:reference, ref: 'C')
           ]
         )
       end
@@ -43,8 +43,8 @@ describe ::CSVPlusPlus::Entities::FunctionCall do
           :fn_call,
           name: :*,
           arguments: [
-            build(:cell_reference, ref: 'A'),
-            build(:cell_reference, ref: 'B')
+            build(:reference, ref: 'A'),
+            build(:reference, ref: 'B')
           ],
           infix: true
         )

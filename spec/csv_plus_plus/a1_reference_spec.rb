@@ -1,7 +1,7 @@
 # typed: false
 # frozen_string_literal: true
 
-describe ::CSVPlusPlus::Entities::CellReference do
+describe ::CSVPlusPlus::A1Reference do
   subject(:entity) { described_class.new(ref: 'A1') }
 
   describe '.valid_cell_reference?' do
@@ -139,22 +139,22 @@ describe ::CSVPlusPlus::Entities::CellReference do
   end
 
   describe '#==' do
-    it { is_expected.to(eq(build(:cell_reference, ref: 'A1'))) }
+    it { is_expected.to(eq(build(:a1_reference, ref: 'A1'))) }
 
-    it { is_expected.not_to(eq(build(:cell_reference, ref: 'Z5'))) }
+    it { is_expected.not_to(eq(build(:a1_reference, ref: 'Z5'))) }
     it { is_expected.not_to(eq(build(:number_one))) }
     it { is_expected.not_to(eq(build(:variable_foo))) }
-    it { is_expected.not_to(eq(build(:cell_reference, ref: 'A1:B2'))) }
-    it { is_expected.not_to(eq(build(:cell_reference, ref: 'Foo!A1'))) }
+    it { is_expected.not_to(eq(build(:a1_reference, ref: 'A1:B2'))) }
+    it { is_expected.not_to(eq(build(:a1_reference, ref: 'Foo!A1'))) }
   end
 
-  describe '#evaluate' do
+  describe '#to_a1_ref' do
     let(:entity) { described_class.new(cell_index:, row_index:) }
     let(:cell_index) { nil }
     let(:position) { build(:position) }
     let(:row_index) { nil }
 
-    subject { entity.evaluate(position) }
+    subject { entity.to_a1_ref(position) }
 
     context 'with a row_index' do
       let(:row_index) { 0 }

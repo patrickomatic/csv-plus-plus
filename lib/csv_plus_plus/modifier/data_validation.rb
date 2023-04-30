@@ -44,7 +44,7 @@ module CSVPlusPlus
       end
 
       def a1_notation(arg)
-        return arg if ::CSVPlusPlus::Entities::CellReference.valid_cell_reference?(arg)
+        return arg if ::CSVPlusPlus::A1Reference.valid_cell_reference?(arg)
       end
 
       def a_date(arg, allow_relative_date: false)

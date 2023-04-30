@@ -56,6 +56,23 @@ module CSVPlusPlus
         @starts_at = row_index
         @ends_at = row_index + @repetitions unless @repetitions.nil?
       end
+
+      sig { params(position: ::CSVPlusPlus::Runtime::Position).returns(::T::Boolean) }
+      # Does the given +position+ fall within this expand?
+      #
+      # @param position [Runtime::Position]
+      #
+      # @return [boolean]
+      def position_within?(position)
+        unless starts_at
+          raise(
+            ::CSVPlusPlus::Error::CompilerError,
+            'Must call Template.expand_rows! before checking the scope of expands.'
+          )
+        end
+
+        position.row_index >= ::T.must(starts_at) && (ends_at.nil? || position.row_index <= ::T.must(ends_at))
+      end
     end
   end
 end

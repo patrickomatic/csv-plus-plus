@@ -62,22 +62,20 @@ describe ::CSVPlusPlus::Runtime::Scope do
     context 'when var_id is undefined' do
       let(:var_id) { :foo }
 
-      it 'raises a SyntaxError' do
-        expect { scope.in_scope?(var_id, position) }
-          .to(raise_error(::CSVPlusPlus::Error::ModifierSyntaxError))
-      end
+      it { is_expected.not_to(be_in_scope(var_id, position)) }
     end
 
     context 'when it is not scoped to an expand' do
       let(:var_id) { :foo }
-      let(:variables) { { foo: build(:cell_reference, ref: 'A1') } }
+      let(:variables) { { foo: build(:reference, ref: 'A1') } }
 
       it { is_expected.to(be_in_scope(var_id, position)) }
     end
 
     context 'when scope#cell is outside the expand' do
       let(:var_id) { :foo }
-      let(:variables) { { foo: build(:cell_reference, cell_index: 0, scoped_to_expand: expand) } }
+      let(:a1_ref) { build(:a1_reference, cell_index: 0, scoped_to_expand: expand) }
+      let(:variables) { { foo: build(:reference, a1_ref:) } }
 
       it { is_expected.not_to(be_in_scope(var_id, position)) }
     end
@@ -85,7 +83,8 @@ describe ::CSVPlusPlus::Runtime::Scope do
     context 'when scope#cell is within the expand' do
       let(:var_id) { :foo }
       let(:row_index) { 15 }
-      let(:variables) { { foo: build(:cell_reference, cell_index: 0, scoped_to_expand: expand) } }
+      let(:a1_ref) { build(:a1_reference, cell_index: 0, scoped_to_expand: expand) }
+      let(:variables) { { foo: build(:reference, a1_ref:) } }
 
       it { is_expected.to(be_in_scope(var_id, position)) }
     end

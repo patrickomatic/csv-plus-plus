@@ -41,37 +41,33 @@ module CSVPlusPlus
         )
       end
 
-      sig { params(var_id: ::Symbol).returns(::CSVPlusPlus::Entities::CellReference) }
+      sig { params(var_id: ::Symbol).returns(::CSVPlusPlus::Entities::Reference) }
       # Bind +var_id+ to the current cell
       #
       # @param var_id [Symbol] The name of the variable to bind the cell reference to
       #
-      # @return [CellReference]
+      # @return [Entities::Reference]
       def bind_variable_to_cell(var_id)
-        ::CSVPlusPlus::Entities::CellReference.new(
-          cell_index: position.cell_index,
-          row_index: position.row_index
+        ::CSVPlusPlus::Entities::Reference.new(
+          a1_ref: ::CSVPlusPlus::A1Reference.new(cell_index: position.cell_index, row_index: position.row_index)
         ).tap do |var|
           scope.def_variable(var_id, var)
         end
       end
 
       sig do
-        params(
-          var_id: ::Symbol,
-          expand: ::CSVPlusPlus::Modifier::Expand
-        ).returns(::CSVPlusPlus::Entities::CellReference)
+        params(var_id: ::Symbol, expand: ::CSVPlusPlus::Modifier::Expand).returns(::CSVPlusPlus::Entities::Reference)
       end
-      # Bind +var_id+ relative to an ![[expand]] modifier.
+      # Bind +var_id+ relative to a cell relative to an ![[expand]] modifier.  The variable can only be referenced
+      # inside rows of that expand.
       #
       # @param var_id [Symbol] The name of the variable to bind the cell reference to
       # @param expand [Expand] The expand where the variable is accessible (where it will be bound relative to)
       #
-      # @return [CellReference]
+      # @return [Entities::Reference]
       def bind_variable_in_expand(var_id, expand)
-        ::CSVPlusPlus::Entities::CellReference.new(
-          scoped_to_expand: expand,
-          cell_index: position.cell_index
+        ::CSVPlusPlus::Entities::Reference.new(
+          a1_ref: ::CSVPlusPlus::A1Reference.new(scoped_to_expand: expand, cell_index: position.cell_index)
         ).tap do |var|
           scope.def_variable(var_id, var)
         end

@@ -17,6 +17,7 @@ require 'set'
 require 'strscan'
 require 'tempfile'
 
+require_relative 'csv_plus_plus/a1_reference'
 require_relative 'csv_plus_plus/options'
 require_relative 'csv_plus_plus/runtime/position'
 require_relative 'csv_plus_plus/source_code'

@@ -13,7 +13,7 @@ module CSVPlusPlus
       sig { returns(::T::Array[::CSVPlusPlus::Entities::FunctionCall]) }
       attr_accessor :functions
 
-      sig { returns(::T::Array[::CSVPlusPlus::Entities::Variable]) }
+      sig { returns(::T::Array[::CSVPlusPlus::Entities::Reference]) }
       attr_accessor :variables
 
       sig do
@@ -33,7 +33,7 @@ module CSVPlusPlus
       def self.extract(ast, position, scope)
         new.tap do |refs|
           ::CSVPlusPlus::Runtime::Graph.depth_first_search(ast) do |node|
-            unless node.is_a?(::CSVPlusPlus::Entities::FunctionCall) || node.is_a?(::CSVPlusPlus::Entities::Variable)
+            unless node.is_a?(::CSVPlusPlus::Entities::FunctionCall) || node.is_a?(::CSVPlusPlus::Entities::Reference)
               next
             end
 
@@ -57,14 +57,17 @@ module CSVPlusPlus
       #
       # @return [boolean]
       def self.variable_reference?(node, position, scope)
-        return false unless node.is_a?(::CSVPlusPlus::Entities::Variable)
+        return false unless node.is_a?(::CSVPlusPlus::Entities::Reference)
 
-        return true if scope.in_scope?(node.id, position)
+        id = node.id
+        return false unless id && scope.variables.key?(id)
+
+        return true if scope.in_scope?(id, position)
 
         raise(
           ::CSVPlusPlus::Error::ModifierSyntaxError.new(
-            "#{node.id} can only be referenced within the ![[expand]] where it was defined.",
-            bad_input: node.id.to_s
+            "Reference #{node.ref} can only be referenced within the ![[expand]] where it was defined.",
+            bad_input: node.ref.to_s
           )
         )
       end
@@ -89,7 +92,7 @@ module CSVPlusPlus
       # Create an object with empty references.  The caller will build them up as it depth-first-searches
       def initialize
         @functions = ::T.let([], ::T::Array[::CSVPlusPlus::Entities::FunctionCall])
-        @variables = ::T.let([], ::T::Array[::CSVPlusPlus::Entities::Variable])
+        @variables = ::T.let([], ::T::Array[::CSVPlusPlus::Entities::Reference])
       end
 
       sig { params(other: ::CSVPlusPlus::Runtime::References).returns(::T::Boolean) }

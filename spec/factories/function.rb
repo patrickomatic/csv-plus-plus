@@ -24,7 +24,7 @@
     factory :fn_add do
       name { :add }
       arguments { %i[a b] }
-      body { build(:fn_call, name: :add, arguments: [build(:variable, id: :a), build(:variable, id: :b)]) }
+      body { build(:fn_call, name: :add, arguments: [build(:reference, ref: 'a'), build(:reference, ref: 'b')]) }
     end
   end
 end

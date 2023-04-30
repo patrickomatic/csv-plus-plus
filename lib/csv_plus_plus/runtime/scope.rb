@@ -67,33 +67,14 @@ module CSVPlusPlus
       # @param position [Position]
       #
       # @return [boolean]
-      # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       def in_scope?(var_id, position)
         value = @variables[var_id]
 
-        unless value
-          raise(
-            ::CSVPlusPlus::Error::ModifierSyntaxError.new(
-              'Undefined variable reference',
-              bad_input: var_id.to_s
-            )
-          )
-        end
+        return false unless value
 
-        expand = value.is_a?(::CSVPlusPlus::Entities::CellReference) && value.scoped_to_expand
-        return true unless expand
-
-        unless expand.starts_at
-          raise(
-            ::CSVPlusPlus::Error::CompilerError,
-            'Must call Template.expand_rows! before checking the scope of expands.'
-          )
-        end
-
-        position.row_index >= ::T.must(expand.starts_at) \
-          && (expand.ends_at.nil? || position.row_index <= ::T.must(expand.ends_at))
+        expand = value.is_a?(::CSVPlusPlus::Entities::Reference) && value.a1_ref.scoped_to_expand
+        !expand || expand.position_within?(position)
       end
-      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
       sig { returns(::String) }
       # Provide a summary of the functions and variables compiled (to show in verbose mode)
@@ -135,7 +116,7 @@ module CSVPlusPlus
         params(
           position: ::CSVPlusPlus::Runtime::Position,
           ast: ::CSVPlusPlus::Entities::Entity,
-          refs: ::T::Enumerable[::CSVPlusPlus::Entities::Variable]
+          refs: ::T::Enumerable[::CSVPlusPlus::Entities::Reference]
         ).returns(::CSVPlusPlus::Entities::Entity)
       end
       # @param position [Position]
@@ -145,7 +126,9 @@ module CSVPlusPlus
       # @return [Entity]
       def resolve_variables(position, ast, refs)
         refs.reduce(ast.dup) do |acc, elem|
-          variable_replace(acc, elem.id, resolve_variable(position, elem.id))
+          next acc unless (id = elem.id)
+
+          variable_replace(acc, id, resolve_variable(position, id))
         end
       end
 
@@ -246,7 +229,7 @@ module CSVPlusPlus
           arguments = node.arguments.map { |n| variable_replace(n, var_id, replacement) }
           # TODO: refactor these places where we copy functions... it's brittle with the kwargs
           ::CSVPlusPlus::Entities::FunctionCall.new(node.id, arguments, infix: node.infix)
-        elsif node.is_a?(::CSVPlusPlus::Entities::Variable) && node.id == var_id
+        elsif node.is_a?(::CSVPlusPlus::Entities::Reference) && node.id == var_id
           replacement
         else
           node

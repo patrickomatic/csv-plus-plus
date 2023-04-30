@@ -29,7 +29,7 @@ module CSVPlusPlus
       sig { params(input: ::String).void }
       # @param input [String]
       def initialize(input)
-        rewrite_input!(input)
+        rewrite_input!(::CSVPlusPlus::Lexer.preprocess(input))
       end
 
       sig { returns(::CSVPlusPlus::Cell) }

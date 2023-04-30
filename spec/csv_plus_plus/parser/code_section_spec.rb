@@ -53,7 +53,7 @@ describe ::CSVPlusPlus::Parser::CodeSection do
             .ccj
             kj:= 1
             ---
-            =$$foo,bar,baz
+            =foo,bar,baz
           INPUT
         end
 
@@ -70,14 +70,14 @@ describe ::CSVPlusPlus::Parser::CodeSection do
           <<~INPUT
             foo := 1
             ---
-            =$$foo,bar,baz
+            =foo,bar,baz
           INPUT
         end
 
         it { is_expected.to(eq({ foo: build(:number_one) })) }
 
         it 'returns the csv section' do
-          expect(csv_section).to(eq('=$$foo,bar,baz'))
+          expect(csv_section).to(eq('=foo,bar,baz'))
         end
       end
 
@@ -91,24 +91,24 @@ describe ::CSVPlusPlus::Parser::CodeSection do
             baz := OtherSheet!A1:Z1
             c := A
             ---
-            =SUM($$foo),bar,baz
+            =SUM(foo),bar,baz
           INPUT
         end
 
         it 'parses a cell reference' do
-          expect(subject[:foo]).to(eq(build(:cell_reference, ref: 'A1')))
+          expect(subject[:foo]).to(eq(build(:reference, ref: 'A1')))
         end
 
         it 'parses a column reference' do
-          expect(subject[:c]).to(eq(build(:cell_reference, ref: 'A')))
+          expect(subject[:c]).to(eq(build(:reference, ref: 'A')))
         end
 
         it 'parses a range reference' do
-          expect(subject[:bar]).to(eq(build(:cell_reference, ref: 'A1:Z1')))
+          expect(subject[:bar]).to(eq(build(:reference, ref: 'A1:Z1')))
         end
 
         it 'parses a sheet reference' do
-          expect(subject[:baz]).to(eq(build(:cell_reference, ref: 'OtherSheet!A1:Z1')))
+          expect(subject[:baz]).to(eq(build(:reference, ref: 'OtherSheet!A1:Z1')))
         end
       end
 
@@ -117,9 +117,9 @@ describe ::CSVPlusPlus::Parser::CodeSection do
 
         let(:input) do
           <<~INPUT
-            foo := FOO(BAR(C1, 8), $$var)
+            foo := FOO(BAR(C1, 8), var)
             ---
-            =$$foo,bar,baz
+            =foo,bar,baz
           INPUT
         end
 
@@ -131,8 +131,8 @@ describe ::CSVPlusPlus::Parser::CodeSection do
                   :fn_call,
                   name: :foo,
                   arguments: [
-                    build(:fn_call, name: :bar, arguments: [build(:cell_reference, ref: 'C1'), build(:number, n: 8)]),
-                    build(:variable, id: :var)
+                    build(:fn_call, name: :bar, arguments: [build(:reference, ref: 'C1'), build(:number, n: 8)]),
+                    build(:reference, ref: 'var')
                   ]
                 )
               }
@@ -147,9 +147,9 @@ describe ::CSVPlusPlus::Parser::CodeSection do
         let(:input) do
           <<~INPUT
             foo := 1
-            bar := FOO($$foo, 2)
+            bar := FOO(foo, 2)
             ---
-            =$$foo,=$$bar,baz
+            =foo,=bar,baz
           INPUT
         end
 
@@ -158,14 +158,14 @@ describe ::CSVPlusPlus::Parser::CodeSection do
             eq(
               {
                 foo: build(:number_one),
-                bar: build(:fn_call, name: :foo, arguments: [build(:variable, id: :foo), build(:number_two)])
+                bar: build(:fn_call, name: :foo, arguments: [build(:reference, ref: 'foo'), build(:number_two)])
               }
             )
           )
         end
 
         it 'returns the csv section' do
-          expect(csv_section).to(eq('=$$foo,=$$bar,baz'))
+          expect(csv_section).to(eq('=foo,=bar,baz'))
         end
       end
 
@@ -176,7 +176,7 @@ describe ::CSVPlusPlus::Parser::CodeSection do
           <<~INPUT
             foo := BAR(1)
             ---
-            =$$foo,bar,baz
+            =foo,bar,baz
           INPUT
         end
 
@@ -196,7 +196,7 @@ describe ::CSVPlusPlus::Parser::CodeSection do
           <<~INPUT
             def bar() INDIRECT("BAR")
             ---
-            =$$foo(A1, B1),bar,baz
+            =foo(A1, B1),bar,baz
           INPUT
         end
 
@@ -207,9 +207,9 @@ describe ::CSVPlusPlus::Parser::CodeSection do
         let(:fn_add) { build(:fn_add) }
         let(:input) do
           <<~INPUT
-            def foo(a, b) ADD($$a, $$b)
+            def foo(a, b) ADD(a, b)
             ---
-            =$$foo(A1, B1),bar,baz
+            =foo(A1, B1),bar,baz
           INPUT
         end
 
@@ -220,9 +220,9 @@ describe ::CSVPlusPlus::Parser::CodeSection do
         let(:fn_add) { build(:fn_add) }
         let(:input) do
           <<~INPUT
-            def foo(a, b, c) SUM($$a, $$b, $$c)
+            def foo(a, b, c) SUM(a, b, c)
             ---
-            =$$foo(A2, B2, C2),bar,baz
+            =foo(A2, B2, C2),bar,baz
             10,20,30
           INPUT
         end
@@ -239,9 +239,9 @@ describe ::CSVPlusPlus::Parser::CodeSection do
                     :fn_call,
                     name: :sum,
                     arguments: [
-                      build(:variable, id: :a),
-                      build(:variable, id: :b),
-                      build(:variable, id: :c)
+                      build(:reference, ref: 'a'),
+                      build(:reference, ref: 'b'),
+                      build(:reference, ref: 'c')
                     ]
                   )
                 )
@@ -254,11 +254,11 @@ describe ::CSVPlusPlus::Parser::CodeSection do
       context 'with functions that depend on each other' do
         let(:input) do
           <<~INPUT
-            def foo(a) ADD(bar($$a), 1)
-            def bar(a) ADD(baz($$a), 1)
-            def baz(a) ADD($$a, 1)
+            def foo(a) ADD(bar(a), 1)
+            def bar(a) ADD(baz(a), 1)
+            def baz(a) ADD(a, 1)
             ---
-            =$$foo(2),bar,baz
+            =foo(2),bar,baz
             10,20,30
           INPUT
         end
@@ -276,7 +276,7 @@ describe ::CSVPlusPlus::Parser::CodeSection do
                     :fn_call,
                     name: :add,
                     arguments: [
-                      build(:fn_call, name: :bar, arguments: [build(:variable, id: :a)]),
+                      build(:fn_call, name: :bar, arguments: [build(:reference, ref: 'a')]),
                       build(:number_one)
                     ]
                   )
@@ -290,7 +290,7 @@ describe ::CSVPlusPlus::Parser::CodeSection do
                     :fn_call,
                     name: :add,
                     arguments: [
-                      build(:fn_call, name: :baz, arguments: [build(:variable, id: :a)]),
+                      build(:fn_call, name: :baz, arguments: [build(:reference, ref: 'a')]),
                       build(:number_one)
                     ]
                   )
@@ -300,7 +300,7 @@ describe ::CSVPlusPlus::Parser::CodeSection do
                   name: :baz,
                   arguments: %i[a],
                   body:
-                  build(:fn_call, name: :add, arguments: [build(:variable, id: :a), build(:number_one)])
+                  build(:fn_call, name: :add, arguments: [build(:reference, ref: 'a'), build(:number_one)])
                 )
               }
             )
@@ -311,9 +311,9 @@ describe ::CSVPlusPlus::Parser::CodeSection do
       context 'with an infix function call' do
         let(:input) do
           <<~INPUT
-            def foo(a) 1 + $$a
+            def foo(a) 1 + a
             ---
-            =$$foo(2),bar,baz
+            =foo(2),bar,baz
           INPUT
         end
 
@@ -326,7 +326,7 @@ describe ::CSVPlusPlus::Parser::CodeSection do
                   name: :foo,
                   arguments: %i[a],
                   body:
-                  build(:fn_call, name: :+, arguments: [build(:number_one), build(:variable, id: :a)], infix: true)
+                  build(:fn_call, name: :+, arguments: [build(:number_one), build(:reference, ref: 'a')], infix: true)
                 )
               }
             )
@@ -337,7 +337,7 @@ describe ::CSVPlusPlus::Parser::CodeSection do
       context 'with an infix function call with parenthesis for grouping' do
         let(:input) do
           <<~INPUT
-            def bar(a) sum($$a) * ($$a + 2)
+            def bar(a) sum(a) * (a + 2)
             ---
             =foo,bar(2),baz
           INPUT
@@ -355,8 +355,13 @@ describe ::CSVPlusPlus::Parser::CodeSection do
                     :fn_call,
                     name: :*,
                     arguments: [
-                      build(:fn_call, name: :sum, arguments: [build(:variable, id: :a)]),
-                      build(:fn_call, name: :+, arguments: [build(:variable, id: :a), build(:number_two)], infix: true)
+                      build(:fn_call, name: :sum, arguments: [build(:reference, ref: 'a')]),
+                      build(
+                        :fn_call,
+                        name: :+,
+                        arguments: [build(:reference, ref: 'a'), build(:number_two)],
+                        infix: true
+                      )
                     ],
                     infix: true
                   )

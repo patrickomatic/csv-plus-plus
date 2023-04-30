@@ -15,19 +15,19 @@ module CSVPlusPlus
           cellnum: runtime_value(->(p, _args) { number(p.cell_index + 1) }),
 
           # A reference to the current cell
-          cellref: runtime_value(->(p, _args) { cell_reference(row_index: p.row_index, cell_index: p.cell_index) }),
+          cellref: runtime_value(->(p, _args) { cell_ref(p.row_index, p.cell_index) }),
 
           # A reference to the row above
-          rowabove: runtime_value(->(p, _args) { cell_reference(row_index: [0, (p.row_index - 1)].max) }),
+          rowabove: runtime_value(->(p, _args) { cell_ref([0, (p.row_index - 1)].max) }),
 
           # A reference to the row below
-          rowbelow: runtime_value(->(p, _args) { cell_reference(row_index: p.row_index + 1) }),
+          rowbelow: runtime_value(->(p, _args) { cell_ref(p.row_index + 1) }),
 
           # The number (integer) of the current row.  Starts at 1
           rownum: runtime_value(->(p, _args) { number(p.rownum) }),
 
           # A reference to the current row
-          rowref: runtime_value(->(p, _args) { cell_reference(row_index: p.row_index) })
+          rowref: runtime_value(->(p, _args) { cell_ref(p.row_index) })
         }.freeze,
         ::T::Hash[::Symbol, ::CSVPlusPlus::Entities::RuntimeValue]
       )
@@ -38,25 +38,13 @@ module CSVPlusPlus
       FUNCTIONS = ::T.let(
         {
           # A reference to a cell above the current row
-          cellabove: runtime_value(
-            lambda { |p, args|
-              cell_reference(cell_index: args[0].cell_index, row_index: [0, (p.row_index - 1)].max)
-            }
-          ),
+          cellabove: runtime_value(->(p, args) { cell_ref([0, (p.row_index - 1)].max, args[0].a1_ref.cell_index) }),
 
           # A reference to a cell in the current row
-          celladjacent: runtime_value(
-            lambda { |p, args|
-              cell_reference(cell_index: args[0].cell_index, row_index: p.row_index)
-            }
-          ),
+          celladjacent: runtime_value(->(p, args) { cell_ref(p.row_index, args[0].a1_ref.cell_index) }),
 
           # A reference to a cell below the current row
-          cellbelow: runtime_value(
-            lambda { |p, args|
-              cell_reference(cell_index: args[0].cell_index, row_index: p.row_index + 1)
-            }
-          )
+          cellbelow: runtime_value(->(p, args) { cell_ref(p.row_index + 1, args[0].a1_ref.cell_index) })
         }.freeze,
         ::T::Hash[::Symbol, ::CSVPlusPlus::Entities::RuntimeValue]
       )
@@ -81,6 +69,18 @@ module CSVPlusPlus
       def self.builtin_variable?(var_id)
         ::CSVPlusPlus::Entities::Builtins::VARIABLES.key?(var_id)
       end
+
+      sig do
+        params(row_index: ::Integer, cell_index: ::T.nilable(::Integer)).returns(::CSVPlusPlus::Entities::Reference)
+      end
+      # @param row_index [Integer]
+      # @param cell_index [Integer, nil]
+      #
+      # @return [Runtime::Reference]
+      def self.cell_ref(row_index, cell_index = nil)
+        ::CSVPlusPlus::Entities::Reference.new(a1_ref: ::CSVPlusPlus::A1Reference.new(row_index:, cell_index:))
+      end
+      private_class_method :cell_ref
     end
   end
 end

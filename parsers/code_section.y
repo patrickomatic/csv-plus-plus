@@ -17,9 +17,9 @@ token ASSIGN
       END_OF_CODE
       FALSE
       FN_DEF
-      ID
       INFIX_OP
       NUMBER
+      REF
       STRING
       TRUE
       VAR_REF
@@ -31,30 +31,29 @@ rule
 
   def: fn_def | var_def
 
-  fn_def: FN_DEF ID fn_def_args_or_not exp    { def_function(val[1].to_sym, val[2], val[3])                           }
+  fn_def: FN_DEF REF fn_def_args_or_not exp   { def_function(val[1].to_sym, val[2], val[3])                           }
 
   fn_def_args_or_not: '(' fn_def_args ')'     { result = val[1]                                                       }
                     | '(' ')'                 { result = []                                                           }
 
-  fn_def_args: fn_def_args ',' ID             { result = val[0] << val[2]                                             }
-             | ID                             { result = [val[0]]                                                     }
+  fn_def_args: fn_def_args ',' REF            { result = val[0] << val[2]                                             }
+             | REF                            { result = [val[0]]                                                     }
 
-  var_def: ID ASSIGN exp                      { def_variable(val[0].to_sym, val[2])                                   }
+  var_def: REF ASSIGN exp                     { def_variable(val[0].to_sym, val[2])                                   }
 
   exp: fn_call
      | infix_fn_call
      | '(' exp ')'                            { result = val[1] }
-     | VAR_REF ID                             { result = variable(val[1].to_sym)                                      }
      | STRING                                 { result = string(val[0])                                               }
      | NUMBER                                 { result = number(val[0])                                               }
      | TRUE                                   { result = boolean(true)                                                }
      | FALSE                                  { result = boolean(false)                                               }
-     | ID                                     { result = cell_reference(ref: val[0])                                  }
+     | REF                                    { result = reference(ref: val[0])                                       }
      
   infix_fn_call: exp INFIX_OP exp             { result = function_call(val[1].to_sym, [val[0], val[2]], infix: true)  }
 
-  fn_call: ID '(' fn_call_args ')'            { result = function_call(val[0].to_sym, val[2])                         }
-         | ID '(' ')'                         { result = function_call(val[0].to_sym, [])                             }
+  fn_call: REF '(' fn_call_args ')'           { result = function_call(val[0].to_sym, val[2])                         }
+         | REF '(' ')'                        { result = function_call(val[0].to_sym, [])                             }
 
   fn_call_args: fn_call_args ',' exp          { result = val[0] << val[2]                                             }
               | exp                           { result = [val[0]]                                                     }
@@ -113,8 +112,7 @@ end
         ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:NUMBER],
         ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:STRING],
         ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:INFIX_OP],
-        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:VAR_REF],
-        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:ID]
+        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:REF]
       ],
     )
   end

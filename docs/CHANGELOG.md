@@ -1,5 +1,12 @@
 ## main/upcoming
 
+### **Breaking Changes**
+
+- Removal of the $$ operator - to dereference variables you can just reference them by name and they will be resolved if they are defined.  Otherwise they will be left alone in the output
+
+### Non-breaking Changes
+
+- Allow for more generous spacing 
 - More type coverage
 
 ## v0.1.3

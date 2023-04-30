@@ -29,7 +29,7 @@ describe ::CSVPlusPlus::Runtime::References do
   describe '.extract' do
     let(:position) { build(:position) }
     let(:functions) { { foo: build(:fn_foo) } }
-    let(:variables) { { bar: build(:cell_reference, ref: 'A1') } }
+    let(:variables) { { bar: build(:reference, ref: 'A1') } }
     let(:scope) { build(:scope, functions:, variables:) }
     let(:ast) { build(:number_one) }
 

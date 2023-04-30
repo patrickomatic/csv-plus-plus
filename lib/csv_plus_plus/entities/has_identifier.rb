@@ -3,8 +3,7 @@
 
 module CSVPlusPlus
   module Entities
-    # A runtime value. These are values which can be materialized at any point via the +resolve_fn+ which
-    # will provide a value depending on the +Runtime+'s current state.
+    # Can be included on any class that has a comparable id
     module HasIdentifier
       extend ::T::Sig
 

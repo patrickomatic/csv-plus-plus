@@ -11,7 +11,7 @@ module CSVPlusPlus
       # TODO: this is only used in one place - refactor it
       def self.variable_references(ast, include_runtime_variables: false)
         depth_first_search(ast) do |node|
-          next unless node.is_a?(::CSVPlusPlus::Entities::Variable)
+          next unless node.is_a?(::CSVPlusPlus::Entities::Reference)
 
           node.id if !::CSVPlusPlus::Entities::Builtins.builtin_variable?(node.id) || include_runtime_variables
         end

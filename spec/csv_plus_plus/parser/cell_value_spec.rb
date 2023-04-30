@@ -31,7 +31,6 @@ describe ::CSVPlusPlus::Parser::CellValue do
     end
 
     describe 'a function call with 3 arguments' do
-      # XXX need to make sure all id setters lowercase it (make it case-insensitive)
       let(:cell_value) { '=SUM(A1, A2, A3)' }
 
       it do
@@ -41,9 +40,9 @@ describe ::CSVPlusPlus::Parser::CellValue do
               :fn_call,
               name: :sum,
               arguments: [
-                build(:cell_reference, ref: 'A1'),
-                build(:cell_reference, ref: 'A2'),
-                build(:cell_reference, ref: 'A3')
+                build(:reference, ref: 'A1'),
+                build(:reference, ref: 'A2'),
+                build(:reference, ref: 'A3')
               ]
             )
           )
@@ -92,9 +91,9 @@ describe ::CSVPlusPlus::Parser::CellValue do
     end
 
     describe 'a variable' do
-      let(:cell_value) { '=$$foo' }
+      let(:cell_value) { '=foo' }
 
-      it { is_expected.to(eq(build(:variable, id: :foo))) }
+      it { is_expected.to(eq(build(:reference, ref: 'foo'))) }
     end
 
     describe 'a double quoted string' do
@@ -106,7 +105,7 @@ describe ::CSVPlusPlus::Parser::CellValue do
     describe 'a cell reference' do
       let(:cell_value) { '=A1' }
 
-      it { is_expected.to(eq(build(:cell_reference, ref: 'A1'))) }
+      it { is_expected.to(eq(build(:reference, ref: 'A1'))) }
     end
   end
 end

@@ -17,19 +17,19 @@ describe ::CSVPlusPlus::Entities::Builtins do
     describe 'cellref' do
       let(:variable) { :cellref }
 
-      it { is_expected.to(eq(build(:cell_reference, cell_index: 2, row_index: 1))) }
+      it { is_expected.to(eq(build(:reference, a1_ref: build(:a1_reference, cell_index: 2, row_index: 1)))) }
     end
 
     describe 'rowabove' do
       let(:variable) { :rowabove }
 
-      it { is_expected.to(eq(build(:cell_reference, row_index: 0))) }
+      it { is_expected.to(eq(build(:reference, a1_ref: build(:a1_reference, row_index: 0)))) }
     end
 
     describe 'rowbelow' do
       let(:variable) { :rowbelow }
 
-      it { is_expected.to(eq(build(:cell_reference, row_index: 2))) }
+      it { is_expected.to(eq(build(:reference, a1_ref: build(:a1_reference, row_index: 2)))) }
     end
 
     describe 'rownum' do
@@ -41,7 +41,7 @@ describe ::CSVPlusPlus::Entities::Builtins do
     describe 'rowref' do
       let(:variable) { :rowref }
 
-      it { is_expected.to(eq(build(:cell_reference, row_index: 1))) }
+      it { is_expected.to(eq(build(:reference, a1_ref: build(:a1_reference, row_index: 1)))) }
     end
   end
 
@@ -49,24 +49,24 @@ describe ::CSVPlusPlus::Entities::Builtins do
     subject { described_class::FUNCTIONS[function].call(position, args) }
 
     describe 'cellabove' do
-      let(:args) { [build(:cell_reference, cell_index: 2)] }
+      let(:args) { [build(:reference, a1_ref: build(:a1_reference, cell_index: 2))] }
       let(:function) { :cellabove }
 
-      it { is_expected.to(eq(build(:cell_reference, ref: 'C1'))) }
+      it { is_expected.to(eq(build(:reference, a1_ref: build(:a1_reference, ref: 'C1')))) }
     end
 
     describe 'celladjacent' do
-      let(:args) { [build(:cell_reference, ref: 'Z')] }
+      let(:args) { [build(:reference, a1_ref: build(:a1_reference, ref: 'Z'))] }
       let(:function) { :celladjacent }
 
-      it { is_expected.to(eq(build(:cell_reference, ref: 'Z2'))) }
+      it { is_expected.to(eq(build(:reference, ref: 'Z2'))) }
     end
 
     describe 'cellbelow' do
-      let(:args) { [build(:cell_reference, ref: 'B')] }
+      let(:args) { [build(:reference, a1_ref: build(:a1_reference, ref: 'B'))] }
       let(:function) { :cellbelow }
 
-      it { is_expected.to(eq(build(:cell_reference, ref: 'B3'))) }
+      it { is_expected.to(eq(build(:reference, a1_ref: build(:a1_reference, ref: 'B3')))) }
     end
   end
 

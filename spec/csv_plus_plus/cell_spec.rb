@@ -52,9 +52,9 @@ describe ::CSVPlusPlus::Cell do
       it { is_expected.to(eq(value)) }
     end
 
-    context 'with a variable' do
-      let(:value) { '=$$foo' }
-      let(:ast) { build(:variable, id: :foo) }
+    context 'with a reference' do
+      let(:value) { '=foo' }
+      let(:ast) { build(:reference, ref: 'foo') }
 
       it { is_expected.to(eq(value)) }
     end
@@ -75,7 +75,7 @@ describe ::CSVPlusPlus::Cell do
 
     context 'with a cell reference' do
       let(:value) { '=C1' }
-      let(:ast) { build(:cell_reference, ref: 'C1') }
+      let(:ast) { build(:reference, ref: 'C1') }
 
       it { is_expected.to(eq(value)) }
     end

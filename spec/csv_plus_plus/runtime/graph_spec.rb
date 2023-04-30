@@ -29,7 +29,7 @@ describe ::CSVPlusPlus::Runtime::Graph do
 
   describe '#dependency_graph' do
     let(:ast) do
-      build(:fn_call, name: :multiply, arguments: [build(:variable, id: :bar), build(:variable, id: :foo)])
+      build(:fn_call, name: :multiply, arguments: [build(:reference, ref: 'bar'), build(:reference, ref: 'foo')])
     end
     let(:variables) do
       {
@@ -78,7 +78,7 @@ describe ::CSVPlusPlus::Runtime::Graph do
             ]
           ),
           build(:variable_bar),
-          build(:variable, id: :rownum)
+          build(:reference, ref: 'rownum')
         ]
       )
     end
