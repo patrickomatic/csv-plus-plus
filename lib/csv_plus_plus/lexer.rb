@@ -24,25 +24,35 @@ module CSVPlusPlus
     # @see https://github.com/ruby/racc/blob/master/lib/racc/parser.rb#L121
     TOKEN_LIBRARY = ::T.let(
       {
-        A1_NOTATION: ::CSVPlusPlus::Lexer::Token.new(
-          regexp: ::CSVPlusPlus::Entities::CellReference::A1_NOTATION_REGEXP, token: :A1_NOTATION
-        ),
+        # A1_NOTATION: ::CSVPlusPlus::Lexer::Token.new(
+        # regexp: ::CSVPlusPlus::A1Reference::A1_NOTATION_REGEXP, token: :A1_NOTATION
+        # ),
         FALSE: ::CSVPlusPlus::Lexer::Token.new(regexp: /false/i, token: :FALSE),
         HEX_COLOR: ::CSVPlusPlus::Lexer::Token.new(regexp: ::CSVPlusPlus::Color::HEX_STRING_REGEXP, token: :HEX_COLOR),
-        ID: ::CSVPlusPlus::Lexer::Token.new(regexp: /[$!\w:]+/, token: :ID),
         INFIX_OP: ::CSVPlusPlus::Lexer::Token.new(regexp: %r{\^|\+|-|\*|/|&|<|>|<=|>=|<>}, token: :INFIX_OP),
         NUMBER: ::CSVPlusPlus::Lexer::Token.new(regexp: /-?[\d.]+/, token: :NUMBER),
+        REF: ::CSVPlusPlus::Lexer::Token.new(regexp: /[$!\w:]+/, token: :REF),
         STRING: ::CSVPlusPlus::Lexer::Token.new(
           regexp: %r{"(?:[^"\\]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*"},
           token: :STRING
         ),
         TRUE: ::CSVPlusPlus::Lexer::Token.new(regexp: /true/i, token: :TRUE),
         VAR_REF: ::CSVPlusPlus::Lexer::Token.new(regexp: /\$\$/, token: :VAR_REF)
-        # EOF: ::CSVPlusPlus::Lexer::Token.new(false, false)
       }.freeze,
       ::T::Hash[::Symbol, ::CSVPlusPlus::Lexer::Token]
     )
     public_constant :TOKEN_LIBRARY
+
+    sig { params(str: ::String).returns(::String) }
+    # Run any transformations to the input before going into the CSV parser
+    #
+    # The CSV parser in particular does not like if there is whitespace after a double quote and before the next comma
+    #
+    # @param str [String]
+    # @return [String]
+    def self.preprocess(str)
+      str.gsub(/"\s*,/, '",')
+    end
 
     sig { params(str: ::String).returns(::String) }
     # When parsing a modifier with a quoted string field, we need a way to unescape.  Some examples of quoted and

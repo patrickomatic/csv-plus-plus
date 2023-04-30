@@ -2,6 +2,14 @@
 # frozen_string_literal: true
 
 describe ::CSVPlusPlus::Lexer do
+  describe '#preprocess' do
+    let(:str) { '"=foo"   , Bar  ,"stuff ,"   ' }
+
+    subject { described_class.preprocess(str) }
+
+    it { is_expected.to(eq('"=foo", Bar  ,"stuff ,"   ')) }
+  end
+
   describe '#unquote' do
     let(:str) { 'just a string' }
 

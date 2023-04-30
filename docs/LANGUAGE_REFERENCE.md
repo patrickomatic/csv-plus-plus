@@ -30,7 +30,7 @@ which they are called.
 def minus_one(number) number - 1
 
 def profit(quantity) 
-  (celladjacent(A) * $$quantity) - $$fees
+  (celladjacent(A) * quantity) - fees
 ```
 
 ## Variables
@@ -45,8 +45,17 @@ and underscores), the expression `:=` and followed with a value:
 
 ```
 foo := A3
-bar := SUM(celladjacent(A), B4)
+bar := SUM(celladjacent(A), foo)
 ```
+
+To reference a variable you just use it by it's name - there is no special operator to dereference.  
+
+## Cell References
+
+You can use A1-style cell references in the code section and within function definitions.  Since the
+syntax for variable references and for cell references are overlapping (for example `ABC` is both a 
+valid cell reference and variable reference), csv++ will only interpolate the variable if it is
+defined.  Otherwise it will be left alone and treated as a cell reference.
 
 ## Built-ins
 
@@ -80,18 +89,18 @@ they are used.  For example you can define a variable (or function) in the code 
 references cells relative to the place where they are used:
 
 ```
-# $$interest_rate is bound to cell B1 via the var= modifier below.
+# interest_rate is bound to cell B1 via the var= modifier below.
 # cell_adjacent(A) gives us a reference to the "Amount" value for each row
-interest_on_amount := $$interest_rate * cell_adjacent(A)
+interest_on_amount := interest_rate * cell_adjacent(A)
 ---
 Interest Rate:,[[var=interest_rate]]0.05
 [[format=bold]Amount,Amount with interest
-50000,=$$interest_on_amount
-100000,=$$interest_on_amount
-500000,=$$interest_on_amount
+50000,=interest_on_amount
+100000,=interest_on_amount
+500000,=interest_on_amount
 ```
 
-in the above example, `$$interest_on_amount` will be evaluated per the different amount on each
+in the above example, `interest_on_amount` will be evaluated per the different amount on each
 row.  This gets interesting when combined with the `![[expand=]]` directive:
 
 ```

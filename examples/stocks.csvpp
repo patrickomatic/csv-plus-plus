@@ -1,7 +1,8 @@
 commission_charge := 0.65 # the broker charges $0.65 a contract/share
 
-fees := $$commission_charge * celladjacent(D)
-profit := (celladjacent(B) * celladjacent(C)) - $$fees
+fees := commission_charge * celladjacent(D)
+profit := (celladjacent(B) * celladjacent(C)) - fees
+
 ---
-![[format=bold/halign=center/freeze]]Date,Purchase,Price,Quantity,Total,Fees
-![[expand]],[[format=bold]],,,"=$$profit","=$$fees"
+![[format=bold/halign=center/freeze]]Date ,Purchase         ,Price  ,Quantity ,Profit     ,Fees
+![[expand]]                               ,[[format=bold]]  ,       ,         ,"=profit"  ,"=fees"

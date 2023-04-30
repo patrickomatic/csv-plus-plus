@@ -1,11 +1,11 @@
 # just a comment
 simple_var := 1
 
-depends_on_another := $$simple_var + 2
+depends_on_another := simple_var + 2
 
 ---
 ![[format=bold/halign=center]]Header1,[[format=underline]]Header2,[[border=top/border=bottom/format=strikethrough]]Header3,[[valign=bottom/format=italic]]Header4,Header5
-=$$depends_on_another,[[format=underline]]=$$simple_var,These are variables,
+=depends_on_another,[[format=underline]]=simple_var,These are variables,
 [[note='this is a note']]A note,
 [[fontcolor=#FF0000]]The font is red,
 [[fontfamily='Comic Sans MS']]The font is 'Comic Sans MS',
