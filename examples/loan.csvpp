@@ -1,23 +1,24 @@
 ##
-# A template for a simple loan with a fixed interest amount.  For example a $500 loan
+# A template for a simple loan with a fixed interest amount.  For example a $500 loan 
 # with 10% interest would net $550
 
-loan_amount := 2B
-interest_rate := 3B
-start_date := 4B
+total_interest := interest_rate * loan_amount
+final_amount := loan_amount + total_interest
 
-def final_amount()
-  $$loan_amount + $$interest_rate * $$loan_amount
+payment := celladjacent(C)
 
 def ending_balance()
-  celladjacent(B) - celladjacent(C)
+  # use ISBLANK because we only want to show this for lines with a payment
+  IF(ISBLANK(payment), "", celladjacent(B) - payment)
+
+def beginning_balance()
+  IF(ISBLANK(payment), "", cellabove(D))
 
 ---
-![[bgcolor=#FF0000,format=bold,fontsize=20]],,Loan Summary,
-[[format=bold]]Loan Amount,,,[[format=bold]]Monthly Payment,
-[[format=bold]]Interest Rate,,,[[format=bold]]Total Interest,
-[[format=bold]]Start Date,,,[[format=bold]]Final Amount,
-,
-![[format=bold/align=center]]Payment Date,Beginning Balance,Payment,Ending Balance
-,$$loan_amount,,=ending_balance()
-![[expand]],=cellabove(D),,=ending_balance()
+[[format=bold]]                Principal     ,[[var=loan_amount]]    ,        ,[[format=bold]]Monthly Payment   ,
+[[format=bold]]                Interest Rate ,[[var=interest_rate]]  ,        ,[[format=bold]]Interest Accrued  ,=total_interest
+[[format=bold]]                Start Date    ,[[var=start_date]]     ,        ,[[format=bold]]Final Amount      ,=final_amount
+                                             ,                       ,        ,                                 ,
+![[format=bold/halign=center]] Date          ,Balance                ,Amount  ,Ending Balance                   ,Description
+                                             ,=final_amount          ,        ,=ending_balance()                ,
+![[expand]]                                  ,=beginning_balance()   ,        ,=ending_balance()                ,           
