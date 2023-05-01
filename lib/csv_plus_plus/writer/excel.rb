@@ -17,7 +17,7 @@ module CSVPlusPlus
       # @param template [Template] The template to write
       def write(template)
         ::CSVPlusPlus::Writer::RubyXLBuilder.new(
-          input_filename: ::T.must(@options.output_filename),
+          output_filename: ::T.must(@options.output_filename),
           rows: template.rows,
           position: @position,
           sheet_name: @options.sheet_name

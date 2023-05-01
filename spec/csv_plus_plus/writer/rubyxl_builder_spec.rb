@@ -5,9 +5,9 @@ describe ::CSVPlusPlus::Writer::RubyXLBuilder do
   let(:position) { build(:position) }
   let(:sheet_name) { 'Test Excel Sheet' }
   let(:rows) { [] }
-  let(:input_filename) { ::Pathname.new('test.xlsx') }
+  let(:output_filename) { ::Pathname.new('test.xlsx') }
 
-  subject(:rubyxl_builder) { described_class.new(input_filename:, position:, rows:, sheet_name:) }
+  subject(:rubyxl_builder) { described_class.new(output_filename:, position:, rows:, sheet_name:) }
 
   describe '#build_workbook' do
     let(:worksheet) { subject.worksheets[0] }

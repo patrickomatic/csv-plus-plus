@@ -5,7 +5,7 @@ module CSVPlusPlus
   module Writer
     # Build a RubyXL workbook formatted according to the given +rows+
     #
-    # @attr_reader input_filename [Pathname, nil] The filename being written to
+    # @attr_reader output_filename [Pathname, nil] The filename being written to
     # @attr_reader rows [Array<Row>] The rows being written
     # rubocop:disable Metrics/ClassLength
     class RubyXLBuilder
@@ -15,28 +15,28 @@ module CSVPlusPlus
       public_constant :RubyXLCell
 
       sig { returns(::T.nilable(::Pathname)) }
-      attr_reader :input_filename
+      attr_reader :output_filename
 
       sig { returns(::T::Array[::CSVPlusPlus::Row]) }
       attr_reader :rows
 
       sig do
         params(
-          input_filename: ::T.nilable(::Pathname),
+          output_filename: ::Pathname,
           position: ::CSVPlusPlus::Runtime::Position,
           rows: ::T::Array[::CSVPlusPlus::Row],
           sheet_name: ::T.nilable(::String)
         ).void
       end
-      # @param input_filename [::String] The file to write to
+      # @param output_filename [::String] The file to write to
       # @param position [Position] The current position
       # @param rows [Array<Row>] The rows to write
       # @param sheet_name [::String] The name of the sheet within the workbook to write to
-      def initialize(input_filename:, position:, rows:, sheet_name: nil)
+      def initialize(output_filename:, position:, rows:, sheet_name: nil)
         @rows = rows
-        @input_filename = input_filename
+        @output_filename = output_filename
         @position = position
-        @sheet_name = sheet_name
+        @sheet_name = ::T.let(sheet_name || output_filename.basename.to_s, ::String)
         @worksheet = ::T.let(open_worksheet, ::RubyXL::Worksheet)
       end
 
@@ -176,8 +176,8 @@ module CSVPlusPlus
 
       sig { returns(::RubyXL::Worksheet) }
       def open_worksheet
-        if @input_filename && ::File.exist?(@input_filename)
-          workbook = ::RubyXL::Parser.parse(@input_filename)
+        if ::File.exist?(@output_filename)
+          workbook = ::RubyXL::Parser.parse(@output_filename)
           workbook[@sheet_name] || workbook.add_worksheet(@sheet_name)
         else
           workbook = ::RubyXL::Workbook.new
