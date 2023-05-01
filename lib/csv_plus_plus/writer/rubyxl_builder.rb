@@ -36,7 +36,7 @@ module CSVPlusPlus
         @rows = rows
         @output_filename = output_filename
         @position = position
-        @sheet_name = ::T.let(sheet_name || output_filename.basename.to_s, ::String)
+        @sheet_name = ::T.let(sheet_name || output_filename.basename.sub_ext('').to_s, ::String)
         @worksheet = ::T.let(open_worksheet, ::RubyXL::Worksheet)
       end
 
