@@ -1,0 +1,26 @@
+##
+# A feature matrix of which features work for which output format.
+
+yes := "yes"
+no := "no"
+wip := "not yet"
+
+---
+![[format=bold]]  Feature   ,CSV     ,Google Sheets   ,Excel  ,OpenDocument
+
+expand                      ,=yes    ,=yes            ,=yes   ,=wip
+var                         ,=yes    ,=yes            ,=yes   ,=wip
+border                      ,=no     ,=yes            ,=yes   ,=wip
+bordercolor                 ,=no     ,=yes            ,=yes   ,=wip
+borderstyle                 ,=no     ,=yes            ,=yes   ,=wip
+color                       ,=no     ,=yes            ,=yes   ,=wip
+fontcolor                   ,=no     ,=yes            ,=yes   ,=wip
+fontfamily                  ,=no     ,=yes            ,=yes   ,=wip
+fontsize                    ,=no     ,=yes            ,=yes   ,=wip
+format                      ,=no     ,=yes            ,=yes   ,=wip
+halign                      ,=no     ,=yes            ,=yes   ,=wip
+valign                      ,=no     ,=yes            ,=yes   ,=wip
+note                        ,=no     ,=yes            ,=wip   ,=wip
+freeze                      ,=no     ,=wip            ,=wip   ,=wip
+numberformat                ,=no     ,=wip            ,=wip   ,=wip
+validate                    ,=no     ,=wip            ,=wip   ,=wip

@@ -62,3 +62,7 @@ Usage: csv++ [options]
     -x, --offset-columns OFFSET      Apply the template offset by OFFSET cells
     -y, --offset-rows OFFSET         Apply the template offset by OFFSET rows
 ```
+
+## See Also:
+
+* [Supported features by output format](./docs/feature_matrix.csvpp)

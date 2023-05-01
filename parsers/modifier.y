@@ -24,12 +24,12 @@ rule
                       | cell_modifiers
 
   row_modifiers: START_ROW_MODIFIERS   { parsing_row! }
-                 modifiers 
+                 modifiers
                  END_MODIFIERS         { finished_row! }
 
   cell_modifiers: START_CELL_MODIFIERS { parsing_cell! }
-                  modifiers 
-                  END_MODIFIERS 
+                  modifiers
+                  END_MODIFIERS
 
   modifiers: modifiers MODIFIER_SEPARATOR modifier | modifier
 
