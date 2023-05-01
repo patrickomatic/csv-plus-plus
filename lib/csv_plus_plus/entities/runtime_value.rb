@@ -42,7 +42,7 @@ module CSVPlusPlus
       sig { override.params(_position: ::CSVPlusPlus::Runtime::Position).returns(::String) }
       # Given the current runtime, call +@resolve_fn+ to produce a value
       #
-      # @param position [Position]
+      # @param _position [Position]
       #
       # @return [Entities::Entity]
       def evaluate(_position)

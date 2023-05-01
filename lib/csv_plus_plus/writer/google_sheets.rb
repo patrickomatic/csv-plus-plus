@@ -24,7 +24,7 @@ module CSVPlusPlus
 
       sig { params(options: ::CSVPlusPlus::Options, position: ::CSVPlusPlus::Runtime::Position).void }
       # @param options [Options]
-      # @param runtime [Runtime]
+      # @param position [Runtime::Position]
       def initialize(options, position)
         super(options, position)
 

@@ -18,8 +18,9 @@
 - [x] Excel - look into caxlsx, Apache POI or openxml
 - [x] make it output to CSV (loses formatting, but keeps formulas, variables and expansions)
 
-# Modifiers 
+# Modifiers
 
+- [ ] shorthand conventions - for example (format=bold == f=b, bg=#000000, fs=20 (fontsize=20)
 - [ ] conditional formatting
 - [ ] implement freeze
 - [ ] data validation
@@ -39,10 +40,10 @@
 
 # Language
 
-- [ ] make the code section (and `---`) optional
-- [ ] can I get rid of $$ syntax and just resolve the functions and runtime vars it knows about?
 - [ ] a way to not show a function if it's dependent cells are blank (make it less ugly when expanded out)
 - [ ] turn it into a lisp???
+- [x] can I get rid of $$ syntax and just resolve the functions and runtime vars it knows about?
+- [x] make the code section (and `---`) optional
 - [x] maybe a RuntimeValue doesn't belong as an entity - it doesn't output itself, it only needs to exist during function resolution
 - [x] ROWABOVE - given 2 (or 2A, $2A, etc) returns 1
 - [x] ROWBELOW - given 2 (or 2A, $2A, etc) returns 3

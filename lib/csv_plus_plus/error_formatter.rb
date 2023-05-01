@@ -10,8 +10,8 @@ module CSVPlusPlus
     sig do
       params(options: ::CSVPlusPlus::Options, runtime: ::CSVPlusPlus::Runtime::Runtime).void
     end
+    # @param options [Options]
     # @param runtime [Runtime::Runtime]
-    # @param  [Runtime::Runtime]
     def initialize(options:, runtime:)
       @options = options
       @runtime = runtime
@@ -77,7 +77,7 @@ module CSVPlusPlus
     sig { params(error: ::CSVPlusPlus::Error::Error).returns(::String) }
     # Output a user-helpful string that references the runtime state
     #
-    # @params error_message [String] The error message to be prefixed with a filename and position
+    # @param error [Error::Error] The error message to be prefixed with a filename and position
     #
     # @return [String]
     def with_position(error)
