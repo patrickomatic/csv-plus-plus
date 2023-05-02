@@ -85,8 +85,7 @@ module_eval(<<'...end modifier.y/module_eval...', 'modifier.y', 60)
         ::CSVPlusPlus::Lexer::Token.new(regexp: /\bvalidate\b/, token: 'validate'),
         ::CSVPlusPlus::Lexer::Token.new(regexp: /\bvalign\b/, token: 'valign'),
         ::CSVPlusPlus::Lexer::Token.new(regexp: /\bvar\b/, token: 'var'),
-        ::CSVPlusPlus::Lexer::Token.new(regexp: /-?[\d.]+/, token: :NUMBER),
-        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:HEX_COLOR],
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /-?[1-9][\d.]*/, token: :NUMBER),
         ::CSVPlusPlus::Lexer::Token.new(
           regexp: /
             (?:
@@ -165,7 +164,7 @@ racc_action_pointer = [
     36,    52,    41,   nil,   nil,   nil,    56,   nil,   -17,    -1,
    nil,    41,   nil,    49,    50,    51,    52,    53,    54,    55,
     56,    57,   nil,    58,    59,    60,    61,    62,    63,    42,
-   nil,    15,    59,    64,    61,    66,    66,    68,    65,    69,
+   nil,    15,    59,    60,    61,    62,    66,    64,    65,    69,
     67,    68,    69,    70,    71,    72,    73,   nil,   nil,   nil,
    nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,   nil,
    nil,   nil,   nil,   nil ]

@@ -73,7 +73,7 @@ describe ::CSVPlusPlus::Parser::Modifier do
     end
 
     describe 'color' do
-      let(:value) { '[[color=#FF00FF]]=ADD(1, 2)' }
+      let(:value) { '[[color=FF00FF]]=ADD(1, 2)' }
 
       subject { cell_modifier.color }
 

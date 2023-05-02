@@ -40,6 +40,7 @@
 
 # Language
 
+- [ ] if you reference a variable outside of an expand, it references the range of the expand
 - [ ] a way to not show a function if it's dependent cells are blank (make it less ugly when expanded out)
 - [ ] turn it into a lisp???
 - [x] can I get rid of $$ syntax and just resolve the functions and runtime vars it knows about?
@@ -61,6 +62,7 @@
 
 # Other
 
+- [ ] Allow it to take URLs to files (like `-o https://github.com/patrickomatic/foo/some_file.csvpp`)
 - [x] Revise the "how to use" docs
 - [x] backups before each write
 - [x] Benchmarks in verbose mode
