@@ -96,7 +96,7 @@ end
   def tokenizer
     ::CSVPlusPlus::Lexer::Tokenizer.new(
       catchall: /[\{\}\(\),]/, # TODO: do I even need this (oh I think brackets are for arrays
-      ignore: /\s+|\#[^\n]+\n/,
+      ignore: /\s+|\#.*/,
       stop_fn: lambda do |scanner|
         return false unless scanner.scan(/#{::CSVPlusPlus::Lexer::END_OF_CODE_SECTION}/)
 

@@ -34,12 +34,12 @@ rule
   modifiers: modifiers MODIFIER_SEPARATOR modifier | modifier
 
   modifier: 'border'       EQ RIGHT_SIDE  { modifier.border = val[2]        }
-          | 'bordercolor'  EQ HEX_COLOR   { modifier.bordercolor = val[2]   }
+          | 'bordercolor'  EQ RIGHT_SIDE  { modifier.bordercolor = val[2]   }
           | 'borderstyle'  EQ RIGHT_SIDE  { modifier.borderstyle = val[2]   }
-          | 'color'        EQ HEX_COLOR   { modifier.color = val[2]         }
+          | 'color'        EQ RIGHT_SIDE  { modifier.color = val[2]         }
           | 'expand'       EQ NUMBER      { modifier.expand = val[2]        }
           | 'expand'                      { modifier.infinite_expand!       }
-          | 'fontcolor'    EQ HEX_COLOR   { modifier.fontcolor = val[2]     }
+          | 'fontcolor'    EQ RIGHT_SIDE  { modifier.fontcolor = val[2]     }
           | 'fontfamily'   EQ RIGHT_SIDE  { modifier.fontfamily = val[2]    }
           | 'fontsize'     EQ NUMBER      { modifier.fontsize = val[2]      }
           | 'format'       EQ RIGHT_SIDE  { modifier.format = val[2]        }
@@ -128,8 +128,7 @@ require_relative '../lexer/racc_lexer'
         ::CSVPlusPlus::Lexer::Token.new(regexp: /\bvalidate\b/, token: 'validate'),
         ::CSVPlusPlus::Lexer::Token.new(regexp: /\bvalign\b/, token: 'valign'),
         ::CSVPlusPlus::Lexer::Token.new(regexp: /\bvar\b/, token: 'var'),
-        ::CSVPlusPlus::Lexer::Token.new(regexp: /-?[\d.]+/, token: :NUMBER),
-        ::CSVPlusPlus::Lexer::TOKEN_LIBRARY[:HEX_COLOR],
+        ::CSVPlusPlus::Lexer::Token.new(regexp: /-?[1-9][\d.]*/, token: :NUMBER),
         ::CSVPlusPlus::Lexer::Token.new(
           regexp: /
             (?:
