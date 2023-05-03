@@ -14,17 +14,7 @@ RACC_FILES = {
   'lib/csv_plus_plus/parser/modifier.tab.rb': 'parsers/modifier.y'
 }.freeze
 
-task default: ::RACC_FILES.keys.map(&:to_sym) + %i[
-  rubocop:autocorrect_all
-  sorbet:typecheck
-  spec
-  test:csv:all_features
-  test:excel:all_features
-  test:excel:loan
-  test:google_sheets:all_features
-  test:google_sheets:crypto_wallet
-  test:google_sheets:stocks
-]
+task default: ::RACC_FILES.keys.map(&:to_sym) + %i[rubocop:autocorrect_all sorbet:typecheck spec]
 
 ::RACC_FILES.each do |dep, source|
   desc "Use racc to generate parser file #{dep}"
@@ -94,72 +84,5 @@ namespace :sorbet do
   desc 'Run a typecheck with Sorbet'
   task :typecheck do
     sh 'bundle exec srb tc'
-  end
-end
-
-namespace :test do
-  namespace :google_sheets do
-    # get GOOGLE_SHEET_ID which should be set in the env (or warn)
-    def with_google_sheet_id
-      google_sheet_id = ::ENV.fetch('GOOGLE_SHEET_ID', nil)
-      if google_sheet_id
-        yield(google_sheet_id)
-      else
-        warn('GOOGLE_SHEET_ID is not defined')
-      end
-    end
-
-    desc 'Test examples/all_features/all_features.csvpp outputting to Google Sheets'
-    task :all_features do
-      with_google_sheet_id do |google_sheet_id|
-        sh %(./bin/csv++ --verbose -n "Sheet2" -g #{google_sheet_id} examples/all_features/all_features.csvpp)
-      end
-    end
-
-    desc 'Test examples/crypto_wallet/crypto_wallet.csvpp outputting to Google Sheets'
-    task :crypto_wallet do
-      with_google_sheet_id do |google_sheet_id|
-        sh %(./bin/csv++ --verbose -n "Crypto Wallet" -g #{google_sheet_id} examples/crypto_wallet/crypto_wallet.csvpp)
-      end
-    end
-
-    desc 'Test examples/loan/loan.csvpp outputting to Google Sheets'
-    task :loan do
-      with_google_sheet_id do |google_sheet_id|
-        sh %(./bin/csv++ --verbose -n "Loan Test" -g #{google_sheet_id} examples/loan/loan.csvpp)
-      end
-    end
-
-    desc 'Test examples/stocks/stocks.csvpp outputting to Google Sheets'
-    task :stocks do
-      with_google_sheet_id do |google_sheet_id|
-        sh %(./bin/csv++ -v -n "Sheet1" -g #{google_sheet_id} examples/stocks/stocks.csvpp)
-      end
-    end
-  end
-
-  namespace :csv do
-    desc 'Test examples/all_features/all_features.csvpp outputting to CSV'
-    task :all_features do
-      sh %(./bin/csv++ \
-            -b \
-            --verbose \
-            --output examples/all_features/all_features.csv \
-            examples/all_features/all_features.csvpp
-          )
-    end
-  end
-
-  namespace :excel do
-    desc 'Test examples/all_features/all_features.csvpp outputting to Excel'
-    task :all_features do
-      sh %(./bin/csv++ -v -n "All Features" -o examples/all_features/all_features.xlsx \
-            examples/all_features/all_features.csvpp)
-    end
-
-    desc 'Test examples/loan/loan.csvpp outputting to Excel'
-    task :loan do
-      sh %(./bin/csv++ -v -n "Loan" -o examples/loan/loan.xlsx examples/loan/loan.csvpp)
-    end
   end
 end

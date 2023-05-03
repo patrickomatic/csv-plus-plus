@@ -45,7 +45,7 @@ or if you want the very latest changes, clone this repository and run:
 
 ## Examples
 
-Take a look at the [examples](./examples/) directory for a bunch of example `.csvpp` files.
+Take a look at the [repository of examples](https://github.com/patrickomatic/csvpp-examples) repository for a bunch of example `.csvpp` files.
 
 ## CLI Arguments
 
