@@ -11,9 +11,14 @@ module CSVPlusPlus
     #
     # @return [Google::Apis::SheetsV4::SheetsService]
     def self.sheets_client
-      ::Google::Apis::SheetsV4::SheetsService.new.tap do |s|
-        s.authorization = ::Google::Auth.get_application_default(['https://www.googleapis.com/auth/spreadsheets'].freeze)
-      end
+      ::T.must(
+        @sheets_client ||= ::T.let(
+          ::Google::Apis::SheetsV4::SheetsService.new.tap do |s|
+            s.authorization = ::Google::Auth.get_application_default(['https://www.googleapis.com/auth/spreadsheets'].freeze)
+          end,
+          ::T.nilable(::Google::Apis::SheetsV4::SheetsService)
+        )
+      )
     end
 
     sig { returns(::Google::Apis::DriveV3::DriveService) }
@@ -21,9 +26,14 @@ module CSVPlusPlus
     #
     # @return [Google::Apis::DriveV3::DriveService]
     def self.drive_client
-      ::Google::Apis::DriveV3::DriveService.new.tap do |d|
-        d.authorization = ::Google::Auth.get_application_default(['https://www.googleapis.com/auth/drive.file'].freeze)
-      end
+      ::T.must(
+        @drive_client ||= ::T.let(
+          ::Google::Apis::DriveV3::DriveService.new.tap do |d|
+            d.authorization = ::Google::Auth.get_application_default(['https://www.googleapis.com/auth/drive.file'].freeze)
+          end,
+          ::T.nilable(::Google::Apis::DriveV3::DriveService)
+        )
+      )
     end
   end
 end
