@@ -18,10 +18,6 @@ module CSVPlusPlus
       sig { returns(::T.nilable(::String)) }
       attr_reader :sheet_name
 
-      # TODO: it would be nice to raise this but we shouldn't expand out more than necessary for our data
-      SPREADSHEET_INFINITY = 1000
-      public_constant :SPREADSHEET_INFINITY
-
       sig { params(options: ::CSVPlusPlus::Options, position: ::CSVPlusPlus::Runtime::Position).void }
       # @param options [Options]
       # @param position [Runtime::Position]

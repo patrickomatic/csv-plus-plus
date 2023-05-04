@@ -1,11 +1,11 @@
 # typed: false
 # frozen_string_literal: true
 
-require('google/apis/drive_v3')
-require('google/apis/sheets_v4')
-require('googleauth')
-
 describe ::CSVPlusPlus::GoogleApiClient do
+  before do
+    allow(::Google::Auth).to(receive(:get_application_default).and_return({}))
+  end
+
   describe '.sheets_client' do
     subject { described_class.sheets_client }
 
