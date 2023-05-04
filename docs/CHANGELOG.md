@@ -1,12 +1,15 @@
 ## main/upcoming
 
+## v0.2.0
+
 ### **Breaking Changes**
 
 - Removal of the $$ operator - to dereference variables you can just reference them by name and they will be resolved if they are defined.  Otherwise they will be left alone in the output
 
 ### Non-breaking Changes
 
-- Allow for more generous spacing 
+- Support merging in values from CSV (previously it would ignore/overwrite them)
+- Allow for more generous spacing in the csv section (and reflect this in the examples)
 - More type coverage
 
 ## v0.1.3

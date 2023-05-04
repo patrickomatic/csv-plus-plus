@@ -1,4 +1,4 @@
-name: Run RSpec Tests
+name: Tests
 
 on:
   push:
