@@ -18,6 +18,7 @@ require 'strscan'
 require 'tempfile'
 
 require_relative 'csv_plus_plus/a1_reference'
+require_relative 'csv_plus_plus/google_api_client'
 require_relative 'csv_plus_plus/options'
 require_relative 'csv_plus_plus/runtime/position'
 require_relative 'csv_plus_plus/source_code'
@@ -40,8 +41,8 @@ require_relative 'csv_plus_plus/parser/modifier.tab'
 
 require_relative 'csv_plus_plus/compiler'
 
-require_relative 'csv_plus_plus/google_options'
 require_relative 'csv_plus_plus/lexer'
+require_relative 'csv_plus_plus/reader'
 require_relative 'csv_plus_plus/row'
 require_relative 'csv_plus_plus/template'
 require_relative 'csv_plus_plus/writer'
@@ -52,14 +53,13 @@ require_relative 'csv_plus_plus/benchmarked_compiler'
 module CSVPlusPlus
   extend ::T::Sig
 
-  sig { params(input: ::String, filename: ::T.nilable(::String), options: ::CSVPlusPlus::Options).void }
+  sig { params(source_code: ::CSVPlusPlus::SourceCode, options: ::CSVPlusPlus::Options::Options).void }
   # Parse the input into a +Template+ and write it to the desired format
   #
-  # @param input [String] The csvpp input to compile
-  # @param filename [String, nil] The filename the input was read from.  +nil+ if it is read from stdin.
+  # @param source_code [SourceCode] The source code being compiled
   # @param options [Options] The various options to compile with
-  def self.cli_compile(input, filename, options)
-    runtime = ::CSVPlusPlus::Runtime.new(source_code: ::CSVPlusPlus::SourceCode.new(input:, filename:))
+  def self.cli_compile(source_code, options)
+    runtime = ::CSVPlusPlus::Runtime.new(source_code:)
 
     warn(options.verbose_summary) if options.verbose
 
@@ -76,7 +76,11 @@ module CSVPlusPlus
   end
 
   sig do
-    params(compiler: ::CSVPlusPlus::Compiler, options: ::CSVPlusPlus::Options, template: ::CSVPlusPlus::Template).void
+    params(
+      compiler: ::CSVPlusPlus::Compiler,
+      options: ::CSVPlusPlus::Options::Options,
+      template: ::CSVPlusPlus::Template
+    ).void
   end
   # Write the results (and possibly make a backup) of a compiled +template+
   #
@@ -86,7 +90,7 @@ module CSVPlusPlus
   def self.write_template(compiler:, options:, template:)
     compiler.outputting! do |position|
       output = ::CSVPlusPlus::Writer.writer(options, position)
-      output.write_backup(options) if options.backup
+      output.write_backup if options.backup
       output.write(template)
     end
   end

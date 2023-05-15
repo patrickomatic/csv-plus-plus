@@ -7,7 +7,7 @@ describe ::CSVPlusPlus::Compiler do
   let(:source_code) { build(:source_code, input:) }
   let(:position) { build(:position, input:) }
   let(:runtime) { build(:runtime, source_code:, position:) }
-  let(:options) { build(:options, key_values:) }
+  let(:options) { build(:file_options, key_values:) }
   let(:compiler) { build(:compiler, runtime:, options:) }
 
   describe '.with_compiler' do
@@ -19,7 +19,7 @@ describe ::CSVPlusPlus::Compiler do
     end
 
     context 'with Options.verbose = true' do
-      let(:options) { build(:options, verbose: true) }
+      let(:options) { build(:file_options, verbose: true) }
 
       it 'yields a Compiler with #benchmark set' do
         described_class.with_compiler(options:, runtime:) do |compiler|

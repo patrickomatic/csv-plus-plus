@@ -1,11 +1,15 @@
 # typed: strict
 # frozen_string_literal: true
 
-require_relative './writer/base_writer'
+require_relative './writer/merger'
+require_relative './writer/writer'
+
 require_relative './writer/csv'
 require_relative './writer/excel'
 require_relative './writer/google_sheets'
+require_relative './writer/google_sheets_builder'
 require_relative './writer/open_document'
+require_relative './writer/rubyxl_builder'
 
 module CSVPlusPlus
   # Various strategies for writing to various formats (excel, google sheets, CSV & OpenDocument (not yet implemented))
@@ -14,7 +18,7 @@ module CSVPlusPlus
 
     sig do
       params(
-        options: ::CSVPlusPlus::Options,
+        options: ::CSVPlusPlus::Options::Options,
         position: ::CSVPlusPlus::Runtime::Position
       ).returns(
         ::T.any(
@@ -31,24 +35,59 @@ module CSVPlusPlus
     # @param position [Position] The current position.
     #
     # @return [Writer::CSV | Writer::Excel | Writer::GoogleSheets | Writer::OpenDocument]
-    # rubocop:disable Metrics/MethodLength
     def self.writer(options, position)
       output_format = options.output_format
       case output_format
-      when ::CSVPlusPlus::Options::OutputFormat::CSV then ::CSVPlusPlus::Writer::CSV.new(options, position)
-      when ::CSVPlusPlus::Options::OutputFormat::Excel then ::CSVPlusPlus::Writer::Excel.new(options, position)
-      when ::CSVPlusPlus::Options::OutputFormat::GoogleSheets then ::CSVPlusPlus::Writer::GoogleSheets.new(
-        options,
-        position
-      )
-      when ::CSVPlusPlus::Options::OutputFormat::OpenDocument then ::CSVPlusPlus::Writer::OpenDocument.new(
-        options,
-        position
-      )
-      else
-        ::T.absurd(output_format)
+      when ::CSVPlusPlus::Options::OutputFormat::CSV then csv(options, position)
+      when ::CSVPlusPlus::Options::OutputFormat::Excel then excel(options, position)
+      when ::CSVPlusPlus::Options::OutputFormat::GoogleSheets then google_sheets(options, position)
+      when ::CSVPlusPlus::Options::OutputFormat::OpenDocument then open_document(options, position)
+      else ::T.absurd(output_format)
       end
     end
-    # rubocop:enable Metrics/MethodLength
+
+    sig do
+      params(
+        options: ::CSVPlusPlus::Options::Options,
+        position: ::CSVPlusPlus::Runtime::Position
+      ).returns(::CSVPlusPlus::Writer::CSV)
+    end
+    # Instantiate a +CSV+ writer
+    def self.csv(options, position)
+      ::CSVPlusPlus::Writer::CSV.new(::T.cast(options, ::CSVPlusPlus::Options::FileOptions), position)
+    end
+
+    sig do
+      params(
+        options: ::CSVPlusPlus::Options::Options,
+        position: ::CSVPlusPlus::Runtime::Position
+      ).returns(::CSVPlusPlus::Writer::Excel)
+    end
+    # Instantiate a +Excel+ writer
+    def self.excel(options, position)
+      ::CSVPlusPlus::Writer::Excel.new(::T.cast(options, ::CSVPlusPlus::Options::FileOptions), position)
+    end
+
+    sig do
+      params(
+        options: ::CSVPlusPlus::Options::Options,
+        position: ::CSVPlusPlus::Runtime::Position
+      ).returns(::CSVPlusPlus::Writer::GoogleSheets)
+    end
+    # Instantiate a +GoogleSheets+ writer
+    def self.google_sheets(options, position)
+      ::CSVPlusPlus::Writer::GoogleSheets.new(::T.cast(options, ::CSVPlusPlus::Options::GoogleSheetsOptions), position)
+    end
+
+    sig do
+      params(
+        options: ::CSVPlusPlus::Options::Options,
+        position: ::CSVPlusPlus::Runtime::Position
+      ).returns(::CSVPlusPlus::Writer::OpenDocument)
+    end
+    # Instantiate an +OpenDocument+ writer
+    def self.open_document(options, position)
+      ::CSVPlusPlus::Writer::OpenDocument.new(::T.cast(options, ::CSVPlusPlus::Options::FileOptions), position)
+    end
   end
 end

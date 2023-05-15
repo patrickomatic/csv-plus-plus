@@ -8,7 +8,7 @@ module CSVPlusPlus
     extend ::T::Sig
 
     sig do
-      params(options: ::CSVPlusPlus::Options, runtime: ::CSVPlusPlus::Runtime::Runtime).void
+      params(options: ::CSVPlusPlus::Options::Options, runtime: ::CSVPlusPlus::Runtime::Runtime).void
     end
     # @param options [Options]
     # @param runtime [Runtime::Runtime]
@@ -43,7 +43,7 @@ module CSVPlusPlus
       warn(
         <<~ERROR_MESSAGE)
           An unexpected error was encountered.  Please try running again with --verbose and
-          reporting the error at: https://github.com/patrickomatic/csv-plus-plus/issues/new'
+          report the error at: https://github.com/patrickomatic/csv-plus-plus/issues/new'
         ERROR_MESSAGE
 
       return unless @options.verbose

@@ -2,14 +2,17 @@
 # frozen_string_literal: true
 
 module CSVPlusPlus
-  # Handle running the application with the given CLI flags
+  # Handle running the application with the supported +CLIFlag+s
   #
-  # @attr options [Options, nil] The parsed CLI options
+  # @attr options [Options] The parsed CLI options
   class CLI
     extend ::T::Sig
 
-    sig { returns(::CSVPlusPlus::Options) }
+    sig { returns(::CSVPlusPlus::Options::Options) }
     attr_accessor :options
+
+    sig { returns(::CSVPlusPlus::SourceCode) }
+    attr_accessor :source_code
 
     sig { void }
     # Handle CLI flags and launch the compiler
@@ -17,21 +20,24 @@ module CSVPlusPlus
     # @return [CLI]
     def self.launch_compiler!
       new.main
-    rescue ::StandardError
+    rescue ::StandardError => e
+      warn(e.message)
       exit(1)
     end
 
     sig { void }
     # Initialize and parse the CLI flags provided to the program
     def initialize
-      @options = ::T.let(::CSVPlusPlus::Options.new, ::CSVPlusPlus::Options)
-      parse_options!
+      opts = parse_options
+
+      @source_code = ::T.let(::CSVPlusPlus::SourceCode.new(source_code_filename), ::CSVPlusPlus::SourceCode)
+      @options = ::T.let(apply_options(opts), ::CSVPlusPlus::Options::Options)
     end
 
     sig { void }
     # Compile the given template using the given CLI flags
     def main
-      ::CSVPlusPlus.cli_compile(::ARGF.read, ::ARGF.filename, @options)
+      ::CSVPlusPlus.cli_compile(source_code, options)
     end
 
     private
@@ -45,27 +51,37 @@ module CSVPlusPlus
         end
 
         ::CSVPlusPlus::SUPPORTED_CSVPP_FLAGS.each do |f|
-          parser.on(f.short_flag, f.long_flag, f.description) { |v| f.handler.call(@options, v) }
+          parser.on(f.short_flag, f.long_flag, f.description)
         end
       end
     end
 
-    sig { void }
-    # Handle the supplied command line options, setting +@options+ or throw an error if anything is invalid
-    def parse_options!
-      option_parser.parse!
-      validate_options
+    sig { params(opts: ::T::Hash[::Symbol, ::String]).returns(::CSVPlusPlus::Options::Options) }
+    def apply_options(opts)
+      ::CSVPlusPlus::Options.from_cli_flags(opts, source_code.filename).tap do |options|
+        opts.each do |key, value|
+          ::T.must(::CSVPlusPlus::FLAG_HANDLERS[key]).call(options, value) if ::CSVPlusPlus::FLAG_HANDLERS.key?(key)
+        end
+      end
+    end
+
+    sig { returns(::T::Hash[::Symbol, ::String]) }
+    def parse_options
+      {}.tap do |opts|
+        option_parser.parse!(into: opts)
+      end
     rescue ::OptionParser::InvalidOption => e
+      puts(option_parser)
       raise(::CSVPlusPlus::Error::CLIError, e.message)
     end
 
-    sig { void }
-    def validate_options
-      error_message = @options.validate
-      return if error_message.nil?
-
-      puts(option_parser)
-      raise(::CSVPlusPlus::Error::CLIError, error_message)
+    sig { returns(::String) }
+    # NOTE: this must be called after #parse_options, since #parse_options modifiers +ARGV+
+    def source_code_filename
+      ::ARGV.pop || raise(
+        ::CSVPlusPlus::Error::CLIError,
+        'You must specify a source (.csvpp) file to compile as the last argument'
+      )
     end
   end
 end

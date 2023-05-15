@@ -18,6 +18,6 @@
       filename { 'test.csvpp' }
     end
 
-    initialize_with { new(input:, filename:) }
+    initialize_with { new(filename, input:) }
   end
 end

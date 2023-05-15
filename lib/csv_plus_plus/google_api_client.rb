@@ -10,7 +10,7 @@ module CSVPlusPlus
     # Get a +Google::Apis::SheetsV4::SheetsService+ instance configured to connect to the sheets API
     #
     # @return [Google::Apis::SheetsV4::SheetsService]
-    def self.sheets_client
+    def sheets_client
       ::T.must(
         @sheets_client ||= ::T.let(
           ::Google::Apis::SheetsV4::SheetsService.new.tap do |s|
@@ -25,7 +25,7 @@ module CSVPlusPlus
     # Get a +Google::Apis::DriveV3::DriveService+ instance connected to the drive API
     #
     # @return [Google::Apis::DriveV3::DriveService]
-    def self.drive_client
+    def drive_client
       ::T.must(
         @drive_client ||= ::T.let(
           ::Google::Apis::DriveV3::DriveService.new.tap do |d|

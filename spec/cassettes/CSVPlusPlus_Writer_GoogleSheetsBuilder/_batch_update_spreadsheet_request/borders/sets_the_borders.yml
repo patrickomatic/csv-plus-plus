@@ -1,0 +1,171 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://www.googleapis.com/oauth2/v4/token
+    body:
+      encoding: ASCII-8BIT
+      string: grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJncHVzaC13cml0ZUBnc3B1c2guaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJhdWQiOiJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9vYXV0aDIvdjQvdG9rZW4iLCJleHAiOjE2ODQxNTMxNDUsImlhdCI6MTY4NDE1MzAyNSwic2NvcGUiOiJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9hdXRoL3NwcmVhZHNoZWV0cyJ9.gixyqL_il6Uh7pPzZYHGBHOwekJL0tVimwmSsvp13b3_Eh-ougZmj8NQkdIgDPYuSt7GuFf64c8L6c0Ul2SVaZiV-NHULI8byxrPQcuobWdbOjLKiB2gC-4KfM40oMt_ERULF48G2Og7DrIGtvBhdRW4CibJ_ocdhEO6t74C4i0qVi4gtRmG2ID1UKZsEYe5HTPPNWOZQgMdj-smSz57qZGTebT3hyeZ_ukm2tlVWs1-l0D5CX7kgKD43tI5aBMbtTKc41SXrCzHmLoU_NZHczuK5BMQnyvrcKk053ExuZbpP2GF9z4sQ259OgniXJeVcJyxciDlcuty1kJHxhnDMA
+    headers:
+      User-Agent:
+      - Faraday v2.7.2
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+      Vary:
+      - Origin
+      - Referer
+      - X-Origin
+      Date:
+      - Mon, 15 May 2023 12:18:05 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Cache-Control:
+      - private
+      X-Xss-Protection:
+      - '0'
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Content-Type-Options:
+      - nosniff
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Transfer-Encoding:
+      - chunked
+    body:
+      encoding: ASCII-8BIT
+      string: "<AUTH>"
+  recorded_at: Mon, 15 May 2023 12:18:05 GMT
+- request:
+    method: get
+    uri: https://sheets.googleapis.com/v4/spreadsheets/%23id/values/A1:Z1000?valueRenderOption=FORMATTED_VALUE
+    body:
+      encoding: UTF-8
+      string: ''
+    headers:
+      User-Agent:
+      - unknown/0.0.0 google-apis-sheets_v4/0.20.0 Mac OS X/13.3.1 (gzip)
+      Accept:
+      - "*/*"
+      Accept-Encoding:
+      - gzip,deflate
+      Date:
+      - Mon, 15 May 2023 12:18:05 GMT
+      X-Goog-Api-Client:
+      - gl-ruby/3.1.3 gdcl/1.20.0
+      Authorization:
+      - "<AUTH>"
+      Content-Type:
+      - application/x-www-form-urlencoded
+  response:
+    status:
+      code: 404
+      message: Not Found
+    headers:
+      Vary:
+      - Origin
+      - Referer
+      - X-Origin
+      Content-Type:
+      - application/json; charset=UTF-8
+      Content-Encoding:
+      - gzip
+      Date:
+      - Mon, 15 May 2023 12:18:05 GMT
+      Server:
+      - ESF
+      Cache-Control:
+      - private
+      X-Xss-Protection:
+      - '0'
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Content-Type-Options:
+      - nosniff
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Transfer-Encoding:
+      - chunked
+    body:
+      encoding: UTF-8
+      string: |
+        {
+          "error": {
+            "code": 404,
+            "message": "Requested entity was not found.",
+            "status": "NOT_FOUND"
+          }
+        }
+  recorded_at: Mon, 15 May 2023 12:18:05 GMT
+- request:
+    method: get
+    uri: https://sheets.googleapis.com/v4/spreadsheets/%23id/values/A1:Z1000?valueRenderOption=FORMULA
+    body:
+      encoding: UTF-8
+      string: ''
+    headers:
+      User-Agent:
+      - unknown/0.0.0 google-apis-sheets_v4/0.20.0 Mac OS X/13.3.1 (gzip)
+      Accept:
+      - "*/*"
+      Accept-Encoding:
+      - gzip,deflate
+      Date:
+      - Mon, 15 May 2023 12:18:05 GMT
+      X-Goog-Api-Client:
+      - gl-ruby/3.1.3 gdcl/1.20.0
+      Authorization:
+      - "<AUTH>"
+      Content-Type:
+      - application/x-www-form-urlencoded
+  response:
+    status:
+      code: 404
+      message: Not Found
+    headers:
+      Vary:
+      - Origin
+      - Referer
+      - X-Origin
+      Content-Type:
+      - application/json; charset=UTF-8
+      Content-Encoding:
+      - gzip
+      Date:
+      - Mon, 15 May 2023 12:18:05 GMT
+      Server:
+      - ESF
+      Cache-Control:
+      - private
+      X-Xss-Protection:
+      - '0'
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Content-Type-Options:
+      - nosniff
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Transfer-Encoding:
+      - chunked
+    body:
+      encoding: UTF-8
+      string: |
+        {
+          "error": {
+            "code": 404,
+            "message": "Requested entity was not found.",
+            "status": "NOT_FOUND"
+          }
+        }
+  recorded_at: Mon, 15 May 2023 12:18:05 GMT
+recorded_with: VCR 6.1.0

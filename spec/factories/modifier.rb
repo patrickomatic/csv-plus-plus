@@ -4,7 +4,7 @@
 ::FactoryBot.define do
   factory :modifier, class: ::CSVPlusPlus::Modifier do
     transient do
-      options { build(:options) }
+      options { build(:file_options) }
       row_level { false }
     end
 

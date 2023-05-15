@@ -14,11 +14,12 @@ require 'webmock/rspec'
 ::SimpleCov.minimum_coverage(90)
 
 require_relative '../lib/csv_plus_plus'
-
-::WebMock.enable!
+require_relative 'support/google_sheets_helpers'
 
 ::RSpec::Sorbet.allow_doubles!
 
+# for testing Google Sheets requests
+::WebMock.enable!
 ::VCR.configure do |c|
   c.cassette_library_dir = 'spec/cassettes'
   c.configure_rspec_metadata!
@@ -26,7 +27,8 @@ require_relative '../lib/csv_plus_plus'
   c.hook_into(:webmock)
 
   c.filter_sensitive_data('<AUTH>') do |interaction|
-    interaction.request.headers['Authorization']&.first
+    (interaction.response.body =~ /access_token/ && interaction.response.body) \
+      || interaction.request.headers['Authorization']&.first
   end
 end
 
@@ -46,6 +48,9 @@ end
 #
 # See https://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 ::RSpec.configure do |config|
+  # TODO: this doesn't seem to work, I still have to prefix with
+  # ::Helpers::GoogleSheets to call it's methods
+  config.include(::Helpers::GoogleSheets)
   config.include(::FactoryBot::Syntax::Methods)
 
   config.before(:suite) do

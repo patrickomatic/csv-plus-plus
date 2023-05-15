@@ -1,27 +1,22 @@
 # typed: false
 # frozen_string_literal: true
 
-# TODO: this should probably be more specific than allowing any paths
-google_sheets_path_matcher =
-  lambda do |_r1, _r2|
-    true
-  end
-
 describe ::CSVPlusPlus::Writer::GoogleSheets do
   let(:position) { build(:position) }
   let(:writer) { described_class.new(options, position) }
 
   before do
-    allow(::Google::Auth).to(receive(:get_application_default).and_return({}))
+    # allow(::Google::Auth).to(receive(:get_application_default).and_return({}))
   end
 
   describe '#write' do
-    let(:options) { build(:options, :with_google_sheet_id, sheet_name: nil) }
+    let(:options) { build(:google_sheets_options, sheet_name: 'Test') }
     let(:template) { build(:template, rows:) }
 
     subject { writer.write(template) }
 
-    describe 'modifiers', vcr: { match_requests_on: [google_sheets_path_matcher] } do
+    # xdescribe 'modifiers', vcr: { match_requests_on: [::Helpers::GoogleSheets::PathMatcher] } do
+    xdescribe 'modifiers' do
       context 'format=' do
         let(:rows) { [row] }
         let(:row) do

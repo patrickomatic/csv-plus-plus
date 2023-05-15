@@ -8,6 +8,8 @@
 
 ### Non-breaking Changes
 
+- Excel: fix the merging of existing values 
+- CSV: fix the merging of existing values 
 - Support merging in values from CSV (previously it would ignore/overwrite them)
 - Allow for more generous spacing in the csv section (and reflect this in the examples)
 - More type coverage

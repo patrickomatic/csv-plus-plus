@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 describe ::CSVPlusPlus::ErrorFormatter do
-  let(:options) { build(:options) }
+  let(:options) { build(:file_options) }
   let(:row_index) { nil }
   let(:cell) { nil }
   let(:cell_index) { nil }
@@ -57,7 +57,7 @@ describe ::CSVPlusPlus::ErrorFormatter do
         end
 
         context 'with a #wrapped_error and verbose: true' do
-          let(:options) { build(:options, verbose: true) }
+          let(:options) { build(:file_options, verbose: true) }
 
           it 'includes the wrapped error message' do
             expect(error_formatter).to(receive(:warn).once.with('test.csvpp:1 Uh oh: "bad input"'))
@@ -77,7 +77,7 @@ describe ::CSVPlusPlus::ErrorFormatter do
       end
 
       context 'when verbose' do
-        let(:options) { build(:options, verbose: true) }
+        let(:options) { build(:file_options, verbose: true) }
 
         it 'prints two warnings' do
           expect(error_formatter).to(receive(:warn).twice)

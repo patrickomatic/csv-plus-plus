@@ -5,35 +5,27 @@ module CSVPlusPlus
   module Writer
     # Given +rows+ from a +Template+, build requests compatible with Google Sheets Ruby API
     # rubocop:disable Metrics/ClassLength
-    class GoogleSheetBuilder
+    class GoogleSheetsBuilder
       extend ::T::Sig
+      include ::CSVPlusPlus::Writer::Merger
 
       sig do
         params(
-          current_sheet_values: ::T::Array[::T::Array[::T.nilable(::String)]],
+          options: ::CSVPlusPlus::Options::GoogleSheetsOptions,
           position: ::CSVPlusPlus::Runtime::Position,
-          sheet_id: ::T.nilable(::Integer),
-          rows: ::T::Array[::CSVPlusPlus::Row],
-          column_index: ::T.nilable(::Integer),
-          row_index: ::T.nilable(::Integer)
+          reader: ::CSVPlusPlus::Reader::GoogleSheets,
+          rows: ::T::Array[::CSVPlusPlus::Row]
         ).void
       end
-      # @param column_index [Integer] Offset the results by +column_index+
-      # @param current_sheet_values [Array<Array<::String, nil>>]
-      # @param sheet_id [::String] The sheet ID referencing the sheet in Google
-      # @param row_index [Integer] Offset the results by +row_index+
-      # @param rows [Array<Row>] The rows to render
+      # @param options [Options]
       # @param position [Position] The current position.
-      #
-      # rubocop:disable Metrics/ParameterLists
-      def initialize(current_sheet_values:, position:, sheet_id:, rows:, column_index: 0, row_index: 0)
-        # rubocop:enable Metrics/ParameterLists
-        @current_sheet_values = current_sheet_values
-        @sheet_id = sheet_id
-        @rows = rows
-        @column_index = column_index
-        @row_index = row_index
+      # @param reader [::CSVPlusPlus::Reader::GoogleSheets]
+      # @param rows [Array<Row>] The rows to render
+      def initialize(options:, position:, reader:, rows:)
+        @options = options
         @position = position
+        @reader = reader
+        @rows = rows
       end
 
       sig { returns(::Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest) }
@@ -46,19 +38,23 @@ module CSVPlusPlus
 
       private
 
-      sig { params(extended_value: ::Google::Apis::SheetsV4::ExtendedValue, value: ::T.nilable(::String)).void }
-      def set_extended_value_type!(extended_value, value)
-        v = value || ''
-        if v.start_with?('=')
-          extended_value.formula_value = value
-        elsif v.match(/^-?[\d.]+$/)
-          extended_value.number_value = value
-        elsif v.downcase == 'true' || v.downcase == 'false'
-          extended_value.bool_value = value
-        else
-          extended_value.string_value = value
+      sig { params(value: ::T.nilable(::String)).returns(::Google::Apis::SheetsV4::ExtendedValue) }
+      # rubocop:disable Metrics/MethodLength
+      def build_extended_value(value)
+        ::Google::Apis::SheetsV4::ExtendedValue.new.tap do |xv|
+          v = value || ''
+          if v.start_with?('=')
+            xv.formula_value = value
+          elsif v.match(/^-?[\d.]+$/)
+            xv.number_value = value
+          elsif v.downcase == 'true' || v.downcase == 'false'
+            xv.bool_value = value
+          else
+            xv.string_value = value
+          end
         end
       end
+      # rubocop:enable Metrics/MethodLength
 
       sig { params(mod: ::CSVPlusPlus::Modifier::GoogleSheetModifier).returns(::Google::Apis::SheetsV4::CellFormat) }
       def build_cell_format(mod)
@@ -75,7 +71,6 @@ module CSVPlusPlus
       sig { params(cell: ::CSVPlusPlus::Cell).returns(::Google::Apis::SheetsV4::GridRange) }
       def grid_range_for_cell(cell)
         ::Google::Apis::SheetsV4::GridRange.new(
-          sheet_id: @sheet_id,
           start_column_index: cell.index,
           end_column_index: cell.index + 1,
           start_row_index: cell.row_index,
@@ -83,25 +78,15 @@ module CSVPlusPlus
         )
       end
 
-      sig { params(row_index: ::Integer, cell_index: ::Integer).returns(::T.nilable(::String)) }
-      def current_value(row_index, cell_index)
-        ::T.must(@current_sheet_values[row_index])[cell_index]
-      rescue ::StandardError
-        nil
-      end
-
       sig { params(cell: ::CSVPlusPlus::Cell).returns(::Google::Apis::SheetsV4::ExtendedValue) }
       def build_cell_value(cell)
-        ::Google::Apis::SheetsV4::ExtendedValue.new.tap do |xv|
-          value =
-            if cell.value.nil?
-              current_value(cell.row_index, cell.index)
-            else
-              cell.evaluate(@position)
-            end
-
-          set_extended_value_type!(xv, value)
-        end
+        build_extended_value(
+          merge_cell_value(
+            existing_value: @reader.value_at(cell),
+            new_value: (ast = cell.ast) ? ast.evaluate(@position) : cell.value,
+            options: @options
+          )
+        )
       end
 
       sig { params(cell: ::CSVPlusPlus::Cell).returns(::Google::Apis::SheetsV4::CellData) }
@@ -127,9 +112,8 @@ module CSVPlusPlus
         ::Google::Apis::SheetsV4::UpdateCellsRequest.new(
           fields: '*',
           start: ::Google::Apis::SheetsV4::GridCoordinate.new(
-            sheet_id: @sheet_id,
-            column_index: @column_index,
-            row_index: @row_index
+            column_index: @options.offset[1],
+            row_index: @options.offset[0]
           ),
           rows:
         )

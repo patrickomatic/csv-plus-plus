@@ -9,14 +9,28 @@ describe ::CSVPlusPlus::CLI do
   end
 
   describe '#initialize' do
-    let(:argv) { %w[csv++ --output foo.xls --verbose] }
+    let(:argv) { %w[csv++ --output foo.xlsx --verbose foo.csvpp] }
 
-    before { stub_const('ARGV', argv) }
+    before do
+      ::File.write('foo.csvpp', 'foo,bar')
+      stub_const('ARGV', argv)
+    end
+
+    after { ::File.delete('foo.csvpp') if ::File.exist?('foo.csvpp') }
 
     it 'validates the CLI flags' do
       subject
-      expect(cli.options.output_filename).to(eq(::Pathname.new('foo.xls')))
+      expect(cli.options.output_filename).to(eq(::Pathname.new('foo.xlsx')))
       expect(cli.options.verbose).to(be(true))
+    end
+
+    context 'when the source file does not exist' do
+      before { ::File.delete('foo.csvpp') if ::File.exist?('foo.csvpp') }
+
+      it 'raises an error' do
+        expect { subject }
+          .to(raise_error(::CSVPlusPlus::Error::CLIError))
+      end
     end
 
     context 'with the help flag' do

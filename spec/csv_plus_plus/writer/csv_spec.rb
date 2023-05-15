@@ -3,7 +3,7 @@
 
 describe ::CSVPlusPlus::Writer::CSV do
   let(:output_filename) { 'foo.csv' }
-  let(:options) { build(:options, output_filename:) }
+  let(:options) { build(:file_options, output_filename:) }
   let(:position) { build(:position) }
   let(:writer) { described_class.new(options, position) }
 
