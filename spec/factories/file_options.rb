@@ -6,6 +6,7 @@
     transient do
       create_if_not_exists { false }
       output_filename { 'text.xlsx' }
+      overwrite_values { true }
       sheet_name { 'Test' }
     end
 
@@ -13,6 +14,7 @@
 
     after(:build) do |i, e|
       i.create_if_not_exists = e.create_if_not_exists
+      i.overwrite_values = e.overwrite_values
       i.sheet_name = e.sheet_name
     end
   end

@@ -46,6 +46,7 @@ module CSVPlusPlus
       'offset-columns': ->(options, v) { options.offset[0] = v },
       'offset-rows': ->(options, v) { options.offset[1] = v },
       output: ->(options, v) { options.output_filename = ::Pathname.new(v) },
+      safe: ->(options, _v) { options.overwrite_values = false },
       verbose: ->(options, _v) { options.verbose = true }
     },
     ::T::Hash[::Symbol, ::T.proc.params(options: ::CSVPlusPlus::Options::Options, v: ::String).void]
@@ -80,6 +81,11 @@ module CSVPlusPlus
         '-o OUTPUT_FILE',
         '--output OUTPUT_FILE',
         'The file to write to (must be .csv, .ods, .xls)'
+      ),
+      ::CSVPlusPlus::CLIFlag.new(
+        '-s',
+        '--safe',
+        'Do not overwrite values in the spreadsheet being written to. The default is to overwrite'
       ),
       ::CSVPlusPlus::CLIFlag.new('-v', '--verbose', 'Enable verbose output'),
       ::CSVPlusPlus::CLIFlag.new('-x OFFSET', '--offset-columns OFFSET', 'Apply the template offset by OFFSET cells'),

@@ -59,6 +59,7 @@ Usage: csv++ [options]
     -k, --key-values KEY_VALUES      A comma-separated list of key=values which will be made available to the template
     -n, --sheet-name SHEET_NAME      The name of the sheet to apply the template to
     -o, --output OUTPUT_FILE         The file to write to (must be .csv, .ods, .xls)
+    -s, --safe                       Do not overwrite values in the spreadsheet being written to. The default is to overwrite
     -v, --verbose                    Enable verbose output
     -x, --offset-columns OFFSET      Apply the template offset by OFFSET cells
     -y, --offset-rows OFFSET         Apply the template offset by OFFSET rows

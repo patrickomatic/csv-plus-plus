@@ -9,6 +9,7 @@ module CSVPlusPlus
     # @attr create_if_not_exists [Boolean] Create the spreadsheet if it does not exist?
     # @attr key_values [Hash] Additional variables that can be supplied to the template
     # @attr offset [Array<Integer>] An [x, y] offset (array with two integers)
+    # @attr overwrite_values [Boolean] Whether or not to overwrite existing values in the output spreadsheet.
     # @attr sheet_name [String] The name of the spreadsheet to write to
     # @attr verbose [Boolean] Include extra verbose output?
     class Options
@@ -29,6 +30,9 @@ module CSVPlusPlus
       sig { returns(::T::Array[::Integer]) }
       attr_accessor :offset
 
+      sig { returns(::T::Boolean) }
+      attr_accessor :overwrite_values
+
       sig { returns(::String) }
       attr_accessor :sheet_name
 
@@ -38,12 +42,13 @@ module CSVPlusPlus
       sig { params(sheet_name: ::String).void }
       # Initialize a defaul +Options+ object
       def initialize(sheet_name)
-        @sheet_name = sheet_name
-        @offset = ::T.let([0, 0], ::T::Array[::Integer])
+        @backup = ::T.let(false, ::T::Boolean)
         @create_if_not_exists = ::T.let(false, ::T::Boolean)
         @key_values = ::T.let({}, ::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Entity])
+        @offset = ::T.let([0, 0], ::T::Array[::Integer])
+        @overwrite_values = ::T.let(true, ::T::Boolean)
+        @sheet_name = sheet_name
         @verbose = ::T.let(false, ::T::Boolean)
-        @backup = ::T.let(false, ::T::Boolean)
       end
 
       sig { abstract.returns(::CSVPlusPlus::Options::OutputFormat) }

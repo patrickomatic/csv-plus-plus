@@ -41,10 +41,9 @@
 # Language
 
 - [ ] Make the csv-separator work with '|' instead. I think it would look better
-- [ ] Make the merge strategy a configurable flag (whether it overwrites data already in the spreadsheet or not)
-  * maybe even make it warn when in --verbose mode
 - [ ] if you reference a variable outside of an expand, it references the range of the expand
 - [ ] a way to not show a function if it's dependent cells are blank (make it less ugly when expanded out)
+- [x] Make the merge strategy a configurable flag (whether it overwrites data already in the spreadsheet or not)
 - [x] can I get rid of $$ syntax and just resolve the functions and runtime vars it knows about?
 - [x] make the code section (and `---`) optional
 - [x] maybe a RuntimeValue doesn't belong as an entity - it doesn't output itself, it only needs to exist during function resolution

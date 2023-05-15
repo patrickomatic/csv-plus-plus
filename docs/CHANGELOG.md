@@ -1,3 +1,7 @@
+## main
+
+- Add a `-s`/`--safe` flag which changes the merge strategy to not overwrite existing values.  If the spreadsheet being written to has values where the csvpp template wants to write, they will be overwritten otherwise.
+
 ## v0.2.0
 
 ### **Breaking Changes**
