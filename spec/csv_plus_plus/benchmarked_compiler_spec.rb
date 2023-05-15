@@ -3,7 +3,7 @@
 
 describe ::CSVPlusPlus::BenchmarkedCompiler do
   let(:benchmark) { instance_double('Benchmark::Report') }
-  let(:options) { build(:options) }
+  let(:options) { build(:file_options) }
   let(:runtime) { build(:runtime) }
   let(:compiler) { described_class.new(benchmark:, options:, runtime:) }
 

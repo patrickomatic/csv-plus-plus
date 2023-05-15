@@ -52,5 +52,20 @@ describe ::CSVPlusPlus::Entities::FunctionCall do
 
       it { is_expected.to(eq('(A * B)')) }
     end
+
+    context 'with a nested function' do
+      let(:entity) do
+        build(
+          :fn_call,
+          name: :multiply,
+          arguments: [
+            build(:number, n: 5),
+            build(:fn_call, name: :foo, arguments: [build(:number_one), build(:number_two)])
+          ]
+        )
+      end
+
+      it { is_expected.to(eq('MULTIPLY(5, FOO(1, 2))')) }
+    end
   end
 end

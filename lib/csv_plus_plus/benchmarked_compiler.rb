@@ -18,7 +18,7 @@ module CSVPlusPlus
 
     sig do
       params(
-        options: ::CSVPlusPlus::Options,
+        options: ::CSVPlusPlus::Options::Options,
         runtime: ::CSVPlusPlus::Runtime::Runtime,
         block: ::T.proc.params(compiler: ::CSVPlusPlus::Compiler).void
       ).void
@@ -40,7 +40,7 @@ module CSVPlusPlus
     sig do
       params(
         benchmark: ::Benchmark::Report,
-        options: ::CSVPlusPlus::Options,
+        options: ::CSVPlusPlus::Options::Options,
         runtime: ::CSVPlusPlus::Runtime::Runtime
       ).void
     end

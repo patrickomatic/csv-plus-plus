@@ -9,7 +9,7 @@ module CSVPlusPlus
     sig { returns(::String) }
     attr_reader :input
 
-    sig { returns(::T.nilable(::Pathname)) }
+    sig { returns(::Pathname) }
     attr_reader :filename
 
     sig { returns(::Integer) }
@@ -21,15 +21,13 @@ module CSVPlusPlus
     sig { returns(::Integer) }
     attr_reader :length_of_file
 
-    sig { params(input: ::String, filename: ::T.nilable(::String)).void }
-    # @param input [::String] The source code being parsed
-    # @param filename [::String, nil] The name of the file the source came from.  If not set we assume it came
-    #   from stdin
-    def initialize(input:, filename: nil)
-      @input = input
-      @filename = ::T.let(filename ? ::Pathname.new(filename) : nil, ::T.nilable(::Pathname))
+    sig { params(filename: ::String, input: ::T.nilable(::String)).void }
+    # @param filename [::String] The name of the file the source came from.
+    def initialize(filename, input: nil)
+      @filename = ::T.let(::Pathname.new(filename), ::Pathname)
+      @input = ::T.let(input || read_file, ::String)
 
-      lines = input.split(/[\r\n]/)
+      lines = @input.split(/[\r\n]/)
       @length_of_file = ::T.let(lines.length, ::Integer)
       @length_of_code_section = ::T.let(count_code_section_lines(lines), ::Integer)
       @length_of_csv_section = ::T.let(@length_of_file - @length_of_code_section, ::Integer)
@@ -56,6 +54,13 @@ module CSVPlusPlus
     end
 
     private
+
+    sig { returns(::String) }
+    def read_file
+      raise(::CSVPlusPlus::Error::CLIError, "Source file #{@filename} does not exist") unless ::File.exist?(@filename)
+
+      ::File.read(@filename)
+    end
 
     sig { params(lines: ::T::Array[::String]).returns(::Integer) }
     def count_code_section_lines(lines)

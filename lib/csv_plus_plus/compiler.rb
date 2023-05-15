@@ -11,7 +11,7 @@ module CSVPlusPlus
   class Compiler
     extend ::T::Sig
 
-    sig { returns(::CSVPlusPlus::Options) }
+    sig { returns(::CSVPlusPlus::Options::Options) }
     attr_reader :options
 
     sig { returns(::CSVPlusPlus::Runtime::Runtime) }
@@ -19,7 +19,7 @@ module CSVPlusPlus
 
     sig do
       params(
-        options: ::CSVPlusPlus::Options,
+        options: ::CSVPlusPlus::Options::Options,
         runtime: ::CSVPlusPlus::Runtime::Runtime,
         block: ::T.proc.params(arg0: ::CSVPlusPlus::Compiler).void
       ).void
@@ -40,7 +40,7 @@ module CSVPlusPlus
       runtime.position.cleanup!
     end
 
-    sig { params(options: ::CSVPlusPlus::Options, runtime: ::CSVPlusPlus::Runtime::Runtime).void }
+    sig { params(options: ::CSVPlusPlus::Options::Options, runtime: ::CSVPlusPlus::Runtime::Runtime).void }
     # @param options [Options]
     # @param runtime [Runtime]
     def initialize(options:, runtime:)

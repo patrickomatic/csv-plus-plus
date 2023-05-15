@@ -76,7 +76,12 @@ module CSVPlusPlus
       end
     end
 
-    sig { params(options: ::CSVPlusPlus::Options, row_level: ::T::Boolean).returns(::CSVPlusPlus::Modifier::Modifier) }
+    sig do
+      params(
+        options: ::CSVPlusPlus::Options::Options,
+        row_level: ::T::Boolean
+      ).returns(::CSVPlusPlus::Modifier::Modifier)
+    end
     # Return a +Modifier+ with the proper validation and helper functions attached for the given output
     #
     # @param options [boolean] is this a row level modifier? (otherwise cell-level)

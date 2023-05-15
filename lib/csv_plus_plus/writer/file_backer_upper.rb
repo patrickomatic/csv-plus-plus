@@ -21,9 +21,9 @@ module CSVPlusPlus
       )
       private_constant :DESIRED_BACKUP_FORMATS
 
-      sig { params(options: ::CSVPlusPlus::Options).returns(::T.nilable(::Pathname)) }
+      sig { params(options: ::CSVPlusPlus::Options::FileOptions).returns(::T.nilable(::Pathname)) }
       # Assuming the underlying spreadsheet is file-based, create a backup of it
-      def write_backup(options)
+      def backup_file(options)
         return unless ::File.exist?(options.output_filename)
 
         # TODO: also don't do anything if the current backups contents haven't changed (do a md5sum or something)
@@ -35,16 +35,15 @@ module CSVPlusPlus
 
       private
 
-      sig { params(options: ::CSVPlusPlus::Options).returns(::Pathname) }
+      sig { params(options: ::CSVPlusPlus::Options::FileOptions).returns(::Pathname) }
       # rubocop:disable Metrics/MethodLength
       def attempt_backups(options)
-        output_filename = ::T.must(options.output_filename)
         attempted =
           # rubocop:disable Lint/ConstantResolution
           DESIRED_BACKUP_FORMATS.map do |file_format|
             # rubocop:enable Lint/ConstantResolution
-            filename = format_backup_filename(file_format, output_filename)
-            backed_up_to = backup(filename, output_filename)
+            filename = format_backup_filename(file_format, options.output_filename)
+            backed_up_to = backup(filename, options.output_filename)
 
             next filename unless backed_up_to
 

@@ -2,17 +2,8 @@
 # frozen_string_literal: true
 
 module CSVPlusPlus
-  # The options a user can supply (via CLI flags)
-  #
-  # @attr backup [Boolean] Create a backup of the spreadsheet before writing
-  # @attr create_if_not_exists [Boolean] Create the spreadsheet if it does not exist?
-  # @attr key_values [Hash] Additional variables that can be supplied to the template
-  # @attr offset [Array<Integer>] An [x, y] offset (array with two integers)
-  # @attr output_filename [String] The file to write our compiled results to
-  # @attr sheet_name [String] The name of the spreadsheet to write to
-  # @attr verbose [Boolean] Include extra verbose output?
-  # @attr_reader google [GoogleOptions] Options that are specific to the Google Sheets writer
-  class Options
+  # Options that a user can supply - either specific for compiling to a file (xlsx, csv) or Google Sheets
+  module Options
     extend ::T::Sig
 
     # The supported output formats.  We use this to dispatch flow in several places
@@ -25,109 +16,30 @@ module CSVPlusPlus
       end
     end
 
-    sig { returns(::T::Boolean) }
-    attr_accessor :backup
-
-    sig { returns(::T::Boolean) }
-    attr_accessor :create_if_not_exists
-
-    sig { returns(::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Entity]) }
-    attr_accessor :key_values
-
-    sig { returns(::T::Array[::Integer]) }
-    attr_accessor :offset
-
-    sig { returns(::T.nilable(::Pathname)) }
-    attr_accessor :output_filename
-
-    sig { returns(::T.nilable(::String)) }
-    attr_accessor :sheet_name
-
-    sig { returns(::T::Boolean) }
-    attr_accessor :verbose
-
-    sig { returns(::T.nilable(::CSVPlusPlus::GoogleOptions)) }
-    attr_reader :google
-
-    sig { void }
-    # Initialize a default +Options+ object
-    def initialize
-      @offset = ::T.let([0, 0], ::T::Array[::Integer])
-      @create_if_not_exists = ::T.let(false, ::T::Boolean)
-      @key_values = ::T.let({}, ::T::Hash[::Symbol, ::CSVPlusPlus::Entities::Entity])
-      @verbose = ::T.let(false, ::T::Boolean)
-      @backup = ::T.let(false, ::T::Boolean)
-      @google = ::T.let(nil, ::T.nilable(::CSVPlusPlus::GoogleOptions))
+    sig do
+      params(flags: ::T::Hash[::Symbol, ::String], input_filename: ::Pathname).returns(::CSVPlusPlus::Options::Options)
     end
-
-    sig { params(sheet_id: ::String).returns(::CSVPlusPlus::GoogleOptions) }
-    # Set the Google Sheet ID
+    # Use the given +flags+ to determine if we're dealing with either a Google Sheets or file-based
+    # compilation and build an +Options+ instance accordingly.
     #
-    # @param sheet_id [::String] The identifier used by Google's API to reference the sheet.  You can find it in the URL
-    #   for the sheet
+    # @param flags [Hash<Symbol, String>]
+    # @param input_filename [Pathname]
     #
-    # @return [::String]
-    def google_sheet_id=(sheet_id)
-      @google = ::CSVPlusPlus::GoogleOptions.new(sheet_id)
-    end
-
-    sig { returns(::CSVPlusPlus::Options::OutputFormat) }
-    # Given the options, figure out which type of +OutputFormat+ we'll be writing to
-    #
-    # @return [Options::OutputFormat]
-    def output_format
-      return ::CSVPlusPlus::Options::OutputFormat::GoogleSheets if @google
-
-      case @output_filename&.extname
-      when '.csv' then ::CSVPlusPlus::Options::OutputFormat::CSV
-      when '.ods' then ::CSVPlusPlus::Options::OutputFormat::OpenDocument
-      when /\.xl(sx|sm|tx|tm)$/ then ::CSVPlusPlus::Options::OutputFormat::Excel
-      else raise(::CSVPlusPlus::Error::CLIError, "Unsupported file extension: #{@output_filename}")
+    # @return [Options::Options]
+    def self.from_cli_flags(flags, input_filename)
+      sheet_name = flags[:'sheet-name'] || input_filename.sub_ext('').to_s
+      if (google_sheet_id = flags[:'google-sheet-id'])
+        ::CSVPlusPlus::Options::GoogleSheetsOptions.new(sheet_name, google_sheet_id)
+      elsif (output_filename = flags[:output])
+        ::CSVPlusPlus::Options::FileOptions.new(sheet_name, output_filename)
+      else
+        raise(::CSVPlusPlus::Error::CLIError, 'You must supply either -o/--output or -g/-google-sheet-id')
       end
-    end
-
-    sig { returns(::T.nilable(::String)) }
-    # Returns an error string or nil if there are no validation problems
-    #
-    # @return [String, nil]
-    def validate
-      return if @google || @output_filename
-
-      'You must supply either a Google Sheet ID or an output file'
-    end
-
-    sig { returns(::String) }
-    # Return a string with a verbose description of what we're doing with the options
-    #
-    # @return [String]
-    def verbose_summary
-      <<~SUMMARY
-        #{summary_divider}
-
-        # csv++ Command Options
-
-        > Sheet name                          | #{@sheet_name}
-        > Create sheet if it does not exist?  | #{@create_if_not_exists}
-        > Spreadsheet row-offset              | #{@offset[0]}
-        > Spreadsheet cell-offset             | #{@offset[1]}
-        > User-supplied key-values            | #{@key_values}
-        > Verbose                             | #{@verbose}
-
-        ## Output Options
-
-        > Backup                              | #{@backup}
-        > Output filename                     | #{@output_filename}
-
-        #{@google&.verbose_summary || ''}
-        #{summary_divider}
-      SUMMARY
-    end
-
-    private
-
-    sig { returns(::String) }
-    def summary_divider
-      '========================================================================='
     end
   end
 end
+
+require_relative './options/options'
+
+require_relative './options/file_options'
+require_relative './options/google_sheets_options'

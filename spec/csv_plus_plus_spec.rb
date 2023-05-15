@@ -3,7 +3,7 @@
 
 describe ::CSVPlusPlus do
   let(:backup) { false }
-  let(:options) { build(:options, backup:, output_filename:) }
+  let(:options) { build(:file_options, backup:, output_filename:) }
   let(:filename) { 'foo.csvpp' }
   let(:input) do
     <<~INPUT
@@ -16,14 +16,14 @@ describe ::CSVPlusPlus do
       "=COMPUTE(500, 400)"
     INPUT
   end
+  let(:source_code) { build(:source_code, input:, filename:) }
 
   describe '.cli_compile' do
-    subject { described_class.cli_compile(input, filename, options) }
+    subject { described_class.cli_compile(source_code, options) }
 
     context 'to CSV' do
       let(:output_filename) { 'bar.csv' }
       let(:backup) { false }
-      let(:options) { build(:options, backup:, output_filename:) }
 
       after { ::File.delete(output_filename) if ::File.exist?(output_filename) }
 
@@ -125,6 +125,39 @@ describe ::CSVPlusPlus do
               Date,Purchase,Price,Quantity,Profit,Fees
               ,,,,=((B2 * C2) - (0.65 * D2)),=(0.65 * D2)
               ,,,,=((B3 * C3) - (0.65 * D3)),=(0.65 * D3)
+            OUTPUT
+        end
+      end
+
+      context 'when output_filename has values' do
+        before do
+          ::File.write(output_filename, <<~EXISTING_OUTPUT)
+            foo,bar,baz
+            foo1,bar1,baz1
+            foo2,bar2,baz2
+            foo3,bar3,baz3
+          EXISTING_OUTPUT
+        end
+
+        let(:input) do
+          <<~INPUT
+            var := 5
+            ---
+            ![[format=bold]]              ,     ,=var ,
+            ![[expand=2/format=italic]]   ,     ,foo  ,
+            ![[halign=left]]              ,     ,     ,
+          INPUT
+        end
+
+        it 'merges the values into the results' do
+          subject
+
+          expect(::File.read(output_filename)).to(
+            eq(<<~OUTPUT))
+              foo,bar,=5,
+              foo1,bar1,foo,
+              foo2,bar2,foo,
+              foo3,bar3,baz3,
             OUTPUT
         end
       end

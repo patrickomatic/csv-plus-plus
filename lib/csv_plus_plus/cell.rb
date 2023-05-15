@@ -46,24 +46,10 @@ module CSVPlusPlus
     # The +@value+ (cleaned up some)
     #
     # @return [::String]
-    # TODO: is this used?
     def value
       stripped = @value&.strip
 
       stripped&.empty? ? nil : stripped
-    end
-
-    sig { params(position: ::CSVPlusPlus::Runtime::Position).returns(::T.nilable(::String)) }
-    # A compiled final representation of the cell.  This can only happen after all cell have had variables and functions
-    # resolved.
-    #
-    # @param position [Position]
-    #
-    # @return [::String]
-    def evaluate(position)
-      return value unless @ast
-
-      "=#{@ast.evaluate(position)}"
     end
   end
 end

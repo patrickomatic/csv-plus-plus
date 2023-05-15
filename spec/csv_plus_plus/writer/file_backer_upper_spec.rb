@@ -12,21 +12,21 @@ class TestWriter
 end
 
 describe ::CSVPlusPlus::Writer::FileBackerUpper do
-  let(:options) { build(:options, output_filename:) }
+  let(:options) { build(:file_options, output_filename:) }
   let(:writer) { ::TestWriter.new(options) }
   let(:output_file) do
     ::Tempfile.new(%w[foo csvpp]).tap do |f|
       f.write('foo,bar,baz')
     end
   end
-  let(:output_filename) { ::Pathname.new(output_file.path) }
+  let(:output_filename) { output_file.path }
 
   after do
     output_file.unlink
   end
 
-  describe '#write_backup' do
-    subject { writer.write_backup(options) }
+  describe '#backup_file' do
+    subject { writer.backup_file(options) }
 
     after { subject.unlink }
 
