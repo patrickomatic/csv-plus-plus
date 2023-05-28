@@ -1,0 +1,4 @@
+foo := 1
+
+---
+[[format=bold]]foo,bar,baz
