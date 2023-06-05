@@ -30,6 +30,10 @@ impl fmt::Display for SourceCode {
     }
 }
 
+// fn split_template(reader: &BufReader) -> (Option<String>, String) {
+    // TODO
+// }
+
 impl SourceCode {
     pub fn open(filename: PathBuf) -> Result<SourceCode, String>  {
         let mut total_lines = 0;

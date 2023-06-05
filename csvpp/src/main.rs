@@ -13,22 +13,33 @@ mod options;
 mod runtime;
 mod source_code;
 
+pub type Position = (usize, usize);
+
 fn main() {
     let options = options::parse_cli_args();
-    let template = compiler::compile_template(&options);
+    if let Ok(template) = compiler::compile_template(&options) {
+        if options.backup {
+            println!("Backing up {}", options.backup)
+            // XXX back it up
+        }
 
-    if options.backup {
-        println!("Backing up {}", options.backup)
-        // XXX back it up
-    }
-
-    if options.verbose {
-        println!(
+        if options.verbose {
+            println!(
 r#"
-# Parsed csvpp template
+# csv++ 
+
+## Called with options
+{}
+
+## Parsed csvpp template
 {}
 "#, 
-            options.input
-        );
+                options,
+                template,
+            );
+        }
+    } else {
+        // TODO actually catch the error and handle
+        println!("Error parsing template!!");
     }
 }

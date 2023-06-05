@@ -1,6 +1,7 @@
 use std::collections::HashMap;
+use std::fmt;
 use std::path::{Path, PathBuf};
-use clap::{Parser};
+use clap::Parser;
 
 use crate::ast;
 use crate::source_code;
@@ -13,6 +14,15 @@ pub enum OutputTarget {
     File(PathBuf),
 }
 
+impl fmt::Display for OutputTarget {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::GoogleSheets(id) => write!(f, "Google Sheets: {}", id),
+            Self::File(path) => write!(f, "{}", path.to_str().unwrap()),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Options {
     pub backup: bool,
@@ -22,6 +32,31 @@ pub struct Options {
     pub output: OutputTarget,
     pub overwrite_values: bool,
     pub verbose: bool,
+}
+
+impl fmt::Display for Options {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f, 
+            r#"
+    backup: {}
+    input: {}
+    key_values: {:?}
+    offset: ({}, {})
+    output: {}
+    overwrite_values: {}
+    verbose: {}
+            "#,
+            self.backup,
+            self.input,
+            self.key_values,
+            self.offset.0,
+            self.offset.1,
+            self.output,
+            self.overwrite_values,
+            self.verbose,
+        )
+    }
 }
 
 // TODO: maybe come up with a better name for this class that isn't similar to the Option primitive
@@ -53,6 +88,7 @@ impl Options {
     }
 }
 
+// TODO actually use this
 fn validate_output_filename(output_filename: &Path) -> Result<(), String> {
     match output_filename.extension() {
         None => Err(String::from("Output filename must end with .csv, .xlsx or .ods")),
@@ -71,6 +107,7 @@ fn validate_output_filename(output_filename: &Path) -> Result<(), String> {
     }
 }
 
+// TODO actually use this
 fn validate_google_sheet_id(google_sheet_id: &str) -> Result<(), &str> {
     if google_sheet_id.chars().all(char::is_alphanumeric) {
         Ok(())

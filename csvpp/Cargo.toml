@@ -10,5 +10,6 @@ edition = "2021"
 chrono = "0.4.24"
 clap = { version = "4.2.7", features = ["derive"] }
 csv = "1"
+lazy_static = "1"
 regex = "1"
 rgb = "0.8"

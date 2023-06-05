@@ -1,12 +1,10 @@
 use std::collections::HashMap;
 use chrono;
 
-use crate::runtime::Position;
-
 type FunctionArguments = Vec<String>;
 type FunctionCallArguments = Vec<Node>;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Node {
     Boolean(bool),
 
