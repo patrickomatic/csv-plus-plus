@@ -16,7 +16,7 @@ pub enum CsvppError<'a> {
         message: &'a str,
     },
     ModifierSyntaxError {
-        bad_input: &'a str,
+        bad_input: String,
         index: Position,
         message: String,
     },
