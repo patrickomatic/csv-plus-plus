@@ -13,7 +13,14 @@ mod options;
 mod runtime;
 mod source_code;
 
-pub type Position = (usize, usize);
+#[derive(Clone, Debug, PartialEq)]
+pub struct Position(usize, usize);
+
+impl Position {
+    pub fn is_first_cell(&self) -> bool {
+        self.0 == 0
+    }
+}
 
 fn main() {
     let options = options::parse_cli_args();

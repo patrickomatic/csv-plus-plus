@@ -1,7 +1,8 @@
 //! Error handling functions
 use std::error::Error;
 use std::fmt;
-// use std::result;
+
+use crate::Position;
 
 #[derive(Clone, Debug)]
 pub enum CsvppError<'a> {
@@ -11,12 +12,12 @@ pub enum CsvppError<'a> {
         message: &'a str,
     },
     CellSyntaxError {
-        index: crate::Position,
+        index: Position,
         message: &'a str,
     },
     ModifierSyntaxError {
         bad_input: &'a str,
-        index: crate::Position,
+        index: Position,
         message: String,
     },
 }
@@ -26,9 +27,9 @@ impl<'a> fmt::Display for CsvppError<'a> {
         match self {
             CsvppError::CodeSyntaxError { line_number, message } => 
                 write!(f, "{}: {}", line_number, message),
-            CsvppError::CellSyntaxError { index: (x, y), message } => 
+            CsvppError::CellSyntaxError { index: Position(x, y), message } => 
                 write!(f, "Cell->[{},{}]: {}", x, y, message),
-            CsvppError::ModifierSyntaxError { bad_input, index: (x, y), message } => 
+            CsvppError::ModifierSyntaxError { bad_input, index: Position(x, y), message } => 
                 // TODO: more specific error message
                 write!(f, "Cell->[{},{}]: {}. bad_input = {}", x, y, message, bad_input),
         }
