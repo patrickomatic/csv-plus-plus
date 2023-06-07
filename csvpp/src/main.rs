@@ -10,6 +10,7 @@ mod compiler;
 mod error;
 mod modifier;
 mod options;
+mod rgb;
 mod runtime;
 mod source_code;
 

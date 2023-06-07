@@ -1,13 +1,14 @@
 //! Module for lexing and parsing the modifiers on a cell.
 //!
 //! TODO:
-//! * lowercase input
+//! * fix the row parsing logic (it doesn't apply them)
+//! * need to lowercase the input but we can't do it on the entire value because we don't want to
+//!     lowercase the stuff outside the modifier definition
 //! * get quoted strings working
-//! * need to open up the characters the right hand side lexer accepts in order to parse some of the
-//!     shorthands
 use crate::error::CsvppError;
 use crate::Position;
 use crate::modifier::*;
+use crate::rgb::Rgb;
 use std::str::FromStr;
 
 #[derive(PartialEq)]
@@ -18,7 +19,7 @@ pub enum Token {
     ModifierName,
     ModifierRightSide,
     PositiveNumber,
-    QuotedString,
+    QString,
     Slash,
     StartCellModifier,
     StartRowModifier,
@@ -92,7 +93,7 @@ impl ModifierLexer {
             Token::ModifierName =>      self.take_while(|ch| ch.is_alphanumeric()),
             Token::ModifierRightSide => self.take_while(|ch| ch.is_alphanumeric() || ch == '_'),
             Token::PositiveNumber =>    self.take_while(|ch| ch.is_ascii_digit()),
-            Token::QuotedString =>      self.take_quoted_string(),
+            Token::QString =>           self.take_string(),
             Token::Slash =>             self.take("/"),
             Token::StartCellModifier => self.take("[["),
             Token::StartRowModifier =>  self.take("![["),
@@ -114,9 +115,15 @@ impl ModifierLexer {
         Ok(String::from("#FFF"))
     }
 
-    fn take_quoted_string<'a>(&mut self) -> LexerTakeResult {
-        // XXX
-        Ok("".to_string())
+    fn take_string<'a>(&mut self) -> LexerTakeResult {
+        let input = self.input.trim();
+
+        if input.starts_with("'") {
+            todo!(); // XXX single quote parsing logic
+        } else {
+            let unquoted_string = self.take_while(|ch| ch.is_alphanumeric())?;
+            Ok(unquoted_string.to_string())
+        }
     }
 
     // TODO need to lowercase this
@@ -153,34 +160,36 @@ struct ModifierParser<'a> {
 type ParseResult = Result<(), String>;
 
 impl<'a> ModifierParser<'a> {
-    fn parse_border_modifier(&mut self) -> ParseResult {
+    fn border_modifier(&mut self) -> ParseResult {
         self.modifier.borders.insert(BorderSide::from_str(&self.lexer.take_modifier_right_side()?)?);
         Ok(())
     }
 
-    fn parse_border_color_modifier(&mut self) -> ParseResult {
+    fn border_color_modifier(&mut self) -> ParseResult {
         self.lexer.take_token(Token::Equals)?;
-        let _color = self.lexer.take_token(Token::Color)?;
-        // TODO
-        // modifier.border_color = RGB16 { 
+
+        let color = self.lexer.take_token(Token::Color)?;
+        self.modifier.border_color = Some(Rgb::from_str(&color)?);
         Ok(())
     }
 
-    fn parse_border_style_modifier(&mut self) -> ParseResult {
+    fn border_style_modifier(&mut self) -> ParseResult {
         self.modifier.border_style = Some(
             BorderStyle::from_str(&self.lexer.take_modifier_right_side()?)?
         );
         Ok(())
     }
 
-    fn parse_color_modifier(&mut self) -> ParseResult {
+    fn color_modifier(&mut self) -> ParseResult {
         self.lexer.take_token(Token::Equals)?;
-        let _color = self.lexer.take_token(Token::Color)?;
+
+        let color = self.lexer.take_token(Token::Color)?;
+        self.modifier.color = Some(Rgb::from_str(&color)?);
 
         Ok(())
     }
 
-    fn parse_expand_modifier(&mut self) -> ParseResult {
+    fn expand_modifier(&mut self) -> ParseResult {
         let amount = if let Some(_) = self.lexer.maybe_take_token(Token::Equals) {
             let amount_string = self.lexer.take_token(Token::PositiveNumber)?;
             
@@ -197,44 +206,86 @@ impl<'a> ModifierParser<'a> {
         Ok(())
     }
 
-    fn parse_format_modifier(&mut self) -> ParseResult {
+    fn font_color_modifier(&mut self) -> ParseResult {
+        self.lexer.take_token(Token::Equals)?;
+
+        let color = self.lexer.take_token(Token::Color)?;
+        self.modifier.font_color = Some(Rgb::from_str(&color)?);
+        Ok(())
+    }
+
+    fn font_family_modifier(&mut self) -> ParseResult {
+        self.lexer.take_token(Token::Equals)?;
+
+        let color = self.lexer.take_token(Token::Color)?;
+        self.modifier.font_color = Some(Rgb::from_str(&color)?);
+        Ok(())
+    }
+
+    fn font_size_modifier(&mut self) -> ParseResult {
+        self.lexer.take_token(Token::Equals)?;
+
+        let font_size_string = self.lexer.take_token(Token::PositiveNumber)?;
+        match font_size_string.parse::<u8>() {
+            Ok(n) => self.modifier.font_size = Some(n),
+            Err(e) => return Err(format!("Error parsing fontsize: {}", e)),
+        }
+
+        Ok(())
+    }
+
+    fn format_modifier(&mut self) -> ParseResult {
         self.modifier.formats.insert(TextFormat::from_str(&self.lexer.take_modifier_right_side()?)?);
         Ok(())
     }
 
-    fn parse_halign_modifier(&mut self) -> ParseResult {
+    fn halign_modifier(&mut self) -> ParseResult {
         self.modifier.horizontal_align = Some(
             HorizontalAlign::from_str(&self.lexer.take_modifier_right_side()?)?
         );
         Ok(())
     }
 
-    fn parse_valign_modifier(&mut self) -> ParseResult {
+    fn note(&mut self) -> ParseResult {
+        self.modifier.note = Some(self.lexer.take_token(Token::QString)?);
+        Ok(())
+    }
+
+    fn number_format(&mut self) -> ParseResult {
+        todo!()
+    }
+
+    fn valign_modifier(&mut self) -> ParseResult {
         self.modifier.vertical_align = Some(
             VerticalAlign::from_str(&self.lexer.take_modifier_right_side()?)?
         );
         Ok(())
     }
 
-    fn parse_modifier(&mut self) -> ParseResult {
+    fn modifier(&mut self) -> ParseResult {
         let modifier_name = self.lexer.take_token(Token::ModifierName)?;
 
         match modifier_name.as_str() {
-            "b"  | "border"         => self.parse_border_modifier(),
-            "bc" | "bordercolor"    => self.parse_border_color_modifier(),
-            "bs" | "borderstyle"    => self.parse_border_style_modifier(),
-            "c"  | "color"          => self.parse_color_modifier(),
-            "e"  | "expand"         => self.parse_expand_modifier(),
-            "f"  | "format"         => self.parse_format_modifier(),
-            "ha" | "halign"         => self.parse_halign_modifier(),
-            "va" | "valign"         => self.parse_valign_modifier(),
+            "b"  | "border"         => self.border_modifier(),
+            "bc" | "bordercolor"    => self.border_color_modifier(),
+            "bs" | "borderstyle"    => self.border_style_modifier(),
+            "c"  | "color"          => self.color_modifier(),
+            "e"  | "expand"         => self.expand_modifier(),
+            "f"  | "format"         => self.format_modifier(),
+            "fc" | "fontcolor"      => self.font_color_modifier(),
+            "ff" | "fontfamily"     => self.font_family_modifier(),
+            "fs" | "fontsize"       => self.font_size_modifier(),
+            "ha" | "halign"         => self.halign_modifier(),
+            "n"  | "note"           => self.note(),
+            "nf" | "numberformat"   => self.number_format(),
+            "va" | "valign"         => self.valign_modifier(),
             _ => return Err(format!("Unrecognized modifier: {}", modifier_name))
         }
     }
 
-    fn parse_modifiers(&mut self) -> Result<(), String> {
+    fn modifiers(&mut self) -> Result<(), String> {
         loop {
-            self.parse_modifier()?;
+            self.modifier()?;
 
             if let None = self.lexer.maybe_take_token(Token::Slash) {
                 break
@@ -263,7 +314,7 @@ pub fn parse_all_modifiers(
             modifier: &mut new_modifier,
         };
 
-        modifier_parser.parse_modifiers()?;
+        modifier_parser.modifiers()?;
 
         if is_row_modifier {
             if row_modifier.is_some() {
@@ -335,6 +386,7 @@ mod tests {
         let parsed_modifiers = parse(Position(0, 0), String::from("abc123"), default_modifier).unwrap();
 
         assert_eq!(parsed_modifiers.value, "abc123");
+
         assert_eq!(parsed_modifiers.modifier.row_level, false);
         assert_eq!(parsed_modifiers.row_modifier.row_level, true);
     }
@@ -353,8 +405,9 @@ mod tests {
             default_modifier,
         ).unwrap();
 
-        assert!(modifier.formats.contains(&TextFormat::Bold));
         assert_eq!(value, "abc123");
+
+        assert!(modifier.formats.contains(&TextFormat::Bold));
     }
 
     #[test]
@@ -371,9 +424,32 @@ mod tests {
             default_modifier,
         ).unwrap();
 
-        assert!(modifier.formats.contains(&TextFormat::Italic));
         assert_eq!(value, "abc123");
+
+        assert!(modifier.formats.contains(&TextFormat::Italic));
+        assert_eq!(modifier.vertical_align, Some(VerticalAlign::Top));
+        assert_eq!(modifier.expand, Some(Expand { amount: None }));
     }
 
-    // XXX make a shorthand test
+    #[test]
+    fn parse_multiple_modifiers_shorthand() {
+        let default_modifier = Modifier::new(true);
+        let ParsedModifiers { 
+            value,
+            modifier,
+            row_modifier: _row_modifier,
+            index: _index,
+        } = parse(
+            Position(0, 0), 
+            String::from("[[ha=l/va=c/f=u/fs=12]]abc123"),
+            default_modifier,
+        ).unwrap();
+
+        assert_eq!(value, "abc123");
+
+        assert_eq!(modifier.font_size, Some(12));
+        assert_eq!(modifier.horizontal_align, Some(HorizontalAlign::Left));
+        assert_eq!(modifier.vertical_align, Some(VerticalAlign::Center));
+        assert!(modifier.formats.contains(&TextFormat::Underline));
+    }
 }

@@ -2,7 +2,7 @@
 //
 // * open up the ModifierRightSide parser fn so that it actually can parse non-letter characters
 //
-use rgb::RGB16;
+use crate::rgb::Rgb;
 use std::collections::HashSet;
 use std::str::FromStr;
 
@@ -20,11 +20,11 @@ impl FromStr for BorderSide {
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input {
-            "*" | "a" | "all"       => Ok(Self::All),
-            "^" | "t" | "top"       => Ok(Self::Top),
-            "_" | "b" | "bottom"    => Ok(Self::Bottom),
-            "<" | "l" | "left"      => Ok(Self::Left),
-            ">" | "r" | "right"     => Ok(Self::Right),
+            "a" | "all"       => Ok(Self::All),
+            "t" | "top"       => Ok(Self::Top),
+            "b" | "bottom"    => Ok(Self::Bottom),
+            "l" | "left"      => Ok(Self::Left),
+            "r" | "right"     => Ok(Self::Right),
             _ => 
                 Err(format!("Invalid border= value: {}", input)),
         }
@@ -46,12 +46,12 @@ impl FromStr for BorderStyle {
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input {
-            "-" | "dashed"        => Ok(Self::Dashed),
-            "." | "dotted"        => Ok(Self::Dotted),
-            "=" | "double"        => Ok(Self::Double),
-            "1" | "solid"         => Ok(Self::Solid),
-            "2" | "solid_medium"  => Ok(Self::SolidMedium),
-            "3" | "solid_thick"   => Ok(Self::SolidThick),
+            "dash" | "dashed"        => Ok(Self::Dashed),
+            "dot"  | "dotted"        => Ok(Self::Dotted),
+            "dbl"  | "double"        => Ok(Self::Double),
+            "1"    | "solid"         => Ok(Self::Solid),
+            "2"    | "solid_medium"  => Ok(Self::SolidMedium),
+            "3"    | "solid_thick"   => Ok(Self::SolidThick),
             _ => 
                 Err(format!("Invalid borderstyle= value: {}", input)),
         }
@@ -71,9 +71,9 @@ impl FromStr for HorizontalAlign {
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input {
-            "|" | "center"  => Ok(Self::Center),
-            "<" | "left"    => Ok(Self::Left),
-            ">" | "right"   => Ok(Self::Right),
+            "c" | "center"  => Ok(Self::Center),
+            "l" | "left"    => Ok(Self::Left),
+            "r" | "right"   => Ok(Self::Right),
             _ => 
                 Err(format!("Invalid halign= value: {}", input)),
         }
@@ -148,9 +148,9 @@ impl FromStr for VerticalAlign {
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input {
-            "_" | "bottom"    => Ok(Self::Bottom),
-            "-" | "center"    => Ok(Self::Center),
-            "^" | "top"       => Ok(Self::Top),
+            "b" | "bottom"    => Ok(Self::Bottom),
+            "c" | "center"    => Ok(Self::Center),
+            "t" | "top"       => Ok(Self::Top),
             _ 
                 => Err(format!("Invalid valign= value: {}", input)),
         }
@@ -165,12 +165,12 @@ pub struct Expand {
 /// # Modifier
 #[derive(Clone, Debug, PartialEq)]
 pub struct Modifier {
-    pub border_color: Option<RGB16>,
+    pub border_color: Option<Rgb>,
     pub border_style: Option<BorderStyle>,
     pub borders: HashSet<BorderSide>,
-    pub color: Option<RGB16>,
+    pub color: Option<Rgb>,
     pub expand: Option<Expand>,
-    pub font_color: Option<RGB16>,
+    pub font_color: Option<Rgb>,
     pub font_family: Option<String>,
     pub font_size: Option<u8>,
     pub formats: HashSet<TextFormat>,
@@ -184,7 +184,7 @@ pub struct Modifier {
 
 impl Default for Modifier {
     fn default() -> Self {
-        // XXX maybe make this lazy static?
+        // TODO maybe make this lazy static?
         Self {
             border_color: None,
             border_style: None,
@@ -205,7 +205,6 @@ impl Default for Modifier {
     }
 }
 
-// TODO: maybe make this plural?
 impl Modifier {
     pub fn new(row_level: bool) -> Self {
         let default = Self::default();

@@ -8,13 +8,7 @@ mod modifier;
 
 use crate::Position;
 use crate::ast;
-use crate::error::CsvppError;
 use crate::options::Options;
- 
-// TODO: include Options? what is really shared? does it even matter?
-pub trait Parser {
-    fn parse(&self, input: String) -> Result<Box<Self>, CsvppError>;
-}
 
 #[derive(Clone, Debug)]
 pub struct Cell {

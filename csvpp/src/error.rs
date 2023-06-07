@@ -37,3 +37,40 @@ impl<'a> fmt::Display for CsvppError<'a> {
 }
 
 impl<'a> Error for CsvppError<'a> {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn code_syntax_error_display() {
+        let message = CsvppError::CodeSyntaxError {
+            line_number: 1,
+            message: "foo",
+        };
+
+        assert_eq!("1: foo", message.to_string());
+    }
+
+    #[test]
+    fn cell_syntax_error_display() {
+        let message = CsvppError::CellSyntaxError {
+            index: Position(1, 5),
+            message: "foo",
+        };
+
+        assert_eq!("Cell->[1,5]: foo", message.to_string());
+    }
+
+    #[test]
+    fn modifier_syntax_error_display() {
+        let message = CsvppError::ModifierSyntaxError {
+            bad_input: "bad input".to_string(),
+            index: Position(0, 1),
+            message: "foo".to_string(),
+        };
+
+        assert_eq!("Cell->[0,1]: foo. bad_input = bad input", message.to_string());
+    }
+}
+ 
