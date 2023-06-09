@@ -5,49 +5,34 @@
 //! ```
 //! ```
 //! 
-mod ast;
-mod compiler;
-mod error;
-mod modifier;
-mod options;
-mod rgb;
-mod runtime;
-mod source_code;
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Position(usize, usize);
-
-impl Position {
-    pub fn is_first_cell(&self) -> bool {
-        self.0 == 0
-    }
-}
+use csvpp::{compile_template, parse_cli_args};
+use std::process;
 
 fn main() {
-    let options = options::parse_cli_args();
-    if let Ok(template) = compiler::compile_template(&options) {
-        if options.backup {
-            println!("Backing up {}", options.backup)
-            // XXX back it up
+    // TODO handle errors from parse_cli_args without a panic
+    let options = parse_cli_args();
+
+    match compile_template(options) {
+        Ok(runtime) => {
+            if runtime.options.backup {
+                if runtime.options.verbose {
+                    // TODO: better message
+                    println!("Backing up {}", runtime.options.backup)
+                }
+                todo!();
+            }
+
+            if runtime.options.verbose {
+                println!("{}", runtime.to_string());
+            }
+
+            // template.write_compiled_template(&options, &template);
+            // writer.write(&options, &template)
+        },
+        Err(error) => {
+            // TODO more extensive stuff if in verbose mode?
+            eprintln!("{}", error.to_string());
+            process::exit(1)
         }
-
-        if options.verbose {
-            println!(
-r#"
-# csv++ 
-
-## Called with options
-{}
-
-## Parsed csvpp template
-{}
-"#, 
-                options,
-                template,
-            );
-        }
-    } else {
-        // TODO actually catch the error and handle
-        println!("Error parsing template!!");
     }
 }

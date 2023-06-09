@@ -1,42 +1,53 @@
 //! Error handling functions
-use std::error::Error;
+use std::error;
 use std::fmt;
 
 use crate::Position;
+use crate::options::OutputTarget;
 
 #[derive(Clone, Debug)]
-pub enum CsvppError<'a> {
+pub enum Error {
     // TODO we could have a codesyntax error in a cell
     CodeSyntaxError {
         line_number: usize,
-        message: &'a str,
+        message: String,
     },
     CellSyntaxError {
         index: Position,
-        message: &'a str,
+        message: String,
     },
+    InitError(String),
     ModifierSyntaxError {
         bad_input: String,
         index: Position,
         message: String,
     },
+    TargetWriteError {
+        target: OutputTarget,
+        message: String,
+    },
 }
 
-impl<'a> fmt::Display for CsvppError<'a> {
+impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            CsvppError::CodeSyntaxError { line_number, message } => 
+            Error::CodeSyntaxError { line_number, message } => 
                 write!(f, "{}: {}", line_number, message),
-            CsvppError::CellSyntaxError { index: Position(x, y), message } => 
+            Error::CellSyntaxError { index: Position(x, y), message } => 
                 write!(f, "Cell->[{},{}]: {}", x, y, message),
-            CsvppError::ModifierSyntaxError { bad_input, index: Position(x, y), message } => 
+            Error::InitError(message) => 
+                // TODO some kind of better error message when in verbose mode
+                write!(f, "Error starting: {}", message),
+            Error::ModifierSyntaxError { bad_input, index: Position(x, y), message } => 
                 // TODO: more specific error message
                 write!(f, "Cell->[{},{}]: {}. bad_input = {}", x, y, message, bad_input),
+            Error::TargetWriteError { target, message } => 
+                write!(f, "Error writing to {}: {}", target, message),
         }
     }
 }
 
-impl<'a> Error for CsvppError<'a> {}
+impl error::Error for Error {}
 
 #[cfg(test)]
 mod tests {
@@ -44,9 +55,9 @@ mod tests {
 
     #[test]
     fn code_syntax_error_display() {
-        let message = CsvppError::CodeSyntaxError {
+        let message = Error::CodeSyntaxError {
             line_number: 1,
-            message: "foo",
+            message: "foo".to_string(),
         };
 
         assert_eq!("1: foo", message.to_string());
@@ -54,9 +65,9 @@ mod tests {
 
     #[test]
     fn cell_syntax_error_display() {
-        let message = CsvppError::CellSyntaxError {
+        let message = Error::CellSyntaxError {
             index: Position(1, 5),
-            message: "foo",
+            message: "foo".to_string(),
         };
 
         assert_eq!("Cell->[1,5]: foo", message.to_string());
@@ -64,7 +75,7 @@ mod tests {
 
     #[test]
     fn modifier_syntax_error_display() {
-        let message = CsvppError::ModifierSyntaxError {
+        let message = Error::ModifierSyntaxError {
             bad_input: "bad input".to_string(),
             index: Position(0, 1),
             message: "foo".to_string(),

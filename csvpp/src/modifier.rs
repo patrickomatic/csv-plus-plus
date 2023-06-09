@@ -2,11 +2,13 @@
 //
 // * open up the ModifierRightSide parser fn so that it actually can parse non-letter characters
 //
-use crate::rgb::Rgb;
+use serde::{Serialize, Deserialize};
 use std::collections::HashSet;
 use std::str::FromStr;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+use crate::rgb::Rgb;
+
+#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum BorderSide {
     All,
     Top,
@@ -31,7 +33,7 @@ impl FromStr for BorderSide {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum BorderStyle {
     Dashed,
     Dotted,
@@ -59,7 +61,7 @@ impl FromStr for BorderStyle {
 }
 
 /// The possible values for aligning a cell horizontally.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum HorizontalAlign {
     Center,
     Left,
@@ -80,7 +82,7 @@ impl FromStr for HorizontalAlign {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum NumberFormat {
     Currency,
     Date,
@@ -112,7 +114,7 @@ impl FromStr for NumberFormat {
     }
 }
 
-#[derive(Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Serialize)]
 pub enum TextFormat {
     Bold,
     Italic,
@@ -136,7 +138,7 @@ impl FromStr for TextFormat {
 }
 
 /// The possible values for aligning a cell vertically.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum VerticalAlign {
     Bottom,
     Center,
@@ -157,13 +159,13 @@ impl FromStr for VerticalAlign {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Expand {
     pub amount: Option<usize>,
 }
 
 /// # Modifier
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Modifier {
     pub border_color: Option<Rgb>,
     pub border_style: Option<BorderStyle>,

@@ -8,7 +8,7 @@ use crate::source_code;
 
 type GoogleSheetID = String;
 
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum OutputTarget {
     GoogleSheets(GoogleSheetID),
     File(PathBuf),
@@ -17,7 +17,7 @@ pub enum OutputTarget {
 impl fmt::Display for OutputTarget {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::GoogleSheets(id) => write!(f, "Google Sheets: {}", id),
+            Self::GoogleSheets(id) => write!(f, "Google Sheets[{}]", id),
             Self::File(path) => write!(f, "{}", path.to_str().unwrap()),
         }
     }

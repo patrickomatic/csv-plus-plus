@@ -1,33 +1,35 @@
-use std::error::Error;
+// TODO:
+// * use the row modifier as intended
+// * globally allocate the default modifier
 use csv;
 
-use crate::modifier::Modifier;
-use crate::compiler::{Cell, Spreadsheet};
-use crate::options::Options;
-use crate::Position;
-use crate::error::CsvppError;
+use crate::compiler::code;
+use crate::{Cell, Error, Position, Runtime, Spreadsheet};
 
-fn parse_cell<'a>(input: String, index: Position) -> Result<Cell, CsvppError<'a>> {
-    // XXX make a more global/static version of this so we're not allocating on every cell parse
-    let default_modifier = Modifier::new(true);
-
-    let parsed_modifiers = super::modifier::parse(index, input, default_modifier)?;
+fn parse_cell<'a>(
+    input: String,
+    index: Position,
+    runtime: &Runtime,
+) -> Result<Cell, Error> {
+    let parsed_modifiers = super::modifier::parse(index, input, runtime.default_modifier.clone())?;
 
     // XXX use the row_modifier
     // default_modifier = row_modifier;
 
     Ok(Cell {
-        ast: None, // XXX parse the AST
+        // XXX use &str instead
+        // XXX there may or may not be an AST
+        ast: Some(code::AstParser::parse(parsed_modifiers.value.clone()).unwrap()), 
         index: parsed_modifiers.index,
         modifier: parsed_modifiers.modifier,
         value: parsed_modifiers.value,
     })
 }
 
-pub fn parse<'a>(options: &'a Options) -> Result<Spreadsheet, Box<dyn Error>> {
+pub fn parse<'a>(runtime: &'a Runtime) -> Result<Spreadsheet, Error> {
     let mut csv_reader = csv::ReaderBuilder::new()
         .has_headers(false)
-        .from_reader(options.input.csv_section.as_bytes());
+        .from_reader(runtime.options.input.csv_section.as_bytes());
 
     let mut cell_index = 0;
     let mut row_index = 0;
@@ -41,7 +43,7 @@ pub fn parse<'a>(options: &'a Options) -> Result<Spreadsheet, Box<dyn Error>> {
 
         for unparsed_value in &csv_row {
             let index = Position(cell_index, row_index);
-            row.push(parse_cell(unparsed_value.to_string(), index)?);
+            row.push(parse_cell(unparsed_value.to_string(), index, runtime)?);
 
             cell_index += 1;
         }

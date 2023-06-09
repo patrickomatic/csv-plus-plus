@@ -5,7 +5,7 @@
 //! * need to lowercase the input but we can't do it on the entire value because we don't want to
 //!     lowercase the stuff outside the modifier definition
 //! * get quoted strings working
-use crate::error::CsvppError;
+use crate::error::Error;
 use crate::Position;
 use crate::modifier::*;
 use crate::rgb::Rgb;
@@ -19,7 +19,7 @@ pub enum Token {
     ModifierName,
     ModifierRightSide,
     PositiveNumber,
-    QString,
+    String,
     Slash,
     StartCellModifier,
     StartRowModifier,
@@ -93,7 +93,7 @@ impl ModifierLexer {
             Token::ModifierName =>      self.take_while(|ch| ch.is_alphanumeric()),
             Token::ModifierRightSide => self.take_while(|ch| ch.is_alphanumeric() || ch == '_'),
             Token::PositiveNumber =>    self.take_while(|ch| ch.is_ascii_digit()),
-            Token::QString =>           self.take_string(),
+            Token::String =>           self.take_string(),
             Token::Slash =>             self.take("/"),
             Token::StartCellModifier => self.take("[["),
             Token::StartRowModifier =>  self.take("![["),
@@ -247,12 +247,15 @@ impl<'a> ModifierParser<'a> {
     }
 
     fn note(&mut self) -> ParseResult {
-        self.modifier.note = Some(self.lexer.take_token(Token::QString)?);
+        self.modifier.note = Some(self.lexer.take_token(Token::String)?);
         Ok(())
     }
 
     fn number_format(&mut self) -> ParseResult {
-        todo!()
+        self.modifier.number_format = Some(
+            NumberFormat::from_str(&self.lexer.take_modifier_right_side()?)?
+        );
+        Ok(())
     }
 
     fn valign_modifier(&mut self) -> ParseResult {
@@ -260,6 +263,10 @@ impl<'a> ModifierParser<'a> {
             VerticalAlign::from_str(&self.lexer.take_modifier_right_side()?)?
         );
         Ok(())
+    }
+
+    fn var_modifier(&mut self) -> ParseResult {
+        todo!();
     }
 
     fn modifier(&mut self) -> ParseResult {
@@ -278,6 +285,7 @@ impl<'a> ModifierParser<'a> {
             "ha" | "halign"         => self.halign_modifier(),
             "n"  | "note"           => self.note(),
             "nf" | "numberformat"   => self.number_format(),
+            "v"  | "var"            => self.var_modifier(),
             "va" | "valign"         => self.valign_modifier(),
             _ => return Err(format!("Unrecognized modifier: {}", modifier_name))
         }
@@ -346,13 +354,13 @@ pub fn parse<'a>(
     index: Position, 
     input: String, 
     default_from: Modifier,
-) -> Result<ParsedModifiers, CsvppError<'a>> {
+) -> Result<ParsedModifiers, Error> {
     let lexer = &mut ModifierLexer::new(input);
 
     match parse_all_modifiers(lexer, &default_from) {
         Ok((modifier, row_modifier)) => {
             if row_modifier != None && index.is_first_cell() {
-                Err(CsvppError::ModifierSyntaxError { 
+                Err(Error::ModifierSyntaxError { 
                     bad_input: lexer.rest(),
                     index,
                     message: "You can only define a row modifier on the first cell of a row".to_string(), 
@@ -367,7 +375,7 @@ pub fn parse<'a>(
             }
         },
         Err(message) => {
-            Err(CsvppError::ModifierSyntaxError { 
+            Err(Error::ModifierSyntaxError { 
                 bad_input: lexer.rest(),
                 index,
                 message, 
@@ -383,7 +391,7 @@ mod tests {
     #[test]
     fn parse_no_modifier() {
         let default_modifier = Modifier::new(true);
-        let parsed_modifiers = parse(Position(0, 0), String::from("abc123"), default_modifier).unwrap();
+        let parsed_modifiers = parse(Position(0, 0), "abc123".to_string(), default_modifier).unwrap();
 
         assert_eq!(parsed_modifiers.value, "abc123");
 

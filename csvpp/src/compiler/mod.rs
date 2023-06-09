@@ -1,53 +1,33 @@
-use std::fmt;
-use std::result::Result;
-use std::error::Error;
+use serde::{Serialize, Deserialize};
 
+mod code;
 mod code_section;
 mod csv_section;
 mod modifier;
+pub mod template;
+pub mod token_library;
 
-use crate::Position;
-use crate::ast;
-use crate::options::Options;
+use crate::{Error, Modifier, Node, Position, Options, Runtime};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Cell {
-    ast: Option<ast::Node>,
+    ast: Option<Node>,
     index: Position,
-    modifier: super::modifier::Modifier,
+    modifier: Modifier,
     value: String,
 }
 
-type Spreadsheet = Vec<Vec<Cell>>; 
-
-pub struct Template {
-    spreadsheet: Spreadsheet,
-}
-
-impl<'a> fmt::Display for Template {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            r#"
-    rows: {}
-            "#,
-            self.spreadsheet.len()
-        )
-    }
-}
-
-fn resolve_cell_variables<'a>(spreadsheet: Spreadsheet) -> Spreadsheet {
+fn resolve_cell_variables<'a>(runtime: Runtime) -> Result<Runtime, Error> {
     // TODO
-    spreadsheet
+    Ok(runtime)
 }
 
-pub fn compile_template<'a>(options: &'a Options) -> Result<Template, Box<dyn Error>> {
+pub fn compile_template(options: Options) -> Result<Runtime, Error> {
+    let runtime = Runtime::new(options)?;
+
     // TODO do these in parallel
-    let csv_section = csv_section::parse(options)?;
-    let _code_section = code_section::parse(options)?;
+    let _csv_section = csv_section::parse(&runtime)?;
+    let _code_section = code_section::parse(&runtime)?;
 
-    let spreadsheet = resolve_cell_variables(csv_section);
-
-    // resolve_cell_variables(csv_section, code_section)
-    Ok(Template { spreadsheet })
+    resolve_cell_variables(runtime)
 }

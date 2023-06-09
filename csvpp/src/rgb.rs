@@ -1,8 +1,9 @@
 //! RGB-parsing and formatting functionality
+use serde::{Serialize, Deserialize};
 use std::fmt;
 use std::str::FromStr;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Rgb {
     pub r: u8,
     pub g: u8,

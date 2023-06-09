@@ -30,10 +30,6 @@ impl fmt::Display for SourceCode {
     }
 }
 
-// fn split_template(reader: &BufReader) -> (Option<String>, String) {
-    // TODO
-// }
-
 impl SourceCode {
     pub fn open(filename: PathBuf) -> Result<SourceCode, String>  {
         let mut total_lines = 0;
@@ -43,7 +39,8 @@ impl SourceCode {
 
         let file = match File::open(&filename) {
             Ok(file) => file,
-            Err(error) => return Err(format!("Error opening {}: {}", &filename.display(), error.to_string())),
+            Err(error) => 
+                return Err(format!("Error opening {}: {}", &filename.display(), error.to_string())),
         };
 
         let reader = BufReader::new(file);
@@ -66,7 +63,9 @@ impl SourceCode {
 
                     total_lines += 1;
                 },
-                Err(message) => return Err(format!("Error reading line {}: {}", total_lines, message)),
+                Err(message) => 
+                    // TODO return a CsvppError 
+                    return Err(format!("Error reading line {}: {}", total_lines, message)),
             }
         }
 
@@ -82,5 +81,40 @@ impl SourceCode {
             csv_section,
             code_section, 
         })
+    }
+
+    pub fn object_code_filename(&self) -> PathBuf {
+        let mut f = self.filename.clone();
+        f.set_extension("csvpo");
+        f
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_source_code() -> SourceCode {
+        SourceCode {
+            filename: PathBuf::from("test.csvpp".to_string()),
+            lines: 25,
+            length_of_code_section: 10,
+            length_of_csv_section: 15,
+            code_section: Some("\n".repeat(10)),
+            csv_section: "foo,bar,baz".to_string(),
+        }
+    }
+
+    #[test]
+    fn display() {
+        assert_eq!(
+            "test.csvpp: total_lines: 25, csv_section: 15, code_section: 10", 
+            test_source_code().to_string(),
+        );
+    }
+
+    #[test]
+    fn object_code_filename() {
+        assert_eq!(PathBuf::from("test.csvpo"), test_source_code().object_code_filename());
     }
 }
