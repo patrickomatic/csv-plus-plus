@@ -6,18 +6,23 @@ use crate::Position;
 use crate::options::OutputTarget;
 
 #[derive(Clone, Debug)]
-pub enum Error {
+pub enum Error<'a> {
     // TODO we could have a codesyntax error in a cell
     CodeSyntaxError {
-        bad_input: String,
+        bad_input: &'a str,
         line_number: usize,
-        message: String,
+        message: &'a str,
     },
     CellSyntaxError {
         index: Position,
         message: String,
     },
     InitError(String),
+    InvalidModifier {
+        message: &'a str,
+        bad_input: &'a str,
+        possible_values: &'a str,
+    },
     ModifierSyntaxError {
         bad_input: String,
         index: Position,
@@ -29,27 +34,34 @@ pub enum Error {
     },
 }
 
-impl fmt::Display for Error {
+impl<'a> fmt::Display for Error<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // TODO: anything else to do when in verbose mode?
         match self {
-            Error::CodeSyntaxError { bad_input: _bad_input, line_number, message } => 
-                // TODO use bad_input
-                write!(f, "{}: {}", line_number, message),
+            Error::CodeSyntaxError { bad_input, line_number, message } => {
+                write!(f, "{}: {}", line_number, message);
+                write!(f, "bad input: {}", bad_input)
+            },
             Error::CellSyntaxError { index: Position(x, y), message } => 
                 write!(f, "Cell->[{},{}]: {}", x, y, message),
             Error::InitError(message) => 
-                // TODO some kind of better error message when in verbose mode
-                write!(f, "Error starting: {}", message),
-            Error::ModifierSyntaxError { bad_input, index: Position(x, y), message } => 
-                // TODO: more specific error message
-                write!(f, "Cell->[{},{}]: {}. bad_input = {}", x, y, message, bad_input),
+                write!(f, "Error initializing: {}", message),
+            Error::InvalidModifier { message, bad_input, possible_values } => {
+                write!(f, "{}", message);
+                write!(f, "bad input: {}", bad_input);
+                write!(f, "possible values: {}", possible_values)
+            },
+            Error::ModifierSyntaxError { bad_input, index: Position(x, y), message } => {
+                write!(f, "Cell->[{},{}]: {}", x, y, message);
+                write!(f, "bad input: {}", bad_input)
+            },
             Error::TargetWriteError { target, message } => 
                 write!(f, "Error writing to {}: {}", target, message),
         }
     }
 }
 
-impl error::Error for Error {}
+impl error::Error for Error<'_> {}
 
 #[cfg(test)]
 mod tests {
@@ -59,8 +71,8 @@ mod tests {
     fn code_syntax_error_display() {
         let message = Error::CodeSyntaxError {
             line_number: 1,
-            message: "foo".to_string(),
-            bad_input: "bar".to_string(),
+            message: "foo",
+            bad_input: "bar",
         };
 
         assert_eq!("1: foo", message.to_string());
@@ -87,4 +99,3 @@ mod tests {
         assert_eq!("Cell->[0,1]: foo. bad_input = bad input", message.to_string());
     }
 }
- 

@@ -1,12 +1,10 @@
 // TODO
 //
-// * open up the ModifierRightSide parser fn so that it actually can parse non-letter characters
-//
 use serde::{Serialize, Deserialize};
 use std::collections::HashSet;
 use std::str::FromStr;
 
-use crate::rgb::Rgb;
+use crate::{Error, Rgb};
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum BorderSide {
@@ -18,17 +16,18 @@ pub enum BorderSide {
 }
 
 impl FromStr for BorderSide {
-    type Err = String;
-
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
+    fn from_str(input: &str) -> Result<Self, Error> {
         match input {
             "a" | "all"       => Ok(Self::All),
             "t" | "top"       => Ok(Self::Top),
             "b" | "bottom"    => Ok(Self::Bottom),
             "l" | "left"      => Ok(Self::Left),
             "r" | "right"     => Ok(Self::Right),
-            _ => 
-                Err(format!("Invalid border= value: {}", input)),
+            _ => Err(Error::InvalidModifier {
+                message: "Invalid border= value",
+                bad_input: input,
+                possible_values: "all (a) | top (t) | bottom (b) | left (l) | right (r)",
+            }),
         }
     }
 }
@@ -44,9 +43,7 @@ pub enum BorderStyle {
 }
 
 impl FromStr for BorderStyle {
-    type Err = String;
-
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
+    fn from_str(input: &str) -> Result<Self, Error> {
         match input {
             "dash" | "dashed"        => Ok(Self::Dashed),
             "dot"  | "dotted"        => Ok(Self::Dotted),
@@ -54,8 +51,12 @@ impl FromStr for BorderStyle {
             "1"    | "solid"         => Ok(Self::Solid),
             "2"    | "solid_medium"  => Ok(Self::SolidMedium),
             "3"    | "solid_thick"   => Ok(Self::SolidThick),
-            _ => 
-                Err(format!("Invalid borderstyle= value: {}", input)),
+            _ => Err(Error::InvalidModifier {
+                message: "Invalid borderstyle= value",
+                bad_input: input,
+                possible_values: "dashed (dash) | dotted (dot) | double (dbl) \
+                                    | solid (1) | solid_medium (2) | solid_thick (3)",
+            }),
         }
     }
 }
@@ -69,15 +70,16 @@ pub enum HorizontalAlign {
 }
 
 impl FromStr for HorizontalAlign {
-    type Err = String;
-
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
+    fn from_str(input: &str) -> Result<Self, Error> {
         match input {
             "c" | "center"  => Ok(Self::Center),
             "l" | "left"    => Ok(Self::Left),
             "r" | "right"   => Ok(Self::Right),
-            _ => 
-                Err(format!("Invalid halign= value: {}", input)),
+            _ => Err(Error::InvalidModifier { 
+                message: "Invalid halign= value",
+                bad_input: input, 
+                possible_values: "center (c) | left (l) | right (r)",
+            }),
         }
     }
 }
@@ -97,19 +99,22 @@ pub enum NumberFormat {
 impl FromStr for NumberFormat {
     type Err = String;
 
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
+    fn from_str(input: &str) -> Result<Self, Error> {
         match input {
             "c"  | "currency"      => Ok(Self::Currency),
             "d"  | "date"          => Ok(Self::Date),
-            "dt" | "date_time"     => Ok(Self::DateTime),
+            "dt" | "datetime"      => Ok(Self::DateTime),
             "n"  | "number"        => Ok(Self::Number),
             "p"  | "percent"       => Ok(Self::Percent),
-            "o"  | "text"          => Ok(Self::Text), // TODO change "text" to "none"... or
-                                                      // something.  fix this
+            "text"                 => Ok(Self::Text),  // TODO: think of a shortcut!!!
             "t"  | "time"          => Ok(Self::Time),
             "s"  | "scientific"    => Ok(Self::Scientific),
-            _ =>
-                Err(format!("Invalid numberformat= value: {}", input)),
+            _ => Err(Error::InvalidModifier { 
+                message: "Invalid numberformat= value",
+                bad_input: input,
+                possible_values: "currency (c) | date (d) | datetime (dt) | number (n) | percent (p) \
+                                    | text | time (t) | scientific (s)",
+            }),
         }
     }
 }
@@ -123,16 +128,17 @@ pub enum TextFormat {
 }
 
 impl FromStr for TextFormat {
-    type Err = String;
-
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
+    fn from_str(input: &str) -> Result<Self, Error> {
         match input {
             "b" | "bold"          => Ok(Self::Bold),
             "i" | "italic"        => Ok(Self::Italic),
             "s" | "strikethrough" => Ok(Self::Strikethrough),
             "u" | "underline"     => Ok(Self::Underline),
-            _ =>
-                Err(format!("Invalid format= value: {}", input)),
+            _ => Err(Error::InvalidModifier { 
+                message: "Invalid format= value",
+                bad_input: input, 
+                possible_values: "bold (b) | italic (i) | strikethrough (s) | underline (u)",
+            }),
         }
     }
 }
@@ -146,15 +152,16 @@ pub enum VerticalAlign {
 }
 
 impl FromStr for VerticalAlign {
-    type Err = String;
-
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
+    fn from_str(input: &str) -> Result<Self, Error> {
         match input {
             "b" | "bottom"    => Ok(Self::Bottom),
             "c" | "center"    => Ok(Self::Center),
             "t" | "top"       => Ok(Self::Top),
-            _ 
-                => Err(format!("Invalid valign= value: {}", input)),
+            _ => Err(Error::InvalidModifier { 
+                message: "Invalid valign= value",
+                bad_input: input, 
+                possible_values: "bottom (b) | center (c) | top (t)",
+            }),
         }
     }
 }
@@ -223,4 +230,3 @@ impl Modifier {
         }
     }
 }
-
