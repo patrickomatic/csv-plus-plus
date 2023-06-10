@@ -9,6 +9,7 @@ pub mod token_library;
 
 use crate::{Error, Modifier, Node, Position, Options, Runtime};
 
+// TODO rename to SpreadsheetCell? Rust has too many Cell-like names... RefCell, OnceCell, etc
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Cell {
     ast: Option<Node>,

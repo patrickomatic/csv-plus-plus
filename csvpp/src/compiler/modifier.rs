@@ -5,11 +5,10 @@
 //! * need to lowercase the input but we can't do it on the entire value because we don't want to
 //!     lowercase the stuff outside the modifier definition
 //! * get quoted strings working
-use crate::error::Error;
-use crate::Position;
-use crate::modifier::*;
-use crate::rgb::Rgb;
 use std::str::FromStr;
+
+use crate::{Error, Position, Rgb};
+use crate::modifier::*;
 
 #[derive(PartialEq)]
 pub enum Token {

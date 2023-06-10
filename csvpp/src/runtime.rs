@@ -8,7 +8,6 @@ use crate::compiler::token_library::TokenLibrary;
 pub struct Runtime {
     pub default_modifier: Modifier,
     pub options: Options,
-    // TODO need to make the template mutable
     pub template: Template,
     pub token_library: TokenLibrary,
 }
@@ -33,7 +32,7 @@ impl fmt::Display for Runtime {
 ## Called with options
 {}
 
-## Parsed csvpp template
+## Parsed template
 {}
 "#, 
             self.options,

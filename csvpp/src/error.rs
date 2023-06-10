@@ -9,6 +9,7 @@ use crate::options::OutputTarget;
 pub enum Error {
     // TODO we could have a codesyntax error in a cell
     CodeSyntaxError {
+        bad_input: String,
         line_number: usize,
         message: String,
     },
@@ -31,7 +32,8 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Error::CodeSyntaxError { line_number, message } => 
+            Error::CodeSyntaxError { bad_input: _bad_input, line_number, message } => 
+                // TODO use bad_input
                 write!(f, "{}: {}", line_number, message),
             Error::CellSyntaxError { index: Position(x, y), message } => 
                 write!(f, "Cell->[{},{}]: {}", x, y, message),
@@ -58,6 +60,7 @@ mod tests {
         let message = Error::CodeSyntaxError {
             line_number: 1,
             message: "foo".to_string(),
+            bad_input: "bar".to_string(),
         };
 
         assert_eq!("1: foo", message.to_string());

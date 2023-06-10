@@ -5,6 +5,8 @@ use std::io::{BufRead, BufReader};
 use std::fs::File;
 use std::path::PathBuf;
 
+use crate::Error;
+
 type LineCount = u16;
 
 #[derive(Debug)]
@@ -31,7 +33,7 @@ impl fmt::Display for SourceCode {
 }
 
 impl SourceCode {
-    pub fn open(filename: PathBuf) -> Result<SourceCode, String>  {
+    pub fn open(filename: PathBuf) -> Result<SourceCode, Error>  {
         let mut total_lines = 0;
         let mut separator_line: Option<LineCount> = None;
         let mut code_section_str = String::from("");
@@ -40,7 +42,9 @@ impl SourceCode {
         let file = match File::open(&filename) {
             Ok(file) => file,
             Err(error) => 
-                return Err(format!("Error opening {}: {}", &filename.display(), error.to_string())),
+                return Err(Error::InitError(
+                    format!("Error opening {}: {}", &filename.display(), error.to_string()),
+                )),
         };
 
         let reader = BufReader::new(file);
@@ -64,8 +68,9 @@ impl SourceCode {
                     total_lines += 1;
                 },
                 Err(message) => 
-                    // TODO return a CsvppError 
-                    return Err(format!("Error reading line {}: {}", total_lines, message)),
+                    return Err(Error::InitError(
+                        format!("Error reading line {}: {}", total_lines, message),
+                    )),
             }
         }
 

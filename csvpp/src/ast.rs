@@ -10,6 +10,7 @@ use chrono::serde::ts_milliseconds;
 type FunctionArgs = Vec<String>;
 type FunctionName = String;
 
+// TODO turn this into an empty impl and have individual structs that implement it
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum Node {
     Boolean(bool),

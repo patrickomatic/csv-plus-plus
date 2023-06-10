@@ -8,88 +8,104 @@
 //! * [https://news.ycombinator.com/item?id=24480504](Which Parsing Approach?)
 // TODO
 // * lexer support for floats
-// use std::cell::Lazy;
-use regex::Regex;
+use crate::{Error, Node, TokenLibrary};
+use super::token_library::{Token, TokenMatch, TokenMatcher};
 
-use crate::ast;
-
-#[derive(Debug, Clone, PartialEq)]
-enum Token {
-    CloseParen,
-    Comma,
-    Eof,
-    Equals,
-    InfixOperator(String),
-    Integer(i64),
-    Float(f64),
-    OpenParen,
-    Reference(String),
+struct Lexer<'a> {
+    tokens: Vec<TokenMatch<'a>>,
 }
 
-
-struct Lexer {
-    tokens: Vec<Token>,
+/// Unfortunately the tokens are not mutually exclusive - some of them are subsets of another (for
+/// example 555.55 could be matched by both float and integer (integer can just match the first
+/// part of it) so it's important float is first. Another example is comments - they have to be
+/// stripped out first
+fn matchers_ordered(tl: &TokenLibrary) -> [&TokenMatcher; 12] {
+    [
+        &tl.comment,
+        &tl.double_quoted_string,
+        &tl.comma,
+        &tl.close_paren,
+        &tl.open_paren,
+        &tl.infix_operator,
+        &tl.code_section_eof,
+        &tl.integer,
+        &tl.float,
+        &tl.boolean_true,
+        &tl.boolean_false,
+        &tl.reference,
+    ]
 }
 
-// XXX XXX XXX apply regexes iteratively to split up the line
-// XXX ignore comments until the end of the line
-impl Lexer {
-    fn new(input: &str) -> Lexer {
-        let re = Regex::new(r"\s*\b\s*|\s+").unwrap();
-        // XXX I think I need the lexer to be able to handle strings..splitting on 
-        let mut tokens = re.split(input)
-            .filter(|it| !it.is_empty())
-            .map(|tok| match tok {
-                "(" => Token::OpenParen,
-                ")" => Token::CloseParen,
-                "," => Token::Comma,
-                "=" => Token::Equals,
-                "+" | "*" | "-" | "/"  | "^"  | "&"
-                    | "<" | ">" | "<=" | ">=" | "<>" 
-                    => Token::InfixOperator(tok.to_string()),
-                _ => {
-                    // XXX need to handle floats
-                    match tok.parse::<i64>() {
-                        Ok(n) => Token::Integer(n),
-                        Err(_) => Token::Reference(tok.to_string()),
-                    }
+impl<'a> Lexer<'a> {
+    fn new(input: &'a str, token_library: &'a TokenLibrary) -> Result<Lexer<'a>, Error> {
+        let mut tokens: Vec<TokenMatch> = vec![];
+        let mut p = input.clone();
+
+        loop {
+            let mut matched = false;
+
+            for TokenMatcher(token, regex) in matchers_ordered(token_library).iter() {
+                if let Some(m) = regex.find(p) {
+                    tokens.push(TokenMatch(token.clone(), m.as_str().trim()));
+
+                    // move the input past the match
+                    p = &p[m.end()..];
+                    matched = true;
+
+                    break;
                 }
-            })
-            .collect::<Vec<_>>();
+            }
+
+            if p.trim().is_empty() {
+                break;
+            }
+
+            if !matched {
+                // we did a round of all the tokens and didn't match any of them - invalid syntax
+                return Err(Error::CodeSyntaxError {
+                    line_number: 0, // XXX
+                    message: "Error parsing input: invalid token".to_string(),
+                    bad_input: p.to_string(),
+                })
+            }
+        }
 
         tokens.reverse();
 
-        Lexer { tokens }
+        Ok(Lexer { tokens })
     }
 
-    fn next(&mut self) -> Token {
-        self.tokens.pop().unwrap_or(Token::Eof)
+    fn next(&mut self) -> TokenMatch {
+        self.tokens.pop().unwrap_or_else(|| self.eof())
     }
 
-    fn peek(&mut self) -> Token {
+    fn peek(&mut self) -> TokenMatch {
         match self.tokens.last() {
             Some(t) => t.clone(),
-            None => Token::Eof,
+            None => self.eof(),
         }
+    }
+
+    fn eof(&self) -> TokenMatch {
+        TokenMatch(Token::Eof, "")
     }
 }
 
 pub struct AstParser<'a> {
-    lexer: &'a mut Lexer,
+    lexer: &'a mut Lexer<'a>,
 }
 
 impl<'a> AstParser<'a> {
-    // TODO throw a CsvppError instead
-    pub fn parse(input: String) -> Result<ast::Node, String> {
-        let mut lexer = Lexer::new(input.as_str());
+    pub fn parse(input: &'a str, tl: &'a TokenLibrary) -> Result<Node, Error> {
+        let mut lexer = Lexer::new(input, tl)?;
         let mut parser = AstParser { lexer: &mut lexer };
         parser.expr_bp(0)
     }
 
-    fn expr_bp(&mut self, min_bp: u8) -> Result<ast::Node, String> {
+    fn expr_bp(&mut self, _min_bp: u8) -> Result<Node, Error> {
         /*
         let mut lhs = match lexer.next() {
-            Token::Reference(r) => 
+            _ => todo!(),
         }
 
         loop {
@@ -97,13 +113,12 @@ impl<'a> AstParser<'a> {
                 Token::Eof => break,
                 Token::InfixOperator(op) => op,
 
-
-
             }
+            break;
         }
         */
 
-        Ok(ast::Node::Integer(1))
+        Ok(Node::Integer(1))
     }
 
     fn prefix_binding_power(&self, op: &str) -> ((), u8) {
@@ -141,40 +156,58 @@ impl<'a> AstParser<'a> {
 mod tests {
     use super::*;
 
+    fn token_library() -> TokenLibrary {
+        TokenLibrary::build().unwrap()
+    }
+
     #[test]
     fn lexer_new() {
-        let mut lexer = Lexer::new("foo =bar,\"a\",123 (d, b) + *");
+        let tl = token_library();
+        let mut lexer = Lexer::new("foo bar,\"a\",123 (d, b) + *", &tl).unwrap();
 
-        assert_eq!(lexer.next(), Token::Reference("foo".to_string()));
-        assert_eq!(lexer.next(), Token::Equals);
-        assert_eq!(lexer.next(), Token::Reference("bar".to_string()));
-        assert_eq!(lexer.next(), Token::Comma);
-        assert_eq!(lexer.next(), Token::Reference("\"a\"".to_string()));
-        assert_eq!(lexer.next(), Token::Comma);
-        assert_eq!(lexer.next(), Token::Integer(123));
-        assert_eq!(lexer.next(), Token::OpenParen);
-        assert_eq!(lexer.next(), Token::Reference("d".to_string()));
-        assert_eq!(lexer.next(), Token::Comma);
-        assert_eq!(lexer.next(), Token::Reference("b".to_string()));
-        assert_eq!(lexer.next(), Token::CloseParen);
-        assert_eq!(lexer.next(), Token::InfixOperator("+".to_string()));
-        assert_eq!(lexer.next(), Token::InfixOperator("*".to_string()));
+        assert_eq!(lexer.next(), TokenMatch(Token::Reference, "foo"));
+        assert_eq!(lexer.next(), TokenMatch(Token::Reference, "bar"));
+        assert_eq!(lexer.next(), TokenMatch(Token::Comma, ","));
+        assert_eq!(lexer.next(), TokenMatch(Token::DoubleQuotedString,"\"a\""));
+        assert_eq!(lexer.next(), TokenMatch(Token::Comma, ","));
+        assert_eq!(lexer.next(), TokenMatch(Token::Integer, "123"));
+        assert_eq!(lexer.next(), TokenMatch(Token::OpenParen, "("));
+        assert_eq!(lexer.next(), TokenMatch(Token::Reference, "d"));
+        assert_eq!(lexer.next(), TokenMatch(Token::Comma, ","));
+        assert_eq!(lexer.next(), TokenMatch(Token::Reference, "b"));
+        assert_eq!(lexer.next(), TokenMatch(Token::CloseParen, ")"));
+        assert_eq!(lexer.next(), TokenMatch(Token::InfixOperator, "+"));
+        assert_eq!(lexer.next(), TokenMatch(Token::InfixOperator, "*"));
+        assert_eq!(lexer.next(), TokenMatch(Token::Eof, ""));
+        assert_eq!(lexer.next(), TokenMatch(Token::Eof, ""));
+    }
+
+    #[test]
+    fn lexer_new_comment() {
+        let tl = token_library();
+        let mut lexer = Lexer::new("# this is a comment\na_ref\n", &tl).unwrap();
+
+        assert_eq!(lexer.next(), TokenMatch(Token::Comment, "# this is a comment"));
+        assert_eq!(lexer.next(), TokenMatch(Token::Reference, "a_ref"));
+        assert_eq!(lexer.next(), TokenMatch(Token::Eof, ""));
     }
 
     #[test]
     fn lexer_peek() {
-        let mut lexer = Lexer::new("foo (bar) + baz");
+        let tl = token_library();
+        let mut lexer = Lexer::new("foo (bar) + baz", &tl).unwrap();
 
-        assert_eq!(lexer.peek(), Token::Reference("foo".to_string()));
-        assert_eq!(lexer.peek(), Token::Reference("foo".to_string()));
-        assert_eq!(lexer.peek(), Token::Reference("foo".to_string()));
+        assert_eq!(lexer.peek(), TokenMatch(Token::Reference, "foo"));
+        assert_eq!(lexer.peek(), TokenMatch(Token::Reference, "foo"));
+        assert_eq!(lexer.peek(), TokenMatch(Token::Reference, "foo"));
     }
 
     #[test]
     fn ast_parser_parse_integer() {
-        let node = AstParser::parse("1".to_string()).unwrap();
+        let tl = token_library();
+        let node = AstParser::parse("1", &tl).unwrap();
 
-        assert_eq!(node, ast::Node::Integer(1));
+        assert_eq!(node, Node::Integer(1));
     }
 
     /*

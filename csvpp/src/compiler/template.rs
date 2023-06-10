@@ -19,7 +19,7 @@ pub struct Template {
 impl fmt::Display for Template {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // TODO: include variables and functions
-        write!(f, r"    rows: {} ", self.spreadsheet.borrow().len())
+        write!(f, "rows: {}", self.spreadsheet.borrow().len())
     }
 }
 

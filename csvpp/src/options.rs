@@ -3,8 +3,7 @@ use std::fmt;
 use std::path::{Path, PathBuf};
 use clap::Parser;
 
-use crate::ast;
-use crate::source_code;
+use crate::{Error, Node, SourceCode};
 
 type GoogleSheetID = String;
 
@@ -26,8 +25,8 @@ impl fmt::Display for OutputTarget {
 #[derive(Debug)]
 pub struct Options {
     pub backup: bool,
-    pub input: source_code::SourceCode,
-    pub key_values: HashMap<String, ast::Node>,
+    pub input: SourceCode,
+    pub key_values: HashMap<String, Node>,
     pub offset: (u32, u32),
     pub output: OutputTarget,
     pub overwrite_values: bool,
@@ -59,60 +58,67 @@ impl fmt::Display for Options {
     }
 }
 
-// TODO: maybe come up with a better name for this class that isn't similar to the Option primitive
 impl Options {
-    fn build(cli_args: CliArgs) -> Options {
+    fn build(cli_args: CliArgs) -> Result<Options, Error> {
         let output = if let Some(google_sheet_id) = cli_args.google_sheet_id {
             OutputTarget::GoogleSheets(google_sheet_id.to_string())
         } else if let Some(output_filename) = cli_args.output_filename {
             OutputTarget::File(output_filename)
         } else {
-            // XXX return a Result<> or move this check up into the CLI parser
-            panic!("Must specify either -g/--google-sheet-id or -o/--output-filename");
+            return Err(Error::InitError(
+                    "Must specify either -g/--google-sheet-id or -o/--output-filename".to_string()
+                )
+            )
         };
         
-        let source_code = match source_code::SourceCode::open(cli_args.input_filename) {
+        let source_code = match SourceCode::open(cli_args.input_filename.clone()) {
             Ok(source_code) => source_code,
-            Err(error) => panic!("{}", error),
+            Err(error) => 
+                return Err(Error::InitError(
+                    format!(
+                        "Error opening source code {}: {}", 
+                        // XXX make maybe a SourceCodeError error that takes the filename
+                        cli_args.input_filename.into_os_string().into_string().unwrap(), 
+                        error)))
         };
 
-        Options {
+        Ok(Options {
             backup: cli_args.backup,
             input: source_code,
-            key_values: ast::Node::from_key_value_args(cli_args.key_values),
+            key_values: Node::from_key_value_args(cli_args.key_values),
             offset: (cli_args.x_offset, cli_args.y_offset),
             output,
             overwrite_values: !cli_args.safe,
             verbose: cli_args.verbose,
-        }
+        })
     }
 }
 
 // TODO actually use this
-fn validate_output_filename(output_filename: &Path) -> Result<(), String> {
+fn validate_output_filename(output_filename: &Path) -> Result<(), Error> {
     match output_filename.extension() {
-        None => Err(String::from("Output filename must end with .csv, .xlsx or .ods")),
+        None => Err(Error::InitError("Output filename must end with .csv, .xlsx or .ods".to_string())),
         Some(ext) => {
             if ext.eq_ignore_ascii_case("csv") || ext.eq_ignore_ascii_case("xlsx") || ext.eq_ignore_ascii_case("ods") {
                 Ok(())
             } else {
-                Err(
+                Err(Error::InitError(
                     format!(
                         "{} is an unsupported extension: only .csv, .xlsx or .ods are supported.",
                         ext.to_str().unwrap()
                     )
-                )
+                ))
             }
         }
     }
 }
 
 // TODO actually use this
-fn validate_google_sheet_id(google_sheet_id: &str) -> Result<(), &str> {
+fn validate_google_sheet_id(google_sheet_id: &str) -> Result<(), Error> {
     if google_sheet_id.chars().all(char::is_alphanumeric) {
         Ok(())
     } else {
-        Err("The GOOGLE_SHEET_ID must be all letters and digits.")
+        Err(Error::InitError("The GOOGLE_SHEET_ID must be all letters and digits.".to_string()))
     }
 }
 
@@ -194,7 +200,7 @@ struct CliArgs {
     input_filename: PathBuf,
 }
 
-pub fn parse_cli_args() -> Options {
+pub fn parse_cli_args() -> Result<Options, Error> {
     Options::build(CliArgs::parse())
 }
 
@@ -204,37 +210,31 @@ mod tests {
 
     #[test]
     fn validate_google_sheet_id_valid() {
-        assert_eq!(Ok(()), validate_google_sheet_id("abc123"))
+        assert!(validate_google_sheet_id("abc123").is_ok())
     }
     
     #[test]
     fn validate_google_sheet_id_invalid() {
-        assert_eq!(
-            Err("The GOOGLE_SHEET_ID must be all letters and digits."), 
-            validate_google_sheet_id("abc #!*)! 123")
-        )
+        assert!(validate_google_sheet_id("abc #!*)! 123").is_err())
     }
 
     #[test]
     fn validate_output_filename_csv() {
-        assert_eq!(Ok(()), validate_output_filename(&Path::new("/foo/bar/file.csv")))
+        assert!(validate_output_filename(&Path::new("/foo/bar/file.csv")).is_ok())
     }
 
     #[test]
     fn validate_output_filename_xlsx() {
-        assert_eq!(Ok(()), validate_output_filename(&Path::new("FileName.xlsx")))
+        assert!(validate_output_filename(&Path::new("FileName.xlsx")).is_ok())
     }
 
     #[test]
     fn validate_output_filename_ods() {
-        assert_eq!(Ok(()), validate_output_filename(&Path::new("TEST.ODS")))
+        assert!(validate_output_filename(&Path::new("TEST.ODS")).is_ok())
     }
 
     #[test]
     fn validate_output_filename_invalid() {
-        assert_eq!(
-            Err(String::from("Output filename must end with .csv, .xlsx or .ods")),
-            validate_output_filename(&Path::new("/home/Patrick/not_a_valid_file"))
-        )
+        assert!(validate_output_filename(&Path::new("/home/Patrick/not_a_valid_file")).is_err())
     }
 }
