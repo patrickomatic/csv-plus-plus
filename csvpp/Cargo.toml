@@ -1,4 +1,5 @@
 [package]
+authors = ["Patrick Carroll <patrick@patrickomatic.com>"]
 description = "Compile csvpp source code to a target spreadsheet format"
 name = "csvpp"
 version = "0.1.0"
@@ -9,5 +10,7 @@ chrono = { version = "0.4.24", features = ["serde"] }
 clap = { version = "4.2.7", features = ["derive"] }
 csv = "1"
 flexbuffers = "2.0.0"
+google-sheets4 = "*"
 regex = "1"
 serde = { version = "1", features = ["derive"] }
+serde_json = "^1.0"

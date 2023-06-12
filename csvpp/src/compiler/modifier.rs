@@ -28,7 +28,7 @@ pub struct ModifierLexer {
     input: String,
 }
 
-type LexerTakeResult = Result<String, String>;
+type LexerTakeResult = Result<String, Error>;
 
 /// # ModifierLexer
 ///
@@ -106,7 +106,11 @@ impl ModifierLexer {
             self.input = input[substring.len()..].to_string();
             Ok(substring.to_string())
         } else {
-            Err(format!("Error parsing input, expected '{}'", substring))
+            Err(Error::ModifierSyntaxError {
+                message: format!("Error parsing input, expected '{}'", substring),
+                bad_input: input.to_string(),
+                index: Position(0, 0), // XXX
+            })
         }
     }
 
@@ -129,7 +133,7 @@ impl ModifierLexer {
     fn take_while<'a, F>(
         &'a mut self, 
         while_fn: F,
-    ) -> Result<String, String> 
+    ) -> LexerTakeResult
     where F: Fn(char) -> bool {
         let input = self.input.trim();
 
@@ -143,7 +147,11 @@ impl ModifierLexer {
         }
 
         if matched == "" {
-            Err(String::from("Expected a modifier definition (i.e. format/halign/etc)"))
+            Err(Error::ModifierSyntaxError {
+                message: String::from("Expected a modifier definition (i.e. format/halign/etc)"),
+                bad_input: input.to_string(),
+                index: Position(0, 0), // XXX
+            })
         } else {
             self.input = input[matched.len()..].to_string();
             Ok(matched)
@@ -156,7 +164,7 @@ struct ModifierParser<'a> {
     modifier: &'a mut Modifier,
 }
 
-type ParseResult = Result<(), String>;
+type ParseResult = Result<(), Error>;
 
 impl<'a> ModifierParser<'a> {
     fn border_modifier(&mut self) -> ParseResult {
@@ -194,7 +202,11 @@ impl<'a> ModifierParser<'a> {
             
             match amount_string.parse::<usize>() {
                 Ok(n) => Some(n),
-                Err(e) => return Err(format!("Error parsing expand= repetitions: {}", e)),
+                Err(e) => return Err(Error::ModifierSyntaxError {
+                    message: format!("Error parsing expand= repetitions: {}", e),
+                    bad_input: amount_string,
+                    index: Position(0, 0), // XXX
+                }),
             }
         } else {
             None
@@ -227,7 +239,11 @@ impl<'a> ModifierParser<'a> {
         let font_size_string = self.lexer.take_token(Token::PositiveNumber)?;
         match font_size_string.parse::<u8>() {
             Ok(n) => self.modifier.font_size = Some(n),
-            Err(e) => return Err(format!("Error parsing fontsize: {}", e)),
+            Err(e) => return Err(Error::ModifierSyntaxError {
+                message: format!("Error parsing fontsize: {}", e),
+                bad_input: font_size_string,
+                index: Position(0, 0), // XXX
+            }),
         }
 
         Ok(())
@@ -286,11 +302,15 @@ impl<'a> ModifierParser<'a> {
             "nf" | "numberformat"   => self.number_format(),
             "v"  | "var"            => self.var_modifier(),
             "va" | "valign"         => self.valign_modifier(),
-            _ => return Err(format!("Unrecognized modifier: {}", modifier_name))
+            _ => return Err(Error::ModifierSyntaxError {
+                bad_input: modifier_name.to_string(),
+                index: Position(0, 0),  // XXX
+                message: format!("Unrecognized modifier: {}", &modifier_name),
+            }),
         }
     }
 
-    fn modifiers(&mut self) -> Result<(), String> {
+    fn modifiers(&mut self) -> Result<(), Error> {
         loop {
             self.modifier()?;
 
@@ -309,7 +329,7 @@ impl<'a> ModifierParser<'a> {
 pub fn parse_all_modifiers(
     lexer: &mut ModifierLexer,
     default_from: &Modifier,
-) -> Result<(Option<Modifier>, Option<Modifier>), String> {
+) -> Result<(Option<Modifier>, Option<Modifier>), Error> {
     let mut modifier: Option<Modifier> = None;
     let mut row_modifier: Option<Modifier> = None;
 
@@ -325,13 +345,21 @@ pub fn parse_all_modifiers(
 
         if is_row_modifier {
             if row_modifier.is_some() {
-                return Err("You can only define one row modifier for a cell".to_string())
+                return Err(Error::ModifierSyntaxError {
+                    bad_input: "".to_string(), // XXX
+                    index: Position(0, 0), // XXX
+                    message: "You can only define one row modifier for a cell".to_string(),
+                })
             } 
 
             row_modifier = Some(new_modifier)
         } else {
             if modifier.is_some() {
-                return Err("You can only define one modifier for a cell".to_string())
+                return Err(Error::ModifierSyntaxError {
+                    bad_input: "".to_string(), // XXX
+                    index: Position(0, 0), // XXX
+                    message: "You can only define one modifier for a cell".to_string(),
+                })
             }
 
             modifier = Some(new_modifier)
@@ -349,7 +377,7 @@ pub struct ParsedModifiers {
     pub index: Position,
 }
 
-pub fn parse<'a>(
+pub fn parse(
     index: Position, 
     input: String, 
     default_from: Modifier,
@@ -377,7 +405,7 @@ pub fn parse<'a>(
             Err(Error::ModifierSyntaxError { 
                 bad_input: lexer.rest(),
                 index,
-                message, 
+                message: message.to_string(), 
             })
         },
     }

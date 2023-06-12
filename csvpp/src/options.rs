@@ -3,6 +3,7 @@ use std::fmt;
 use std::path::{Path, PathBuf};
 use clap::Parser;
 
+use crate::ast;
 use crate::{Error, Node, SourceCode};
 
 type GoogleSheetID = String;
@@ -26,7 +27,7 @@ impl fmt::Display for OutputTarget {
 pub struct Options {
     pub backup: bool,
     pub input: SourceCode,
-    pub key_values: HashMap<String, Node>,
+    pub key_values: HashMap<String, Box<dyn Node>>,
     pub offset: (u32, u32),
     pub output: OutputTarget,
     pub overwrite_values: bool,
@@ -85,7 +86,7 @@ impl Options {
         Ok(Options {
             backup: cli_args.backup,
             input: source_code,
-            key_values: Node::from_key_value_args(cli_args.key_values),
+            key_values: ast::from_key_value_args(cli_args.key_values),
             offset: (cli_args.x_offset, cli_args.y_offset),
             output,
             overwrite_values: !cli_args.safe,

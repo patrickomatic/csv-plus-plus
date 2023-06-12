@@ -5,6 +5,7 @@
 //! boundaries/spacing but neither of those will work very well for us when handling complex types
 //! like double-quotes strings.
 use regex::Regex;
+// use std::fmt;
 
 use crate::Error;
 
@@ -91,7 +92,7 @@ mod tests {
     }
 
     #[test]
-    fn test_boolean() {
+    fn boolean() {
         assert!(token_library().boolean_true.1.is_match("true"));
         assert!(token_library().boolean_false.1.is_match("false"));
 
@@ -100,17 +101,17 @@ mod tests {
     }
 
     #[test]
-    fn test_code_section_eof() {
+    fn code_section_eof() {
         assert!(token_library().code_section_eof.1.is_match("---"));
     }
 
     #[test]
-    fn test_comment() {
+    fn comment() {
         assert!(token_library().comment.1.is_match("# this is a comment"));
     }
 
     #[test]
-    fn test_double_quoted_string() {
+    fn double_quoted_string() {
         assert!(token_library().double_quoted_string.1.is_match("\"this is a string\""));
         assert!(token_library().double_quoted_string.1.is_match("\"with an \\\" escaped quote\""));
 
@@ -119,7 +120,7 @@ mod tests {
     }
 
     #[test]
-    fn test_integer() {
+    fn integer() {
         assert!(token_library().integer.1.is_match("555"));
         assert!(token_library().integer.1.is_match("-555"));
 
@@ -127,7 +128,7 @@ mod tests {
     }
 
     #[test]
-    fn test_float() {
+    fn float() {
         assert!(token_library().float.1.is_match("555.55"));
         assert!(token_library().float.1.is_match("-555.55"));
 
@@ -135,7 +136,7 @@ mod tests {
     }
 
     #[test]
-    fn test_reference() {
+    fn reference() {
         assert!(token_library().reference.1.is_match("foo"));
         assert!(token_library().reference.1.is_match("A1:B2"));
         assert!(token_library().reference.1.is_match("Foo!A1:B2"));

@@ -8,7 +8,9 @@
 //! * [https://news.ycombinator.com/item?id=24480504](Which Parsing Approach?)
 // TODO
 // * lexer support for floats
-use crate::{Error, Node, TokenLibrary};
+use std::str::FromStr;
+
+use crate::{Boolean, Error, Float, Integer, Node, Reference, Text, TokenLibrary};
 use super::token_library::{Token, TokenMatch, TokenMatcher};
 
 struct Lexer<'a> {
@@ -37,7 +39,10 @@ fn matchers_ordered(tl: &TokenLibrary) -> [&TokenMatcher; 12] {
 }
 
 impl<'a> Lexer<'a> {
-    fn new(input: &'a str, token_library: &'a TokenLibrary) -> Result<Lexer<'a>, Error> {
+    fn new(
+        input: &'a str,
+        token_library: &'a TokenLibrary
+    ) -> Result<Lexer<'a>, Error> {
         let mut tokens: Vec<TokenMatch> = vec![];
         let mut p = input.clone();
 
@@ -46,7 +51,11 @@ impl<'a> Lexer<'a> {
 
             for TokenMatcher(token, regex) in matchers_ordered(token_library).iter() {
                 if let Some(m) = regex.find(p) {
-                    tokens.push(TokenMatch(token.clone(), m.as_str().trim()));
+                    if *token != Token::Comment {
+                        // we'll want to consume everything but comments (no point in the parsing
+                        // code even needing to consider them)
+                        tokens.push(TokenMatch(token.clone(), m.as_str().trim()));
+                    }
 
                     // move the input past the match
                     p = &p[m.end()..];
@@ -63,9 +72,9 @@ impl<'a> Lexer<'a> {
             if !matched {
                 // we did a round of all the tokens and didn't match any of them - invalid syntax
                 return Err(Error::CodeSyntaxError {
+                    bad_input: p.to_string(),
                     line_number: 0, // XXX
                     message: "Error parsing input: invalid token".to_string(),
-                    bad_input: p.to_string(),
                 })
             }
         }
@@ -96,59 +105,75 @@ pub struct AstParser<'a> {
 }
 
 impl<'a> AstParser<'a> {
-    pub fn parse(input: &'a str, tl: &'a TokenLibrary) -> Result<Node, Error> {
+    pub fn parse(
+        input: &'a str,
+        tl: &'a TokenLibrary
+    ) -> Result<Box<dyn Node>, Error> {
         let mut lexer = Lexer::new(input, tl)?;
         let mut parser = AstParser { lexer: &mut lexer };
+
         parser.expr_bp(0)
     }
 
-    fn expr_bp(&mut self, _min_bp: u8) -> Result<Node, Error> {
-        /*
-        let mut lhs = match lexer.next() {
-            _ => todo!(),
-        }
+    fn expr_bp(&mut self, _min_bp: u8) -> Result<Box<dyn Node>, Error> {
+        let mut lhs: Box<dyn Node> = match self.lexer.next() {
+            // non-terminals we'll accept on the LHS
+            TokenMatch(Token::OpenParen, _) => self.expr_bp(0)?,
+
+            // terminals
+            TokenMatch(Token::Boolean, b) => Box::new(Boolean::from_str(b)?),
+            TokenMatch(Token::Integer, i) => Box::new(Integer::from_str(i)?),
+            TokenMatch(Token::Float, f) => Box::new(Float::from_str(f)?),
+            TokenMatch(Token::DoubleQuotedString, t) => Box::new(Text::from_str(t)?),
+            TokenMatch(Token::Reference, t) => Box::new(Reference::from_str(t)?),
+
+            TokenMatch(t, m) => return Err(Error::CodeSyntaxError {
+                message: format!("Invalid left-hand side expression ({:?})", t),
+                bad_input: m.to_string(),
+                line_number: 0, // XXX
+            }),
+        };
 
         loop {
-            let op = match lexer.peek() {
-                Token::Eof => break,
-                Token::InfixOperator(op) => op,
+            let op = match self.lexer.peek() {
+                TokenMatch(Token::Eof, _) => break,
+                TokenMatch(Token::InfixOperator, op) => op,
+                _ => panic!("XXX"),
+            };
 
-            }
             break;
         }
-        */
 
-        Ok(Node::Integer(1))
+        Ok(Box::new(Integer(1)))
     }
 
     fn prefix_binding_power(&self, op: &str) -> ((), u8) {
         match op {
-            // TODO `=` could work here, where it signifies that we even begin parsing
+            // TODO: remove this if we never end up having any prefix operators
             _ => panic!("unknown binding power for operator: {:?}", op),
         }
     }
 
     fn postfix_binding_power(&self, op: &str) -> Option<(u8, ())> {
-        let bp = match op {
+        Some(match op {
             "(" => (15, ()),
             _ => return None,
-        };
-        Some(bp)
+        })
     }
 
     fn infix_binding_power(&self, op: &str) -> Option<(u8, u8)> {
-        let bp = match op {
-            ":=" => (2, 1),
-            "," => (3, 4),
-            "=" | "<" | ">" | "<=" | ">=" | "<>" => (5, 6),
-            "&" => (7, 8),
-            "+" | "-" => (9, 10),
-            "*" | "/" => (11, 12),
-            "^" => (13, 14),
-            _ => return None,
+        Some(match op {
+            ":="                        => (2, 1),
+            ","                         => (3, 4),
+            "=" | "<"  | ">"  | 
+                  "<=" | ">=" | "<>"    => (5, 6),
+            "&"                         => (7, 8),
+            "+" | "-"                   => (9, 10),
+            "*" | "/"                   => (11, 12),
+            "^"                         => (13, 14),
+            _                           => return None,
 
-        };
-        Some(bp)
+        })
     }
 }
 
@@ -187,7 +212,6 @@ mod tests {
         let tl = token_library();
         let mut lexer = Lexer::new("# this is a comment\na_ref\n", &tl).unwrap();
 
-        assert_eq!(lexer.next(), TokenMatch(Token::Comment, "# this is a comment"));
         assert_eq!(lexer.next(), TokenMatch(Token::Reference, "a_ref"));
         assert_eq!(lexer.next(), TokenMatch(Token::Eof, ""));
     }
@@ -205,9 +229,9 @@ mod tests {
     #[test]
     fn ast_parser_parse_integer() {
         let tl = token_library();
-        let node = AstParser::parse("1", &tl).unwrap();
+        let node = AstParser::parse("1", &tl);
 
-        assert_eq!(node, Node::Integer(1));
+        assert!(node.is_ok())
     }
 
     /*

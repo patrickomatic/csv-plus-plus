@@ -12,7 +12,7 @@ mod rgb;
 mod runtime;
 mod source_code;
 
-pub use ast::Node;
+pub use ast::*;
 pub use compiler::{Cell, compile_template};
 pub use compiler::template::{Spreadsheet, Template};
 pub use compiler::token_library::TokenLibrary;

@@ -1,19 +1,19 @@
 use flexbuffers;
-use serde::{Serialize, Deserialize};
+// use serde::{Serialize, Deserialize};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::{Cell, Node, Runtime};
+use crate::{Cell, Node, Function, Runtime};
 
 pub type Spreadsheet = Vec<Vec<Cell>>;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+// #[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug)]
 pub struct Template {
-    // TODO can I enforce that this is only Node::Functions?
-    functions: HashMap<String, Node>,
+    functions: HashMap<String, Function>,
     spreadsheet: RefCell<Spreadsheet>,
-    variables: HashMap<String, Node>,
+    variables: HashMap<String, Box<dyn Node>>,
 }
 
 impl fmt::Display for Template {
@@ -38,7 +38,7 @@ impl Template {
     pub fn write_object_code(runtime: &Runtime) -> () {
         let _object_code_filename = runtime.options.input.object_code_filename();
         let mut s = flexbuffers::FlexbufferSerializer::new();
-        runtime.template.serialize(&mut s).unwrap();
+        // runtime.template.serialize(&mut s).unwrap();
         // TODO: write s to a file
         todo!()
     }

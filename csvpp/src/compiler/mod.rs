@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+// use serde::{Serialize, Deserialize};
 
 mod code;
 mod code_section;
@@ -10,15 +10,16 @@ pub mod token_library;
 use crate::{Error, Modifier, Node, Position, Options, Runtime};
 
 // TODO rename to SpreadsheetCell? Rust has too many Cell-like names... RefCell, OnceCell, etc
-#[derive(Clone, Debug, Deserialize, Serialize)]
+// #[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Debug)]
 pub struct Cell {
-    ast: Option<Node>,
+    ast: Option<Box<dyn Node>>,
     index: Position,
     modifier: Modifier,
     value: String,
 }
 
-fn resolve_cell_variables<'a>(runtime: Runtime) -> Result<Runtime, Error> {
+fn resolve_cell_variables(runtime: Runtime) -> Result<Runtime, Error> {
     // TODO
     Ok(runtime)
 }

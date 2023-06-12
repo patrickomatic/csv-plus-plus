@@ -1,0 +1,80 @@
+//!
+use serde::{Serialize, Deserialize};
+use std::collections::HashSet;
+
+mod border_side;
+mod border_style;
+mod expand;
+mod horizontal_align;
+mod number_format;
+mod text_format;
+mod vertical_align;
+
+pub use border_side::BorderSide;
+pub use border_style::BorderStyle;
+pub use expand::Expand;
+pub use horizontal_align::HorizontalAlign;
+pub use number_format::NumberFormat;
+pub use text_format::TextFormat;
+pub use vertical_align::VerticalAlign;
+
+use crate::Rgb;
+
+/// # Modifier
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct Modifier {
+    pub border_color: Option<Rgb>,
+    pub border_style: Option<BorderStyle>,
+    pub borders: HashSet<BorderSide>,
+    pub color: Option<Rgb>,
+    pub expand: Option<Expand>,
+    pub font_color: Option<Rgb>,
+    pub font_family: Option<String>,
+    pub font_size: Option<u8>,
+    pub formats: HashSet<TextFormat>,
+    pub horizontal_align: Option<HorizontalAlign>,
+    pub note: Option<String>,
+    pub number_format: Option<NumberFormat>,
+    pub row_level: bool,
+    pub var: Option<String>,
+    pub vertical_align: Option<VerticalAlign>,
+}
+
+impl Default for Modifier {
+    fn default() -> Self {
+        Self {
+            border_color: None,
+            border_style: None,
+            borders: HashSet::new(),
+            color: None,
+            expand: None,
+            font_color: None,
+            font_family: None,
+            font_size: None,
+            formats: HashSet::new(),
+            horizontal_align: None,
+            note: None,
+            number_format: None,
+            row_level: false,
+            var: None,
+            vertical_align: None, 
+        }
+    }
+}
+
+impl Modifier {
+    pub fn new(row_level: bool) -> Self {
+        let default = Self::default();
+        Self {
+            row_level,
+            ..default
+        }
+    }
+
+    pub fn from(modifier: &Modifier) -> Self {
+        Self {
+            row_level: false,
+            ..modifier.clone()
+        }
+    }
+}
