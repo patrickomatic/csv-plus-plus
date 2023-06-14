@@ -5,13 +5,13 @@
 //! ```
 //! ```
 //! 
-use csvpp::{Error, compile_template, parse_cli_args};
+use csvpp::{Result, Runtime, Template};
 use std::process;
 
-fn compile_from_cli() -> Result<(), Error> {
-    let options = parse_cli_args()?;
+fn compile_from_cli() -> Result<()> {
+    let runtime = Runtime::from_cli_args()?;
 
-    let runtime = compile_template(options)?;
+    let template = Template::compile(&runtime)?;
     if runtime.options.backup {
         if runtime.options.verbose {
             // TODO: better message
@@ -27,7 +27,7 @@ fn compile_from_cli() -> Result<(), Error> {
     Ok(())
 
     // template.write_compiled_template(&options, &template);
-    // writer.write(&options, &template)
+    // writer.write(&runtime, &template)
 }
 
 // TODO wrap these two error handlings in a function that calls with ?

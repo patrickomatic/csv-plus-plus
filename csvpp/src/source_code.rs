@@ -1,11 +1,18 @@
+//! # SourceCode
 //!
+//! The original source code being compiled.  When csv++ is first initialized the source code will
+//! be read and a very rough parse will be done which reads line-by-line and splits the CSV section
+//! from the code section by looking for the `---` token.
+//!
+//! After this both the code section and CSV section will be lexed and parsed using separate
+//! algorithms.
 //!
 use std::fmt;
 use std::io::{BufRead, BufReader};
 use std::fs::File;
 use std::path::PathBuf;
 
-use crate::Error;
+use crate::{Error, Result};
 
 type LineCount = u16;
 
@@ -33,25 +40,22 @@ impl fmt::Display for SourceCode {
 }
 
 impl SourceCode {
-    pub fn open(filename: PathBuf) -> Result<SourceCode, Error>  {
+    /// Open the source code and do a rough first pass where we split the code section from the CSV
+    /// section by looking for `---`.
+    pub fn open(filename: PathBuf) -> Result<SourceCode>  {
         let mut total_lines = 0;
         let mut separator_line: Option<LineCount> = None;
         let mut code_section_str = String::from("");
         let mut csv_section = String::from("");
 
-        let file = match File::open(&filename) {
-            Ok(file) => file,
-            Err(error) => 
-                return Err(Error::InitError(
-                    format!("Error opening {}: {}", &filename.display(), error.to_string()),
-                )),
-        };
+        let file = Self::open_file(&filename)?;
 
         let reader = BufReader::new(file);
 
         for line in reader.lines() {
             match line {
                 Ok(l) => {
+                    // TODO: use the token library to get this
                     if l.trim() == "---" {
                         separator_line = Some(total_lines + 1);
                         continue;
@@ -68,9 +72,10 @@ impl SourceCode {
                     total_lines += 1;
                 },
                 Err(message) => 
-                    return Err(Error::InitError(
-                        format!("Error reading line {}: {}", total_lines, message),
-                    )),
+                    return Err(Error::SourceCodeError {
+                        filename,
+                        message: format!("Error reading line {}: {}", total_lines, message),
+                    }),
             }
         }
 
@@ -92,6 +97,15 @@ impl SourceCode {
         let mut f = self.filename.clone();
         f.set_extension("csvpo");
         f
+    }
+
+    fn open_file(filename: &PathBuf) -> Result<File> {
+        File::open(filename).or_else(|error| {
+            Err(Error::SourceCodeError {
+                filename: filename.to_path_buf(),
+                message: format!("Error opening file: {}", error.to_string()),
+            })
+        })
     }
 }
 

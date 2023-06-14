@@ -1,5 +1,4 @@
 // use serde::{Serialize, Deserialize};
-
 mod code;
 mod code_section;
 mod csv_section;
@@ -7,7 +6,7 @@ mod modifier;
 pub mod template;
 pub mod token_library;
 
-use crate::{Error, Modifier, Node, Position, Options, Runtime};
+use crate::{Modifier, Node, Position};
 
 // TODO rename to SpreadsheetCell? Rust has too many Cell-like names... RefCell, OnceCell, etc
 // #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -17,19 +16,4 @@ pub struct Cell {
     index: Position,
     modifier: Modifier,
     value: String,
-}
-
-fn resolve_cell_variables(runtime: Runtime) -> Result<Runtime, Error> {
-    // TODO
-    Ok(runtime)
-}
-
-pub fn compile_template(options: Options) -> Result<Runtime, Error> {
-    let runtime = Runtime::new(options)?;
-
-    // TODO do these in parallel
-    let _csv_section = csv_section::parse(&runtime)?;
-    let _code_section = code_section::parse(&runtime)?;
-
-    resolve_cell_variables(runtime)
 }

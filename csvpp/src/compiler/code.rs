@@ -6,11 +6,12 @@
 //! Powerful Pratt Parsing)
 //!
 //! * [https://news.ycombinator.com/item?id=24480504](Which Parsing Approach?)
+//!
 // TODO
 // * lexer support for floats
+//
 use std::str::FromStr;
-
-use crate::{Boolean, Error, Float, Integer, Node, Reference, Text, TokenLibrary};
+use crate::{Boolean, Error, Float, FunctionCall, Integer, Node, Reference, Text, TokenLibrary};
 use super::token_library::{Token, TokenMatch, TokenMatcher};
 
 struct Lexer<'a> {
@@ -53,7 +54,7 @@ impl<'a> Lexer<'a> {
                 if let Some(m) = regex.find(p) {
                     if *token != Token::Comment {
                         // we'll want to consume everything but comments (no point in the parsing
-                        // code even needing to consider them)
+                        // logic even needing to consider them)
                         tokens.push(TokenMatch(token.clone(), m.as_str().trim()));
                     }
 
@@ -95,13 +96,13 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn eof(&self) -> TokenMatch {
+    fn eof(&mut self) -> TokenMatch {
         TokenMatch(Token::Eof, "")
     }
 }
 
 pub struct AstParser<'a> {
-    lexer: &'a mut Lexer<'a>,
+    lexer: Lexer<'a>,
 }
 
 impl<'a> AstParser<'a> {
@@ -110,21 +111,23 @@ impl<'a> AstParser<'a> {
         tl: &'a TokenLibrary
     ) -> Result<Box<dyn Node>, Error> {
         let mut lexer = Lexer::new(input, tl)?;
-        let mut parser = AstParser { lexer: &mut lexer };
+        let mut parser = AstParser { lexer };
 
+        // AstParser::expr_bp(&mut lexer, 0)
         parser.expr_bp(0)
     }
 
-    fn expr_bp(&mut self, _min_bp: u8) -> Result<Box<dyn Node>, Error> {
-        let mut lhs: Box<dyn Node> = match self.lexer.next() {
-            // non-terminals we'll accept on the LHS
+    // fn expr_bp(lexer: &mut Lexer, min_bp: u8) -> Result<Box<dyn Node>, Error> {
+    fn expr_bp(&mut self, min_bp: u8) -> Result<Box<dyn Node>, Error> {
+        let mut lhs = match self.lexer.next() {
+            // non-terminals we'll recurse on the LHS
             TokenMatch(Token::OpenParen, _) => self.expr_bp(0)?,
 
             // terminals
             TokenMatch(Token::Boolean, b) => Box::new(Boolean::from_str(b)?),
-            TokenMatch(Token::Integer, i) => Box::new(Integer::from_str(i)?),
-            TokenMatch(Token::Float, f) => Box::new(Float::from_str(f)?),
             TokenMatch(Token::DoubleQuotedString, t) => Box::new(Text::from_str(t)?),
+            TokenMatch(Token::Float, f) => Box::new(Float::from_str(f)?),
+            TokenMatch(Token::Integer, i) => Box::new(Integer::from_str(i)?),
             TokenMatch(Token::Reference, t) => Box::new(Reference::from_str(t)?),
 
             TokenMatch(t, m) => return Err(Error::CodeSyntaxError {
@@ -137,14 +140,39 @@ impl<'a> AstParser<'a> {
         loop {
             let op = match self.lexer.peek() {
                 TokenMatch(Token::Eof, _) => break,
-                TokenMatch(Token::InfixOperator, op) => op,
+                TokenMatch(Token::InfixOperator, op) => op.to_owned(),
+                // XXX
                 _ => panic!("XXX"),
             };
+
+            if let Some((l_bp, ())) = self.postfix_binding_power(&op) {
+                if l_bp < min_bp {
+                    break;
+                }
+                
+                self.lexer.next();
+
+                let id = lhs.id_ref();
+                lhs = if op == "(" && id.is_some() {
+                    // XXX we've got a function call
+                    // for now it will just accept a single expression
+                    let rhs = self.expr_bp(0)?;
+
+                    // XXX consume either a comma (and keep getting exprs) or a CloseParen
+                    self.lexer.next();
+
+                    Box::new(FunctionCall { name: id.unwrap(), args: vec![rhs], })
+                } else {
+                    panic!("foo")
+                };
+
+                continue;
+            }
 
             break;
         }
 
-        Ok(Box::new(Integer(1)))
+        Ok(lhs)
     }
 
     fn prefix_binding_power(&self, op: &str) -> ((), u8) {

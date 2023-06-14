@@ -9,13 +9,15 @@ use regex::Regex;
 
 use crate::Error;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Token {
     Boolean,
     CloseParen,
     Comma,
     Comment,
     CodeSectionEof,
+    // TODO
+    // DateTime,
     DoubleQuotedString,
     Eof,
     InfixOperator,
@@ -27,10 +29,10 @@ pub enum Token {
     VarAssign,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct TokenMatcher(pub Token, pub Regex);
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TokenMatch<'a>(pub Token, pub &'a str);
 
 impl TokenMatcher {
@@ -51,6 +53,8 @@ pub struct TokenLibrary {
     pub comma: TokenMatcher,
     pub comment: TokenMatcher,
     pub close_paren: TokenMatcher,
+    // TODO
+    // pub date_time: TokenMatcher,
     pub double_quoted_string: TokenMatcher,
     pub infix_operator: TokenMatcher,
     pub integer: TokenMatcher,

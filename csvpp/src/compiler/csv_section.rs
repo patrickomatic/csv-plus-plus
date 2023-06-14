@@ -29,7 +29,7 @@ fn parse_cell<'a>(
 pub fn parse<'a>(runtime: &'a Runtime) -> Result<Spreadsheet, Error> {
     let mut csv_reader = csv::ReaderBuilder::new()
         .has_headers(false)
-        .from_reader(runtime.options.input.csv_section.as_bytes());
+        .from_reader(runtime.source_code.csv_section.as_bytes());
 
     let mut cell_index = 0;
     let mut row_index = 0;

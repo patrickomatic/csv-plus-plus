@@ -1,3 +1,4 @@
+//! # VerticalAlign
 //!
 use serde::{Serialize, Deserialize};
 use std::str::FromStr;

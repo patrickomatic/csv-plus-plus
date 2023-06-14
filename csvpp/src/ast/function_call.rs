@@ -9,8 +9,8 @@ use std::fmt;
 // #[derive(Debug, Deserialize, PartialEq, Serialize)]
 #[derive(Debug)]
 pub struct FunctionCall {
-    args: Vec<Box<dyn super::Node>>,
-    name: super::FunctionName,
+    pub args: Vec<Box<dyn super::Node>>,
+    pub name: super::FunctionName,
 }
 
 impl super::Node for FunctionCall {}

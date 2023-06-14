@@ -4,7 +4,9 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::{Cell, Node, Function, Runtime};
+use super::csv_section;
+use super::code_section::CodeSection;
+use crate::{Cell, Node, Function, Result, Runtime};
 
 pub type Spreadsheet = Vec<Vec<Cell>>;
 
@@ -34,9 +36,28 @@ impl Default for Template {
 }
 
 impl Template {
+    pub fn compile(runtime: &Runtime) -> Result<Self> {
+        // TODO do these in parallel
+        let spreadsheet = csv_section::parse(&runtime)?;
+        let code_section = CodeSection::parse(&runtime)?;
+
+        let template = Template {
+            functions: code_section.functions,
+            spreadsheet: RefCell::new(spreadsheet),
+            variables: code_section.variables,
+        };
+
+        template.resolve_cell_variables(runtime)
+    }
+
+    fn resolve_cell_variables(self, runtime: &Runtime) -> Result<Self> {
+        // TODO
+        Ok(self)
+    }
+
     // TODO hmm should this just move onto impl Runtime rather than taking a runtime
     pub fn write_object_code(runtime: &Runtime) -> () {
-        let _object_code_filename = runtime.options.input.object_code_filename();
+        let _object_code_filename = runtime.source_code.object_code_filename();
         let mut s = flexbuffers::FlexbufferSerializer::new();
         // runtime.template.serialize(&mut s).unwrap();
         // TODO: write s to a file

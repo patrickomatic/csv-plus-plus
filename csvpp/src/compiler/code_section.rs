@@ -1,5 +1,18 @@
-use crate::{Runtime, Error};
+//! # CodeSection
+use std::collections::HashMap;
+use crate::{Function, Node, Result, Runtime};
 
-pub fn parse(runtime: &Runtime) -> Result<(), Error> {
-    todo!()
+pub struct CodeSection {
+    pub functions: HashMap<String, Function>,
+    pub variables: HashMap<String, Box<dyn Node>>,
+}
+
+impl CodeSection {
+    pub fn parse(runtime: &Runtime) -> Result<Self> {
+        // TODO
+        Ok(CodeSection {
+            functions: HashMap::new(),
+            variables: HashMap::new(),
+        })
+    }
 }

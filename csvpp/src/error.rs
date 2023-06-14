@@ -1,9 +1,9 @@
 //! Error handling functions
 use std::error;
 use std::fmt;
+use std::path::PathBuf;
 
-use crate::Position;
-use crate::options::OutputTarget;
+use crate::{OutputTarget, Position};
 
 #[derive(Clone, Debug)]
 pub enum Error {
@@ -26,6 +26,10 @@ pub enum Error {
     ModifierSyntaxError {
         bad_input: String,
         index: Position,
+        message: String,
+    },
+    SourceCodeError {
+        filename: PathBuf,
         message: String,
     },
     TargetWriteError {
@@ -54,6 +58,10 @@ impl fmt::Display for Error {
             Error::ModifierSyntaxError { bad_input, index: Position(x, y), message } => {
                 writeln!(f, "Cell->[{},{}]: {}", x, y, message)?;
                 write!(f, "bad input: {}", bad_input)
+            },
+            Error::SourceCodeError { filename, message } => {
+                writeln!(f, "Error reading source: {}", filename.display())?;
+                write!(f, "{}", message)
             },
             Error::TargetWriteError { target, message } => 
                 write!(f, "Error writing to {}: {}", target, message),

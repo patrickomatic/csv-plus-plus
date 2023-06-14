@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 use std::fmt;
 use std::str::FromStr;
 
-use crate::{Error, Position};
+use crate::{Error, Position, Result};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Rgb {
@@ -18,7 +18,7 @@ impl fmt::Display for Rgb {
     }
 }
 
-fn string_to_hex(hex_code: &str, double_it: bool) -> Result<u8, Error> {
+fn string_to_hex(hex_code: &str, double_it: bool) -> Result<u8> {
     let hex_string = if double_it {
         hex_code.repeat(2)
     } else {
@@ -38,7 +38,7 @@ fn string_to_hex(hex_code: &str, double_it: bool) -> Result<u8, Error> {
 impl FromStr for Rgb {
     type Err = Error;
 
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
+    fn from_str(input: &str) -> Result<Self> {
         let start_at = if input.starts_with("#") { 1 } else { 0 };
         let input_len = input.len() - start_at;
 

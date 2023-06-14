@@ -2,6 +2,7 @@
 //!
 // use serde::{Deserialize, Serialize};
 // use std::str;
+/*
 use std::fmt;
 
 // use crate::Error;
@@ -19,7 +20,6 @@ impl fmt::Display for RuntimeValue {
     }
 }
 
-/*
 impl str::FromStr for RuntimeValue {
     type Err = Error;
 
@@ -28,9 +28,9 @@ impl str::FromStr for RuntimeValue {
         // Ok(RuntimeValue(input.to_string()))
     }
 }
-*/
 
 #[cfg(test)]
 mod tests {
     // use super::*;
 }
+*/
