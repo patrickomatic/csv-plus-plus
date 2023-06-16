@@ -1,3 +1,12 @@
+//! # Init
+//!
+//! The first phase of processing which gets everything ready for parsing and compilation.  This
+//! takes the `CliArgs` supplied by the user and:
+//!
+//! * Reads the source and does a rough parse (splitting it by `---`)
+//! * Validates the output target
+//! * Creates an `Options` given the various CLI options
+//!
 use crate::ast;
 use crate::{CliArgs, Options, OutputTarget, Result, SourceCode};
 
@@ -28,10 +37,23 @@ impl Init {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     
     #[test]
     fn from_cli_args() {
-        // TODO
+        let init = Init::from_cli_args(CliArgs {
+            output_filename: Some(PathBuf::from("foo.xlsx")),
+            input_filename: PathBuf::from("foo.csvpp"),
+            ..CliArgs::default()
+        }).unwrap();
+
+        // it takes defaults for options - we don't need to check all
+        assert_eq!(init.options.backup, false);
+        assert_eq!(init.options.overwrite_values, true);
+
+        assert_eq!(init.output, OutputTarget::File(PathBuf::from("foo.xlsx")));
+        assert_eq!(init.source_code.filename, PathBuf::from("foo.csvpp"))
     }
 }

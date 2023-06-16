@@ -24,8 +24,9 @@ fn compile_from_cli() -> Result<()> {
         println!("{}", runtime.to_string());
     }
 
-    Ok(())
+    dbg!(template);
 
+    Ok(())
     // template.write_compiled_template(&options, &template);
     // writer.write(&runtime, &template)
 }

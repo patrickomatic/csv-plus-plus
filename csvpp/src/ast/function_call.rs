@@ -4,6 +4,7 @@
 //! function calls until we're ready to write to the target format.
 //!
 // use serde::{Deserialize, Serialize};
+use std::any;
 use std::fmt;
 
 // #[derive(Debug, Deserialize, PartialEq, Serialize)]
@@ -13,7 +14,29 @@ pub struct FunctionCall {
     pub name: super::FunctionName,
 }
 
-impl super::Node for FunctionCall {}
+impl super::Node for FunctionCall {
+    fn id_ref(&self) -> Option<super::NodeId> {
+        Some(self.name.clone())
+    }
+
+    fn eq(&self, other: &dyn any::Any) -> bool {
+        if let Some(other_fn) = other.downcast_ref::<FunctionCall>() {
+            if self.name != other_fn.name || self.args.len() != other_fn.args.len() {
+                return false
+            }
+
+            for (i, arg) in self.args.iter().enumerate() {
+                if !arg.eq(&other_fn.args[i]) {
+                    return false
+                }
+            }
+            
+            return true
+        }
+
+        false
+    }
+}
 
 impl fmt::Display for FunctionCall {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

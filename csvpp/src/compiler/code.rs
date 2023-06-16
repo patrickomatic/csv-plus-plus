@@ -11,7 +11,18 @@
 // * lexer support for floats
 //
 use std::str::FromStr;
-use crate::{Boolean, Error, Float, FunctionCall, Integer, Node, Reference, Text, TokenLibrary};
+use crate::{
+    Boolean, 
+    Error, 
+    Float, 
+    FunctionCall, 
+    InfixFunctionCall,
+    Integer, 
+    Node, 
+    Reference, 
+    Text, 
+    TokenLibrary, 
+};
 use super::token_library::{Token, TokenMatch, TokenMatcher};
 
 struct Lexer<'a> {
@@ -110,10 +121,9 @@ impl<'a> AstParser<'a> {
         input: &'a str,
         tl: &'a TokenLibrary
     ) -> Result<Box<dyn Node>, Error> {
-        let mut lexer = Lexer::new(input, tl)?;
+        let lexer = Lexer::new(input, tl)?;
         let mut parser = AstParser { lexer };
 
-        // AstParser::expr_bp(&mut lexer, 0)
         parser.expr_bp(0)
     }
 
@@ -150,6 +160,7 @@ impl<'a> AstParser<'a> {
                     break;
                 }
                 
+                // consume the token we peeked
                 self.lexer.next();
 
                 let id = lhs.id_ref();
@@ -161,10 +172,29 @@ impl<'a> AstParser<'a> {
                     // XXX consume either a comma (and keep getting exprs) or a CloseParen
                     self.lexer.next();
 
+
                     Box::new(FunctionCall { name: id.unwrap(), args: vec![rhs], })
                 } else {
                     panic!("foo")
                 };
+
+                continue;
+            }
+
+            if let Some((l_bp, r_bp)) = self.infix_binding_power(&op) {
+                if l_bp < min_bp {
+                    break;
+                }
+
+                // consume the token we peeked
+                self.lexer.next();
+
+                let rhs = self.expr_bp(r_bp)?;
+                lhs = Box::new(InfixFunctionCall { 
+                    left_arg: lhs,
+                    right_arg: rhs,
+                    operator: op,
+                });
 
                 continue;
             }
@@ -175,12 +205,14 @@ impl<'a> AstParser<'a> {
         Ok(lhs)
     }
 
+    /*
     fn prefix_binding_power(&self, op: &str) -> ((), u8) {
         match op {
             // TODO: remove this if we never end up having any prefix operators
             _ => panic!("unknown binding power for operator: {:?}", op),
         }
     }
+    */
 
     fn postfix_binding_power(&self, op: &str) -> Option<(u8, ())> {
         Some(match op {
@@ -192,7 +224,8 @@ impl<'a> AstParser<'a> {
     fn infix_binding_power(&self, op: &str) -> Option<(u8, u8)> {
         Some(match op {
             ":="                        => (2, 1),
-            ","                         => (3, 4),
+            ","                         => (3, 4), // XXX I don't think we need this here because
+                                                   // we handle commas explicitly above
             "=" | "<"  | ">"  | 
                   "<=" | ">=" | "<>"    => (5, 6),
             "&"                         => (7, 8),
@@ -262,16 +295,19 @@ mod tests {
         assert!(node.is_ok())
     }
 
-    /*
     #[test]
     fn ast_parser_parse_infix_function() {
-        let node = AstParser::parse("1 * 2".to_string()).unwrap();
+        let tl = token_library();
+        let node = AstParser::parse("1 * 2", &tl);
 
-        assert_eq!(node, ast::Node::InfixFunctionCall {
+        dbg!(&node);
+        assert!(node.is_ok())
+        /*
+        assert_eq!(node, InfixFunctionCall {
             operator: "*".to_string(),
-            left_arg: Box::new(ast::Node::Integer(1)),
-            right_arg: Box::new(ast::Node::Integer(1)),
+            left_arg: Box::new(Integer(1)),
+            right_arg: Box::new(Integer(1)),
         });
+        */
     }
-    */
 }

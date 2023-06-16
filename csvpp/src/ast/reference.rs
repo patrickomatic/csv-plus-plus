@@ -12,6 +12,7 @@
 // TODO need to be able to init from either A1 format or a cell index
 //
 use serde::{Deserialize, Serialize};
+use std::any;
 use std::fmt;
 use std::str;
 
@@ -59,6 +60,14 @@ impl Node for Reference {
             Some(self.0.clone())
         }
     }
+
+    fn eq(&self, other: &dyn any::Any) -> bool {
+        if let Some(other_ref) = other.downcast_ref::<Reference>() {
+            return self == other_ref
+        }
+
+        false
+    }
 }
 
 impl fmt::Display for Reference {
@@ -78,7 +87,9 @@ impl str::FromStr for Reference {
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
+
     use super::*;
+    use super::super::*;
 
     #[test]
     fn display() {
@@ -88,5 +99,16 @@ mod tests {
     #[test]
     fn from_str() {
         assert_eq!(Reference("bar".to_string()), Reference::from_str("bar").unwrap());
+    }
+
+    #[test]
+    fn eq() {
+        assert!(Node::eq(&Reference("foo".to_string()), &Reference("foo".to_string())))
+    }
+
+    #[test]
+    fn eq_false() {
+        assert!(!Node::eq(&Reference("foo".to_string()), &Reference("bar".to_string())));
+        assert!(!Node::eq(&Reference("foo".to_string()), &Float(123.0)))
     }
 }

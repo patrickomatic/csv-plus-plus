@@ -4,6 +4,7 @@
 use core::fmt::Debug;
 use core::fmt::Display;
 // use serde::{Serialize, Deserialize};
+use std::any::Any;
 use std::collections::HashMap;
 
 mod boolean;
@@ -14,7 +15,6 @@ mod function_call;
 mod infix_function_call;
 mod integer;
 mod reference;
-mod runtime_value;
 mod text;
 
 pub use boolean::Boolean;
@@ -25,7 +25,6 @@ pub use function_call::FunctionCall;
 pub use infix_function_call::InfixFunctionCall;
 pub use integer::Integer;
 pub use reference::Reference;
-// pub use runtime_value::RuntimeValue;
 pub use text::Text;
 
 type NodeId = String;
@@ -39,6 +38,7 @@ pub trait NodeWithId: Debug + Display {
     fn id(&self) -> NodeId;
 }
 
+// TODO add Send + Sync?
 // pub trait Node: Debug + Deserialize + Display + Serialize {
 pub trait Node: Debug + Display {
     // TODO not sure yet how evaluation will work
@@ -48,9 +48,23 @@ pub trait Node: Debug + Display {
     fn id_ref(&self) -> Option<NodeId> {
         None
     }
+
+    fn eq(&self, other: &dyn Any) -> bool;
+
+    /*
+    fn as_any(&self) -> Box<&'_ dyn Any> {
+        Box::new(&self)
+    }
+    */
+}
+
+impl PartialEq for Box<dyn Node> {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
 }
 
 pub fn from_key_value_args(_key_value_args: String) -> HashMap<String, Box<dyn Node>> {
-    // TODO parse arg
-    todo!()
+    // TODO parse _key_value_args
+    HashMap::new()
 }

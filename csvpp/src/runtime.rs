@@ -20,7 +20,7 @@ impl Runtime {
         let init = Init::from_cli_args(CliArgs::parse())?;
 
         Ok(Self {
-            default_modifier: Modifier::new(false),
+            default_modifier: Modifier::default(),
             options: init.options,
             output: init.output,
             source_code: init.source_code,

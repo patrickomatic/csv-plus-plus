@@ -3,15 +3,23 @@
 //! Can either be TRUE or FALSE.
 //!
 use serde::{Serialize, Deserialize};
+use std::any;
 use std::fmt;
 use std::str;
 
 use crate::Error;
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
-pub struct Boolean(bool);
+pub struct Boolean(pub bool);
 
-impl super::Node for Boolean {}
+impl super::Node for Boolean {
+    fn eq(&self, other: &dyn any::Any) -> bool {
+        if let Some(other_boolean) = other.downcast_ref::<Boolean>() {
+            return self == other_boolean
+        }
+        false
+    }
+}
 
 impl fmt::Display for Boolean {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

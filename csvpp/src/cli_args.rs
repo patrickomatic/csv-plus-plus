@@ -16,7 +16,6 @@ pub struct CliArgs {
         short,
         long,
         help = "The id of the sheet - you can find this from the URL: https://docs.google.com/spreadsheets/d/< ... SHEET_ID ... >/edit#gid=",
-        // validator = validate_google_sheet_id)]
     )]
     pub google_sheet_id: Option<String>,
 
@@ -33,7 +32,6 @@ pub struct CliArgs {
         short,
         long,
         help = "The file to write to (must be .csv, .ods, .xls)",
-        // validator = validate_output_filename)]
     )]
     pub output_filename: Option<PathBuf>,
 
@@ -79,10 +77,19 @@ pub struct CliArgs {
     pub input_filename: PathBuf,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // #[test]
-    // fn 
+impl Default for CliArgs {
+    fn default() -> Self {
+        Self {
+            backup: false,
+            google_sheet_id: None,
+            input_filename: PathBuf::new(),
+            key_values: "".to_string(),
+            output_filename: None,
+            safe: false,
+            sheet_name: None,
+            verbose: false,
+            x_offset: 0,
+            y_offset: 0,
+        }
+    }
 }

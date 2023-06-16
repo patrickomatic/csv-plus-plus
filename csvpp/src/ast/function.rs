@@ -4,6 +4,7 @@
 //! function (`FunctionCall`.)
 //!
 // use serde::{Serialize, Deserialize};
+use std::any;
 use std::fmt;
 
 // #[derive(Debug, Deserialize, Serialize)]
@@ -14,7 +15,23 @@ pub struct Function {
     name: super::FunctionName, 
 }
 
-impl super::Node for Function {}
+impl super::NodeWithId for Function {
+    fn id(&self) -> super::NodeId {
+        self.name.clone()
+    }
+}
+
+impl super::Node for Function {
+    fn eq(&self, other: &dyn any::Any) -> bool {
+        if let Some(other_fn) = other.downcast_ref::<Function>() {
+            return self.args == other_fn.args 
+                && self.body.eq(&other_fn.body) 
+                && self.name == other_fn.name
+        }
+
+        false
+    }
+}
 
 impl fmt::Display for Function {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

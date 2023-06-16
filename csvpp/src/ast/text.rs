@@ -3,6 +3,7 @@
 //! A string of text - it starts with a `"` and ends with a `"`.  
 //!
 use serde::{Deserialize, Serialize};
+use std::any;
 use std::fmt;
 use std::str;
 
@@ -11,7 +12,15 @@ use crate::Error;
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Text(pub String);
 
-impl super::Node for Text {}
+impl super::Node for Text {
+    fn eq(&self, other: &dyn any::Any) -> bool {
+        if let Some(other_text) = other.downcast_ref::<Text>() {
+            return self == other_text
+        }
+
+        false
+    }
+}
 
 impl fmt::Display for Text {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

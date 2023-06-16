@@ -3,15 +3,24 @@
 //! A float value.
 //!
 use serde::{Deserialize, Serialize};
+use std::any;
 use std::fmt;
 use std::str;
 
 use crate::Error;
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
-pub struct Float(f64);
+pub struct Float(pub f64);
 
-impl super::Node for Float {}
+impl super::Node for Float {
+    fn eq(&self, other: &dyn any::Any) -> bool {
+        if let Some(other_float) = other.downcast_ref::<Float>() {
+            return self == other_float
+        }
+
+        false
+    }
+}
 
 impl str::FromStr for Float {
     type Err = Error;
@@ -37,6 +46,7 @@ impl fmt::Display for Float {
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
+
     use super::*;
 
     #[test]
