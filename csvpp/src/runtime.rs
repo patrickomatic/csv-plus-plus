@@ -1,4 +1,4 @@
-//!
+//! # Runtime
 //!
 use clap::Parser;
 use std::fmt;
@@ -18,6 +18,7 @@ pub struct Runtime {
 impl Runtime {
     pub fn from_cli_args() -> Result<Self> {
         let init = Init::from_cli_args(CliArgs::parse())?;
+        // TODO this needs to merge in variables from both the CLI and the runtime variables
 
         Ok(Self {
             default_modifier: Modifier::default(),
@@ -51,8 +52,8 @@ impl fmt::Display for Runtime {
 mod tests {
     use super::*;
 
-    fn build_runtime() {
-        /*
+    fn from_cli_args() {
+        /* TODO
         Runtime::new(Options
 
         }

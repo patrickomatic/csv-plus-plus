@@ -53,7 +53,7 @@ mod tests {
         assert_eq!(init.options.backup, false);
         assert_eq!(init.options.overwrite_values, true);
 
-        assert_eq!(init.output, OutputTarget::File(PathBuf::from("foo.xlsx")));
+        assert_eq!(init.output, OutputTarget::Excel(PathBuf::from("foo.xlsx")));
         assert_eq!(init.source_code.filename, PathBuf::from("foo.csvpp"))
     }
 }

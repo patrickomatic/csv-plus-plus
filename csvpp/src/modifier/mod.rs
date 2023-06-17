@@ -21,6 +21,10 @@ pub use vertical_align::VerticalAlign;
 use crate::Rgb;
 
 /// # Modifier
+///
+/// All of the things that can be done to a cell.  For the most part this comprises visual things
+/// like fonts, formatting, alignment, etc but there are a couple tricky things here like `var`
+/// which allows the user to bind variables to cells.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Modifier {
     pub border_color: Option<Rgb>,
@@ -64,13 +68,16 @@ impl Default for Modifier {
 
 impl Modifier {
     pub fn new(row_level: bool) -> Self {
-        let default = Self::default();
         Self {
             row_level,
-            ..default
+            ..Self::default()
         }
     }
 
+    /// Copy the values from a `modifier` and allocate a new one.  This is a common procedure
+    /// because as we're parsing, we take the row modifier and use it to initialize each of the
+    /// cell modifiers.  This is also why the `row_level` always gets set to `false - this should
+    /// always be `false` by default.  It's the only field we don't wanna carry over.
     pub fn from(modifier: &Modifier) -> Self {
         Self {
             row_level: false,

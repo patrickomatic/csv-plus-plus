@@ -23,15 +23,15 @@ fn compile_from_cli() -> Result<()> {
     if runtime.options.verbose {
         println!("{}", runtime.to_string());
     }
+    // TODO write (and read) object files
+    // template.write_compiled_template(&options, &template);
 
-    dbg!(template);
+    let target = runtime.output.compiler_target();
+    target.write(&runtime.options, &template)?;
 
     Ok(())
-    // template.write_compiled_template(&options, &template);
-    // writer.write(&runtime, &template)
 }
 
-// TODO wrap these two error handlings in a function that calls with ?
 fn main() {
     if let Err(e) = compile_from_cli() {
         // TODO do more in verbose mode?

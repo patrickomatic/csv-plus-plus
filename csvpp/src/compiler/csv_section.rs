@@ -3,7 +3,7 @@
 // * globally allocate the default modifier
 use csv;
 
-use crate::compiler::code;
+use crate::compiler::ast_parser::AstParser;
 use crate::{Cell, Error, Position, Runtime, Spreadsheet};
 
 fn parse_cell<'a>(
@@ -19,7 +19,7 @@ fn parse_cell<'a>(
     Ok(Cell {
         // XXX use &str instead
         // XXX there may or may not be an AST
-        ast: Some(code::AstParser::parse(&parsed_modifiers.value, &runtime.token_library)?), 
+        ast: Some(AstParser::parse(&parsed_modifiers.value, &runtime.token_library)?), 
         index: parsed_modifiers.index,
         modifier: parsed_modifiers.modifier,
         value: parsed_modifiers.value,

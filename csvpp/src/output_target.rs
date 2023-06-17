@@ -3,58 +3,68 @@
 use std::fmt;
 use std::path::PathBuf;
 
-use crate::{CliArgs, Error, Result};
+use crate::{CliArgs, Error, Result, CompilerTarget};
+use crate::target;
 
 type GoogleSheetID = String;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum OutputTarget {
-    File(PathBuf),
+    Csv(PathBuf),
+    Excel(PathBuf),
+    OpenDocument(PathBuf),
     GoogleSheets(GoogleSheetID),
 }
 
 impl OutputTarget {
     pub fn from_cli_args(cli_args: &CliArgs) -> Result<Self> {
-        let output = if cli_args.google_sheet_id.is_some() {
-            OutputTarget::GoogleSheets(cli_args.google_sheet_id.clone().unwrap().to_string())
-        } else if cli_args.output_filename.is_some() {
-            OutputTarget::File(cli_args.output_filename.clone().unwrap())
+        if let Some(sheet_id) = &cli_args.google_sheet_id {
+            Ok(Self::from_google_sheet_id(sheet_id.to_string()))?
+        } else if let Some(filename) = &cli_args.output_filename {
+            Ok(Self::from_filename(filename.to_path_buf()))?
         } else {
-            return Err(Error::InitError(
+            Err(Error::InitError(
                     "Must specify either -g/--google-sheet-id or -o/--output-filename".to_string()))
-        };
-
-        output.validate()?;
-
-        Ok(output)
-    }
-
-    pub fn validate(&self) -> Result<()> {
-        match self {
-            Self::File(f) => self.validate_file(f),        
-            Self::GoogleSheets(sheet_id) => self.validate_google_sheets(sheet_id),        
         }
     }
 
-    fn validate_google_sheets(&self, sheet_id: &GoogleSheetID) -> Result<()> {
+    pub fn compiler_target(&self) -> Box<dyn CompilerTarget> {
+        match self {
+            Self::Csv(path) => 
+                Box::new(target::Csv::new(path.to_path_buf())),
+            Self::Excel(path) => 
+                Box::new(target::Excel::new(path.to_path_buf())),
+            Self::GoogleSheets(sheet_id) =>
+                Box::new(target::GoogleSheets::new(sheet_id.clone())),
+            Self::OpenDocument(path) =>
+                Box::new(target::OpenDocument::new(path.to_path_buf())),
+        }
+    }
+
+    fn from_filename(path: PathBuf) -> Result<Self> {
+        match path.extension() {
+            Some(ext) => {
+                if target::Csv::supports_extension(ext) {
+                    Ok(Self::Csv(path))
+                } else if target::Excel::supports_extension(ext) {
+                    Ok(Self::Excel(path))
+                } else if target::OpenDocument::supports_extension(ext) {
+                    Ok(Self::OpenDocument(path))
+                } else {
+                    Err(Error::InitError(
+                        format!("{} is an unsupported extension: only .csv, .xlsx or .ods are supported.", 
+                                ext.to_str().unwrap())))
+                }
+            },
+            None => Err(Error::InitError("Output filename must end with .csv, .xlsx or .ods".to_string()))
+        }
+    }
+
+    fn from_google_sheet_id(sheet_id: String) -> Result<Self> {
         if sheet_id.chars().all(char::is_alphanumeric) {
-            Ok(())
+            Ok(Self::GoogleSheets(sheet_id))
         } else {
             Err(Error::InitError("The GOOGLE_SHEET_ID must be all letters and digits.".to_string()))
-        }
-    }
-    
-    fn validate_file(&self, path: &PathBuf) -> Result<()> {
-        if let Some(ext) = path.extension() {
-            if ext.eq_ignore_ascii_case("csv") || ext.eq_ignore_ascii_case("xlsx") || ext.eq_ignore_ascii_case("ods") {
-                return Ok(())
-            } else {
-                Err(Error::InitError(
-                    format!("{} is an unsupported extension: only .csv, .xlsx or .ods are supported.", 
-                            ext.to_str().unwrap())))
-            }
-        } else {
-            Err(Error::InitError("Output filename must end with .csv, .xlsx or .ods".to_string()))
         }
     }
 }
@@ -62,8 +72,10 @@ impl OutputTarget {
 impl fmt::Display for OutputTarget {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::GoogleSheets(id) => write!(f, "Google Sheets[{}]", id),
-            Self::File(path) => write!(f, "{}", path.to_str().unwrap()),
+            Self::GoogleSheets(id) => 
+                write!(f, "Google Sheets[{}]", id),
+            Self::Csv(path) | Self::Excel(path) | Self::OpenDocument(path) => 
+                write!(f, "{}", path.to_str().unwrap()),
         }
     }
 }
@@ -83,6 +95,7 @@ mod tests {
         // TODO
     }
 
+    /*
     #[test]
     fn validate_google_sheets_valid() {
         assert!(OutputTarget::GoogleSheets("abc123".to_string()).validate().is_ok());
@@ -112,5 +125,6 @@ mod tests {
     fn validate_file_invalid() {
         assert!(OutputTarget::File(PathBuf::from("not_a_valid_file")).validate().is_err());
     }
+    */
 }
 

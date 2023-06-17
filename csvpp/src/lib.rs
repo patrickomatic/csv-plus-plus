@@ -14,6 +14,7 @@ mod position;
 mod rgb;
 mod runtime;
 mod source_code;
+mod target;
 
 pub use ast::*;
 pub use cli_args::CliArgs;
@@ -29,5 +30,6 @@ pub use position::Position;
 pub use rgb::Rgb;
 pub use runtime::Runtime;
 pub use source_code::SourceCode;
+pub use target::CompilerTarget;
 
 pub type Result<T> = std::result::Result<T, Error>;

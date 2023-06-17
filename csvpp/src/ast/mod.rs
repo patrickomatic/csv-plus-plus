@@ -1,6 +1,7 @@
 //! # AST (abstract syntaX tree) Functions
 //!
-//! `Node` represents a building block of the parsed language
+//! `Node` represents a building block of the parsed language, with a 
+//!
 use core::fmt::Debug;
 use core::fmt::Display;
 // use serde::{Serialize, Deserialize};
@@ -38,24 +39,21 @@ pub trait NodeWithId: Debug + Display {
     fn id(&self) -> NodeId;
 }
 
+// TODO can I implement PartialEq and call my own eq function?
 // TODO add Send + Sync?
-// pub trait Node: Debug + Deserialize + Display + Serialize {
+// TODO add Serialize + Deserialize
 pub trait Node: Debug + Display {
     // TODO not sure yet how evaluation will work
     // fn evaluate(position, variables) -> Cell;
     
-    /// By overriding the default implementation, a `Node` can point to a `NodeWithId`
+    /// What allows one Node (a `FunctionCall` or a `Reference`) to point to another node.  Think
+    /// about if a user is referencing a variable - in the AST this would appear as a `Reference`
+    /// which has an `id_ref() -> Some(reference.name)`.
     fn id_ref(&self) -> Option<NodeId> {
         None
     }
 
     fn eq(&self, other: &dyn Any) -> bool;
-
-    /*
-    fn as_any(&self) -> Box<&'_ dyn Any> {
-        Box::new(&self)
-    }
-    */
 }
 
 impl PartialEq for Box<dyn Node> {
@@ -64,6 +62,8 @@ impl PartialEq for Box<dyn Node> {
     }
 }
 
+
+// TODO move to AstParser?
 pub fn from_key_value_args(_key_value_args: String) -> HashMap<String, Box<dyn Node>> {
     // TODO parse _key_value_args
     HashMap::new()
