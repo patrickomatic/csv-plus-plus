@@ -17,6 +17,7 @@ use std::fmt;
 use std::str;
 
 use crate::{Error, Node};
+use super::NodeId;
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Reference(pub String);
@@ -52,10 +53,16 @@ impl Reference {
     }
 }
 
+impl Reference {
+    pub fn new(reference: &str) -> Self {
+        Reference(reference.to_string())
+    }
+}
+
 impl Node for Reference {
     fn as_any(&self) -> &dyn any::Any { self }
 
-    fn id_ref(&self) -> Option<super::NodeId> {
+    fn id_ref(&self) -> Option<NodeId> {
         if self.is_definitely_a1_format() {
             None
         } else {
@@ -64,14 +71,7 @@ impl Node for Reference {
     }
 
     fn node_eq(&self, other: &dyn any::Any) -> bool {
-        other.downcast_ref::<Self>().map_or(false, |f| self == f)
-            /*
-        if let Some(other_ref) = other.downcast_ref::<Reference>() {
-            return self == other_ref
-        }
-
-        false
-        */
+        other.downcast_ref::<Self>().map_or(false, |o| self == o)
     }
 }
 
@@ -85,7 +85,7 @@ impl str::FromStr for Reference {
     type Err = Error;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Ok(Reference(input.to_string()))
+        Ok(Reference::new(input))
     }
 }
 
@@ -98,22 +98,22 @@ mod tests {
 
     #[test]
     fn display() {
-        assert_eq!("foo", Reference("foo".to_string()).to_string());
+        assert_eq!("foo", Reference::new("foo").to_string());
     }
 
     #[test]
     fn from_str() {
-        assert_eq!(Reference("bar".to_string()), Reference::from_str("bar").unwrap());
+        assert_eq!(Reference::new("bar"), Reference::from_str("bar").unwrap());
     }
 
     #[test]
     fn node_eq() {
-        assert!(Node::node_eq(&Reference("foo".to_string()), &Reference("foo".to_string())))
+        assert!(Node::node_eq(&Reference::new("foo"), &Reference::new("foo")))
     }
 
     #[test]
     fn node_eq_false() {
-        assert!(!Node::node_eq(&Reference("foo".to_string()), &Reference("bar".to_string())));
-        assert!(!Node::node_eq(&Reference("foo".to_string()), &Float(123.0)))
+        assert!(!Node::node_eq(&Reference::new("foo"), &Reference::new("bar")));
+        assert!(!Node::node_eq(&Reference::new("foo"), &Float(123.0)))
     }
 }

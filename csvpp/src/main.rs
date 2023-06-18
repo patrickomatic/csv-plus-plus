@@ -10,8 +10,8 @@ use std::process;
 
 fn compile_from_cli() -> Result<()> {
     let runtime = Runtime::from_cli_args()?;
-    let target = runtime.output.compilation_target();
     let template = Template::compile(&runtime)?;
+    let target = runtime.output.compilation_target();
 
     if runtime.options.backup {
         if runtime.options.verbose {

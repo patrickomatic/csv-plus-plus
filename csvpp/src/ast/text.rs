@@ -23,14 +23,7 @@ impl Node for Text {
     fn as_any(&self) -> &dyn any::Any { self }
 
     fn node_eq(&self, other: &dyn any::Any) -> bool {
-        other.downcast_ref::<Self>().map_or(false, |f| self == f)
-            /*
-        if let Some(other_text) = other.downcast_ref::<Text>() {
-            return self == other_text
-        }
-
-        false
-        */
+        other.downcast_ref::<Self>().map_or(false, |o| self == o)
     }
 }
 
@@ -60,7 +53,7 @@ mod tests {
 
     #[test]
     fn from_str() {
-        assert_eq!(Text("foo".to_string()), Text::from_str("foo").unwrap());
+        assert_eq!(Text::new("foo"), Text::from_str("foo").unwrap());
     }
 
     #[test]

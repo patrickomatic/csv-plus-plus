@@ -30,7 +30,7 @@ impl Node for FunctionCall {
             }
 
             for (i, arg) in self.args.iter().enumerate() {
-                if !arg.node_eq(&other_fn.args[i]) {
+                if !arg.node_eq(other_fn.args[i].as_any()) {
                     return false
                 }
             }
@@ -62,9 +62,39 @@ mod tests {
     #[test]
     fn display() {
         let function_call = FunctionCall {
-            args: vec![Box::new(Integer(1)), Box::new(Text("foo".to_string()))],
+            args: vec![Box::new(Integer(1)), Box::new(Text::new("foo"))],
             name: "bar".to_string(),
         };
         assert_eq!("bar(1, \"foo\")", function_call.to_string());
+    }
+
+    #[test]
+    fn node_eq_true() {
+        let function_call = FunctionCall {
+            args: vec![Box::new(Integer(1)), Box::new(Text::new("foo"))],
+            name: "bar".to_string(),
+        };
+        let function_call2 = FunctionCall {
+            args: vec![Box::new(Integer(1)), Box::new(Text::new("foo"))],
+            name: "bar".to_string(),
+        };
+
+        assert!(Node::node_eq(&function_call, &function_call2))
+    }
+
+    #[test]
+    fn node_eq_false() {
+        let function_call = FunctionCall {
+            args: vec![Box::new(Integer(1)), Box::new(Text::new("foo"))],
+            name: "bar".to_string(),
+        };
+
+        assert!(!Node::node_eq(&function_call, &Integer(1)));
+
+        let function_call2 = FunctionCall {
+            args: vec![Box::new(Integer(1)), Box::new(Text::new("foo"))],
+            name: "foo".to_string(),
+        };
+        assert!(!Node::node_eq(&function_call, &function_call2))
     }
 }

@@ -39,7 +39,6 @@ pub trait NodeWithId: Debug + Display {
     fn id(&self) -> NodeId;
 }
 
-// TODO can I implement PartialEq and call my own eq function?
 // TODO add Send + Sync?
 // TODO add Serialize + Deserialize
 pub trait Node: Debug + Display {

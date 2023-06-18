@@ -28,19 +28,9 @@ impl Node for Function {
     fn node_eq(&self, other: &dyn any::Any) -> bool {
         other.downcast_ref::<Self>().map_or(false, { |f| 
             self.name == f.name
-                && self.args == f.args // XXX we need to loop through each one?
+                && self.args == f.args
                 && self.body.node_eq(f.body.as_any())
         })
-
-        /*
-        if let Some(other_fn) = other.downcast_ref::<Function>() {
-            return self.args == other_fn.args 
-                && self.body.eq(&other_fn.body) 
-                && self.name == other_fn.name
-        } else {
-            false
-        }
-        */
     }
 }
 

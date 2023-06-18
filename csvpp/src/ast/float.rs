@@ -18,13 +18,6 @@ impl super::Node for Float {
     fn node_eq(&self, other: &dyn any::Any) -> bool {
         other.downcast_ref::<Self>().map_or(false, |f| self == f)
     }
-        /*
-        if let Some(other_float) = other.downcast_ref::<Float>() {
-            return self == other_float
-        }
-
-        false
-        */
 }
 
 impl str::FromStr for Float {

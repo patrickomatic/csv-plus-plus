@@ -10,6 +10,7 @@ use std::str;
 
 use crate::Error;
 
+// XXX this doesn't even implement Node
 // TODO: make the acceptable formats more flexible
 const DATE_FORMAT: &'static str = "%Y-%m-%d %H:%M:%S %Z";
 

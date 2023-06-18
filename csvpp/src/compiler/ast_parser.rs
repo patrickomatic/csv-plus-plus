@@ -45,7 +45,6 @@ impl<'a> AstParser<'a> {
     // * function definitions
     // * parenthesis grouping (I think it should work but write a test?)
     fn expr_bp(&mut self, min_bp: u8) -> Result<Box<dyn Node>> {
-        dbg!("top of expr_bp()");
         let mut lhs = match self.lexer.next() {
             // non-terminals we'll recurse on the LHS
             TokenMatch(Token::OpenParen, _) => self.expr_bp(0)?,
@@ -66,9 +65,11 @@ impl<'a> AstParser<'a> {
 
         loop {
             let op = match self.lexer.peek() {
-                // TokenMatch(Token::Comma, op) => op.to_owned(),
-                TokenMatch(Token::CloseParen, op) => op.to_owned(),
+                // end of an expression
+                TokenMatch(Token::Comma, _) => break,
+                TokenMatch(Token::CloseParen, _) => break,
                 TokenMatch(Token::Eof, _) => break,
+
                 TokenMatch(Token::InfixOperator, op) => op.to_owned(),
                 TokenMatch(Token::OpenParen, op) => op.to_owned(),
                 TokenMatch(token, v) => return Err(Error::CodeSyntaxError { 
@@ -88,14 +89,11 @@ impl<'a> AstParser<'a> {
 
                 let id = lhs.id_ref();
                 lhs = if op == "(" && id.is_some() {
-                    dbg!("parsing a fuction");
-                    dbg!(&id);
                     // function call
                     let mut args = vec![];
 
                     // consume arguments (expressions) until we see a close paren
                     loop {
-                        dbg!(self.lexer.peek());
                         match self.lexer.peek() {
                             TokenMatch(Token::CloseParen, _) => {
                                 self.lexer.next();
@@ -104,17 +102,18 @@ impl<'a> AstParser<'a> {
                             TokenMatch(Token::Comma, _) => {
                                 self.lexer.next();
                             },
-                            _ => {
-                                dbg!("recursing");
+                            _ => 
                                 args.push(self.expr_bp(0)?)
-                            },
                         }
                     }
 
                     Box::new(FunctionCall { name: id.unwrap(), args, })
                 } else {
-                    // XXX
-                    panic!("foo")
+                    return Err(Error::CodeSyntaxError {
+                        bad_input: op,
+                        line_number: 0, // XXX
+                        message: "Unexpected infix operator".to_string(),
+                    })
                 };
 
                 continue;
@@ -129,11 +128,7 @@ impl<'a> AstParser<'a> {
                 self.lexer.next();
 
                 let rhs = self.expr_bp(r_bp)?;
-                lhs = Box::new(InfixFunctionCall {
-                    left: lhs, 
-                    operator: op, 
-                    right: rhs,
-                });
+                lhs = Box::new(InfixFunctionCall { left: lhs, operator: op, right: rhs });
 
                 continue;
             }
@@ -154,8 +149,6 @@ impl<'a> AstParser<'a> {
     fn infix_binding_power(&self, op: &str) -> Option<(u8, u8)> {
         Some(match op {
             ":="                        => (2, 1),
-            ","                         => (3, 4), // XXX I don't think we need this here because
-                                                   // we handle commas explicitly above
             "=" | "<"  | ">"  | 
                   "<=" | ">=" | "<>"    => (5, 6),
             "&"                         => (7, 8),
@@ -172,22 +165,21 @@ impl<'a> AstParser<'a> {
 mod tests {
     use super::*;
 
-    fn token_library() -> TokenLibrary {
-        TokenLibrary::build().unwrap()
+    fn test_parse(input: &str) -> Box<dyn Node> {
+        let tl = TokenLibrary::build().unwrap();
+        AstParser::parse(input, &tl).unwrap()
     }
 
     #[test]
     fn parse_integer() {
-        let tl = token_library();
-        let node = AstParser::parse("1", &tl).unwrap();
+        let node = test_parse("1");
 
         assert!(Node::node_eq(&*node, &Integer(1)))
     }
 
     #[test]
     fn parse_infix_function() {
-        let tl = token_library();
-        let node = AstParser::parse("1 * 2", &tl).unwrap();
+        let node = test_parse("1 * 2");
 
         assert!(Node::node_eq(&*node, 
                               &InfixFunctionCall::new(Box::new(Integer(1)), "*", Box::new(Integer(2))),
@@ -196,16 +188,38 @@ mod tests {
 
     #[test]
     fn parse_function_call() {
-        let tl = token_library();
-        let node = AstParser::parse("foo(bar, 1, 2)", &tl).unwrap();
+        let node = test_parse("foo(bar, 1, 2)");
 
         assert!(Node::node_eq(&*node, &FunctionCall {
             name: "foo".to_string(),
             args: vec![
-                Box::new(Reference("bar".to_string())),
+                Box::new(Reference::new("bar")),
                 Box::new(Integer(1)),
                 Box::new(Integer(2)),
             ],
         }))
+    }
+
+    #[test]
+    fn parse_nested_function_call() {
+        let node = test_parse("foo(1, 2 * 3)");
+
+        assert!(Node::node_eq(&*node, &FunctionCall {
+            name: "foo".to_string(),
+            args: vec![
+                Box::new(Integer(1)),
+                Box::new(InfixFunctionCall {
+                    operator: "*".to_string(),
+                    left: Box::new(Integer(2)),
+                    right: Box::new(Integer(3)),
+                }),
+            ],
+        }))
+    }
+
+    #[test]
+    fn parse_infix_precedence() {
+        let node = test_parse("1 * 2 + 3 - 4 / 5");
+        dbg!(&node);
     }
 }

@@ -16,15 +16,7 @@ impl super::Node for Integer {
     fn as_any(&self) -> &dyn any::Any { self }
 
     fn node_eq(&self, other: &dyn any::Any) -> bool {
-        other.downcast_ref::<Self>().map_or(false, |f| self == f)
-        /*
-        if let Some(other_int) = (&*other).downcast_ref::<Integer>() {
-            dbg!(other_int);
-            return *self == *other_int
-        }
-
-        false
-        */
+        other.downcast_ref::<Self>().map_or(false, |o| self == o)
     }
 }
 
