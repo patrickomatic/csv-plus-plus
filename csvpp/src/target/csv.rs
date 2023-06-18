@@ -2,36 +2,36 @@
 //!
 //! Functions for writing to CSV files
 //!
-use csv;
+use csv::WriterBuilder;
 use std::path::PathBuf;
+use std::ffi::OsStr;
 
 use crate::{Options, Result, Template};
-use super::CompilerTarget;
+use super::CompilationTarget;
 
 pub struct Csv {
     path: PathBuf,
-    builder: csv::WriterBuilder,
+    builder: WriterBuilder,
 }
 
-impl CompilerTarget for Csv {
-    fn write(&self, options: &Options, template: &Template) -> Result<()> {
-        // let mut builder = csv::WriterBuilder::new();
-        // let mut csv_target = Csv { builder };
-        // TODO
+impl CompilationTarget for Csv {
+    fn write_backup(&self) -> Result<()> {
+        todo!()
+    }
 
-        Ok(())
+    fn write(&self, options: &Options, template: &Template) -> Result<()> {
+        todo!()
     }
 }
 
 impl Csv {
     pub fn new(path: PathBuf) -> Self {
-        Self {
-            path,
-            builder: csv::WriterBuilder::new(),
-        }
+        let builder = WriterBuilder::new();
+
+        Self { builder, path }
     }
 
-    pub fn supports_extension(os_str: &std::ffi::OsStr) -> bool {
+    pub fn supports_extension(os_str: &OsStr) -> bool {
         os_str.eq_ignore_ascii_case("csv")
     }
 }

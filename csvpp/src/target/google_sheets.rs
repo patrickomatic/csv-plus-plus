@@ -1,13 +1,17 @@
 //! # GoogleSheets
 // use sheets4::api::
 use crate::{Options, Result, Template};
-use super::CompilerTarget;
+use super::CompilationTarget;
 
 pub struct GoogleSheets {
     pub sheet_id: String,
 }
 
-impl CompilerTarget for GoogleSheets {
+impl CompilationTarget for GoogleSheets {
+    fn write_backup(&self) -> Result<()> {
+        todo!();
+    }
+
     fn write(&self, options: &Options, template: &Template) -> Result<()> {
         todo!();
     }

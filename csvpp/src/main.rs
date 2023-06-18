@@ -10,14 +10,15 @@ use std::process;
 
 fn compile_from_cli() -> Result<()> {
     let runtime = Runtime::from_cli_args()?;
-
+    let target = runtime.output.compilation_target();
     let template = Template::compile(&runtime)?;
+
     if runtime.options.backup {
         if runtime.options.verbose {
-            // TODO: better message
-            println!("Backing up {}", runtime.options.backup)
+            println!("Backing up output file: {}", &runtime.output)
         }
-        todo!();
+
+        target.write_backup()?;
     }
 
     if runtime.options.verbose {
@@ -26,7 +27,7 @@ fn compile_from_cli() -> Result<()> {
     // TODO write (and read) object files
     // template.write_compiled_template(&options, &template);
 
-    let target = runtime.output.compiler_target();
+    let target = runtime.output.compilation_target();
     target.write(&runtime.options, &template)?;
 
     Ok(())

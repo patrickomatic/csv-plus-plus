@@ -43,6 +43,8 @@ pub trait NodeWithId: Debug + Display {
 // TODO add Send + Sync?
 // TODO add Serialize + Deserialize
 pub trait Node: Debug + Display {
+    fn as_any(&self) -> &dyn Any;
+
     // TODO not sure yet how evaluation will work
     // fn evaluate(position, variables) -> Cell;
     
@@ -53,12 +55,13 @@ pub trait Node: Debug + Display {
         None
     }
 
-    fn eq(&self, other: &dyn Any) -> bool;
+    // fn eq(&self, other: &dyn Any) -> bool;
+    fn node_eq(&self, other: &dyn Any) -> bool;
 }
 
 impl PartialEq for Box<dyn Node> {
-    fn eq(&self, _other: &Self) -> bool {
-        true
+    fn eq(&self, other: &Box<dyn Node>) -> bool {
+        self.node_eq(other.as_any())
     }
 }
 

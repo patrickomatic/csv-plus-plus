@@ -13,11 +13,10 @@ use crate::Error;
 pub struct Boolean(pub bool);
 
 impl super::Node for Boolean {
-    fn eq(&self, other: &dyn any::Any) -> bool {
-        if let Some(other_boolean) = other.downcast_ref::<Boolean>() {
-            return self == other_boolean
-        }
-        false
+    fn as_any(&self) -> &dyn any::Any { self }
+
+    fn node_eq(&self, other: &dyn any::Any) -> bool {
+        other.downcast_ref::<Self>().map_or(false, |a| self == a)
     }
 }
 
@@ -48,8 +47,10 @@ impl str::FromStr for Boolean {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::str::FromStr;
+
+    use super::*;
+    use super::super::*;
 
     #[test]
     fn display() {
@@ -72,5 +73,17 @@ mod tests {
     #[test]
     fn from_str_invalid() {
         assert!(Boolean::from_str("foo").is_err());
+    }
+
+    #[test]
+    fn node_eq_false() {
+        assert!(!&Boolean(true).node_eq(&Boolean(false)));
+        assert!(!&Boolean(false).node_eq(&Boolean(true)))
+    }
+
+    #[test]
+    fn node_eq_true() {
+        assert!(&Boolean(true).node_eq(&Boolean(true)));
+        assert!(&Boolean(false).node_eq(&Boolean(false)))
     }
 }

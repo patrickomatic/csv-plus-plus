@@ -8,17 +8,29 @@ use std::fmt;
 use std::str;
 
 use crate::Error;
+use super::Node;
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Text(pub String);
 
-impl super::Node for Text {
-    fn eq(&self, other: &dyn any::Any) -> bool {
+impl Text {
+    pub fn new(text: &str) -> Self {
+        Text(text.to_string())
+    }
+}
+
+impl Node for Text {
+    fn as_any(&self) -> &dyn any::Any { self }
+
+    fn node_eq(&self, other: &dyn any::Any) -> bool {
+        other.downcast_ref::<Self>().map_or(false, |f| self == f)
+            /*
         if let Some(other_text) = other.downcast_ref::<Text>() {
             return self == other_text
         }
 
         false
+        */
     }
 }
 
@@ -49,5 +61,15 @@ mod tests {
     #[test]
     fn from_str() {
         assert_eq!(Text("foo".to_string()), Text::from_str("foo").unwrap());
+    }
+
+    #[test]
+    fn node_eq_true() {
+        assert!(Node::node_eq(&Text::new("foo"), &Text::new("foo")))
+    }
+
+    #[test]
+    fn node_eq_false() {
+        assert!(!Node::node_eq(&Text::new("foo"), &Text::new("bar")))
     }
 }

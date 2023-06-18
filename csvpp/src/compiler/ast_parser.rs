@@ -45,7 +45,7 @@ impl<'a> AstParser<'a> {
     // * function definitions
     // * parenthesis grouping (I think it should work but write a test?)
     fn expr_bp(&mut self, min_bp: u8) -> Result<Box<dyn Node>> {
-        dbg!("at the top");
+        dbg!("top of expr_bp()");
         let mut lhs = match self.lexer.next() {
             // non-terminals we'll recurse on the LHS
             TokenMatch(Token::OpenParen, _) => self.expr_bp(0)?,
@@ -129,10 +129,10 @@ impl<'a> AstParser<'a> {
                 self.lexer.next();
 
                 let rhs = self.expr_bp(r_bp)?;
-                lhs = Box::new(InfixFunctionCall { 
-                    left_arg: lhs,
-                    right_arg: rhs,
-                    operator: op,
+                lhs = Box::new(InfixFunctionCall {
+                    left: lhs, 
+                    operator: op, 
+                    right: rhs,
                 });
 
                 continue;
@@ -181,7 +181,7 @@ mod tests {
         let tl = token_library();
         let node = AstParser::parse("1", &tl).unwrap();
 
-        assert!(Node::eq(&*node, &Integer(1)))
+        assert!(Node::node_eq(&*node, &Integer(1)))
     }
 
     #[test]
@@ -189,11 +189,9 @@ mod tests {
         let tl = token_library();
         let node = AstParser::parse("1 * 2", &tl).unwrap();
 
-        assert!(Node::eq(&*node, &InfixFunctionCall {
-            operator: "*".to_string(),
-            left_arg: Box::new(Integer(1)),
-            right_arg: Box::new(Integer(1)),
-        }));
+        assert!(Node::node_eq(&*node, 
+                              &InfixFunctionCall::new(Box::new(Integer(1)), "*", Box::new(Integer(2))),
+        ))
     }
 
     #[test]
@@ -201,7 +199,7 @@ mod tests {
         let tl = token_library();
         let node = AstParser::parse("foo(bar, 1, 2)", &tl).unwrap();
 
-        assert!(Node::eq(&*node, &FunctionCall {
+        assert!(Node::node_eq(&*node, &FunctionCall {
             name: "foo".to_string(),
             args: vec![
                 Box::new(Reference("bar".to_string())),

@@ -10,23 +10,14 @@ pub use open_document::OpenDocument;
 
 use crate::{Options, Result, Template};
 
-pub trait CompilerTarget {
+pub trait CompilationTarget {
+    // TODO: create a FileCompilationTarget trait with a defaut implementation of write_backup
+    fn write_backup(&self) -> Result<()>;
+
     fn write(&self, options: &Options, template: &Template) -> Result<()>;
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    #[test]
-    fn from_output_target_google_sheets() {
-    }
-
-    #[test]
-    fn from_output_target_csv() {
-    }
-
-    #[test]
-    fn from_output_target_excel() {
-    }
+    // TODO
 }

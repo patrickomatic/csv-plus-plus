@@ -7,26 +7,30 @@
 use std::any;
 use std::fmt;
 
+use super::{FunctionName, Node, NodeId};
+
 // #[derive(Debug, Deserialize, PartialEq, Serialize)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct FunctionCall {
-    pub args: Vec<Box<dyn super::Node>>,
-    pub name: super::FunctionName,
+    pub args: Vec<Box<dyn Node>>,
+    pub name: FunctionName,
 }
 
-impl super::Node for FunctionCall {
-    fn id_ref(&self) -> Option<super::NodeId> {
+impl Node for FunctionCall {
+    fn as_any(&self) -> &dyn any::Any { self }
+
+    fn id_ref(&self) -> Option<NodeId> {
         Some(self.name.clone())
     }
 
-    fn eq(&self, other: &dyn any::Any) -> bool {
+    fn node_eq(&self, other: &dyn any::Any) -> bool {
         if let Some(other_fn) = other.downcast_ref::<FunctionCall>() {
             if self.name != other_fn.name || self.args.len() != other_fn.args.len() {
                 return false
             }
 
             for (i, arg) in self.args.iter().enumerate() {
-                if !arg.eq(&other_fn.args[i]) {
+                if !arg.node_eq(&other_fn.args[i]) {
                     return false
                 }
             }

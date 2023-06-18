@@ -13,12 +13,18 @@ use crate::Error;
 pub struct Integer(pub i64);
 
 impl super::Node for Integer {
-    fn eq(&self, other: &dyn any::Any) -> bool {
-        if let Some(other_int) = other.downcast_ref::<Integer>() {
-            return self == other_int
+    fn as_any(&self) -> &dyn any::Any { self }
+
+    fn node_eq(&self, other: &dyn any::Any) -> bool {
+        other.downcast_ref::<Self>().map_or(false, |f| self == f)
+        /*
+        if let Some(other_int) = (&*other).downcast_ref::<Integer>() {
+            dbg!(other_int);
+            return *self == *other_int
         }
 
         false
+        */
     }
 }
 
@@ -61,13 +67,13 @@ mod tests {
     }
 
     #[test]
-    fn eq() {
-        assert!(Node::eq(&Integer(123), &Integer(123)))
+    fn node_eq() {
+        assert!(Node::node_eq(&Integer(123), &Integer(123)))
     }
 
     #[test]
-    fn eq_false() {
-        assert!(!Node::eq(&Integer(123), &Integer(456)));
-        assert!(!Node::eq(&Integer(123), &Float(123.0)))
+    fn node_eq_false() {
+        assert!(!Node::node_eq(&Integer(123), &Integer(456)));
+        assert!(!Node::node_eq(&Integer(123), &Float(123.0)))
     }
 }

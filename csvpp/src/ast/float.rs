@@ -13,13 +13,18 @@ use crate::Error;
 pub struct Float(pub f64);
 
 impl super::Node for Float {
-    fn eq(&self, other: &dyn any::Any) -> bool {
+    fn as_any(&self) -> &dyn any::Any { self }
+
+    fn node_eq(&self, other: &dyn any::Any) -> bool {
+        other.downcast_ref::<Self>().map_or(false, |f| self == f)
+    }
+        /*
         if let Some(other_float) = other.downcast_ref::<Float>() {
             return self == other_float
         }
 
         false
-    }
+        */
 }
 
 impl str::FromStr for Float {
@@ -48,6 +53,7 @@ mod tests {
     use std::str::FromStr;
 
     use super::*;
+    use super::super::*;
 
     #[test]
     fn display() {
@@ -62,5 +68,15 @@ mod tests {
     #[test]
     fn from_str_invalid() {
         assert!(Float::from_str("foo").is_err());
+    }
+
+    #[test]
+    fn node_eq_false() {
+        assert!(!&Float(1.23).node_eq(&Float(3.21)))
+    }
+
+    #[test]
+    fn node_eq_true() {
+        assert!(&Float(1.23).node_eq(&Float(1.23)));
     }
 }

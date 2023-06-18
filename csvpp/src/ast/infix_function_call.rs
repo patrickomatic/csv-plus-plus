@@ -12,9 +12,9 @@ use super::{FunctionName, NodeWithId};
 // #[derive(Debug, Deserialize, Serialize)]
 #[derive(Debug)]
 pub struct InfixFunctionCall {
-    pub left_arg: Box<dyn Node>,
+    pub left: Box<dyn Node>,
     pub operator: FunctionName,
-    pub right_arg: Box<dyn Node>,
+    pub right: Box<dyn Node>,
 }
 
 impl NodeWithId for InfixFunctionCall {
@@ -24,20 +24,26 @@ impl NodeWithId for InfixFunctionCall {
 }
 
 impl Node for InfixFunctionCall {
-    fn eq(&self, other: &dyn Any) -> bool {
-        if let Some(other_fn) = other.downcast_ref::<InfixFunctionCall>() {
-            return self.left_arg.eq(&other_fn.left_arg)
-                && self.operator == other_fn.operator
-                && self.right_arg.eq(&other_fn.right_arg)
-        }
+    fn as_any(&self) -> &dyn Any { self }
 
-        false
+    fn node_eq(&self, other: &dyn Any) -> bool {
+        other.downcast_ref::<Self>().map_or(false, |f| {
+            self.operator == f.operator
+                && self.left.node_eq(f.left.as_any())
+                && self.right.node_eq(f.right.as_any())
+        })
     }
 }
 
 impl fmt::Display for InfixFunctionCall {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({} {} {})", self.left_arg, self.operator, self.right_arg)
+        write!(f, "({} {} {})", self.left, self.operator, self.right)
+    }
+}
+
+impl InfixFunctionCall {
+    pub fn new(left: Box<dyn Node>, operator: &str, right: Box<dyn Node>) -> InfixFunctionCall {
+        InfixFunctionCall { left, operator: operator.to_string(), right }
     }
 }
 
@@ -47,11 +53,7 @@ mod tests {
     use super::super::*;
 
     fn test_infix_fn() -> InfixFunctionCall {
-        InfixFunctionCall { 
-            left_arg: Box::new(Integer(1)),
-            right_arg: Box::new(Integer(2)),
-            operator: "*".to_string(),
-        }
+        InfixFunctionCall::new(Box::new(Integer(1)), "*", Box::new(Integer(2)))
     }
 
     #[test]
@@ -60,18 +62,21 @@ mod tests {
     }
 
     #[test]
-    fn eq_true() {
-        assert!(Node::eq(&test_infix_fn(), &test_infix_fn()));
+    fn node_eq_true() {
+        assert!(Node::node_eq(&test_infix_fn(), &test_infix_fn()));
     }
 
     #[test]
-    fn eq_false() {
-        assert!(!Node::eq(&test_infix_fn(), &InfixFunctionCall {
-            left_arg: Box::new(Integer(1)),
-            right_arg: Box::new(Integer(2)),
-            operator: "+".to_string(),
-        }));
+    fn node_eq_false() {
+        // different kind of Node
+        assert!(!Node::node_eq(&test_infix_fn(), &Integer(5)));
 
-        assert!(!Node::eq(&test_infix_fn(), &Integer(5)))
+        // different operator
+        assert!(!Node::node_eq(&test_infix_fn(), 
+                               &InfixFunctionCall::new(Box::new(Integer(1)), "+", Box::new(Integer(2)))));
+
+        // left and right are switched
+        assert!(!Node::node_eq(&test_infix_fn(), 
+                               &InfixFunctionCall::new(Box::new(Integer(2)), "*", Box::new(Integer(1)))))
     }
 }

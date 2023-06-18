@@ -1,7 +1,6 @@
 // TODO:
 // * use clippy
-// * move some of this into lib.rs rather than main.rs
-// * use (read from) the object file if it exists
+//
 mod ast;
 mod compiler;
 mod cli_args;
@@ -30,6 +29,6 @@ pub use position::Position;
 pub use rgb::Rgb;
 pub use runtime::Runtime;
 pub use source_code::SourceCode;
-pub use target::CompilerTarget;
+pub use target::CompilationTarget;
 
 pub type Result<T> = std::result::Result<T, Error>;

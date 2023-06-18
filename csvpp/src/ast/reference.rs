@@ -53,6 +53,8 @@ impl Reference {
 }
 
 impl Node for Reference {
+    fn as_any(&self) -> &dyn any::Any { self }
+
     fn id_ref(&self) -> Option<super::NodeId> {
         if self.is_definitely_a1_format() {
             None
@@ -61,12 +63,15 @@ impl Node for Reference {
         }
     }
 
-    fn eq(&self, other: &dyn any::Any) -> bool {
+    fn node_eq(&self, other: &dyn any::Any) -> bool {
+        other.downcast_ref::<Self>().map_or(false, |f| self == f)
+            /*
         if let Some(other_ref) = other.downcast_ref::<Reference>() {
             return self == other_ref
         }
 
         false
+        */
     }
 }
 
@@ -102,13 +107,13 @@ mod tests {
     }
 
     #[test]
-    fn eq() {
-        assert!(Node::eq(&Reference("foo".to_string()), &Reference("foo".to_string())))
+    fn node_eq() {
+        assert!(Node::node_eq(&Reference("foo".to_string()), &Reference("foo".to_string())))
     }
 
     #[test]
-    fn eq_false() {
-        assert!(!Node::eq(&Reference("foo".to_string()), &Reference("bar".to_string())));
-        assert!(!Node::eq(&Reference("foo".to_string()), &Float(123.0)))
+    fn node_eq_false() {
+        assert!(!Node::node_eq(&Reference("foo".to_string()), &Reference("bar".to_string())));
+        assert!(!Node::node_eq(&Reference("foo".to_string()), &Float(123.0)))
     }
 }

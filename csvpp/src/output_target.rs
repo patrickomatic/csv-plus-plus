@@ -3,7 +3,7 @@
 use std::fmt;
 use std::path::PathBuf;
 
-use crate::{CliArgs, Error, Result, CompilerTarget};
+use crate::{CliArgs, Error, Result, CompilationTarget};
 use crate::target;
 
 type GoogleSheetID = String;
@@ -28,7 +28,7 @@ impl OutputTarget {
         }
     }
 
-    pub fn compiler_target(&self) -> Box<dyn CompilerTarget> {
+    pub fn compilation_target(&self) -> Box<dyn CompilationTarget> {
         match self {
             Self::Csv(path) => 
                 Box::new(target::Csv::new(path.to_path_buf())),
@@ -83,48 +83,50 @@ impl fmt::Display for OutputTarget {
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
+
     use super::*;
 
     #[test]
-    fn from_cli_args() {
-        // TODO
+    fn from_cli_args_csv() {
+        let mut cli_args = CliArgs::default();
+        cli_args.output_filename = Some(PathBuf::from("foo.csv"));
+
+        let output_target = OutputTarget::from_cli_args(&cli_args).unwrap();
+        assert_eq!(output_target, OutputTarget::Csv(PathBuf::from("foo.csv")))
+    }
+
+    #[test]
+    fn from_cli_args_excel() {
+        let mut cli_args = CliArgs::default();
+        cli_args.output_filename = Some(PathBuf::from("foo.xlsx"));
+
+        let output_target = OutputTarget::from_cli_args(&cli_args).unwrap();
+        assert_eq!(output_target, OutputTarget::Excel(PathBuf::from("foo.xlsx")))
+    }
+
+    #[test]
+    fn from_cli_args_google_sheets() {
+        let mut cli_args = CliArgs::default();
+        cli_args.google_sheet_id = Some("abc".to_string());
+
+        let output_target = OutputTarget::from_cli_args(&cli_args).unwrap();
+        assert_eq!(output_target, OutputTarget::GoogleSheets("abc".to_string()));
+    }
+
+    #[test]
+    fn from_cli_args_open_document() {
+        let mut cli_args = CliArgs::default();
+        cli_args.output_filename = Some(PathBuf::from("foo.ods"));
+
+        let output_target = OutputTarget::from_cli_args(&cli_args).unwrap();
+        assert_eq!(output_target, OutputTarget::OpenDocument(PathBuf::from("foo.ods")))
     }
 
     #[test]
     fn from_cli_args_invalid() {
-        // TODO
-    }
+        let mut cli_args = CliArgs::default();
 
-    /*
-    #[test]
-    fn validate_google_sheets_valid() {
-        assert!(OutputTarget::GoogleSheets("abc123".to_string()).validate().is_ok());
+        let output_target = OutputTarget::from_cli_args(&cli_args);
+        assert!(output_target.is_err());
     }
-    
-    #[test]
-    fn validate_google_sheets_invalid() {
-        assert!(OutputTarget::GoogleSheets("abc #!*)! 123".to_string()).validate().is_err());
-    }
-
-    #[test]
-    fn validate_file_csv() {
-        assert!(OutputTarget::File(PathBuf::from("/foo/bar/file.csv")).validate().is_ok());
-    }
-
-    #[test]
-    fn validate_file_xlsx() {
-        assert!(OutputTarget::File(PathBuf::from("FileName.xlsx")).validate().is_ok());
-    }
-
-    #[test]
-    fn validate_file_ods() {
-        assert!(OutputTarget::File(PathBuf::from("TEST.ODS")).validate().is_ok());
-    }
-
-    #[test]
-    fn validate_file_invalid() {
-        assert!(OutputTarget::File(PathBuf::from("not_a_valid_file")).validate().is_err());
-    }
-    */
 }
-

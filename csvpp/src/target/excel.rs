@@ -5,13 +5,17 @@
 use std::path::PathBuf;
 
 use crate::{Options, Result, Template};
-use super::CompilerTarget;
+use super::CompilationTarget;
 
 pub struct Excel {
     path: PathBuf,
 }
 
-impl CompilerTarget for Excel {
+impl CompilationTarget for Excel {
+    fn write_backup(&self) -> Result<()> {
+        todo!();
+    }
+
     fn write(&self, options: &Options, template: &Template) -> Result<()> {
         todo!();
     }
@@ -19,9 +23,7 @@ impl CompilerTarget for Excel {
 
 impl Excel {
     pub fn new(path: PathBuf) -> Self {
-        Self {
-            path,
-        }
+        Self { path }
     }
 
     pub fn supports_extension(os_str: &std::ffi::OsStr) -> bool {
