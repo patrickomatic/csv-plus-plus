@@ -42,8 +42,12 @@ impl fmt::Display for InfixFunctionCall {
 }
 
 impl InfixFunctionCall {
-    pub fn new(left: Box<dyn Node>, operator: &str, right: Box<dyn Node>) -> InfixFunctionCall {
-        InfixFunctionCall { left, operator: operator.to_string(), right }
+    pub fn new<L: Node + 'static, R: Node + 'static>(left: L, operator: &str, right: R) -> InfixFunctionCall {
+        InfixFunctionCall { 
+            left: Box::new(left),
+            operator: operator.to_string(),
+            right: Box::new(right),
+        }
     }
 }
 
@@ -53,7 +57,7 @@ mod tests {
     use super::super::*;
 
     fn test_infix_fn() -> InfixFunctionCall {
-        InfixFunctionCall::new(Box::new(Integer(1)), "*", Box::new(Integer(2)))
+        InfixFunctionCall::new(Integer(1), "*", Integer(2))
     }
 
     #[test]
@@ -73,10 +77,10 @@ mod tests {
 
         // different operator
         assert!(!Node::node_eq(&test_infix_fn(), 
-                               &InfixFunctionCall::new(Box::new(Integer(1)), "+", Box::new(Integer(2)))));
+                               &InfixFunctionCall::new(Integer(1), "+", Integer(2))));
 
         // left and right are switched
         assert!(!Node::node_eq(&test_infix_fn(), 
-                               &InfixFunctionCall::new(Box::new(Integer(2)), "*", Box::new(Integer(1)))))
+                               &InfixFunctionCall::new(Integer(2), "*", Integer(1))))
     }
 }

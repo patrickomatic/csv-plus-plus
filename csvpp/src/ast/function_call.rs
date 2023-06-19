@@ -16,6 +16,15 @@ pub struct FunctionCall {
     pub name: FunctionName,
 }
 
+impl FunctionCall {
+    pub fn new(name: &str, args: Vec<Box<dyn Node>>) -> Self {
+        Self {
+            args,
+            name: name.to_string(),
+        }
+    }
+}
+
 impl Node for FunctionCall {
     fn as_any(&self) -> &dyn any::Any { self }
 
@@ -61,40 +70,41 @@ mod tests {
 
     #[test]
     fn display() {
-        let function_call = FunctionCall {
-            args: vec![Box::new(Integer(1)), Box::new(Text::new("foo"))],
-            name: "bar".to_string(),
-        };
+        let function_call = FunctionCall::new(
+            "bar",
+            vec![Box::new(Integer(1)), Box::new(Text::new("foo"))],
+        );
+
         assert_eq!("bar(1, \"foo\")", function_call.to_string());
     }
 
     #[test]
     fn node_eq_true() {
-        let function_call = FunctionCall {
-            args: vec![Box::new(Integer(1)), Box::new(Text::new("foo"))],
-            name: "bar".to_string(),
-        };
-        let function_call2 = FunctionCall {
-            args: vec![Box::new(Integer(1)), Box::new(Text::new("foo"))],
-            name: "bar".to_string(),
-        };
+        let function_call = FunctionCall::new(
+            "bar",
+            vec![Box::new(Integer(1)), Box::new(Text::new("foo"))],
+        );
+        let function_call2 = FunctionCall::new(
+            "bar",
+            vec![Box::new(Integer(1)), Box::new(Text::new("foo"))],
+        );
 
         assert!(Node::node_eq(&function_call, &function_call2))
     }
 
     #[test]
     fn node_eq_false() {
-        let function_call = FunctionCall {
-            args: vec![Box::new(Integer(1)), Box::new(Text::new("foo"))],
-            name: "bar".to_string(),
-        };
+        let function_call = FunctionCall::new(
+            "bar",
+            vec![Box::new(Integer(1)), Box::new(Text::new("foo"))],
+        );
 
         assert!(!Node::node_eq(&function_call, &Integer(1)));
 
-        let function_call2 = FunctionCall {
-            args: vec![Box::new(Integer(1)), Box::new(Text::new("foo"))],
-            name: "foo".to_string(),
-        };
+        let function_call2 = FunctionCall::new(
+            "foo",
+            vec![Box::new(Integer(1)), Box::new(Text::new("foo"))],
+        );
         assert!(!Node::node_eq(&function_call, &function_call2))
     }
 }

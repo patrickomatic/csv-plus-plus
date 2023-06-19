@@ -41,13 +41,26 @@ impl<'a> AstParser<'a> {
 
     // TODO: need to handle:
     // * variable definitions
-    // * function calls
     // * function definitions
     // * parenthesis grouping (I think it should work but write a test?)
     fn expr_bp(&mut self, min_bp: u8) -> Result<Box<dyn Node>> {
         let mut lhs = match self.lexer.next() {
-            // non-terminals we'll recurse on the LHS
-            TokenMatch(Token::OpenParen, _) => self.expr_bp(0)?,
+            // a starting parenthesis means we just need to recurse and consume (expect)
+            // the close paren 
+            TokenMatch(Token::OpenParen, _) => {
+                let expr = self.expr_bp(0)?;
+
+                match self.lexer.next() {
+                    TokenMatch(Token::CloseParen, _) => 
+                        expr,
+                    TokenMatch(t, bad_input) => 
+                        return Err(Error::CodeSyntaxError {
+                            message: format!("Expected close parenthesis, received ({:?})", t),
+                            bad_input: bad_input.to_string(),
+                            line_number: 0, // XXX
+                        }),
+                }
+            }
 
             // terminals
             TokenMatch(Token::Boolean, b) => Box::new(Boolean::from_str(b)?),
@@ -182,7 +195,7 @@ mod tests {
         let node = test_parse("1 * 2");
 
         assert!(Node::node_eq(&*node, 
-                              &InfixFunctionCall::new(Box::new(Integer(1)), "*", Box::new(Integer(2))),
+                              &InfixFunctionCall::new(Integer(1), "*", Integer(2)),
         ))
     }
 
@@ -190,36 +203,68 @@ mod tests {
     fn parse_function_call() {
         let node = test_parse("foo(bar, 1, 2)");
 
-        assert!(Node::node_eq(&*node, &FunctionCall {
-            name: "foo".to_string(),
-            args: vec![
+        assert!(Node::node_eq(&*node, &FunctionCall::new(
+            "foo",
+            vec![
                 Box::new(Reference::new("bar")),
                 Box::new(Integer(1)),
                 Box::new(Integer(2)),
             ],
-        }))
+        )))
     }
 
     #[test]
     fn parse_nested_function_call() {
         let node = test_parse("foo(1, 2 * 3)");
 
-        assert!(Node::node_eq(&*node, &FunctionCall {
-            name: "foo".to_string(),
-            args: vec![
+        assert!(Node::node_eq(&*node, &FunctionCall::new(
+            "foo",
+            vec![
                 Box::new(Integer(1)),
-                Box::new(InfixFunctionCall {
-                    operator: "*".to_string(),
-                    left: Box::new(Integer(2)),
-                    right: Box::new(Integer(3)),
-                }),
+                Box::new(InfixFunctionCall::new(Integer(2), "*", Integer(3))),
             ],
-        }))
+        )))
+    }
+
+    #[test]
+    fn parse_explicit_precedence() {
+        let node = test_parse("1 * ((2 + 3) - 4) / 5");
+
+        assert!(Node::node_eq(&*node,
+                              &InfixFunctionCall::new(
+                                  InfixFunctionCall::new(
+                                      Integer(1),
+                                      "*",
+                                      InfixFunctionCall::new(
+                                          InfixFunctionCall::new(
+                                              Integer(2),
+                                              "+",
+                                              Integer(3),
+                                          ),
+                                          "-",
+                                          Integer(4),
+                                      ),
+                                  ),
+                                  "/",
+                                  Integer(5),
+                              )
+        ))
     }
 
     #[test]
     fn parse_infix_precedence() {
         let node = test_parse("1 * 2 + 3 - 4 / 5");
-        dbg!(&node);
+
+        assert!(Node::node_eq(&*node, 
+                              &InfixFunctionCall::new(
+                                  InfixFunctionCall::new(
+                                      InfixFunctionCall::new(Integer(1), "*", Integer(2)),
+                                      "+",
+                                      Integer(3),
+                                  ),
+                                  "-",
+                                  InfixFunctionCall::new(Integer(4), "/", Integer(5)),
+                              )
+        ))
     }
 }

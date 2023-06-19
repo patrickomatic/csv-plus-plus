@@ -41,7 +41,7 @@ pub trait NodeWithId: Debug + Display {
 
 // TODO add Send + Sync?
 // TODO add Serialize + Deserialize
-pub trait Node: Debug + Display {
+pub trait Node: Any + Debug + Display {
     fn as_any(&self) -> &dyn Any;
 
     // TODO not sure yet how evaluation will work
@@ -58,12 +58,12 @@ pub trait Node: Debug + Display {
     fn node_eq(&self, other: &dyn Any) -> bool;
 }
 
+// TODO this doesn't actually work? I can't call Box<dyn Node> == Box<dyn Node>
 impl PartialEq for Box<dyn Node> {
     fn eq(&self, other: &Box<dyn Node>) -> bool {
         self.node_eq(other.as_any())
     }
 }
-
 
 // TODO move to AstParser?
 pub fn from_key_value_args(_key_value_args: String) -> HashMap<String, Box<dyn Node>> {

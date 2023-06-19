@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 use super::csv_section;
-use super::code_section::CodeSection;
+use super::code_section_parser::CodeSectionParser;
 use crate::{Cell, Node, Function, Result, Runtime};
 
 pub type Spreadsheet = Vec<Vec<Cell>>;
@@ -13,14 +13,15 @@ pub type Spreadsheet = Vec<Vec<Cell>>;
 // #[derive(Debug, Deserialize, Serialize)]
 #[derive(Debug)]
 pub struct Template {
-    functions: HashMap<String, Function>,
-    spreadsheet: RefCell<Spreadsheet>,
-    variables: HashMap<String, Box<dyn Node>>,
+    pub functions: HashMap<String, Function>,
+    pub spreadsheet: RefCell<Spreadsheet>,
+    pub variables: HashMap<String, Box<dyn Node>>,
 }
 
 impl fmt::Display for Template {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // TODO: include variables and functions
+        write!(f, "variables: {:?}", &self.variables)?;
+        write!(f, "functions: {:?}", &self.functions)?;
         write!(f, "rows: {}", self.spreadsheet.borrow().len())
     }
 }
@@ -38,19 +39,33 @@ impl Default for Template {
 impl Template {
     pub fn compile(runtime: &Runtime) -> Result<Self> {
         // TODO do these in parallel
+        // XXX get variables and insert them into the template
         let spreadsheet = csv_section::parse(&runtime)?;
-        let code_section = CodeSection::parse(&runtime)?;
 
-        let template = Template {
-            functions: code_section.functions,
-            spreadsheet: RefCell::new(spreadsheet),
-            variables: code_section.variables,
+        let template = if let Some(code_section) = &runtime.source_code.code_section {
+            let code_section_parser = CodeSectionParser::parse(&code_section)?;
+
+            Template {
+                functions: code_section_parser.functions,
+                spreadsheet: RefCell::new(spreadsheet),
+                variables: code_section_parser.variables,
+            }
+        } else {
+            Self::new(spreadsheet)
         };
 
         template.resolve_cell_variables(runtime)
     }
 
-    fn resolve_cell_variables(self, runtime: &Runtime) -> Result<Self> {
+    // XXX mix in the functions and variables from the runtime
+    fn new(spreadsheet: Spreadsheet) -> Self {
+        Template {
+            spreadsheet: RefCell::new(spreadsheet),
+            ..Self::default()
+        }
+    }
+
+    fn resolve_cell_variables(self, _runtime: &Runtime) -> Result<Self> {
         // TODO
         Ok(self)
     }
@@ -58,11 +73,14 @@ impl Template {
     // TODO hmm should this just move onto impl Runtime rather than taking a runtime
     pub fn write_object_code(runtime: &Runtime) -> () {
         let _object_code_filename = runtime.source_code.object_code_filename();
-        let mut s = flexbuffers::FlexbufferSerializer::new();
+        let mut _s = flexbuffers::FlexbufferSerializer::new();
         // runtime.template.serialize(&mut s).unwrap();
-        // TODO: write s to a file
+        // TODO: write `s` to a file
         todo!()
     }
 }
 
-
+#[cfg(test)]
+mod tests {
+    // TODO
+}
