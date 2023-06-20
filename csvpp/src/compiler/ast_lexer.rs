@@ -11,10 +11,12 @@ pub struct AstLexer<'a> {
 /// (for example 555.55 could be matched by both float and integer (integer can just match the first
 /// part of it) so it's important float is first. Another example is comments - they have to be
 /// stripped out first
-fn matchers_ordered(tl: &TokenLibrary) -> [&TokenMatcher; 12] {
+fn matchers_ordered(tl: &TokenLibrary) -> [&TokenMatcher; 14] {
     [
         &tl.comment,
         &tl.double_quoted_string,
+        &tl.fn_def,
+        &tl.var_assign,
         &tl.comma,
         &tl.close_paren,
         &tl.open_paren,

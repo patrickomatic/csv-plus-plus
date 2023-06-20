@@ -17,6 +17,8 @@ pub struct FunctionCall {
 }
 
 impl FunctionCall {
+    // TODO it would be nice if we could do the Box::new()ing inside this function instead of the
+    // caller
     pub fn new(name: &str, args: Vec<Box<dyn Node>>) -> Self {
         Self {
             args,

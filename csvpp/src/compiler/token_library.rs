@@ -38,8 +38,9 @@ pub struct TokenMatch<'a>(pub Token, pub &'a str);
 impl TokenMatcher {
     fn new(regex_str: &str, token: Token) -> Result<TokenMatcher, Error> {
         match Regex::new(format!(r"^\s*{}", regex_str).as_str()) {
-            Ok(r) => Ok(TokenMatcher(token, r)),
-            Err(m) => 
+            Ok(r) =>
+                Ok(TokenMatcher(token, r)),
+            Err(m) =>
                 Err(Error::InitError(format!("Error compiling regex /{}/: {}", regex_str, m))),
         }
     }

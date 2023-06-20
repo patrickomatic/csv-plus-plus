@@ -25,31 +25,30 @@ use super::token_library::{Token, TokenMatch};
 use super::ast_lexer::*;
 
 pub struct AstParser<'a> {
-    lexer: AstLexer<'a>,
+    lexer: &'a mut AstLexer<'a>,
 }
 
 impl<'a> AstParser<'a> {
+    pub fn new(lexer: &'a mut AstLexer<'a>) -> Self {
+        AstParser { lexer }
+    }
+
     pub fn parse(
         input: &'a str,
         tl: &'a TokenLibrary
     ) -> Result<Box<dyn Node>> {
-        let lexer = AstLexer::new(input, tl)?;
-        let mut parser = AstParser { lexer };
+        let mut lexer = AstLexer::new(input, tl)?;
+        let mut parser = AstParser::new(&mut lexer);
 
         parser.expr_bp(0)
     }
 
-    // TODO: need to handle:
-    // * variable definitions
-    // * function definitions
-    // * parenthesis grouping (I think it should work but write a test?)
-    fn expr_bp(&mut self, min_bp: u8) -> Result<Box<dyn Node>> {
+    pub fn expr_bp(&mut self, min_bp: u8) -> Result<Box<dyn Node>> {
         let mut lhs = match self.lexer.next() {
             // a starting parenthesis means we just need to recurse and consume (expect)
             // the close paren 
             TokenMatch(Token::OpenParen, _) => {
                 let expr = self.expr_bp(0)?;
-
                 match self.lexer.next() {
                     TokenMatch(Token::CloseParen, _) => 
                         expr,

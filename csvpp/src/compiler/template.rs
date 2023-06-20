@@ -43,7 +43,7 @@ impl Template {
         let spreadsheet = csv_section::parse(&runtime)?;
 
         let template = if let Some(code_section) = &runtime.source_code.code_section {
-            let code_section_parser = CodeSectionParser::parse(&code_section)?;
+            let code_section_parser = CodeSectionParser::parse(&code_section, &runtime.token_library)?;
 
             Template {
                 functions: code_section_parser.functions,
