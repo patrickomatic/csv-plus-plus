@@ -55,7 +55,7 @@ impl SourceCode {
         for line in reader.lines() {
             match line {
                 Ok(l) => {
-                    // TODO: use the token library to get this
+                    // TODO: use the token library to get this as a regex
                     if l.trim() == "---" {
                         separator_line = Some(total_lines + 1);
                         continue;
@@ -113,7 +113,7 @@ impl SourceCode {
 mod tests {
     use super::*;
 
-    fn test_source_code() -> SourceCode {
+    fn build_source_code() -> SourceCode {
         SourceCode {
             filename: PathBuf::from("test.csvpp".to_string()),
             lines: 25,
@@ -128,12 +128,12 @@ mod tests {
     fn display() {
         assert_eq!(
             "test.csvpp: total_lines: 25, csv_section: 15, code_section: 10", 
-            test_source_code().to_string(),
+            build_source_code().to_string(),
         );
     }
 
     #[test]
     fn object_code_filename() {
-        assert_eq!(PathBuf::from("test.csvpo"), test_source_code().object_code_filename());
+        assert_eq!(PathBuf::from("test.csvpo"), build_source_code().object_code_filename());
     }
 }

@@ -185,86 +185,86 @@ mod tests {
 
     #[test]
     fn parse_integer() {
-        let node = test_parse("1");
+        let equal_to: Box<dyn Node> = Box::new(Integer(1));
 
-        assert!(Node::node_eq(&*node, &Integer(1)))
+        assert_eq!(&equal_to, &test_parse("1"));
     }
 
     #[test]
     fn parse_infix_function() {
-        let node = test_parse("1 * 2");
+        let equal_to: Box<dyn Node> = Box::new(
+            InfixFunctionCall::new(Integer(1), "*", Integer(2)),
+        );
 
-        assert!(Node::node_eq(&*node, 
-                              &InfixFunctionCall::new(Integer(1), "*", Integer(2)),
-        ))
+        assert_eq!(&equal_to, &test_parse("1 * 2"));
     }
 
     #[test]
     fn parse_function_call() {
-        let node = test_parse("foo(bar, 1, 2)");
-
-        assert!(Node::node_eq(&*node, &FunctionCall::new(
+        let equal_to: Box<dyn Node> = Box::new(FunctionCall::new(
             "foo",
             vec![
                 Box::new(Reference::new("bar")),
                 Box::new(Integer(1)),
                 Box::new(Integer(2)),
             ],
-        )))
+        ));
+
+        assert_eq!(&equal_to, &test_parse("foo(bar, 1, 2)"));
     }
 
     #[test]
     fn parse_nested_function_call() {
-        let node = test_parse("foo(1, 2 * 3)");
-
-        assert!(Node::node_eq(&*node, &FunctionCall::new(
+        let equal_to: Box<dyn Node> = Box::new(FunctionCall::new(
             "foo",
             vec![
                 Box::new(Integer(1)),
                 Box::new(InfixFunctionCall::new(Integer(2), "*", Integer(3))),
             ],
-        )))
+        ));
+
+        assert_eq!(&equal_to, &test_parse("foo(1, 2 * 3)"));
     }
 
     #[test]
     fn parse_explicit_precedence() {
-        let node = test_parse("1 * ((2 + 3) - 4) / 5");
+        let equal_to: Box<dyn Node> = Box::new(
+            InfixFunctionCall::new(
+                InfixFunctionCall::new(
+                    Integer(1),
+                    "*",
+                    InfixFunctionCall::new(
+                        InfixFunctionCall::new(
+                            Integer(2),
+                            "+",
+                            Integer(3),
+                        ),
+                        "-",
+                        Integer(4),
+                    ),
+                ),
+                "/",
+                Integer(5),
+            )
+        );
 
-        assert!(Node::node_eq(&*node,
-                              &InfixFunctionCall::new(
-                                  InfixFunctionCall::new(
-                                      Integer(1),
-                                      "*",
-                                      InfixFunctionCall::new(
-                                          InfixFunctionCall::new(
-                                              Integer(2),
-                                              "+",
-                                              Integer(3),
-                                          ),
-                                          "-",
-                                          Integer(4),
-                                      ),
-                                  ),
-                                  "/",
-                                  Integer(5),
-                              )
-        ))
+        assert_eq!(&equal_to, &test_parse("1 * ((2 + 3) - 4) / 5"));
     }
 
     #[test]
     fn parse_infix_precedence() {
-        let node = test_parse("1 * 2 + 3 - 4 / 5");
+        let equal_to: Box<dyn Node> = Box::new(
+            InfixFunctionCall::new(
+                InfixFunctionCall::new(
+                    InfixFunctionCall::new(Integer(1), "*", Integer(2)),
+                    "+",
+                    Integer(3),
+                ),
+                "-",
+                InfixFunctionCall::new(Integer(4), "/", Integer(5)),
+            )
+        );
 
-        assert!(Node::node_eq(&*node, 
-                              &InfixFunctionCall::new(
-                                  InfixFunctionCall::new(
-                                      InfixFunctionCall::new(Integer(1), "*", Integer(2)),
-                                      "+",
-                                      Integer(3),
-                                  ),
-                                  "-",
-                                  InfixFunctionCall::new(Integer(4), "/", Integer(5)),
-                              )
-        ))
+        assert_eq!(&equal_to, &test_parse("1 * 2 + 3 - 4 / 5"));
     }
 }

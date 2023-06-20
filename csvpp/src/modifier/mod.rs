@@ -74,9 +74,9 @@ impl Modifier {
         }
     }
 
-    /// Copy the values from a `modifier` and allocate a new one.  This is a common procedure
+    /// Copy the values from `modifier` and allocate a new one.  This is a common procedure
     /// because as we're parsing, we take the row modifier and use it to initialize each of the
-    /// cell modifiers.  This is also why the `row_level` always gets set to `false - this should
+    /// cell modifiers.  This is also why the `row_level` always gets set to `false` - this should
     /// always be `false` by default.  It's the only field we don't wanna carry over.
     pub fn from(modifier: &Modifier) -> Self {
         Self {
