@@ -19,7 +19,7 @@ impl CompilationTarget for Csv {
         todo!()
     }
 
-    fn write(&self, options: &Options, template: &Template) -> Result<()> {
+    fn write(&self, _options: &Options, _template: &Template) -> Result<()> {
         todo!()
     }
 }

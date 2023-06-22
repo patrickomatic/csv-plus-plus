@@ -1,5 +1,11 @@
 //! # csv++ AST Parser
 //!
+//! A parser that's used for parsing individual expressions.  
+//!
+//! I used a Pratt parser here because it proivdes the benefits of a hand-written parser (better,
+//! more contextual error messaging vs a parser-generator) and it also handls the recursive LHS
+//! problems where a recursive descent parser wouldn't.
+//!
 //! ## Inspired by:
 //!
 //! * [https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html](Simple but
@@ -7,7 +13,13 @@
 //!
 //! * [https://news.ycombinator.com/item?id=24480504](Which Parsing Approach?)
 //!
+// TODO:
+//
+// * Handle line numbers
+//
+use std::collections::HashMap;
 use std::str::FromStr;
+
 use crate::{
     Boolean, 
     Error, 
@@ -20,38 +32,64 @@ use crate::{
     Result, 
     Text, 
     TokenLibrary, 
+    Variables,
 };
 use super::token_library::{Token, TokenMatch};
 use super::ast_lexer::*;
 
 pub struct AstParser<'a> {
-    lexer: &'a mut AstLexer<'a>,
+    lexer: &'a AstLexer<'a>,
 }
 
 impl<'a> AstParser<'a> {
-    pub fn new(lexer: &'a mut AstLexer<'a>) -> Self {
+    pub fn new(lexer: &'a AstLexer<'a>) -> Self {
         AstParser { lexer }
     }
 
+    /// Parse `input` from a `SourceCode`.
     pub fn parse(
         input: &'a str,
+        single_expr: bool,
         tl: &'a TokenLibrary
     ) -> Result<Box<dyn Node>> {
-        let mut lexer = AstLexer::new(input, tl)?;
-        let mut parser = AstParser::new(&mut lexer);
+        let lexer = AstLexer::new(input, tl)?;
+        let parser = AstParser::new(&lexer);
 
-        parser.expr_bp(0)
+        parser.expr_bp(single_expr, 0)
     }
 
-    pub fn expr_bp(&mut self, min_bp: u8) -> Result<Box<dyn Node>> {
+    /// Parse `input` from the command line, specified as a simple key/value string like
+    /// "foo=1,bar=baz"
+    ///
+    // TODO: take multiple key values via the same flag.  similar to awk -v foo1=bar -v foo2=bar
+    pub fn parse_key_value_str(
+        key_values: &'a str,
+        tl: &'a TokenLibrary
+    ) -> Result<Variables> {
+        let mut variables = HashMap::new();
+        for kv in key_values.split(",") {
+            let s: Vec<&str> = kv.split("=").collect();
+            
+            if s.len() != 2 {
+                return Err(Error::InitError(
+                        format!("Invalid key/value variables: {}", key_values)))
+            } else {
+                variables.insert(s[0].to_string(), Self::parse(s[1], false, tl)?);
+            }
+        }
+        
+        Ok(variables)
+    }
+
+    /// The core pratt parser logic for parsing an expression of our AST.  
+    pub fn expr_bp(&self, single_expr: bool, min_bp: u8) -> Result<Box<dyn Node>> {
         let mut lhs = match self.lexer.next() {
             // a starting parenthesis means we just need to recurse and consume (expect)
             // the close paren 
             TokenMatch(Token::OpenParen, _) => {
-                let expr = self.expr_bp(0)?;
+                let expr = self.expr_bp(single_expr, 0)?;
                 match self.lexer.next() {
-                    TokenMatch(Token::CloseParen, _) => 
-                        expr,
+                    TokenMatch(Token::CloseParen, _) => expr,
                     TokenMatch(t, bad_input) => 
                         return Err(Error::CodeSyntaxError {
                             message: format!("Expected close parenthesis, received ({:?})", t),
@@ -76,6 +114,18 @@ impl<'a> AstParser<'a> {
         };
 
         loop {
+            if single_expr {
+                // in the case where we're just looking for a single expr, we can terminate
+                // iteration when we see a reference (beginning of `foo := ...`) or `fn`. 
+                match self.lexer.peek() {
+                    TokenMatch(Token::Reference, _) 
+                        | TokenMatch(Token::FunctionDefinition, _) => break,
+                    // otherwise do nothing and the next match statement will do it's thing
+                    // (regardless of the `single_expr` context)
+                    _ => (),
+                }
+            }
+
             let op = match self.lexer.peek() {
                 // end of an expression
                 TokenMatch(Token::Comma, _) => break,
@@ -115,7 +165,7 @@ impl<'a> AstParser<'a> {
                                 self.lexer.next();
                             },
                             _ => 
-                                args.push(self.expr_bp(0)?)
+                                args.push(self.expr_bp(single_expr, 0)?)
                         }
                     }
 
@@ -139,7 +189,7 @@ impl<'a> AstParser<'a> {
                 // consume the token we peeked
                 self.lexer.next();
 
-                let rhs = self.expr_bp(r_bp)?;
+                let rhs = self.expr_bp(single_expr, r_bp)?;
                 lhs = Box::new(InfixFunctionCall { left: lhs, operator: op, right: rhs });
 
                 continue;
@@ -160,7 +210,6 @@ impl<'a> AstParser<'a> {
 
     fn infix_binding_power(&self, op: &str) -> Option<(u8, u8)> {
         Some(match op {
-            ":="                        => (2, 1),
             "=" | "<"  | ">"  | 
                   "<=" | ">=" | "<>"    => (5, 6),
             "&"                         => (7, 8),
@@ -179,7 +228,7 @@ mod tests {
 
     fn test_parse(input: &str) -> Box<dyn Node> {
         let tl = TokenLibrary::build().unwrap();
-        AstParser::parse(input, &tl).unwrap()
+        AstParser::parse(input, false, &tl).unwrap()
     }
 
     #[test]
@@ -265,5 +314,13 @@ mod tests {
         );
 
         assert_eq!(&equal_to, &test_parse("1 * 2 + 3 - 4 / 5"));
+    }
+
+    #[test]
+    fn parse_key_value_str() {
+        let tl = TokenLibrary::build().unwrap();
+        let parsed_hash = AstParser::parse_key_value_str("foo=bar,baz=1", &tl);
+
+        assert!(parsed_hash.is_ok());
     }
 }

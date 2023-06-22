@@ -1,6 +1,9 @@
 // TODO:
+//
 // * use clippy
 //
+use std::collections::HashMap;
+
 mod ast;
 mod compiler;
 mod cli_args;
@@ -32,3 +35,6 @@ pub use source_code::SourceCode;
 pub use target::CompilationTarget;
 
 pub type Result<T> = std::result::Result<T, Error>;
+
+pub type Functions = HashMap<String, Function>;
+pub type Variables =  HashMap<String, Box<dyn Node>>;

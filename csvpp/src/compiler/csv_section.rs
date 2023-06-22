@@ -10,7 +10,7 @@ use super::modifier;
 fn parse_cell_ast(input: &str, runtime: &Runtime) -> Result<Option<Box<dyn Node>>> {
     if input.starts_with("=") {
         // TODO maybe a more robust skipping-the-first-char logic
-        Ok(Some(AstParser::parse(&input[1..], &runtime.token_library)?))
+        Ok(Some(AstParser::parse(&input[1..], false, &runtime.token_library)?))
     } else {
         Ok(None)
     }

@@ -1,10 +1,13 @@
 //! # AstLexer
 //!
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use crate::{Error, Result, TokenLibrary};
 use super::token_library::{Token, TokenMatch, TokenMatcher};
 
 pub struct AstLexer<'a> {
-    tokens: Vec<TokenMatch<'a>>,
+    tokens: Rc<RefCell<Vec<TokenMatch<'a>>>>,
 }
 
 /// For better or worse the tokens are not mutually exclusive - some of them are subsets of another 
@@ -73,21 +76,23 @@ impl<'a> AstLexer<'a> {
 
         tokens.reverse();
 
-        Ok(AstLexer { tokens })
+        Ok(AstLexer { 
+            tokens: Rc::new(RefCell::new(tokens)),
+        })
     }
 
-    pub fn next(&mut self) -> TokenMatch {
-        self.tokens.pop().unwrap_or_else(|| self.eof())
+    pub fn next(&self) -> TokenMatch {
+        self.tokens.borrow_mut().pop().unwrap_or_else(|| self.eof())
     }
 
-    pub fn peek(&mut self) -> TokenMatch {
-        match self.tokens.last() {
+    pub fn peek(&self) -> TokenMatch {
+        match self.tokens.borrow().last() {
             Some(t) => t.clone(),
             None => self.eof(),
         }
     }
 
-    fn eof(&mut self) -> TokenMatch {
+    fn eof(&self) -> TokenMatch {
         TokenMatch(Token::Eof, "")
     }
 }
@@ -103,7 +108,7 @@ mod tests {
     #[test]
     fn lexer_new() {
         let tl = token_library();
-        let mut lexer = AstLexer::new("foo bar,\"a\",123 (d, b) + *", &tl).unwrap();
+        let lexer = AstLexer::new("foo bar,\"a\",123 (d, b) + *", &tl).unwrap();
 
         assert_eq!(lexer.next(), TokenMatch(Token::Reference, "foo"));
         assert_eq!(lexer.next(), TokenMatch(Token::Reference, "bar"));
@@ -125,16 +130,25 @@ mod tests {
     #[test]
     fn lexer_new_comment() {
         let tl = token_library();
-        let mut lexer = AstLexer::new("# this is a comment\na_ref\n", &tl).unwrap();
+        let lexer = AstLexer::new("# this is a comment\na_ref\n", &tl).unwrap();
 
         assert_eq!(lexer.next(), TokenMatch(Token::Reference, "a_ref"));
         assert_eq!(lexer.next(), TokenMatch(Token::Eof, ""));
     }
 
     #[test]
+    fn lexer_new_newlines() {
+        let tl = token_library();
+        let lexer = AstLexer::new("\n foo \n bar", &tl).unwrap();
+
+        assert_eq!(lexer.next(), TokenMatch(Token::Reference, "foo"));
+        assert_eq!(lexer.next(), TokenMatch(Token::Reference, "bar"));
+    }
+
+    #[test]
     fn lexer_peek() {
         let tl = token_library();
-        let mut lexer = AstLexer::new("foo (bar) + baz", &tl).unwrap();
+        let lexer = AstLexer::new("foo (bar) + baz", &tl).unwrap();
 
         assert_eq!(lexer.peek(), TokenMatch(Token::Reference, "foo"));
         assert_eq!(lexer.peek(), TokenMatch(Token::Reference, "foo"));

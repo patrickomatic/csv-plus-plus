@@ -124,7 +124,7 @@ mod tests {
 
     #[test]
     fn from_cli_args_invalid() {
-        let mut cli_args = CliArgs::default();
+        let cli_args = CliArgs::default();
 
         let output_target = OutputTarget::from_cli_args(&cli_args);
         assert!(output_target.is_err());

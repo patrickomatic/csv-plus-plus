@@ -19,11 +19,8 @@ use std::collections::HashMap;
 
 use super::ast_lexer::AstLexer;
 use super::ast_parser::AstParser;
-use crate::{Error, Function, Node, Result};
+use crate::{Error, Function, Functions, Node, Result, Variables};
 use crate::compiler::token_library::{Token, TokenLibrary, TokenMatch};
-
-type Functions = HashMap<String, Function>;
-type Variables =  HashMap<String, Box<dyn Node>>;
 
 #[derive(Debug)]
 pub struct FunctionsAndVariables {
@@ -41,26 +38,13 @@ pub struct CodeSectionParser<'a> {
 impl<'a> CodeSectionParser<'a> {
     pub fn parse(input: &'a str, tl: &'a TokenLibrary) -> Result<FunctionsAndVariables> {
         let lexer = AstLexer::new(input, tl)?;
-        let mut parser = CodeSectionParser { lexer };
+        let parser = CodeSectionParser { lexer };
         
         Ok(parser.parse_code_section()?)
     }
 
-    /*
-    pub fn functions(&self) -> Functions {
-        HashMap::new()
-        // XXX
-        //self.functions
-    }
-
-    pub fn variables(&self) -> Variables {
-        HashMap::new()
-        // XXX
-        // self.variables
-    }
-    */
-
-    fn parse_code_section(&'a mut self) -> Result<FunctionsAndVariables> {
+    /// our entry point - just expects a series of variable and function definitions in any order
+    fn parse_code_section(&'a self) -> Result<FunctionsAndVariables> {
         let mut variables = HashMap::new();
         let mut functions = HashMap::new();
 
@@ -71,9 +55,11 @@ impl<'a> CodeSectionParser<'a> {
                     functions.insert(function.name.clone(), function);
                 },
                 TokenMatch(Token::Reference, r) => {
-                    let var_id = r.to_string();
                     let expr = self.parse_variable_assign()?;
-                    variables.insert(var_id, expr);
+                    variables.insert(r.to_string(), expr);
+                },
+                TokenMatch(Token::Eof, _) => { 
+                    break;
                 },
                 TokenMatch(t, m) => {
                     return Err(Error::CodeSyntaxError {
@@ -83,14 +69,13 @@ impl<'a> CodeSectionParser<'a> {
                     })
                 },
             }
-
-            break;
         }
 
         Ok(FunctionsAndVariables { functions, variables })
     }
 
-    fn parse_variable_assign(&'a mut self) -> Result<Box<dyn Node>> {
+    /// parses a `:=` folloed by an `<expr>`
+    fn parse_variable_assign(&'a self) -> Result<Box<dyn Node>> {
         // they better give us a :=
         match self.lexer.next() {
             TokenMatch(Token::VarAssign, _) => {
@@ -112,7 +97,7 @@ impl<'a> CodeSectionParser<'a> {
     /// ```ebnf
     /// 'fn' <name-ref> '(' { <arg-ref> ',' } ')' <expr>
     /// ```
-    fn parse_fn_definition(&'a mut self) -> Result<Function> {
+    fn parse_fn_definition(&'a self) -> Result<Function> {
         // expect the function name (as a `Reference`)
         let name = match self.lexer.next() {
             TokenMatch(Token::Reference, r) =>
@@ -138,22 +123,17 @@ impl<'a> CodeSectionParser<'a> {
 
         let mut args = vec![];
 
-        // here we're looking for zero to many References representing the function arguments.
+        // here we're looking for zero or more References representing the function arguments.
         // this is different than a `FunctionCall` where the arguments to the function can be
         // expressions themselves.
         loop {
-            match self.lexer.peek() {
+            match self.lexer.next() {
                 TokenMatch(Token::CloseParen, _) => {
-                    self.lexer.next();
                     break
                 },
-                TokenMatch(Token::Comma, _) => {
-                    self.lexer.next();
-                },
+                TokenMatch(Token::Comma, _) => (),
                 TokenMatch(Token::Reference, r) => {
-                    let arg_name = r.to_string();
-                    self.lexer.next();
-                    args.push(arg_name);
+                    args.push(r.to_string());
                 },
                 TokenMatch(t, m) => {
                     return Err(Error::CodeSyntaxError { 
@@ -171,10 +151,10 @@ impl<'a> CodeSectionParser<'a> {
         Ok(Function { args, body, name })
     }
 
-    fn parse_expr(&'a mut self) -> Result<Box<dyn Node>> {
-        // create an `AstParser` and give it a mutable reference to our lexer
-        let mut ast_parser = AstParser::new(&mut self.lexer);
-        ast_parser.expr_bp(0)
+    fn parse_expr(&'a self) -> Result<Box<dyn Node>> {
+        // create an `AstParser` with a reference to our lexer so it can continue consuming our
+        // stream of tokens
+        AstParser::new(&self.lexer).expr_bp(true, 0)
     }
 }
 
@@ -205,7 +185,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_function_no_args() {
+    fn parse_function_without_args() {
         let fns_and_vars = test("fn foo() 1 * 2");
         let foo = fns_and_vars.functions.get("foo").unwrap();
 
@@ -218,10 +198,39 @@ mod tests {
     }
 
     #[test]
+    fn parse_multiple_functions() {
+        let fns_and_vars = test(r#"
+fn foo()
+    1 * 2
+fn bar(a, b)
+    a + b
+"#);
+
+        let foo = fns_and_vars.functions.get("foo").unwrap();
+        assert_eq!(foo.name, "foo");
+        assert_eq!(foo.args.len(), 0);
+    }
+
+    #[test]
     fn parse_variables() {
         let fns_and_vars = test("foo := \"bar\"");
-        let foo = fns_and_vars.variables.get("foo");
 
-        assert!(foo.is_some());
+        assert!(fns_and_vars.variables.get("foo").is_some());
+    }
+
+    #[test]
+    fn parse_variables_and_functions() {
+        let fns_and_vars = test(r#"
+fn foo_fn() 1 * 2
+foo_var := 3 * 4 + 5
+fn bar_fn(a, b) a + b
+bar_var := D1
+"#);
+
+        assert!(fns_and_vars.functions.get("foo_fn").is_some());
+        assert!(fns_and_vars.functions.get("bar_fn").is_some());
+
+        assert!(fns_and_vars.variables.get("foo_var").is_some());
+        assert!(fns_and_vars.variables.get("bar_var").is_some());
     }
 }
