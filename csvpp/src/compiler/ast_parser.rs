@@ -63,18 +63,17 @@ impl<'a> AstParser<'a> {
     ///
     // TODO: take multiple key values via the same flag.  similar to awk -v foo1=bar -v foo2=bar
     pub fn parse_key_value_str(
-        key_values: &'a str,
+        key_values: Vec<&'a str>,
         tl: &'a TokenLibrary
     ) -> Result<Variables> {
         let mut variables = HashMap::new();
-        for kv in key_values.split(",") {
-            let s: Vec<&str> = kv.split("=").collect();
-            
-            if s.len() != 2 {
-                return Err(Error::InitError(
-                        format!("Invalid key/value variables: {}", key_values)))
+
+        for kv in key_values.iter() {
+            if let Some((key, value)) = kv.split_once("=") {
+                variables.insert(key.to_string(), Self::parse(value, false, tl)?);
             } else {
-                variables.insert(s[0].to_string(), Self::parse(s[1], false, tl)?);
+                return Err(Error::InitError(
+                        format!("Invalid key/value variables: {}", kv)))
             }
         }
         
@@ -319,8 +318,16 @@ mod tests {
     #[test]
     fn parse_key_value_str() {
         let tl = TokenLibrary::build().unwrap();
-        let parsed_hash = AstParser::parse_key_value_str("foo=bar,baz=1", &tl);
+        let parsed_vars = AstParser::parse_key_value_str(vec!["foo=bar", "baz=1"], &tl).unwrap();
 
-        assert!(parsed_hash.is_ok());
+        assert_eq!(parsed_vars.len(), 2);
+    }
+
+    #[test]
+    fn parse_key_value_str_empty() {
+        let tl = TokenLibrary::build().unwrap();
+        let parsed_vars = AstParser::parse_key_value_str(vec![], &tl).unwrap();
+
+        assert_eq!(parsed_vars.len(), 0);
     }
 }

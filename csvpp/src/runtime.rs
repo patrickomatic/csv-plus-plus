@@ -22,7 +22,8 @@ impl Runtime {
     }
 
     pub fn new(cli_args: CliArgs) -> Result<Self> {
-        let init = Init::from_cli_args(cli_args)?;
+        let token_library = TokenLibrary::build()?;
+        let init = Init::from_cli_args(cli_args, &token_library)?;
         // TODO this needs to merge in variables from both the CLI and the runtime variables
 
         Ok(Self {

@@ -6,7 +6,6 @@ use core::fmt::Debug;
 use core::fmt::Display;
 // use serde::{Serialize, Deserialize};
 use std::any::Any;
-use std::collections::HashMap;
 
 mod boolean;
 mod date_time;
@@ -58,15 +57,8 @@ pub trait Node: Any + Debug + Display {
     fn node_eq(&self, other: &dyn Any) -> bool;
 }
 
-// TODO this doesn't actually work? I can't call Box<dyn Node> == Box<dyn Node>
 impl PartialEq for Box<dyn Node> {
     fn eq(&self, other: &Box<dyn Node>) -> bool {
         self.node_eq(other.as_any())
     }
-}
-
-// TODO move to AstParser?
-pub fn from_key_value_args(_key_value_args: String) -> HashMap<String, Box<dyn Node>> {
-    // TODO parse _key_value_args
-    HashMap::new()
 }

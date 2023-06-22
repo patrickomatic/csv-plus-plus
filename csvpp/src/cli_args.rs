@@ -22,10 +22,10 @@ pub struct CliArgs {
     #[arg(
         short,
         long,
-        default_value_t = String::from(""),
-        help = "A comma-separated list of key=values which will be made available to the template",
+        num_args = 0..,
+        help = "`key=value` pairs where the right side will be parsed and made available as a variable",
     )]
-    pub key_values: String,
+    pub key_values: Vec<String>,
 
     #[arg(
         group = "output",
@@ -83,7 +83,7 @@ impl Default for CliArgs {
             backup: false,
             google_sheet_id: None,
             input_filename: PathBuf::new(),
-            key_values: "".to_string(),
+            key_values: vec![],
             output_filename: None,
             safe: false,
             sheet_name: None,

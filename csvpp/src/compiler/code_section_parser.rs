@@ -50,6 +50,7 @@ impl<'a> CodeSectionParser<'a> {
 
         loop {
             match self.lexer.next() {
+                TokenMatch(Token::Eof, _) => break,
                 TokenMatch(Token::FunctionDefinition, _) => {
                     let function = self.parse_fn_definition()?;
                     functions.insert(function.name.clone(), function);
@@ -57,9 +58,6 @@ impl<'a> CodeSectionParser<'a> {
                 TokenMatch(Token::Reference, r) => {
                     let expr = self.parse_variable_assign()?;
                     variables.insert(r.to_string(), expr);
-                },
-                TokenMatch(Token::Eof, _) => { 
-                    break;
                 },
                 TokenMatch(t, m) => {
                     return Err(Error::CodeSyntaxError {

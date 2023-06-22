@@ -7,7 +7,8 @@
 //! * Validates the output target
 //! * Creates an `Options` given the various CLI options
 //!
-use crate::ast;
+use crate::compiler::ast_parser::AstParser;
+use crate::compiler::token_library::TokenLibrary;
 use crate::{CliArgs, Options, OutputTarget, Result, SourceCode};
 
 pub struct Init {
@@ -17,14 +18,16 @@ pub struct Init {
 }
 
 impl Init {
-    pub fn from_cli_args(cli_args: CliArgs) -> Result<Init> {
+    pub fn from_cli_args(cli_args: CliArgs, tl: &TokenLibrary) -> Result<Init> {
         let output = OutputTarget::from_cli_args(&cli_args)?;
         let source_code = SourceCode::open(cli_args.input_filename)?;
+
+        let key_values_as_str = cli_args.key_values.iter().map(|s| s.as_str()).collect();
 
         Ok(Init {
             options: Options {
                 backup: cli_args.backup,
-                key_values: ast::from_key_value_args(cli_args.key_values),
+                key_values: AstParser::parse_key_value_str(key_values_as_str, tl)?,
                 offset: (cli_args.x_offset, cli_args.y_offset),
                 overwrite_values: !cli_args.safe,
                 verbose: cli_args.verbose,
@@ -39,15 +42,20 @@ impl Init {
 mod tests {
     use std::path::PathBuf;
 
+    use crate::compiler::token_library::TokenLibrary;
     use super::*;
     
+    fn build_token_library() -> TokenLibrary {
+        TokenLibrary::build().unwrap()
+    }
+
     #[test]
     fn from_cli_args() {
         let init = Init::from_cli_args(CliArgs {
             output_filename: Some(PathBuf::from("foo.xlsx")),
             input_filename: PathBuf::from("foo.csvpp"),
             ..CliArgs::default()
-        }).unwrap();
+        }, &build_token_library()).unwrap();
 
         // it takes defaults for options - we don't need to check all
         assert_eq!(init.options.backup, false);
