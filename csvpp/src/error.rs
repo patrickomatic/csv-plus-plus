@@ -46,8 +46,8 @@ impl fmt::Display for Error {
                 writeln!(f, "{}: {}", line_number, message)?;
                 write!(f, "bad input: {}", bad_input)
             },
-            Error::CellSyntaxError { index: Position(x, y), message } => 
-                write!(f, "Cell->[{},{}]: {}", x, y, message),
+            Error::CellSyntaxError { index, message } => 
+                write!(f, "Cell->{}: {}", index, message),
             Error::InitError(message) => 
                 write!(f, "Error initializing: {}", message),
             Error::InvalidModifier { message, bad_input, possible_values } => {
@@ -55,8 +55,8 @@ impl fmt::Display for Error {
                 writeln!(f, "bad input: {}", bad_input)?;
                 write!(f, "possible values: {}", possible_values)
             },
-            Error::ModifierSyntaxError { bad_input, index: Position(x, y), message } => {
-                writeln!(f, "Cell->[{},{}]: {}", x, y, message)?;
+            Error::ModifierSyntaxError { bad_input, index, message } => {
+                writeln!(f, "Cell->{}: {}", index, message)?;
                 write!(f, "bad input: {}", bad_input)
             },
             Error::SourceCodeError { filename, message } => {
@@ -78,11 +78,11 @@ mod tests {
     #[test]
     fn display_cell_syntax_error() {
         let message = Error::CellSyntaxError {
-            index: Position(1, 5),
+            index: Position::Absolute(1, 5),
             message: "foo".to_string(),
         };
 
-        assert_eq!("Cell->[1,5]: foo", message.to_string());
+        assert_eq!("Cell->[1, 5]: foo", message.to_string());
     }
 
     #[test]
@@ -100,10 +100,10 @@ mod tests {
     fn display_modifier_syntax_error() {
         let message = Error::ModifierSyntaxError {
             bad_input: "bad_input".to_string(),
-            index: Position(0, 1),
+            index: Position::Absolute(0, 1),
             message: "foo".to_string(),
         };
 
-        assert_eq!("Cell->[0,1]: foo\nbad input: bad_input", message.to_string());
+        assert_eq!("Cell->[0, 1]: foo\nbad input: bad_input", message.to_string());
     }
 }

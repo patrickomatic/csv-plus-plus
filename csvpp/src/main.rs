@@ -5,6 +5,19 @@
 //! ```
 //! ```
 //! 
+// TODO:
+// * proper line numbers and indexes in error messages throughout
+//
+// * writing to:
+//      * CSV
+//      * Excel
+//      * GoogleSheets
+//      * OpenDocument
+//
+// * writing object files via Serde?
+//
+// * make sure the --verbose output is actually useful
+//
 use csvpp::{Result, Runtime, Template};
 use std::process;
 

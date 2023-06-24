@@ -33,7 +33,7 @@ type LexerTakeResult = Result<String, Error>;
 /// # ModifierLexer
 ///
 /// This is the lexer/tokenizer used for parsing csv++ modifiers - it's a little different than
-/// most parsers which parse their entire input into tokens in one go - this tokenizes as the
+/// most parsers which parse their entire input into tokens in one go. This tokenizes as the
 /// parser goes since it is context-dependent.
 ///
 /// [https://en.wikipedia.org/wiki/Lexer_hack](See also: Lexer hack)
@@ -109,7 +109,7 @@ impl ModifierLexer {
             Err(Error::ModifierSyntaxError {
                 message: format!("Error parsing input, expected '{}'", substring),
                 bad_input: input.to_string(),
-                index: Position(0, 0), // XXX
+                index: Position::Absolute(0, 0), // XXX
             })
         }
     }
@@ -150,7 +150,7 @@ impl ModifierLexer {
             Err(Error::ModifierSyntaxError {
                 message: String::from("Expected a modifier definition (i.e. format/halign/etc)"),
                 bad_input: input.to_string(),
-                index: Position(0, 0), // XXX
+                index: Position::Absolute(0, 0), // XXX
             })
         } else {
             self.input = input[matched.len()..].to_string();
@@ -205,7 +205,7 @@ impl<'a> ModifierParser<'a> {
                 Err(e) => return Err(Error::ModifierSyntaxError {
                     message: format!("Error parsing expand= repetitions: {}", e),
                     bad_input: amount_string,
-                    index: Position(0, 0), // XXX
+                    index: Position::Absolute(0, 0), // XXX
                 }),
             }
         } else {
@@ -242,7 +242,7 @@ impl<'a> ModifierParser<'a> {
             Err(e) => return Err(Error::ModifierSyntaxError {
                 message: format!("Error parsing fontsize: {}", e),
                 bad_input: font_size_string,
-                index: Position(0, 0), // XXX
+                index: Position::Absolute(0, 0), // XXX
             }),
         }
 
@@ -304,7 +304,7 @@ impl<'a> ModifierParser<'a> {
             "va" | "valign"         => self.valign_modifier(),
             _ => return Err(Error::ModifierSyntaxError {
                 bad_input: modifier_name.to_string(),
-                index: Position(0, 0),  // XXX
+                index: Position::Absolute(0, 0),  // XXX
                 message: format!("Unrecognized modifier: {}", &modifier_name),
             }),
         }
@@ -347,7 +347,7 @@ pub fn parse_all_modifiers(
             if row_modifier.is_some() {
                 return Err(Error::ModifierSyntaxError {
                     bad_input: "".to_string(), // XXX
-                    index: Position(0, 0), // XXX
+                    index: Position::Absolute(0, 0), // XXX
                     message: "You can only define one row modifier for a cell".to_string(),
                 })
             } 
@@ -357,7 +357,7 @@ pub fn parse_all_modifiers(
             if modifier.is_some() {
                 return Err(Error::ModifierSyntaxError {
                     bad_input: "".to_string(), // XXX
-                    index: Position(0, 0), // XXX
+                    index: Position::Absolute(0, 0), // XXX
                     message: "You can only define one modifier for a cell".to_string(),
                 })
             }
@@ -386,7 +386,7 @@ pub fn parse(
 
     match parse_all_modifiers(lexer, &default_from) {
         Ok((modifier, row_modifier)) => {
-            if row_modifier != None && index.is_first_cell() {
+            if row_modifier.is_some() && !index.can_have_row_modifier() {
                 Err(Error::ModifierSyntaxError { 
                     bad_input: lexer.rest(),
                     index,
@@ -418,7 +418,11 @@ mod tests {
     #[test]
     fn parse_no_modifier() {
         let default_modifier = Modifier::new(true);
-        let parsed_modifiers = parse(Position(0, 0), "abc123".to_string(), default_modifier).unwrap();
+        let parsed_modifiers = parse(
+            Position::Absolute(0, 0),
+            "abc123".to_string(),
+            default_modifier,
+        ).unwrap();
 
         assert_eq!(parsed_modifiers.value, "abc123");
 
@@ -435,7 +439,7 @@ mod tests {
             row_modifier: _row_modifier,
             index: _index,
         } = parse(
-            Position(0, 0), 
+            Position::Absolute(0, 0), 
             String::from("[[format=bold]]abc123"),
             default_modifier,
         ).unwrap();
@@ -454,7 +458,7 @@ mod tests {
             row_modifier: _row_modifier,
             index: _index,
         } = parse(
-            Position(0, 0), 
+            Position::Absolute(0, 0), 
             String::from("[[format=italic/valign=top/expand]]abc123"),
             default_modifier,
         ).unwrap();
@@ -475,7 +479,7 @@ mod tests {
             row_modifier: _row_modifier,
             index: _index,
         } = parse(
-            Position(0, 0), 
+            Position::Absolute(0, 0), 
             String::from("[[ha=l/va=c/f=u/fs=12]]abc123"),
             default_modifier,
         ).unwrap();

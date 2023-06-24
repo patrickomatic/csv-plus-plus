@@ -53,7 +53,6 @@ pub trait Node: Any + Debug + Display {
         None
     }
 
-    // fn eq(&self, other: &dyn Any) -> bool;
     fn node_eq(&self, other: &dyn Any) -> bool;
 }
 

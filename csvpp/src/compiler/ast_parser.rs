@@ -8,10 +8,8 @@
 //!
 //! ## Inspired by:
 //!
-//! * [https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html](Simple but
-//! Powerful Pratt Parsing)
-//!
-//! * [https://news.ycombinator.com/item?id=24480504](Which Parsing Approach?)
+//! * [Simple but Powerful Pratt Parsing](https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html)
+//! * [Which Parsing Approach?](https://news.ycombinator.com/item?id=24480504)
 //!
 // TODO:
 //

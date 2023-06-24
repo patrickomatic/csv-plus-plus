@@ -30,7 +30,7 @@ fn string_to_hex(hex_code: &str, double_it: bool) -> Result<u8> {
         Err(e) => Err(Error::ModifierSyntaxError {
             bad_input: hex_code.to_string(),
             message: format!("Invalid hex: {}", e),
-            index: Position(0, 0), // XXX
+            index: Position::Absolute(0, 0), // XXX
         }),
     }
 }
@@ -61,13 +61,12 @@ impl FromStr for Rgb {
                     input,
                 ),
                 bad_input: input.to_string(),
-                index: Position(0, 0),
+                index: Position::Absolute(0, 0), // XXX
             })
         };
 
         Ok(rgb)
     }
-
 }
 
 #[cfg(test)]

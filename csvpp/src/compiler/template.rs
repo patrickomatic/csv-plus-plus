@@ -1,14 +1,16 @@
+//! # Template
+//!
+//! A `template` holds the final compiled state for a single csv++ source file.
+//!
 use flexbuffers;
 // use serde::{Serialize, Deserialize};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 
-use super::csv_section;
 use super::code_section_parser::CodeSectionParser;
-use crate::{Cell, Node, Function, Result, Runtime};
+use crate::{Node, Function, Result, Runtime, Spreadsheet};
 
-pub type Spreadsheet = Vec<Vec<Cell>>;
 
 // #[derive(Debug, Deserialize, Serialize)]
 #[derive(Debug)]
@@ -22,7 +24,7 @@ impl fmt::Display for Template {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "variables: {:?}", &self.variables)?;
         write!(f, "functions: {:?}", &self.functions)?;
-        write!(f, "rows: {}", self.spreadsheet.borrow().len())
+        write!(f, "rows: {}", self.spreadsheet.borrow().cells.len())
     }
 }
 
@@ -30,7 +32,7 @@ impl Default for Template {
     fn default() -> Self {
         Self {
             functions: HashMap::new(),
-            spreadsheet: RefCell::new(Vec::new()),
+            spreadsheet: RefCell::new(Spreadsheet::default()),
             variables: HashMap::new(),
         }
     }
@@ -40,7 +42,7 @@ impl Template {
     pub fn compile(runtime: &Runtime) -> Result<Self> {
         // TODO do these in parallel
         // XXX get variables and insert them into the template
-        let spreadsheet = csv_section::parse(&runtime)?;
+        let spreadsheet = Spreadsheet::parse(&runtime)?;
 
         let template = if let Some(code_section) = &runtime.source_code.code_section {
             let code_section_parser = CodeSectionParser::parse(&code_section, &runtime.token_library)?;
