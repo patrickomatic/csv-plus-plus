@@ -2,7 +2,6 @@
 //!
 //! A general type for handling all dates - whether it's a date-nnly, date+time or time.
 //!
-use chrono;
 use chrono::serde::ts_milliseconds;
 use serde::{Serialize, Deserialize};
 use std::fmt;
@@ -12,7 +11,7 @@ use crate::Error;
 
 // XXX this doesn't even implement Node
 // TODO: make the acceptable formats more flexible
-const DATE_FORMAT: &'static str = "%Y-%m-%d %H:%M:%S %Z";
+const DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S %Z";
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct DateTime(
@@ -22,7 +21,7 @@ pub struct DateTime(
 
 impl fmt::Display for DateTime {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0.to_string())
+        write!(f, "{}", self.0)
     }
 }
 

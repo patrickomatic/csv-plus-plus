@@ -40,7 +40,7 @@ impl<'a> CodeSectionParser<'a> {
         let lexer = AstLexer::new(input, tl)?;
         let parser = CodeSectionParser { lexer };
         
-        Ok(parser.parse_code_section()?)
+        parser.parse_code_section()
     }
 
     /// our entry point - just expects a series of variable and function definitions in any order

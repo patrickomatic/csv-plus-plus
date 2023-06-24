@@ -61,12 +61,12 @@ impl SourceCode {
                         continue;
                     } 
 
-                    if separator_line == None {
+                    if separator_line.is_none() {
                         code_section_str.push_str(&l);
-                        code_section_str.push_str("\n");
+                        code_section_str.push('\n');
                     } else {
                         csv_section.push_str(&l);
-                        csv_section.push_str("\n");
+                        csv_section.push('\n');
                     }
 
                     total_lines += 1;
@@ -81,7 +81,7 @@ impl SourceCode {
 
         let length_of_code_section = separator_line.unwrap_or(0);
 
-        let code_section = if separator_line == None { None } else { Some(code_section_str) };
+        let code_section = if separator_line.is_none() { None } else { Some(code_section_str) };
 
         Ok(SourceCode {
             filename,
@@ -100,12 +100,10 @@ impl SourceCode {
     }
 
     fn open_file(filename: &PathBuf) -> Result<File> {
-        File::open(filename).or_else(|error| {
-            Err(Error::SourceCodeError {
+        File::open(filename).map_err(|error| Error::SourceCodeError {
                 filename: filename.to_path_buf(),
-                message: format!("Error opening file: {}", error.to_string()),
+                message: format!("Error opening file: {}", error),
             })
-        })
     }
 }
 

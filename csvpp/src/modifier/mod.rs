@@ -25,7 +25,7 @@ use crate::Rgb;
 /// All of the things that can be done to a cell.  For the most part this comprises visual things
 /// like fonts, formatting, alignment, etc but there are a couple tricky things here like `var`
 /// which allows the user to bind variables to cells.
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Modifier {
     pub border_color: Option<Rgb>,
     pub border_style: Option<BorderStyle>,
@@ -42,28 +42,6 @@ pub struct Modifier {
     pub row_level: bool,
     pub var: Option<String>,
     pub vertical_align: Option<VerticalAlign>,
-}
-
-impl Default for Modifier {
-    fn default() -> Self {
-        Self {
-            border_color: None,
-            border_style: None,
-            borders: HashSet::new(),
-            color: None,
-            expand: None,
-            font_color: None,
-            font_family: None,
-            font_size: None,
-            formats: HashSet::new(),
-            horizontal_align: None,
-            note: None,
-            number_format: None,
-            row_level: false,
-            var: None,
-            vertical_align: None, 
-        }
-    }
 }
 
 impl Modifier {

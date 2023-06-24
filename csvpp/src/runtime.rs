@@ -62,11 +62,13 @@ mod tests {
 
     #[test]
     fn new() {
-        let mut cli_args = CliArgs::default();
-        cli_args.input_filename = PathBuf::from("foo.csvpp");
-        cli_args.google_sheet_id = Some("abc123".to_string());
-
+        let cli_args = CliArgs {
+            input_filename: PathBuf::from("foo.csvpp"),
+            google_sheet_id: Some("abc123".to_string()),
+            ..Default::default()
+        };
         let runtime = Runtime::new(cli_args);
+
         assert!(runtime.is_ok())
     }
 

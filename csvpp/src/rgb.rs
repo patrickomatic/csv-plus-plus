@@ -39,7 +39,7 @@ impl FromStr for Rgb {
     type Err = Error;
 
     fn from_str(input: &str) -> Result<Self> {
-        let start_at = if input.starts_with("#") { 1 } else { 0 };
+        let start_at = if input.starts_with('#') { 1 } else { 0 };
         let input_len = input.len() - start_at;
 
         let rgb = if input_len == 6 {

@@ -38,16 +38,16 @@ impl SpreadsheetCell {
     }
 
     fn parse_ast(input: &str, runtime: &Runtime) -> Result<Option<Box<dyn Node>>> {
-        if input.starts_with("=") {
+        if let Some(without_equals) = input.strip_prefix('=') {
             // TODO maybe a more robust skipping-the-first-char logic
-            Ok(Some(AstParser::parse(&input[1..], false, &runtime.token_library)?))
+            Ok(Some(AstParser::parse(without_equals, false, &runtime.token_library)?))
         } else {
             Ok(None)
         }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Spreadsheet {
     pub cells: Vec<Vec<SpreadsheetCell>>,
 }
@@ -60,11 +60,10 @@ impl Spreadsheet {
             .from_reader(runtime.source_code.csv_section.as_bytes());
 
         let mut cell_index = 0;
-        let mut row_index = 0;
 
         let mut cells: Vec<Vec<SpreadsheetCell>> = vec![];
 
-        for result in csv_reader.records() {
+        for (row_index, result) in csv_reader.records().enumerate() {
             let csv_row = result.unwrap_or(csv::StringRecord::new());
 
             let mut row: Vec<SpreadsheetCell> = vec![];
@@ -76,7 +75,6 @@ impl Spreadsheet {
                 cell_index += 1;
             }
 
-            row_index += 1;
             cells.push(row);
         }
 
@@ -98,17 +96,10 @@ impl Spreadsheet {
     }
 }
 
-impl Default for Spreadsheet {
-    fn default() -> Self {
-        Self { 
-            cells: Vec::new(),
-        }
-    }
-}
-
 impl fmt::Display for Spreadsheet {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self)
+        // TODO: something better
+        write!(f, "{}", self.cells.len())
     }
 }
 
@@ -121,9 +112,11 @@ mod tests {
     use crate::modifier::TextFormat;
 
     fn build_runtime(csv_section: &str) -> Runtime {
-        let mut cli_args = CliArgs::default();
-        cli_args.input_filename = PathBuf::from("foo.csvpp");
-        cli_args.google_sheet_id = Some("abc123".to_string());
+        let cli_args = CliArgs {
+            input_filename: PathBuf::from("foo.csvpp"),
+            google_sheet_id: Some("abc123".to_string()),
+            ..Default::default()
+        };
 
         let mut runtime = Runtime::new(cli_args).unwrap();
         runtime.source_code = SourceCode {

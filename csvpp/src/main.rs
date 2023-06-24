@@ -35,7 +35,7 @@ fn compile_from_cli() -> Result<()> {
     }
 
     if runtime.options.verbose {
-        println!("{}", runtime.to_string());
+        println!("{}", runtime);
     }
     // TODO write (and read) object files
     // template.write_compiled_template(&options, &template);
@@ -49,7 +49,7 @@ fn compile_from_cli() -> Result<()> {
 fn main() {
     if let Err(e) = compile_from_cli() {
         // TODO do more in verbose mode?
-        eprintln!("{}", e.to_string());
+        eprintln!("{}", e);
         process::exit(1)
     }
 }

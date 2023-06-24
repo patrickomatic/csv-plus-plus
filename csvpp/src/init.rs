@@ -58,8 +58,8 @@ mod tests {
         }, &build_token_library()).unwrap();
 
         // it takes defaults for options - we don't need to check all
-        assert_eq!(init.options.backup, false);
-        assert_eq!(init.options.overwrite_values, true);
+        assert!(!init.options.backup);
+        assert!(init.options.overwrite_values);
 
         assert_eq!(init.output, OutputTarget::Excel(PathBuf::from("foo.xlsx")));
         assert_eq!(init.source_code.filename, PathBuf::from("foo.csvpp"))

@@ -42,10 +42,10 @@ impl Template {
     pub fn compile(runtime: &Runtime) -> Result<Self> {
         // TODO do these in parallel
         // XXX get variables and insert them into the template
-        let spreadsheet = Spreadsheet::parse(&runtime)?;
+        let spreadsheet = Spreadsheet::parse(runtime)?;
 
         let template = if let Some(code_section) = &runtime.source_code.code_section {
-            let code_section_parser = CodeSectionParser::parse(&code_section, &runtime.token_library)?;
+            let code_section_parser = CodeSectionParser::parse(code_section, &runtime.token_library)?;
 
             Template {
                 functions: code_section_parser.functions,
@@ -73,7 +73,7 @@ impl Template {
     }
 
     // TODO hmm should this just move onto impl Runtime rather than taking a runtime
-    pub fn write_object_code(runtime: &Runtime) -> () {
+    pub fn write_object_code(runtime: &Runtime) {
         let _object_code_filename = runtime.source_code.object_code_filename();
         let mut _s = flexbuffers::FlexbufferSerializer::new();
         // runtime.template.serialize(&mut s).unwrap();

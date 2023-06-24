@@ -49,11 +49,11 @@ impl ModifierLexer {
     pub fn maybe_take_start_modifier(&mut self) -> Option<Token> {
         let input = self.input.trim();
         
-        if input.starts_with("[[") {
-            self.input = input[2..].to_string();
+        if let Some(without_match) = input.strip_prefix("[[") {
+            self.input = without_match.to_string();
             Some(Token::StartCellModifier)
-        } else if input.starts_with("![[") {
-            self.input = input[3..].to_string();
+        } else if let Some(without_match) = input.strip_prefix("![[") {
+            self.input = without_match.to_string();
             Some(Token::StartRowModifier)
         } else {
             None
@@ -73,11 +73,11 @@ impl ModifierLexer {
         }
     }
 
-    fn maybe_take<'a>(&mut self, substring: &'a str) -> Option<String> {
+    fn maybe_take(&mut self, substring: &str) -> Option<String> {
         let input = self.input.trim();
 
-        if input.starts_with(substring) {
-            self.input = input[substring.len()..].to_string();
+        if let Some(without_match) = input.strip_prefix(substring) {
+            self.input = without_match.to_string();
             Some(substring.to_string())
         } else {
             None
@@ -99,11 +99,11 @@ impl ModifierLexer {
         }
     }
 
-    fn take<'a>(&mut self, substring: &'a str) -> LexerTakeResult {
+    fn take(&mut self, substring: &str) -> LexerTakeResult {
         let input = self.input.trim();
 
-        if input.starts_with(substring) {
-            self.input = input[substring.len()..].to_string();
+        if let Some(without_match) = input.strip_prefix(substring) {
+            self.input = without_match.to_string();
             Ok(substring.to_string())
         } else {
             Err(Error::ModifierSyntaxError {
@@ -114,24 +114,24 @@ impl ModifierLexer {
         }
     }
 
-    fn take_color<'a>(&mut self) -> LexerTakeResult {
+    fn take_color(&mut self) -> LexerTakeResult {
         Ok(String::from("#FFF"))
     }
 
-    fn take_string<'a>(&mut self) -> LexerTakeResult {
+    fn take_string(&mut self) -> LexerTakeResult {
         let input = self.input.trim();
 
-        if input.starts_with("'") {
+        if input.starts_with('\'') {
             todo!(); // XXX single quote parsing logic
         } else {
             let unquoted_string = self.take_while(|ch| ch.is_alphanumeric())?;
-            Ok(unquoted_string.to_string())
+            Ok(unquoted_string)
         }
     }
 
     // TODO need to lowercase this
-    fn take_while<'a, F>(
-        &'a mut self, 
+    fn take_while<F>(
+        &mut self, 
         while_fn: F,
     ) -> LexerTakeResult
     where F: Fn(char) -> bool {
@@ -146,7 +146,7 @@ impl ModifierLexer {
             }
         }
 
-        if matched == "" {
+        if matched.is_empty() {
             Err(Error::ModifierSyntaxError {
                 message: String::from("Expected a modifier definition (i.e. format/halign/etc)"),
                 bad_input: input.to_string(),
@@ -197,7 +197,7 @@ impl<'a> ModifierParser<'a> {
     }
 
     fn expand_modifier(&mut self) -> ParseResult {
-        let amount = if let Some(_) = self.lexer.maybe_take_token(Token::Equals) {
+        let amount = if self.lexer.maybe_take_token(Token::Equals).is_some() {
             let amount_string = self.lexer.take_token(Token::PositiveNumber)?;
             
             match amount_string.parse::<usize>() {
@@ -302,7 +302,7 @@ impl<'a> ModifierParser<'a> {
             "nf" | "numberformat"   => self.number_format(),
             "v"  | "var"            => self.var_modifier(),
             "va" | "valign"         => self.valign_modifier(),
-            _ => return Err(Error::ModifierSyntaxError {
+            _ => Err(Error::ModifierSyntaxError {
                 bad_input: modifier_name.to_string(),
                 index: Position::Absolute(0, 0),  // XXX
                 message: format!("Unrecognized modifier: {}", &modifier_name),
@@ -314,7 +314,7 @@ impl<'a> ModifierParser<'a> {
         loop {
             self.modifier()?;
 
-            if let None = self.lexer.maybe_take_token(Token::Slash) {
+            if self.lexer.maybe_take_token(Token::Slash).is_none() {
                 break
             }
         }
@@ -426,8 +426,8 @@ mod tests {
 
         assert_eq!(parsed_modifiers.value, "abc123");
 
-        assert_eq!(parsed_modifiers.modifier.row_level, false);
-        assert_eq!(parsed_modifiers.row_modifier.row_level, true);
+        assert!(!parsed_modifiers.modifier.row_level);
+        assert!(parsed_modifiers.row_modifier.row_level);
     }
 
     #[test]

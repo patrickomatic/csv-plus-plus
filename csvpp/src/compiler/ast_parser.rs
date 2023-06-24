@@ -67,7 +67,7 @@ impl<'a> AstParser<'a> {
         let mut variables = HashMap::new();
 
         for kv in key_values.iter() {
-            if let Some((key, value)) = kv.split_once("=") {
+            if let Some((key, value)) = kv.split_once('=') {
                 variables.insert(key.to_string(), Self::parse(value, false, tl)?);
             } else {
                 return Err(Error::InitError(
@@ -146,9 +146,16 @@ impl<'a> AstParser<'a> {
                 // consume the token we peeked
                 self.lexer.next();
 
-                let id = lhs.id_ref();
-                lhs = if op == "(" && id.is_some() {
+                lhs = if op == "(" {
                     // function call
+                    let id = match lhs.id_ref() {
+                        Some(id) => id,
+                        None => return Err(Error::CodeSyntaxError { 
+                            bad_input: lhs.to_string(), 
+                            line_number: 0, // XXX
+                            message: "Unable to get id for fn".to_string(),
+                        }),
+                    };
                     let mut args = vec![];
 
                     // consume arguments (expressions) until we see a close paren
@@ -166,7 +173,7 @@ impl<'a> AstParser<'a> {
                         }
                     }
 
-                    Box::new(FunctionCall { name: id.unwrap(), args, })
+                    Box::new(FunctionCall { name: id, args, })
                 } else {
                     return Err(Error::CodeSyntaxError {
                         bad_input: op,

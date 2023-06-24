@@ -39,7 +39,7 @@ impl<'a> AstLexer<'a> {
         token_library: &'a TokenLibrary
     ) -> Result<AstLexer<'a>> {
         let mut tokens: Vec<TokenMatch> = vec![];
-        let mut p = input.clone();
+        let mut p = input;
 
         loop {
             let mut matched = false;
@@ -49,7 +49,7 @@ impl<'a> AstLexer<'a> {
                     if *token != Token::Comment {
                         // we'll want to consume everything except for comments (no point in the 
                         // parsing logic needing to consider them)
-                        tokens.push(TokenMatch(token.clone(), m.as_str().trim()));
+                        tokens.push(TokenMatch(*token, m.as_str().trim()));
                     }
 
                     // move the input past the match
@@ -87,7 +87,7 @@ impl<'a> AstLexer<'a> {
 
     pub fn peek(&self) -> TokenMatch {
         match self.tokens.borrow().last() {
-            Some(t) => t.clone(),
+            Some(t) => *t,
             None => self.eof(),
         }
     }
