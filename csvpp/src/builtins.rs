@@ -38,7 +38,7 @@ impl BuiltinFunction {
         if let Some(id) = args[0].id_ref() {
             Ok(id)
         } else {
-            return Err(Error::CodeSyntaxError {
+            Err(Error::CodeSyntaxError {
                 bad_input: args[0].to_string(),
                 line_number: 0, // XXX
                 message: format!("Expected a cell reference as the only argumnent to `{}`", fn_name),
@@ -133,7 +133,6 @@ impl BuiltinVariable {
         vars
     }
 }
-
 
 #[cfg(test)]
 mod tests {

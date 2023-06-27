@@ -7,7 +7,7 @@ use csv;
 
 use crate::{A1, Modifier, Node, Reference, Result, Runtime, Variables};
 use super::ast_parser::AstParser;
-use super::modifier;
+use super::modifier_parser::ModifierParser;
 
 // #[derive(Debug, Deserialize, Serialize)]
 #[derive(Debug)]
@@ -20,11 +20,11 @@ pub struct SpreadsheetCell {
 
 impl SpreadsheetCell {
     pub fn parse(
-        input: String,
+        input: &str,
         index: A1,
         runtime: &Runtime,
     ) -> Result<SpreadsheetCell> {
-        let parsed_modifiers = modifier::parse(index, input, runtime.default_modifier.clone())?;
+        let parsed_modifiers = ModifierParser::parse(index, input, runtime.default_modifier.clone())?;
 
         // XXX use the row_modifier
         // default_modifier = row_modifier;
@@ -65,7 +65,7 @@ impl Spreadsheet {
 
             for unparsed_value in &result.unwrap_or(csv::StringRecord::new()) {
                 let a1 = A1::builder().xy(cell_index, row_index).build()?;
-                row.push(SpreadsheetCell::parse(unparsed_value.to_owned(), a1, runtime)?);
+                row.push(SpreadsheetCell::parse(unparsed_value, a1, runtime)?);
 
                 cell_index += 1;
             }
@@ -77,7 +77,8 @@ impl Spreadsheet {
     }
 
     /// Extract all of the variables that were defined by cells contained in this spreadsheet
-    // TODO we could also store these in a HashMap on the Spreadsheet as we build it
+    // 
+    // NOTE: we could also store these in a HashMap on the Spreadsheet as we build it
     pub fn variables(&self) -> Variables {
         let mut vars = HashMap::new();
         self.cells.iter().flatten().for_each(|c| {

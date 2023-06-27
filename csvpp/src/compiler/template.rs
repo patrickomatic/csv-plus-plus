@@ -52,17 +52,18 @@ impl Template {
                 variables: code_section_parser.variables,
             }
         } else {
-            Self::new(spreadsheet)
+            Self::new(spreadsheet, runtime)
         };
 
         template.resolve_cell_variables(runtime)
     }
 
-    // XXX mix in the functions and variables from the runtime
-    fn new(spreadsheet: Spreadsheet) -> Self {
-        Template {
+    fn new(spreadsheet: Spreadsheet, runtime: &Runtime) -> Self {
+        // XXX merge all the variables
+        Self {
             spreadsheet: RefCell::new(spreadsheet),
-            ..Self::default()
+            ..Default::default()
+            // functions: 
         }
     }
 
