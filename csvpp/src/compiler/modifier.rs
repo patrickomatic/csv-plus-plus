@@ -7,7 +7,8 @@
 //! * get quoted strings working
 use std::str::FromStr;
 
-use crate::{Error, Position, Rgb};
+use crate::a1::A1;
+use crate::{Error, Rgb};
 use crate::modifier::*;
 
 #[derive(PartialEq)]
@@ -109,7 +110,7 @@ impl ModifierLexer {
             Err(Error::ModifierSyntaxError {
                 message: format!("Error parsing input, expected '{}'", substring),
                 bad_input: input.to_string(),
-                index: Position::Absolute(0, 0), // XXX
+                index: A1::builder().xy(0, 0).build()?, // XXX
             })
         }
     }
@@ -150,7 +151,7 @@ impl ModifierLexer {
             Err(Error::ModifierSyntaxError {
                 message: String::from("Expected a modifier definition (i.e. format/halign/etc)"),
                 bad_input: input.to_string(),
-                index: Position::Absolute(0, 0), // XXX
+                index: A1::builder().xy(0, 0).build()?, // XXX
             })
         } else {
             self.input = input[matched.len()..].to_string();
@@ -205,7 +206,7 @@ impl<'a> ModifierParser<'a> {
                 Err(e) => return Err(Error::ModifierSyntaxError {
                     message: format!("Error parsing expand= repetitions: {}", e),
                     bad_input: amount_string,
-                    index: Position::Absolute(0, 0), // XXX
+                    index: A1::builder().xy(0, 0).build()?, // XXX
                 }),
             }
         } else {
@@ -242,7 +243,7 @@ impl<'a> ModifierParser<'a> {
             Err(e) => return Err(Error::ModifierSyntaxError {
                 message: format!("Error parsing fontsize: {}", e),
                 bad_input: font_size_string,
-                index: Position::Absolute(0, 0), // XXX
+                index: A1::builder().xy(0, 0).build()?, // XXX
             }),
         }
 
@@ -304,7 +305,7 @@ impl<'a> ModifierParser<'a> {
             "va" | "valign"         => self.valign_modifier(),
             _ => Err(Error::ModifierSyntaxError {
                 bad_input: modifier_name.to_string(),
-                index: Position::Absolute(0, 0),  // XXX
+                index: A1::builder().xy(0, 0).build()?, // XXX
                 message: format!("Unrecognized modifier: {}", &modifier_name),
             }),
         }
@@ -347,7 +348,7 @@ pub fn parse_all_modifiers(
             if row_modifier.is_some() {
                 return Err(Error::ModifierSyntaxError {
                     bad_input: "".to_string(), // XXX
-                    index: Position::Absolute(0, 0), // XXX
+                    index: A1::builder().xy(0, 0).build()?, // XXX
                     message: "You can only define one row modifier for a cell".to_string(),
                 })
             } 
@@ -357,7 +358,7 @@ pub fn parse_all_modifiers(
             if modifier.is_some() {
                 return Err(Error::ModifierSyntaxError {
                     bad_input: "".to_string(), // XXX
-                    index: Position::Absolute(0, 0), // XXX
+                    index: A1::builder().xy(0, 0).build()?, // XXX
                     message: "You can only define one modifier for a cell".to_string(),
                 })
             }
@@ -374,11 +375,11 @@ pub struct ParsedModifiers {
     pub modifier: Modifier,
     pub row_modifier: Modifier,
     pub value: String,
-    pub index: Position,
+    pub index: A1,
 }
 
 pub fn parse(
-    index: Position, 
+    index: A1, 
     input: String, 
     default_from: Modifier,
 ) -> Result<ParsedModifiers, Error> {
@@ -386,7 +387,9 @@ pub fn parse(
 
     match parse_all_modifiers(lexer, &default_from) {
         Ok((modifier, row_modifier)) => {
-            if row_modifier.is_some() && !index.can_have_row_modifier() {
+            // XXX fix the row modifier logic
+            // if row_modifier.is_some() && !index.can_have_row_modifier() {
+            if row_modifier.is_some() {
                 Err(Error::ModifierSyntaxError { 
                     bad_input: lexer.rest(),
                     index,
@@ -419,7 +422,7 @@ mod tests {
     fn parse_no_modifier() {
         let default_modifier = Modifier::new(true);
         let parsed_modifiers = parse(
-            Position::Absolute(0, 0),
+            A1::builder().xy(0, 0).build().unwrap(),
             "abc123".to_string(),
             default_modifier,
         ).unwrap();
@@ -439,7 +442,7 @@ mod tests {
             row_modifier: _row_modifier,
             index: _index,
         } = parse(
-            Position::Absolute(0, 0), 
+            A1::builder().xy(0, 0).build().unwrap(),
             String::from("[[format=bold]]abc123"),
             default_modifier,
         ).unwrap();
@@ -458,7 +461,7 @@ mod tests {
             row_modifier: _row_modifier,
             index: _index,
         } = parse(
-            Position::Absolute(0, 0), 
+            A1::builder().xy(0, 0).build().unwrap(),
             String::from("[[format=italic/valign=top/expand]]abc123"),
             default_modifier,
         ).unwrap();
@@ -479,7 +482,7 @@ mod tests {
             row_modifier: _row_modifier,
             index: _index,
         } = parse(
-            Position::Absolute(0, 0), 
+            A1::builder().xy(0, 0).build().unwrap(),
             String::from("[[ha=l/va=c/f=u/fs=12]]abc123"),
             default_modifier,
         ).unwrap();

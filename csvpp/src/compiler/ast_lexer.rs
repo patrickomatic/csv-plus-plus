@@ -81,10 +81,12 @@ impl<'a> AstLexer<'a> {
         })
     }
 
+    /// Consume and return the next `TokenMatch`
     pub fn next(&self) -> TokenMatch {
         self.tokens.borrow_mut().pop().unwrap_or_else(|| self.eof())
     }
 
+    /// Return but do not consume the next `TokenMatch`
     pub fn peek(&self) -> TokenMatch {
         match self.tokens.borrow().last() {
             Some(t) => *t,

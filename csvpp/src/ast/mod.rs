@@ -53,6 +53,8 @@ pub trait Node: Any + Debug + Display {
         None
     }
 
+    /// Each implementation needs to define this to define equivalency. They'll downcast to the
+    /// concrete type and return `false` for anything else.
     fn node_eq(&self, other: &dyn Any) -> bool;
 }
 

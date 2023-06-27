@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::fmt;
 use csv;
 
-use crate::{Modifier, Node, Position, Reference, Result, Runtime, Variables};
+use crate::{A1, Modifier, Node, Reference, Result, Runtime, Variables};
 use super::ast_parser::AstParser;
 use super::modifier;
 
@@ -13,7 +13,7 @@ use super::modifier;
 #[derive(Debug)]
 pub struct SpreadsheetCell {
     pub ast: Option<Box<dyn Node>>,
-    pub index: Position,
+    pub index: A1,
     pub modifier: Modifier,
     pub value: String,
 }
@@ -21,7 +21,7 @@ pub struct SpreadsheetCell {
 impl SpreadsheetCell {
     pub fn parse(
         input: String,
-        index: Position,
+        index: A1,
         runtime: &Runtime,
     ) -> Result<SpreadsheetCell> {
         let parsed_modifiers = modifier::parse(index, input, runtime.default_modifier.clone())?;
@@ -39,7 +39,6 @@ impl SpreadsheetCell {
 
     fn parse_ast(input: &str, runtime: &Runtime) -> Result<Option<Box<dyn Node>>> {
         if let Some(without_equals) = input.strip_prefix('=') {
-            // TODO maybe a more robust skipping-the-first-char logic
             Ok(Some(AstParser::parse(without_equals, false, &runtime.token_library)?))
         } else {
             Ok(None)
@@ -58,19 +57,15 @@ impl Spreadsheet {
         let mut csv_reader = csv::ReaderBuilder::new()
             .has_headers(false)
             .from_reader(runtime.source_code.csv_section.as_bytes());
-
         let mut cell_index = 0;
-
         let mut cells: Vec<Vec<SpreadsheetCell>> = vec![];
 
         for (row_index, result) in csv_reader.records().enumerate() {
-            let csv_row = result.unwrap_or(csv::StringRecord::new());
-
             let mut row: Vec<SpreadsheetCell> = vec![];
 
-            for unparsed_value in &csv_row {
-                let index = Position::Absolute(cell_index, row_index);
-                row.push(SpreadsheetCell::parse(unparsed_value.to_string(), index, runtime)?);
+            for unparsed_value in &result.unwrap_or(csv::StringRecord::new()) {
+                let a1 = A1::builder().xy(cell_index, row_index).build()?;
+                row.push(SpreadsheetCell::parse(unparsed_value.to_owned(), a1, runtime)?);
 
                 cell_index += 1;
             }
@@ -87,7 +82,7 @@ impl Spreadsheet {
         let mut vars = HashMap::new();
         self.cells.iter().flatten().for_each(|c| {
             if let Some(var_id) = &c.modifier.var {
-                let reference: Box<dyn Node> = Box::new(Reference(c.index.to_a1()));
+                let reference: Box<dyn Node> = Box::new(Reference(c.index.to_string()));
                 vars.insert(var_id.to_owned(), reference);
             }
         });

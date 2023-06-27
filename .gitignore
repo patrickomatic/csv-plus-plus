@@ -5,3 +5,4 @@ coverage/
 csv_plus_plus-*.gem
 doc/
 examples/all_features-*.csv
+csvpp/target

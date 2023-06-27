@@ -3,10 +3,11 @@ use std::error;
 use std::fmt;
 use std::path::PathBuf;
 
-use crate::{OutputTarget, Position};
+use crate::{A1, OutputTarget};
 
 #[derive(Clone, Debug)]
 pub enum Error {
+    A1BuilderError(String),
     // TODO we could have a codesyntax error in a cell
     CodeSyntaxError {
         bad_input: String,
@@ -14,7 +15,7 @@ pub enum Error {
         message: String,
     },
     CellSyntaxError {
-        index: Position,
+        index: A1,
         message: String,
     },
     InitError(String),
@@ -25,7 +26,11 @@ pub enum Error {
     },
     ModifierSyntaxError {
         bad_input: String,
-        index: Position,
+        index: A1,
+        message: String,
+    },
+    RgbSyntaxError {
+        bad_input: String,
         message: String,
     },
     SourceCodeError {
@@ -42,6 +47,8 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // TODO: anything else to do when in verbose mode?
         match self {
+            Error::A1BuilderError(message) => 
+                write!(f, "Error parsing A1 expression: {}", message),
             Error::CodeSyntaxError { bad_input, line_number, message } => {
                 writeln!(f, "{}: {}", line_number, message)?;
                 write!(f, "bad input: {}", bad_input)
@@ -57,6 +64,10 @@ impl fmt::Display for Error {
             },
             Error::ModifierSyntaxError { bad_input, index, message } => {
                 writeln!(f, "Cell->{}: {}", index, message)?;
+                write!(f, "bad input: {}", bad_input)
+            },
+            Error::RgbSyntaxError { bad_input, message } => {
+                writeln!(f, "Error parsing RGB value: {}", message)?;
                 write!(f, "bad input: {}", bad_input)
             },
             Error::SourceCodeError { filename, message } => {
@@ -78,11 +89,11 @@ mod tests {
     #[test]
     fn display_cell_syntax_error() {
         let message = Error::CellSyntaxError {
-            index: Position::Absolute(1, 5),
+            index: A1::builder().xy(1, 5).build().unwrap(),
             message: "foo".to_string(),
         };
 
-        assert_eq!("Cell->[1, 5]: foo", message.to_string());
+        assert_eq!("Cell->F2: foo", message.to_string());
     }
 
     #[test]
@@ -100,10 +111,10 @@ mod tests {
     fn display_modifier_syntax_error() {
         let message = Error::ModifierSyntaxError {
             bad_input: "bad_input".to_string(),
-            index: Position::Absolute(0, 1),
+            index: A1::builder().xy(0, 1).build().unwrap(),
             message: "foo".to_string(),
         };
 
-        assert_eq!("Cell->[0, 1]: foo\nbad input: bad_input", message.to_string());
+        assert_eq!("Cell->B1: foo\nbad input: bad_input", message.to_string());
     }
 }

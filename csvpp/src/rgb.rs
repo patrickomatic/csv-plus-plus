@@ -1,9 +1,11 @@
+//! # Rgb
+//!
 //! RGB-parsing and formatting functionality
 use serde::{Serialize, Deserialize};
 use std::fmt;
 use std::str::FromStr;
 
-use crate::{Error, Position, Result};
+use crate::{Error, Result};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Rgb {
@@ -27,10 +29,9 @@ fn string_to_hex(hex_code: &str, double_it: bool) -> Result<u8> {
 
     match u8::from_str_radix(&hex_string, 16) {
         Ok(n) => Ok(n),
-        Err(e) => Err(Error::ModifierSyntaxError {
+        Err(e) => Err(Error::RgbSyntaxError {
             bad_input: hex_code.to_string(),
             message: format!("Invalid hex: {}", e),
-            index: Position::Absolute(0, 0), // XXX
         }),
     }
 }
@@ -55,13 +56,12 @@ impl FromStr for Rgb {
                 b: string_to_hex(&input[start_at+2 .. start_at+3], true)?,
             }
         } else {
-            return Err(Error::ModifierSyntaxError {
+            return Err(Error::RgbSyntaxError {
                 message: format!(
                     "\"{}\" must be a 3 or 6-character RGB string, optionally prefixed with '#'", 
                     input,
                 ),
                 bad_input: input.to_string(),
-                index: Position::Absolute(0, 0), // XXX
             })
         };
 

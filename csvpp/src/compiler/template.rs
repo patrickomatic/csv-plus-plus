@@ -41,7 +41,6 @@ impl Default for Template {
 impl Template {
     pub fn compile(runtime: &Runtime) -> Result<Self> {
         // TODO do these in parallel
-        // XXX get variables and insert them into the template
         let spreadsheet = Spreadsheet::parse(runtime)?;
 
         let template = if let Some(code_section) = &runtime.source_code.code_section {

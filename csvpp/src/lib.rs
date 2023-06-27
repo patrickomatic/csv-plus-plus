@@ -28,13 +28,11 @@
 //! =foo   ,=foo + 2   ,=bar(foo)
 //! ```
 //!
-// TODO:
-//
-// * use clippy
-//
 use std::collections::HashMap;
 
+mod a1;
 mod ast;
+mod builtins;
 mod compiler;
 mod cli_args;
 mod error;
@@ -42,13 +40,14 @@ mod init;
 mod modifier;
 mod options;
 mod output_target;
-mod position;
 mod rgb;
 mod runtime;
 mod source_code;
 mod target;
 
+pub use a1::*;
 pub use ast::*;
+pub use builtins::{BuiltinFunction, BuiltinVariable};
 pub use cli_args::CliArgs;
 pub use compiler::spreadsheet::Spreadsheet;
 pub use compiler::template::Template;
@@ -58,13 +57,24 @@ pub use init::Init;
 pub use modifier::Modifier;
 pub use options::Options;
 pub use output_target::OutputTarget;
-pub use position::Position;
 pub use rgb::Rgb;
 pub use runtime::Runtime;
 pub use source_code::SourceCode;
 pub use target::CompilationTarget;
 
 pub type Result<T> = std::result::Result<T, Error>;
+
+pub enum FunctionOrBuiltin {
+    BuiltinFunction,
+    Function,
+}
+
+type Variable = Box<dyn Node>;
+
+pub enum VariableOrBuiltin {
+    BuiltinVariable,
+    Variable,
+}
 
 pub type Functions = HashMap<String, Function>;
 pub type Variables =  HashMap<String, Box<dyn Node>>;
