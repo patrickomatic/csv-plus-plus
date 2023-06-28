@@ -27,83 +27,61 @@ pub struct ParsedModifiers {
 
 impl<'a> ModifierParser<'a> {
     pub fn parse(
-        index: A1, 
         input: &str, 
-        default_from: Modifier,
+        index: A1, 
+        row_modifier: Modifier,
     ) -> Result<ParsedModifiers> {
         let lexer = &mut ModifierLexer::new(input);
+        let (modifier, row_modifier) = Self::parse_all_modifiers(lexer, &index, row_modifier)?;
 
-        match Self::parse_all_modifiers(lexer, &default_from) {
-            Ok((modifier, row_modifier)) => {
-                // XXX fix the row modifier logic
-                // if row_modifier.is_some() && !index.can_have_row_modifier() {
-                if row_modifier.is_some() {
-                    Err(Error::ModifierSyntaxError { 
-                        bad_input: lexer.rest(),
-                        index,
-                        message: "You can only define a row modifier on the first cell of a row".to_string(), 
-                    })
-                } else {
-                    Ok(ParsedModifiers {
-                        modifier: modifier.unwrap_or_else(|| Modifier::from(&default_from)),
-                        row_modifier: row_modifier.unwrap_or(default_from.clone()),
-                        value: lexer.rest(),
-                        index
-                    })
-                }
-            },
-            Err(message) => {
-                Err(Error::ModifierSyntaxError { 
-                    bad_input: lexer.rest(),
-                    index,
-                    message: message.to_string(), 
-                })
-            },
-        }
+        Ok(ParsedModifiers {
+            modifier,
+            row_modifier,
+            value: lexer.rest(),
+            index
+        })
     }
 
     /// returns (modifier, row_modifier)
     pub fn parse_all_modifiers(
         lexer: &mut ModifierLexer,
-        default_from: &Modifier,
-    ) -> Result<(Option<Modifier>, Option<Modifier>)> {
-        let mut modifier: Option<Modifier> = None;
-        let mut row_modifier: Option<Modifier> = None;
+        index: &A1,
+        row_modifier: Modifier,
+    ) -> Result<(Modifier, Modifier)> {
+        let mut new_modifier: Option<Modifier> = None;
+        let mut new_row_modifier: Option<Modifier> = None;
 
         while let Some(start_token) = lexer.maybe_take_start_modifier() {
             let is_row_modifier = start_token == Token::StartRowModifier;
-            let mut new_modifier = Modifier::from(default_from);
+            if is_row_modifier && index.x() != Some(0) {
+                return Err(Error::ModifierSyntaxError {
+                    bad_input: "![[".to_owned(),
+                    index: A1::builder().xy(0, 0).build()?, // XXX
+                    message: "You can only define a row modifier in the first cell".to_owned(),
+                })
+            }
+
+            let mut modifier = Modifier::from(&new_row_modifier.clone().unwrap_or_else(|| row_modifier.clone()));
+
+            // we'll instantiate a new parser for each modifier, but share the lexer so we're using
+            // the same stream of tokens
             let mut modifier_parser = ModifierParser { 
                 lexer,
-                modifier: &mut new_modifier,
+                modifier: &mut modifier,
             };
-
             modifier_parser.modifiers()?;
 
             if is_row_modifier {
-                if row_modifier.is_some() {
-                    return Err(Error::ModifierSyntaxError {
-                        bad_input: "![[".to_owned(),
-                        index: A1::builder().xy(0, 0).build()?, // XXX
-                        message: "You can only define one row modifier for a cell".to_string(),
-                    })
-                } 
-
-                row_modifier = Some(new_modifier)
+                new_row_modifier = Some(modifier)
             } else {
-                if modifier.is_some() {
-                    return Err(Error::ModifierSyntaxError {
-                        bad_input: "[[".to_owned(),
-                        index: A1::builder().xy(0, 0).build()?, // XXX
-                        message: "You can only define one modifier for a cell".to_string(),
-                    })
-                }
-
-                modifier = Some(new_modifier)
-            }
+                new_modifier = Some(modifier)
+            } 
         }
 
-        Ok((modifier, row_modifier))
+        Ok((
+            new_modifier.unwrap_or_else(|| Modifier::from(&row_modifier)),
+            new_row_modifier.unwrap_or(row_modifier),
+        ))
     }
 
     fn border_modifier(&mut self) -> Result<()> {
@@ -264,19 +242,21 @@ impl<'a> ModifierParser<'a> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    fn test_parse(input: &str) -> ParsedModifiers {
+        ModifierParser::parse(
+            input,
+            A1::builder().xy(0, 0).build().unwrap(),
+            Modifier::new(true),
+        ).unwrap()
+    }
+
     #[test]
     fn parse_no_modifier() {
-        let default_modifier = Modifier::new(true);
-        let parsed_modifiers = ModifierParser::parse(
-            A1::builder().xy(0, 0).build().unwrap(),
-            "abc123",
-            default_modifier,
-        ).unwrap();
+        let parsed_modifiers = test_parse("abc123");
 
         assert_eq!(parsed_modifiers.value, "abc123");
 
@@ -286,17 +266,12 @@ mod tests {
 
     #[test]
     fn parse_modifier() {
-        let default_modifier = Modifier::new(true);
         let ParsedModifiers { 
             value,
             modifier,
             row_modifier: _row_modifier,
             index: _index,
-        } = ModifierParser::parse(
-            A1::builder().xy(0, 0).build().unwrap(),
-            "[[format=bold]]abc123",
-            default_modifier,
-        ).unwrap();
+        } = test_parse("[[format=bold]]abc123");
 
         assert_eq!(value, "abc123");
 
@@ -305,17 +280,12 @@ mod tests {
 
     #[test]
     fn parse_multiple_modifiers() {
-        let default_modifier = Modifier::new(true);
         let ParsedModifiers { 
             value,
             modifier,
             row_modifier: _row_modifier,
             index: _index,
-        } = ModifierParser::parse(
-            A1::builder().xy(0, 0).build().unwrap(),
-            "[[format=italic/valign=top/expand]]abc123",
-            default_modifier,
-        ).unwrap();
+        } = test_parse("[[format=italic/valign=top/expand]]abc123");
 
         assert_eq!(value, "abc123");
 
@@ -326,17 +296,12 @@ mod tests {
 
     #[test]
     fn parse_multiple_modifiers_shorthand() {
-        let default_modifier = Modifier::new(true);
         let ParsedModifiers { 
             value,
             modifier,
             row_modifier: _row_modifier,
             index: _index,
-        } = ModifierParser::parse(
-            A1::builder().xy(0, 0).build().unwrap(),
-            "[[ha=l/va=c/f=u/fs=12]]abc123",
-            default_modifier,
-        ).unwrap();
+        } = test_parse("[[ha=l/va=c/f=u/fs=12]]abc123");
 
         assert_eq!(value, "abc123");
 

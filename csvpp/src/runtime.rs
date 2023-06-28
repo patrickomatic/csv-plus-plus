@@ -3,12 +3,11 @@
 use clap::Parser;
 use std::fmt;
 
-use crate::{CliArgs, Init, Modifier, Options, OutputTarget, Result, SourceCode, Template};
+use crate::{CliArgs, Init, Options, OutputTarget, Result, SourceCode, Template};
 use crate::compiler::token_library::TokenLibrary;
 
 #[derive(Debug)]
 pub struct Runtime {
-    pub default_modifier: Modifier,
     pub options: Options,
     pub output: OutputTarget,
     pub source_code: SourceCode,
@@ -26,7 +25,6 @@ impl Runtime {
         let init = Init::from_cli_args(cli_args, &token_library)?;
 
         Ok(Self {
-            default_modifier: Modifier::default(),
             options: init.options,
             output: init.output,
             source_code: init.source_code,

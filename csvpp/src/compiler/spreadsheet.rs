@@ -1,6 +1,6 @@
-// TODO:
-// * use the row modifier as intended
-// * globally allocate the default modifier
+//! # Spreadsheet
+//!
+//!
 use std::collections::HashMap;
 use std::fmt;
 use csv;
@@ -9,7 +9,6 @@ use crate::{A1, Modifier, Node, Reference, Result, Runtime, Variables};
 use super::ast_parser::AstParser;
 use super::modifier_parser::ModifierParser;
 
-// #[derive(Debug, Deserialize, Serialize)]
 #[derive(Debug)]
 pub struct SpreadsheetCell {
     pub ast: Option<Box<dyn Node>>,
@@ -19,22 +18,15 @@ pub struct SpreadsheetCell {
 }
 
 impl SpreadsheetCell {
-    pub fn parse(
-        input: &str,
-        index: A1,
-        runtime: &Runtime,
-    ) -> Result<SpreadsheetCell> {
-        let parsed_modifiers = ModifierParser::parse(index, input, runtime.default_modifier.clone())?;
+    pub fn parse(input: &str, index: A1, row_modifier: Modifier, runtime: &Runtime) -> Result<(SpreadsheetCell, Modifier)> {
+        let parsed_modifiers = ModifierParser::parse(input, index, row_modifier)?;
 
-        // XXX use the row_modifier
-        // default_modifier = row_modifier;
-
-        Ok(SpreadsheetCell {
+        Ok((SpreadsheetCell {
             ast: Self::parse_ast(&parsed_modifiers.value, runtime)?,
             index: parsed_modifiers.index,
             modifier: parsed_modifiers.modifier,
             value: parsed_modifiers.value,
-        })
+        }, parsed_modifiers.row_modifier))
     }
 
     fn parse_ast(input: &str, runtime: &Runtime) -> Result<Option<Box<dyn Node>>> {
@@ -54,22 +46,11 @@ pub struct Spreadsheet {
 impl Spreadsheet {
     /// Parse the spreadsheet section of a csv++ source file.
     pub fn parse(runtime: &Runtime) -> Result<Spreadsheet> {
-        let mut csv_reader = csv::ReaderBuilder::new()
-            .has_headers(false)
-            .from_reader(runtime.source_code.csv_section.as_bytes());
-        let mut cell_index = 0;
+        let mut csv_reader = Self::csv_reader(runtime);
         let mut cells: Vec<Vec<SpreadsheetCell>> = vec![];
 
         for (row_index, result) in csv_reader.records().enumerate() {
-            let mut row: Vec<SpreadsheetCell> = vec![];
-
-            for unparsed_value in &result.unwrap_or(csv::StringRecord::new()) {
-                let a1 = A1::builder().xy(cell_index, row_index).build()?;
-                row.push(SpreadsheetCell::parse(unparsed_value, a1, runtime)?);
-
-                cell_index += 1;
-            }
-
+            let row = Self::parse_row(result, row_index, runtime)?;
             cells.push(row);
         }
 
@@ -90,11 +71,36 @@ impl Spreadsheet {
 
         vars
     }
+
+    fn csv_reader(runtime: &Runtime) -> csv::Reader<&[u8]> {
+        csv::ReaderBuilder::new()
+            .has_headers(false)
+            .from_reader(runtime.source_code.csv_section.as_bytes())
+    }
+
+    fn parse_row(
+        record_result: std::result::Result<csv::StringRecord, csv::Error>,
+        row_index: usize,
+        runtime: &Runtime,
+    ) -> Result<Vec<SpreadsheetCell>> {
+        let mut row: Vec<SpreadsheetCell> = vec![];
+        let mut row_modifier = Modifier::new(true);
+
+        for (cell_index, unparsed_value) in (&record_result.unwrap_or(csv::StringRecord::new())).into_iter().enumerate() {
+            let a1 = A1::builder().xy(cell_index, row_index).build()?;
+            let (cell, rm) = SpreadsheetCell::parse(unparsed_value, a1, row_modifier, runtime)?;
+            row_modifier = rm;
+
+            row.push(cell);
+        }
+
+        Ok(row)
+    }
 }
 
 impl fmt::Display for Spreadsheet {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // TODO: something better
+        // TODO: do something better
         write!(f, "{}", self.cells.len())
     }
 }
