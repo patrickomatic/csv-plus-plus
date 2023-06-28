@@ -9,7 +9,7 @@ use std::str;
 
 use crate::Error;
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Boolean(pub bool);
 
 impl super::Node for Boolean {

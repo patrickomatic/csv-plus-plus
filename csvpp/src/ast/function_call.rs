@@ -3,23 +3,21 @@
 //! The calling of a function.  This is the branching point of our AST and we don't evaluate
 //! function calls until we're ready to write to the target format.
 //!
-// use serde::{Deserialize, Serialize};
 use std::any;
 use std::fmt;
 
-use super::{FunctionName, Node, NodeId};
+use super::{Ast, FunctionName, Node, NodeId};
 
-// #[derive(Debug, Deserialize, PartialEq, Serialize)]
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FunctionCall {
-    pub args: Vec<Box<dyn Node>>,
+    pub args: Vec<Ast>,
     pub name: FunctionName,
 }
 
 impl FunctionCall {
     // TODO it would be nice if we could do the Box::new()ing inside this function instead of the
     // caller
-    pub fn new(name: &str, args: Vec<Box<dyn Node>>) -> Self {
+    pub fn new(name: &str, args: Vec<Ast>) -> Self {
         Self {
             args,
             name: name.to_string(),

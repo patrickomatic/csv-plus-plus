@@ -5,13 +5,14 @@ use std::collections::HashMap;
 use std::fmt;
 use csv;
 
-use crate::{A1, Modifier, Node, Reference, Result, Runtime, Variables};
+use crate::{A1, Modifier, Result, Runtime};
+use crate::ast::{Ast, Reference, Variables};
 use super::ast_parser::AstParser;
 use super::modifier_parser::ModifierParser;
 
 #[derive(Debug)]
 pub struct SpreadsheetCell {
-    pub ast: Option<Box<dyn Node>>,
+    pub ast: Option<Ast>,
     pub index: A1,
     pub modifier: Modifier,
     pub value: String,
@@ -29,7 +30,7 @@ impl SpreadsheetCell {
         }, parsed_modifiers.row_modifier))
     }
 
-    fn parse_ast(input: &str, runtime: &Runtime) -> Result<Option<Box<dyn Node>>> {
+    fn parse_ast(input: &str, runtime: &Runtime) -> Result<Option<Ast>> {
         if let Some(without_equals) = input.strip_prefix('=') {
             Ok(Some(AstParser::parse(without_equals, false, &runtime.token_library)?))
         } else {
@@ -64,7 +65,7 @@ impl Spreadsheet {
         let mut vars = HashMap::new();
         self.cells.iter().flatten().for_each(|c| {
             if let Some(var_id) = &c.modifier.var {
-                let reference: Box<dyn Node> = Box::new(Reference(c.index.to_string()));
+                let reference: Ast = Box::new(Reference(c.index.to_string()));
                 vars.insert(var_id.to_owned(), reference);
             }
         });

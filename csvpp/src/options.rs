@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::Node;
+use crate::ast::Ast;
 
 #[derive(Debug)]
 pub struct Options {
     pub backup: bool,
-    pub key_values: HashMap<String, Box<dyn Node>>,
+    pub key_values: HashMap<String, Ast>,
     pub offset: (u32, u32),
     pub overwrite_values: bool,
     pub verbose: bool,

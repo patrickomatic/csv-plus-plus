@@ -3,16 +3,14 @@
 //! A definition of a function.  Note that this is distinctly different than the calling of a
 //! function (`FunctionCall`.)
 //!
-// use serde::{Serialize, Deserialize};
 use std::any;
 use std::fmt;
-use super::{FunctionArgs, FunctionName, Node, NodeId, NodeWithId};
+use super::{Ast, FunctionArgs, FunctionName, Node, NodeId, NodeWithId};
 
-// #[derive(Debug, Deserialize, Serialize)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Function { 
     pub args: FunctionArgs,
-    pub body: Box<dyn Node>,
+    pub body: Ast,
     pub name: FunctionName, 
 }
 
@@ -24,6 +22,10 @@ impl NodeWithId for Function {
 
 impl Node for Function {
     fn as_any(&self) -> &dyn any::Any { self }
+
+    fn eval_fn(&self, _position: &crate::A1, _arguments: &[Ast]) -> crate::Result<Option<Ast>> {
+        todo!()
+    }
 
     fn node_eq(&self, other: &dyn any::Any) -> bool {
         other.downcast_ref::<Self>().map_or(false, { |f| 
@@ -41,8 +43,12 @@ impl fmt::Display for Function {
 }
 
 impl Function {
-    pub fn new(name: &str, args: FunctionArgs, body: Box<dyn Node>) -> Self {
-        Function { args, body, name: name.to_string() }
+    pub fn new(name: &str, args: FunctionArgs, body: Ast) -> Self {
+        Function { 
+            args, 
+            body, 
+            name: name.to_string(),
+        }
     }
 }
 

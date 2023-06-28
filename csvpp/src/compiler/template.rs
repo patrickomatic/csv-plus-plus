@@ -3,21 +3,22 @@
 //! A `template` holds the final compiled state for a single csv++ source file.
 //!
 use flexbuffers;
-// use serde::{Serialize, Deserialize};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 
-use super::code_section_parser::CodeSectionParser;
-use crate::{Node, Function, Result, Runtime, Spreadsheet};
+use crate::{Result, Runtime, Spreadsheet};
+use crate::ast::{BuiltinFunction, BuiltinVariable, Functions, Variables};
+use super::code_section_parser::{CodeSection, CodeSectionParser};
+
 
 
 // #[derive(Debug, Deserialize, Serialize)]
 #[derive(Debug)]
 pub struct Template {
-    pub functions: HashMap<String, Function>,
+    pub functions: Functions,
     pub spreadsheet: RefCell<Spreadsheet>,
-    pub variables: HashMap<String, Box<dyn Node>>,
+    pub variables: Variables,
 }
 
 impl fmt::Display for Template {
@@ -40,30 +41,52 @@ impl Default for Template {
 
 impl Template {
     pub fn compile(runtime: &Runtime) -> Result<Self> {
-        // TODO do these in parallel
         let spreadsheet = Spreadsheet::parse(runtime)?;
 
-        let template = if let Some(code_section) = &runtime.source_code.code_section {
-            let code_section_parser = CodeSectionParser::parse(code_section, &runtime.token_library)?;
-
-            Template {
-                functions: code_section_parser.functions,
-                spreadsheet: RefCell::new(spreadsheet),
-                variables: code_section_parser.variables,
-            }
+        let code_section = if let Some(code_section_source) = &runtime.source_code.code_section {
+            Some(CodeSectionParser::parse(code_section_source, &runtime.token_library)?)
         } else {
-            Self::new(spreadsheet, runtime)
+            None
         };
+
+        let template = Self::new(spreadsheet, code_section, runtime);
 
         template.resolve_cell_variables(runtime)
     }
 
-    fn new(spreadsheet: Spreadsheet, runtime: &Runtime) -> Self {
-        // XXX merge all the variables
+    /// Given a parsed code section and spreadsheet section, this function will assemble all of the
+    /// available functions and variables.  There are some nuances here because there are a lot of
+    /// sources of functions and variables and they're allowed to override each other.
+    ///
+    /// ## Function Precedence
+    ///
+    /// Functions are just comprised of what is builtin and what the user puts in the code section.
+    /// The code section functions can override builtins so the precedence is (with the lowest
+    /// number being the one that is used):
+    /// 
+    /// 1. Functions in the code section
+    /// 2. Builtin functions
+    ///
+    /// ## Variable Precedence
+    ///
+    /// There are a lot more sources of variables - here is their order of precedence:
+    ///
+    /// 1. Variables from the -k/--key-values CLI flag
+    /// 2. Variables defined in cells
+    /// 3. Variables defined in the code section
+    /// 4. Builtin variables
+    ///
+    fn new(spreadsheet: Spreadsheet, _code_section: Option<CodeSection>, _runtime: &Runtime) -> Self {
+        let builtin_fns = BuiltinFunction::all();
+        let builtin_vars = BuiltinVariable::all();
+
+        // let functions = builtin_fns.into_iter().chain(code_section.unwrap().functions).collect();
+        let functions = builtin_fns;
+        let variables = builtin_vars;
         Self {
             spreadsheet: RefCell::new(spreadsheet),
-            ..Default::default()
-            // functions: 
+            functions, 
+            variables,
         }
     }
 

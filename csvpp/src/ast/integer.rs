@@ -9,7 +9,7 @@ use std::str;
 
 use crate::Error;
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Integer(pub i64);
 
 impl super::Node for Integer {

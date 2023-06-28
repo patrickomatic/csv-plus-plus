@@ -2,19 +2,16 @@
 //!
 //! A function call that has exactly two arguments - a left hand side and a right hand side.
 //!
-// use serde::{Deserialize, Serialize};
 use std::any::Any;
 use std::fmt;
 
-use crate::Node;
-use super::{FunctionName, NodeWithId};
+use super::{Ast, FunctionName, Node, NodeWithId};
 
-// #[derive(Debug, Deserialize, Serialize)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct InfixFunctionCall {
-    pub left: Box<dyn Node>,
+    pub left: Ast,
     pub operator: FunctionName,
-    pub right: Box<dyn Node>,
+    pub right: Ast,
 }
 
 impl NodeWithId for InfixFunctionCall {

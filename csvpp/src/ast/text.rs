@@ -10,7 +10,7 @@ use std::str;
 use crate::Error;
 use super::Node;
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Text(pub String);
 
 impl Text {

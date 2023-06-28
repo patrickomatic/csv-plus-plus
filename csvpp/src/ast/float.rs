@@ -9,7 +9,7 @@ use std::str;
 
 use crate::Error;
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Float(pub f64);
 
 impl super::Node for Float {

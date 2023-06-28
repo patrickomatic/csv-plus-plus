@@ -17,13 +17,14 @@
 //!
 use std::collections::HashMap;
 
+use crate::{Error, Result};
+use crate::ast::{Ast, Function, Functions, Variables};
+use super::token_library::{Token, TokenLibrary, TokenMatch};
 use super::ast_lexer::AstLexer;
 use super::ast_parser::AstParser;
-use crate::{Error, Function, Functions, Node, Result, Variables};
-use crate::compiler::token_library::{Token, TokenLibrary, TokenMatch};
 
 #[derive(Debug)]
-pub struct FunctionsAndVariables {
+pub struct CodeSection {
     pub functions: Functions,
     pub variables: Variables,
 }
@@ -36,7 +37,7 @@ pub struct CodeSectionParser<'a> {
 /// mentioned above, the contract here is that this parser handles parsing a series of 
 /// function and variable references and delegates to `AstParser` for handling expressions
 impl<'a> CodeSectionParser<'a> {
-    pub fn parse(input: &'a str, tl: &'a TokenLibrary) -> Result<FunctionsAndVariables> {
+    pub fn parse(input: &'a str, tl: &'a TokenLibrary) -> Result<CodeSection> {
         let lexer = AstLexer::new(input, tl)?;
         let parser = CodeSectionParser { lexer };
         
@@ -44,7 +45,7 @@ impl<'a> CodeSectionParser<'a> {
     }
 
     /// our entry point - just expects a series of variable and function definitions in any order
-    fn parse_code_section(&'a self) -> Result<FunctionsAndVariables> {
+    fn parse_code_section(&'a self) -> Result<CodeSection> {
         let mut variables = HashMap::new();
         let mut functions = HashMap::new();
 
@@ -53,7 +54,9 @@ impl<'a> CodeSectionParser<'a> {
                 TokenMatch(Token::Eof, _) => break,
                 TokenMatch(Token::FunctionDefinition, _) => {
                     let function = self.parse_fn_definition()?;
-                    functions.insert(function.name.clone(), function);
+                    let fn_name = function.name.clone();
+                    let ast: Ast = Box::new(function);
+                    functions.insert(fn_name, ast);
                 },
                 TokenMatch(Token::Reference, r) => {
                     let expr = self.parse_variable_assign()?;
@@ -69,11 +72,11 @@ impl<'a> CodeSectionParser<'a> {
             }
         }
 
-        Ok(FunctionsAndVariables { functions, variables })
+        Ok(CodeSection { functions, variables })
     }
 
     /// parses a `:=` folloed by an `<expr>`
-    fn parse_variable_assign(&'a self) -> Result<Box<dyn Node>> {
+    fn parse_variable_assign(&'a self) -> Result<Ast> {
         // they better give us a :=
         match self.lexer.next() {
             TokenMatch(Token::VarAssign, _) => {
@@ -149,7 +152,7 @@ impl<'a> CodeSectionParser<'a> {
         Ok(Function { args, body, name })
     }
 
-    fn parse_expr(&'a self) -> Result<Box<dyn Node>> {
+    fn parse_expr(&'a self) -> Result<Ast> {
         // create an `AstParser` with a reference to our lexer so it can continue consuming our
         // stream of tokens
         AstParser::new(&self.lexer).expr_bp(true, 0)
@@ -158,14 +161,15 @@ impl<'a> CodeSectionParser<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{TokenLibrary, InfixFunctionCall, Integer, Reference};
+    use crate::TokenLibrary;
+    use crate::ast::{InfixFunctionCall, Integer, Reference};
     use super::*;
 
     fn build_token_library() -> TokenLibrary {
         TokenLibrary::build().unwrap()
     }
 
-    fn test(input: &str) -> FunctionsAndVariables {
+    fn test(input: &str) -> CodeSection {
         CodeSectionParser::parse(input, &build_token_library()).unwrap()
     }
     
@@ -174,12 +178,16 @@ mod tests {
         let fns_and_vars = test("fn foo(a, b) a + b");
         let foo = fns_and_vars.functions.get("foo").unwrap();
 
-        assert_eq!(foo.name, "foo");
-        assert_eq!(foo.args, vec!["a".to_string(), "b".to_string()]);
-
-        let body: Box<dyn Node> = Box::new(
-            InfixFunctionCall::new(Reference::new("a"), "+", Reference::new("b")));
-        assert_eq!(&foo.body, &body);
+        let expected: Ast = Box::new(
+                   Function {
+                       name: "foo".to_owned(),
+                       args: vec!["a".to_string(), "b".to_string()],
+                       body: Box::new(
+                           InfixFunctionCall::new(Reference::new("a"), "+", Reference::new("b")),
+                       ),
+                   });
+            
+        assert_eq!(foo, &expected);
     }
 
     #[test]
@@ -187,12 +195,16 @@ mod tests {
         let fns_and_vars = test("fn foo() 1 * 2");
         let foo = fns_and_vars.functions.get("foo").unwrap();
 
-        assert_eq!(foo.name, "foo");
-        assert_eq!(foo.args.len(), 0);
+        let expected: Ast = Box::new(
+                   Function {
+                       name: "foo".to_owned(),
+                       args: vec![],
+                       body: Box::new(
+                           InfixFunctionCall::new(Integer(1), "*", Integer(2)),
+                       ),
+                   });
 
-        let body: Box<dyn Node> = Box::new(
-            InfixFunctionCall::new(Integer(1), "*", Integer(2)));
-        assert_eq!(&foo.body, &body);
+        assert_eq!(foo, &expected);
     }
 
     #[test]
@@ -204,9 +216,7 @@ fn bar(a, b)
     a + b
 "#);
 
-        let foo = fns_and_vars.functions.get("foo").unwrap();
-        assert_eq!(foo.name, "foo");
-        assert_eq!(foo.args.len(), 0);
+        assert_eq!(fns_and_vars.functions.len(), 2);
     }
 
     #[test]

@@ -18,18 +18,16 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use crate::{
+use crate::{Error, Result, TokenLibrary};
+use crate::ast::{
+    Ast,
     Boolean, 
-    Error, 
     Float, 
     FunctionCall, 
     InfixFunctionCall,
     Integer, 
-    Node, 
     Reference, 
-    Result, 
     Text, 
-    TokenLibrary, 
     Variables,
 };
 use super::token_library::{Token, TokenMatch};
@@ -49,7 +47,7 @@ impl<'a> AstParser<'a> {
         input: &'a str,
         single_expr: bool,
         tl: &'a TokenLibrary
-    ) -> Result<Box<dyn Node>> {
+    ) -> Result<Ast> {
         let lexer = AstLexer::new(input, tl)?;
         let parser = AstParser::new(&lexer);
 
@@ -79,7 +77,7 @@ impl<'a> AstParser<'a> {
     }
 
     /// The core pratt parser logic for parsing an expression of our AST.  
-    pub fn expr_bp(&self, single_expr: bool, min_bp: u8) -> Result<Box<dyn Node>> {
+    pub fn expr_bp(&self, single_expr: bool, min_bp: u8) -> Result<Ast> {
         let mut lhs = match self.lexer.next() {
             // a starting parenthesis means we just need to recurse and consume (expect)
             // the close paren 
@@ -230,21 +228,21 @@ impl<'a> AstParser<'a> {
 mod tests {
     use super::*;
 
-    fn test_parse(input: &str) -> Box<dyn Node> {
+    fn test_parse(input: &str) -> Ast {
         let tl = TokenLibrary::build().unwrap();
         AstParser::parse(input, false, &tl).unwrap()
     }
 
     #[test]
     fn parse_integer() {
-        let equal_to: Box<dyn Node> = Box::new(Integer(1));
+        let equal_to: Ast = Box::new(Integer(1));
 
         assert_eq!(&equal_to, &test_parse("1"));
     }
 
     #[test]
     fn parse_infix_function() {
-        let equal_to: Box<dyn Node> = Box::new(
+        let equal_to: Ast = Box::new(
             InfixFunctionCall::new(Integer(1), "*", Integer(2)),
         );
 
@@ -253,7 +251,7 @@ mod tests {
 
     #[test]
     fn parse_function_call() {
-        let equal_to: Box<dyn Node> = Box::new(FunctionCall::new(
+        let equal_to: Ast = Box::new(FunctionCall::new(
             "foo",
             vec![
                 Box::new(Reference::new("bar")),
@@ -267,7 +265,7 @@ mod tests {
 
     #[test]
     fn parse_nested_function_call() {
-        let equal_to: Box<dyn Node> = Box::new(FunctionCall::new(
+        let equal_to: Ast = Box::new(FunctionCall::new(
             "foo",
             vec![
                 Box::new(Integer(1)),
@@ -280,7 +278,7 @@ mod tests {
 
     #[test]
     fn parse_explicit_precedence() {
-        let equal_to: Box<dyn Node> = Box::new(
+        let equal_to: Ast = Box::new(
             InfixFunctionCall::new(
                 InfixFunctionCall::new(
                     Integer(1),
@@ -305,7 +303,7 @@ mod tests {
 
     #[test]
     fn parse_infix_precedence() {
-        let equal_to: Box<dyn Node> = Box::new(
+        let equal_to: Ast = Box::new(
             InfixFunctionCall::new(
                 InfixFunctionCall::new(
                     InfixFunctionCall::new(Integer(1), "*", Integer(2)),
