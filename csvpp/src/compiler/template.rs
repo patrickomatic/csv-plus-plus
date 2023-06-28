@@ -76,17 +76,30 @@ impl Template {
     /// 3. Variables defined in the code section
     /// 4. Builtin variables
     ///
-    fn new(spreadsheet: Spreadsheet, _code_section: Option<CodeSection>, _runtime: &Runtime) -> Self {
+    fn new(spreadsheet: Spreadsheet, code_section: Option<CodeSection>, runtime: &Runtime) -> Self {
         let builtin_fns = BuiltinFunction::all();
         let builtin_vars = BuiltinVariable::all();
 
-        // let functions = builtin_fns.into_iter().chain(code_section.unwrap().functions).collect();
-        let functions = builtin_fns;
-        let variables = builtin_vars;
+        let cli_vars = &runtime.options.key_values;
+
+        let (code_section_vars, code_section_fns) = if let Some(cs) = code_section {
+            (cs.variables, cs.functions)
+        } else {
+            (HashMap::new(), HashMap::new())
+        };
+
+        let spreadsheet_variables = spreadsheet.variables();
+
         Self {
             spreadsheet: RefCell::new(spreadsheet),
-            functions, 
-            variables,
+            functions: builtin_fns.into_iter()
+                .chain(code_section_fns)
+                .collect(),
+            variables: builtin_vars.into_iter()
+                .chain(code_section_vars)
+                .chain(spreadsheet_variables)
+                .chain(cli_vars.clone())
+                .collect(),
         }
     }
 

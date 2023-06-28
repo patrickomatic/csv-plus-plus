@@ -53,7 +53,7 @@ pub trait NodeWithId: Debug + Display {
 }
 
 // https://stackoverflow.com/questions/30353462/how-to-clone-a-struct-storing-a-boxed-trait-object
-trait NodeClone {
+pub trait NodeClone {
     fn clone_box(&self) -> Ast;
 }
 
