@@ -4,7 +4,8 @@
 //!
 use std::path::PathBuf;
 
-use crate::{Options, Result, Template};
+use crate::{Result, Template};
+use super::file_backer_upper;
 use super::CompilationTarget;
 
 pub struct OpenDocument {
@@ -13,10 +14,11 @@ pub struct OpenDocument {
 
 impl CompilationTarget for OpenDocument {
     fn write_backup(&self) -> Result<()> {
-        todo!()
+        file_backer_upper::backup_file(&self.path)?;
+        Ok(())
     }
 
-    fn write(&self, _options: &Options, _template: &Template) -> Result<()> {
+    fn write(&self, _template: &Template) -> Result<()> {
         todo!()
     }
 }

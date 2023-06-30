@@ -1,6 +1,6 @@
 //! # GoogleSheets
 // use sheets4::api::
-use crate::{Options, Result, Template};
+use crate::{Result, Template};
 use super::CompilationTarget;
 
 pub struct GoogleSheets {
@@ -12,7 +12,7 @@ impl CompilationTarget for GoogleSheets {
         todo!();
     }
 
-    fn write(&self, _options: &Options, _template: &Template) -> Result<()> {
+    fn write(&self, _template: &Template) -> Result<()> {
         todo!();
     }
 }

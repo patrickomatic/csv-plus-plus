@@ -3,21 +3,18 @@
 //! A `template` holds the final compiled state for a single csv++ source file.
 //!
 use flexbuffers;
-use std::cell::RefCell;
-use std::collections::HashMap;
+use std::cell;
+use std::collections;
 use std::fmt;
 
 use crate::{Result, Runtime, Spreadsheet};
 use crate::ast::{BuiltinFunction, BuiltinVariable, Functions, Variables};
 use super::code_section_parser::{CodeSection, CodeSectionParser};
 
-
-
-// #[derive(Debug, Deserialize, Serialize)]
 #[derive(Debug)]
 pub struct Template {
     pub functions: Functions,
-    pub spreadsheet: RefCell<Spreadsheet>,
+    pub spreadsheet: cell::RefCell<Spreadsheet>,
     pub variables: Variables,
 }
 
@@ -32,9 +29,9 @@ impl fmt::Display for Template {
 impl Default for Template {
     fn default() -> Self {
         Self {
-            functions: HashMap::new(),
-            spreadsheet: RefCell::new(Spreadsheet::default()),
-            variables: HashMap::new(),
+            functions: collections::HashMap::new(),
+            spreadsheet: cell::RefCell::new(Spreadsheet::default()),
+            variables: collections::HashMap::new(),
         }
     }
 }
@@ -77,27 +74,24 @@ impl Template {
     /// 4. Builtin variables
     ///
     fn new(spreadsheet: Spreadsheet, code_section: Option<CodeSection>, runtime: &Runtime) -> Self {
-        let builtin_fns = BuiltinFunction::all();
-        let builtin_vars = BuiltinVariable::all();
-
         let cli_vars = &runtime.options.key_values;
-
+        let spreadsheet_vars = spreadsheet.variables();
         let (code_section_vars, code_section_fns) = if let Some(cs) = code_section {
             (cs.variables, cs.functions)
         } else {
-            (HashMap::new(), HashMap::new())
+            (collections::HashMap::new(), collections::HashMap::new())
         };
 
-        let spreadsheet_variables = spreadsheet.variables();
-
         Self {
-            spreadsheet: RefCell::new(spreadsheet),
-            functions: builtin_fns.into_iter()
+            spreadsheet: cell::RefCell::new(spreadsheet),
+
+            functions: BuiltinFunction::all().into_iter()
                 .chain(code_section_fns)
                 .collect(),
-            variables: builtin_vars.into_iter()
+
+            variables: BuiltinVariable::all().into_iter()
                 .chain(code_section_vars)
-                .chain(spreadsheet_variables)
+                .chain(spreadsheet_vars)
                 .chain(cli_vars.clone())
                 .collect(),
         }

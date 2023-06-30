@@ -3,13 +3,13 @@
 use clap::Parser;
 use std::fmt;
 
-use crate::{CliArgs, Init, Options, OutputTarget, Result, SourceCode, Template};
+use crate::{CliArgs, CompilationTarget, Init, Options, OutputTarget, Result, SourceCode, Template};
 use crate::compiler::token_library::TokenLibrary;
 
 #[derive(Debug)]
 pub struct Runtime {
     pub options: Options,
-    pub output: OutputTarget,
+    pub target: OutputTarget,
     pub source_code: SourceCode,
     pub template: Template,
     pub token_library: TokenLibrary,
@@ -26,11 +26,15 @@ impl Runtime {
 
         Ok(Self {
             options: init.options,
-            output: init.output,
+            target: init.output,
             source_code: init.source_code,
             template: Template::default(),
             token_library: TokenLibrary::build()?,
         })
+    }
+
+    pub fn target<'a>(&'a self) -> Box<dyn CompilationTarget + 'a> {
+        self.target.compilation_target(self)
     }
 }
 

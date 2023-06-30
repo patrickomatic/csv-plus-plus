@@ -39,6 +39,13 @@ impl SpreadsheetCell {
     }
 }
 
+// TODO we might want a more dedicated function like to_formula
+impl fmt::Display for SpreadsheetCell {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.ast.clone().map(|a| a.to_string()).unwrap_or_else(|| self.value.clone()))
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct Spreadsheet {
     pub cells: Vec<Vec<SpreadsheetCell>>,

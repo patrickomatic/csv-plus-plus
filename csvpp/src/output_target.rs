@@ -1,18 +1,18 @@
 //! # OutputTarget
 //!
 use std::fmt;
-use std::path::PathBuf;
+use std::path;
 
-use crate::{CliArgs, Error, Result, CompilationTarget};
+use crate::{CliArgs, CompilationTarget, Error, Result, Runtime};
 use crate::target;
 
 type GoogleSheetID = String;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum OutputTarget {
-    Csv(PathBuf),
-    Excel(PathBuf),
-    OpenDocument(PathBuf),
+    Csv(path::PathBuf),
+    Excel(path::PathBuf),
+    OpenDocument(path::PathBuf),
     GoogleSheets(GoogleSheetID),
 }
 
@@ -28,10 +28,10 @@ impl OutputTarget {
         }
     }
 
-    pub fn compilation_target(&self) -> Box<dyn CompilationTarget> {
+    pub fn compilation_target<'a>(&'a self, runtime: &'a Runtime) -> Box<dyn CompilationTarget + 'a> {
         match self {
             Self::Csv(path) => 
-                Box::new(target::Csv::new(path.to_path_buf())),
+                Box::new(target::Csv::new(runtime, path.to_path_buf())),
             Self::Excel(path) => 
                 Box::new(target::Excel::new(path.to_path_buf())),
             Self::GoogleSheets(sheet_id) =>
@@ -41,22 +41,20 @@ impl OutputTarget {
         }
     }
 
-    fn from_filename(path: PathBuf) -> Result<Self> {
-        match path.extension() {
-            Some(ext) => {
-                if target::Csv::supports_extension(ext) {
-                    Ok(Self::Csv(path))
-                } else if target::Excel::supports_extension(ext) {
-                    Ok(Self::Excel(path))
-                } else if target::OpenDocument::supports_extension(ext) {
-                    Ok(Self::OpenDocument(path))
-                } else {
-                    Err(Error::InitError(
-                        format!("{} is an unsupported extension: only .csv, .xlsx or .ods are supported.", 
-                                ext.to_str().unwrap())))
-                }
-            },
-            None => Err(Error::InitError("Output filename must end with .csv, .xlsx or .ods".to_string()))
+    fn from_filename(path: path::PathBuf) -> Result<Self> {
+        let ext = path.extension().ok_or(
+            Error::InitError("Output filename must end with .csv, .xlsx or .ods".to_string()))?;
+
+        if target::Csv::supports_extension(ext) {
+            Ok(Self::Csv(path))
+        } else if target::Excel::supports_extension(ext) {
+            Ok(Self::Excel(path))
+        } else if target::OpenDocument::supports_extension(ext) {
+            Ok(Self::OpenDocument(path))
+        } else {
+            Err(Error::InitError(
+                format!("{} is an unsupported extension: only .csv, .xlsx or .ods are supported.", 
+                        ext.to_str().unwrap())))
         }
     }
 

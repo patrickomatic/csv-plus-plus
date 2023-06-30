@@ -146,14 +146,12 @@ impl<'a> AstParser<'a> {
 
                 lhs = if op == "(" {
                     // function call
-                    let id = match lhs.id_ref() {
-                        Some(id) => id,
-                        None => return Err(Error::CodeSyntaxError { 
-                            bad_input: lhs.to_string(), 
-                            line_number: 0, // XXX
-                            message: "Unable to get id for fn".to_string(),
-                        }),
-                    };
+                    let id = lhs.id_ref().ok_or(Error::CodeSyntaxError { 
+                        bad_input: lhs.to_string(), 
+                        line_number: 0, // XXX
+                        message: "Unable to get id for fn".to_string(),
+                    })?;
+
                     let mut args = vec![];
 
                     // consume arguments (expressions) until we see a close paren

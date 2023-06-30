@@ -42,12 +42,12 @@ mod runtime;
 mod source_code;
 mod target;
 
-pub use a1::*;
+pub use a1::A1;
 pub use cli_args::CliArgs;
-pub use compiler::spreadsheet::Spreadsheet;
+pub use compiler::spreadsheet::{Spreadsheet, SpreadsheetCell};
 pub use compiler::template::Template;
 pub use compiler::token_library::TokenLibrary;
-pub use error::*;
+pub use error::Error;
 pub use init::Init;
 pub use modifier::Modifier;
 pub use options::Options;
@@ -58,4 +58,3 @@ pub use source_code::SourceCode;
 pub use target::CompilationTarget;
 
 pub type Result<T> = std::result::Result<T, Error>;
-
