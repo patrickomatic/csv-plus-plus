@@ -122,13 +122,18 @@ impl<'a> AstParser<'a> {
             }
 
             let op = match self.lexer.peek() {
-                // end of an expression
-                TokenMatch(Token::Comma, _) => break,
-                TokenMatch(Token::CloseParen, _) => break,
-                TokenMatch(Token::Eof, _) => break,
+                // end of an expression, stop looping
+                TokenMatch(Token::Comma, _) 
+                    | TokenMatch(Token::CloseParen, _) 
+                    | TokenMatch(Token::Eof, _) 
+                    => break,
 
-                TokenMatch(Token::InfixOperator, op) => op.to_owned(),
-                TokenMatch(Token::OpenParen, op) => op.to_owned(),
+                // an infix expression or a function definition
+                TokenMatch(Token::InfixOperator, op) 
+                    | TokenMatch(Token::OpenParen, op) 
+                    => op,
+
+                // otherwise undefined
                 TokenMatch(token, v) => return Err(Error::CodeSyntaxError { 
                     bad_input: v.to_string(), 
                     line_number: 0, // XXX
@@ -136,7 +141,7 @@ impl<'a> AstParser<'a> {
                 }),
             };
 
-            if let Some((l_bp, ())) = self.postfix_binding_power(&op) {
+            if let Some((l_bp, ())) = self.postfix_binding_power(op) {
                 if l_bp < min_bp {
                     break;
                 }
@@ -172,7 +177,7 @@ impl<'a> AstParser<'a> {
                     Box::new(FunctionCall { name: id, args, })
                 } else {
                     return Err(Error::CodeSyntaxError {
-                        bad_input: op,
+                        bad_input: op.to_owned(),
                         line_number: 0, // XXX
                         message: "Unexpected infix operator".to_string(),
                     })
@@ -181,7 +186,7 @@ impl<'a> AstParser<'a> {
                 continue;
             }
 
-            if let Some((l_bp, r_bp)) = self.infix_binding_power(&op) {
+            if let Some((l_bp, r_bp)) = self.infix_binding_power(op) {
                 if l_bp < min_bp {
                     break;
                 }
@@ -190,7 +195,11 @@ impl<'a> AstParser<'a> {
                 self.lexer.next();
 
                 let rhs = self.expr_bp(single_expr, r_bp)?;
-                lhs = Box::new(InfixFunctionCall { left: lhs, operator: op, right: rhs });
+                lhs = Box::new(InfixFunctionCall {
+                    left: lhs, 
+                    operator: op.to_owned(), 
+                    right: rhs,
+                });
 
                 continue;
             }

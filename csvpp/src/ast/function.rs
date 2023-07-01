@@ -47,7 +47,7 @@ impl Function {
         Function { 
             args, 
             body, 
-            name: name.to_string(),
+            name: name.to_owned(),
         }
     }
 }

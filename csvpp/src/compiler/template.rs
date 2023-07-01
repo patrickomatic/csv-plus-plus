@@ -20,8 +20,8 @@ pub struct Template {
 
 impl fmt::Display for Template {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "variables: {:?}", &self.variables)?;
-        write!(f, "functions: {:?}", &self.functions)?;
+        writeln!(f, "variables: {:?}", &self.variables)?;
+        writeln!(f, "functions: {:?}", &self.functions)?;
         write!(f, "rows: {}", self.spreadsheet.borrow().cells.len())
     }
 }
@@ -114,5 +114,18 @@ impl Template {
 
 #[cfg(test)]
 mod tests {
-    // TODO
+    use super::*;
+
+    #[test]
+    fn new() {
+        // TODO
+    }
+
+    #[test]
+    fn display() {
+        let template = Template::default();
+        assert_eq!(r#"variables: {}
+functions: {}
+rows: 0"#, template.to_string());
+    }
 }

@@ -249,6 +249,7 @@ dependencies = [
  "clap",
  "csv",
  "flexbuffers",
+ "futures",
  "google-sheets4",
  "regex",
  "serde",

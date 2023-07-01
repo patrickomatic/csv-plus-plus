@@ -16,8 +16,3 @@ pub trait CompilationTarget {
 
     fn write(&self, template: &Template) -> Result<()>;
 }
-
-#[cfg(test)]
-mod tests {
-    // TODO
-}

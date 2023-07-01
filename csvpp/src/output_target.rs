@@ -33,9 +33,9 @@ impl OutputTarget {
             Self::Csv(path) => 
                 Box::new(target::Csv::new(runtime, path.to_path_buf())),
             Self::Excel(path) => 
-                Box::new(target::Excel::new(path.to_path_buf())),
+                Box::new(target::Excel::new(runtime, path.to_path_buf())),
             Self::GoogleSheets(sheet_id) =>
-                Box::new(target::GoogleSheets::new(sheet_id.clone())),
+                Box::new(target::GoogleSheets::new(runtime, sheet_id)),
             Self::OpenDocument(path) =>
                 Box::new(target::OpenDocument::new(path.to_path_buf())),
         }

@@ -18,7 +18,7 @@
 use std::collections::HashMap;
 
 use crate::{Error, Result};
-use crate::ast::{Ast, Function, Functions, Variables};
+use crate::ast::{Ast, Function, Functions, Variable, Variables};
 use super::token_library::{Token, TokenLibrary, TokenMatch};
 use super::ast_lexer::AstLexer;
 use super::ast_parser::AstParser;
@@ -56,11 +56,14 @@ impl<'a> CodeSectionParser<'a> {
                     let function = self.parse_fn_definition()?;
                     let fn_name = function.name.clone();
                     let ast: Ast = Box::new(function);
+
                     functions.insert(fn_name, ast);
                 },
                 TokenMatch(Token::Reference, r) => {
                     let expr = self.parse_variable_assign()?;
-                    variables.insert(r.to_string(), expr);
+                    let variable: Ast = Box::new(Variable::new(r, expr));
+
+                    variables.insert(r.to_string(), variable);
                 },
                 TokenMatch(t, m) => {
                     return Err(Error::CodeSyntaxError {
@@ -101,14 +104,12 @@ impl<'a> CodeSectionParser<'a> {
     fn parse_fn_definition(&'a self) -> Result<Function> {
         // expect the function name (as a `Reference`)
         let name = match self.lexer.next() {
-            TokenMatch(Token::Reference, r) =>
-                r.to_string(),
-            TokenMatch(t, m) => 
-                return Err(Error::CodeSyntaxError { 
-                    bad_input: m.to_string(), 
-                    line_number: 0,  // XXX
-                    message: format!("Expected a function name but saw ({:?})", t),
-                }),
+            TokenMatch(Token::Reference, r) => r,
+            TokenMatch(t, m) => return Err(Error::CodeSyntaxError { 
+                bad_input: m.to_string(), 
+                line_number: 0,  // XXX
+                message: format!("Expected a function name but saw ({:?})", t),
+            }),
         };
 
         // expect a `(`
@@ -149,7 +150,8 @@ impl<'a> CodeSectionParser<'a> {
         // and finally the body is just a single expression
         let body = self.parse_expr()?;
 
-        Ok(Function { args, body, name })
+        // Ok(Function::new( { args, body, name })
+        Ok(Function::new(name, args, body))
     }
 
     fn parse_expr(&'a self) -> Result<Ast> {

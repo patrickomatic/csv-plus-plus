@@ -41,12 +41,14 @@ impl Runtime {
 impl fmt::Display for Runtime {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, r#"
-# csv++ 
+# csv++
 
 ## Called with options
+
 {}
 
 ## Parsed template
+
 {}
 "#, 
             self.options,
@@ -61,22 +63,41 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn new() {
+    fn build_runtime() -> Result<Runtime> {
         let cli_args = CliArgs {
             input_filename: PathBuf::from("foo.csvpp"),
             google_sheet_id: Some("abc123".to_string()),
             ..Default::default()
         };
-        let runtime = Runtime::new(cli_args);
+        Runtime::new(cli_args)
+    }
 
-        assert!(runtime.is_ok())
+    #[test]
+    fn new() {
+        let runtime = build_runtime();
+        assert!(runtime.is_ok());
     }
 
     #[test]
     fn display() {
-        // let output = 
-        // TODO
+        let runtime = build_runtime().unwrap();
+        assert_eq!(r#"
+# csv++
+
+## Called with options
+
+backup: false
+key_values: {}
+offset: (0, 0)
+overwrite_values: true
+verbose: false
+
+## Parsed template
+
+variables: {}
+functions: {}
+rows: 0
+"#, runtime.to_string());
     }
 }
 
