@@ -12,7 +12,6 @@
 // * proper line numbers and indexes in error messages throughout
 //
 // * writing to:
-//   * CSV
 //   * Excel
 //   * GoogleSheets
 //   * OpenDocument
@@ -25,13 +24,13 @@
 //
 // * target the lowest versions of all dependencies
 //
-use csvpp::{Result, Runtime, Template};
+use csvpp::{Error, Runtime, Template};
 use std::process;
 
-fn compile_from_cli() -> Result<()> {
+fn compile_from_cli() -> Result<(), Box<Error>> {
     let runtime = Runtime::from_cli_args()?;
     let template = Template::compile(&runtime)?;
-    let target = runtime.target();
+    let target = runtime.target()?;
 
     if runtime.options.backup {
         if runtime.options.verbose {

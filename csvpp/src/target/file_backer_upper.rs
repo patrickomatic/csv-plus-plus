@@ -1,7 +1,7 @@
 //! # FileBackerUpper
 use chrono::prelude::Local;
 use std::fs;
-use std::path::PathBuf;
+use std::path;
 
 use crate::{Error, Result};
 
@@ -21,7 +21,7 @@ const BACKUP_FORMATS: &[&str] = &[
 // NOTE:
 // this operation is not technically atomic - to do so we'd need to create a tempfile, write to it
 // then move it in place.  (but for this use case I don't think it matters)
-pub fn backup_file(filename: &PathBuf) -> Result<PathBuf> {
+pub fn backup_file(filename: &path::PathBuf) -> Result<path::PathBuf> {
     let now = Local::now();
 
     // TODO use a TargetError instead
@@ -40,7 +40,7 @@ pub fn backup_file(filename: &PathBuf) -> Result<PathBuf> {
     for time_format in BACKUP_FORMATS.iter() {
         let timestamp = now.format(time_format);
 
-        let mut new_file: PathBuf = file_parent.to_path_buf();
+        let mut new_file = file_parent.to_path_buf();
         new_file.push(format!("{}{}", file_stem.to_str().unwrap(), timestamp));
         new_file.set_extension(file_extension);
 

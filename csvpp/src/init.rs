@@ -27,6 +27,7 @@ impl Init {
         Ok(Init {
             options: Options {
                 backup: cli_args.backup,
+                google_account_credentials: cli_args.google_account_credentials,
                 key_values: AstParser::parse_key_value_str(key_values_as_str, tl)?,
                 offset: (cli_args.x_offset, cli_args.y_offset),
                 overwrite_values: !cli_args.safe,

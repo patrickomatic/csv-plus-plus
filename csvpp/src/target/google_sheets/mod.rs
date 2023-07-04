@@ -1,72 +1,108 @@
 //! # GoogleSheets
 //!
-use futures::executor;
+// TODO: 
+// * better error handling throughout (cleanup unwrap()s)
+//
 use google_sheets4::hyper;
 use google_sheets4::hyper_rustls;
 use google_sheets4::oauth2;
-
-use crate::{Result, Runtime, Template};
+use std::env;
+use std::path;
+use crate::{Error, Result, Runtime, Template};
 use super::CompilationTarget;
 
 pub struct GoogleSheets<'a> {
-    pub sheet_id: String,
+    async_runtime: tokio::runtime::Runtime,
+    credentials: path::PathBuf,
     runtime: &'a Runtime,
+    pub sheet_id: String,
 }
 
 type SheetsClient = google_sheets4::Sheets<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>;
 
-async fn sheets_client() -> SheetsClient {
-    let secret: oauth2::ApplicationSecret = Default::default();
-    let auth = oauth2::InstalledFlowAuthenticator::builder(
-        secret,
-        oauth2::InstalledFlowReturnMethod::HTTPRedirect,
-    ).build().await.unwrap();
-
-    google_sheets4::Sheets::new(
-        hyper::Client::builder().build(
-            hyper_rustls::HttpsConnectorBuilder::new()
-                .with_native_roots()
-                .https_or_http()
-                .enable_http1()
-                .enable_http2()
-                .build()), 
-        auth)
-}
-
-pub async fn write_sheet(_runtime: &Runtime, _template: &Template) -> Result<()> {
-    let client = sheets_client().await;
-
-    let req = google_sheets4::api::ValueRange::default();
-    let result = client.spreadsheets().values_append(req, "spreadsheetId", "range")
-             .value_input_option("dolor")
-             .response_value_render_option("ea")
-             .response_date_time_render_option("ipsum")
-             .insert_data_option("invidunt")
-             .include_values_in_response(true)
-             .doit()
-             .await;
-
-    dbg!(result.unwrap());
-
-    Ok(())
-}
 
 impl CompilationTarget for GoogleSheets<'_> {
     fn write_backup(&self) -> Result<()> {
+        // TODO
         todo!();
     }
 
     fn write(&self, template: &Template) -> Result<()> {
-        executor::block_on(write_sheet(self.runtime, template))
+        self.async_runtime.block_on(async {
+            self.write_sheet(template).await
+        })
     }
 }
 
 impl<'a> GoogleSheets<'a> {
-    pub fn new(runtime: &'a Runtime, sheet_id: &'a str) -> Self {
-        Self {
+    pub fn new(runtime: &'a Runtime, sheet_id: &'a str) -> Result<Self> {
+        let credentials = Self::get_credentials(runtime)?;
+
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build().unwrap();
+
+        Ok(Self {
+            async_runtime: rt,
+            credentials,
             sheet_id: sheet_id.to_owned(),
             runtime,
-        }
+        })
+    }
+
+    fn get_credentials(runtime: &'a Runtime) -> Result<path::PathBuf> {
+        let home_path = home::home_dir().ok_or(
+            Error::InitError("Unable to get home directory".to_string()))?;
+
+        let adc_path = home_path.join(".config")
+            .join("gcloud")
+            .join("application_default_credentials.json");
+
+        let creds_file = if let Some(creds) = &runtime.options.google_account_credentials {
+            path::PathBuf::from(creds)
+        } else if let Some(env_var) = env::var_os("GOOGLE_APPLICATION_CREDENTIALS") {
+            path::PathBuf::from(env_var)
+        } else if adc_path.exists() {
+            adc_path
+        } else {
+            return Err(Error::InitError("Could not find Google application credentials.  You must create a service account with access to your spreadsheet and supply the credentials via $GOOGLE_APPLICATION_CREDENTIALS, --google-account-credentials or putting them in ~/.config/gcloud/application_default_credentials.json".to_owned()))
+        };
+
+        Ok(creds_file)
+    }
+
+    async fn write_sheet(&self, _template: &Template) -> Result<()> {
+        let client = self.sheets_client().await;
+
+        let result = client.spreadsheets()
+            .values_get(&self.sheet_id, "A1:Z1000")
+            .doit()
+            .await;
+
+        dbg!(result.unwrap());
+
+        Ok(())
+    }
+
+    async fn sheets_client(&self) -> SheetsClient {
+        let secret = oauth2::read_service_account_key(&self.credentials)
+            .await
+            .expect("Erorr reading service account key");
+
+        let auth = oauth2::ServiceAccountAuthenticator::builder(secret)
+            .build()
+            .await
+            .expect("Error building service account authenticator");
+
+        google_sheets4::Sheets::new(
+            hyper::Client::builder().build(
+                hyper_rustls::HttpsConnectorBuilder::new()
+                    .with_native_roots()
+                    .https_or_http()
+                    .enable_http1()
+                    .enable_http2()
+                    .build()), 
+            auth)
     }
 }
 
@@ -92,6 +128,11 @@ mod tests {
 
     #[test]
     fn write() {
-        GoogleSheets::new(&build_runtime(), "test-1234");
+        let template = build_template();
+        let runtime = build_runtime();
+        let target = GoogleSheets::new(&runtime, "1tgvyN8cgMPx4pKa7LU5n0BW3JQa8wlsCI8quWpfPYFw").unwrap();
+
+        assert!(target.write(&template).is_ok());
+        assert!(false);
     }
 }

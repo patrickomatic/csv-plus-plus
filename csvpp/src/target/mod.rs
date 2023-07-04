@@ -11,6 +11,10 @@ pub use open_document::OpenDocument;
 
 use crate::{Result, Template};
 
+pub trait ExistingValue {
+    type CellValue;
+}
+
 pub trait CompilationTarget {
     fn write_backup(&self) -> Result<()>;
 

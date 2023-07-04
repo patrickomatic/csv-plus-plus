@@ -28,17 +28,17 @@ impl OutputTarget {
         }
     }
 
-    pub fn compilation_target<'a>(&'a self, runtime: &'a Runtime) -> Box<dyn CompilationTarget + 'a> {
-        match self {
+    pub fn compilation_target<'a>(&'a self, runtime: &'a Runtime) -> Result<Box<dyn CompilationTarget + 'a>> {
+        Ok(match self {
             Self::Csv(path) => 
                 Box::new(target::Csv::new(runtime, path.to_path_buf())),
             Self::Excel(path) => 
                 Box::new(target::Excel::new(runtime, path.to_path_buf())),
             Self::GoogleSheets(sheet_id) =>
-                Box::new(target::GoogleSheets::new(runtime, sheet_id)),
+                Box::new(target::GoogleSheets::new(runtime, sheet_id)?),
             Self::OpenDocument(path) =>
                 Box::new(target::OpenDocument::new(path.to_path_buf())),
-        }
+        })
     }
 
     fn from_filename(path: path::PathBuf) -> Result<Self> {

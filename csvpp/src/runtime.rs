@@ -2,7 +2,6 @@
 //!
 use clap::Parser;
 use std::fmt;
-
 use crate::{CliArgs, CompilationTarget, Init, Options, OutputTarget, Result, SourceCode, Template};
 use crate::compiler::token_library::TokenLibrary;
 
@@ -33,7 +32,7 @@ impl Runtime {
         })
     }
 
-    pub fn target<'a>(&'a self) -> Box<dyn CompilationTarget + 'a> {
+    pub fn target<'a>(&'a self) -> Result<Box<dyn CompilationTarget + 'a>> {
         self.target.compilation_target(self)
     }
 }
@@ -87,6 +86,7 @@ mod tests {
 ## Called with options
 
 backup: false
+google_account_credentials: none
 key_values: {}
 offset: (0, 0)
 overwrite_values: true

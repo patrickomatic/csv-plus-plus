@@ -1,7 +1,6 @@
-use clap::Parser;
-use std::path::PathBuf;
+use std::path;
 
-#[derive(Debug, Parser)]
+#[derive(Debug, clap::Parser)]
 #[command(author = "Patrick Carroll")]
 #[command(version, about, long_about = None)] 
 pub struct CliArgs {
@@ -20,6 +19,12 @@ pub struct CliArgs {
     pub google_sheet_id: Option<String>,
 
     #[arg(
+        long,
+        help = "The file path to the service account credentials used to access the Google Sheets",
+        )]
+    pub google_account_credentials: Option<String>,
+
+    #[arg(
         short,
         long,
         num_args = 0..,
@@ -33,7 +38,7 @@ pub struct CliArgs {
         long,
         help = "The file to write to (must be .csv, .ods, .xls)",
     )]
-    pub output_filename: Option<PathBuf>,
+    pub output_filename: Option<path::PathBuf>,
 
     #[arg(
         short,
@@ -74,15 +79,16 @@ pub struct CliArgs {
     pub y_offset: u32,
 
     #[arg(required = true)]
-    pub input_filename: PathBuf,
+    pub input_filename: path::PathBuf,
 }
 
 impl Default for CliArgs {
     fn default() -> Self {
         Self {
             backup: false,
+            google_account_credentials: None,
             google_sheet_id: None,
-            input_filename: PathBuf::new(),
+            input_filename: path::PathBuf::new(),
             key_values: vec![],
             output_filename: None,
             safe: false,
