@@ -11,8 +11,10 @@ pub use open_document::OpenDocument;
 
 use crate::{Result, Template};
 
-pub trait ExistingValue {
-    type CellValue;
+#[derive(Debug)]
+pub enum ExistingCell<V> {
+    Value(V),
+    Empty,
 }
 
 pub trait CompilationTarget {

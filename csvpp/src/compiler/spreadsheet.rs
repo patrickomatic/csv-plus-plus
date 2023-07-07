@@ -93,12 +93,13 @@ impl Spreadsheet {
     ) -> Result<Vec<SpreadsheetCell>> {
         let mut row: Vec<SpreadsheetCell> = vec![];
         let mut row_modifier = Modifier::new(true);
+        let csv_parsed_row = &record_result.unwrap_or(csv::StringRecord::new());
 
-        for (cell_index, unparsed_value) in (&record_result.unwrap_or(csv::StringRecord::new())).into_iter().enumerate() {
+        for (cell_index, unparsed_value) in csv_parsed_row.into_iter().enumerate() {
             let a1 = A1::builder().xy(cell_index, row_index).build()?;
             let (cell, rm) = SpreadsheetCell::parse(unparsed_value, a1, row_modifier, runtime)?;
-            row_modifier = rm;
 
+            row_modifier = rm;
             row.push(cell);
         }
 
