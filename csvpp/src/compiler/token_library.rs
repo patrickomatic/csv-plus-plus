@@ -16,8 +16,7 @@ pub enum Token {
     Comma,
     Comment,
     CodeSectionEof,
-    // TODO
-    // DateTime,
+    DateTime,
     DoubleQuotedString,
     Eof,
     InfixOperator,
@@ -54,8 +53,7 @@ pub struct TokenLibrary {
     pub comma: TokenMatcher,
     pub comment: TokenMatcher,
     pub close_paren: TokenMatcher,
-    // TODO
-    // pub date_time: TokenMatcher,
+    pub date_time: TokenMatcher,
     pub double_quoted_string: TokenMatcher,
     pub infix_operator: TokenMatcher,
     pub integer: TokenMatcher,
@@ -75,6 +73,16 @@ impl TokenLibrary {
             comment: TokenMatcher::new(r"(?m)#.*", Token::Comment)?,
             code_section_eof: TokenMatcher::new(r"---", Token::CodeSectionEof)?,
             close_paren: TokenMatcher::new(r"\)", Token::CloseParen)?,
+// const DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S %Z";
+            date_time: TokenMatcher::new(r"(?x)
+
+                                         (?<date0>\d{2,4}-\d{1,2}-\d{1,2})\s*(?<tz0>\w+)?
+                                         |
+                                         (?<time1>\d+:\d{1,2}(\d+)?)\s*(?<tz1>\w+)?
+                                         |
+                                         (?<date2>\d{2,4}-\d{1,2}-\d{1,2})\s+(?<time2>\d+:\d{1,2}(\d+)?)\s*(?<tz2>\w+)?
+
+                                        ", Token::DateTime)?,
             double_quoted_string: 
                 TokenMatcher::new(r#""(?:[^"\\]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*""#, Token::DoubleQuotedString)?,
             infix_operator: TokenMatcher::new(r"(\^|\+|-|\*|/|&|<|>|<=|>=|<>)", Token::InfixOperator)?,
@@ -113,6 +121,14 @@ mod tests {
     #[test]
     fn comment() {
         assert!(token_library().comment.1.is_match("# this is a comment"));
+    }
+
+    #[test]
+    fn date_time() {
+        assert!(token_library().date_time.1.is_match("2022-01-12"));
+        assert!(token_library().date_time.1.is_match("2022-01-12 EST"));
+        assert!(token_library().date_time.1.is_match("2022-01-12 11:00"));
+        assert!(token_library().date_time.1.is_match("2022-01-12 11:00 EST"));
     }
 
     #[test]

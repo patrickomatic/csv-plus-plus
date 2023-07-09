@@ -15,21 +15,9 @@
 //
 // * Handle line numbers
 //
-use std::collections::HashMap;
-use std::str::FromStr;
-
+use std::collections;
 use crate::{Error, Result, TokenLibrary};
-use crate::ast::{
-    Ast,
-    Boolean, 
-    Float, 
-    FunctionCall, 
-    InfixFunctionCall,
-    Integer, 
-    Reference, 
-    Text, 
-    Variables,
-};
+use crate::ast::{Ast, Node, Variables};
 use super::token_library::{Token, TokenMatch};
 use super::ast_lexer::*;
 
@@ -62,7 +50,7 @@ impl<'a> AstParser<'a> {
         key_values: Vec<&'a str>,
         tl: &'a TokenLibrary
     ) -> Result<Variables> {
-        let mut variables = HashMap::new();
+        let mut variables = collections::HashMap::new();
 
         for kv in key_values.iter() {
             if let Some((key, value)) = kv.split_once('=') {
@@ -95,11 +83,12 @@ impl<'a> AstParser<'a> {
             }
 
             // terminals
-            TokenMatch(Token::Boolean, b) => Box::new(Boolean::from_str(b)?),
-            TokenMatch(Token::DoubleQuotedString, t) => Box::new(Text::from_str(t)?),
-            TokenMatch(Token::Float, f) => Box::new(Float::from_str(f)?),
-            TokenMatch(Token::Integer, i) => Box::new(Integer::from_str(i)?),
-            TokenMatch(Token::Reference, t) => Box::new(Reference::from_str(t)?),
+            TokenMatch(Token::Boolean, b) => Node::boolean_from_str(b)?,
+            TokenMatch(Token::DateTime, d) => Node::datetime_from_str(d)?,
+            TokenMatch(Token::DoubleQuotedString, t) => Node::text_from_str(t)?,
+            TokenMatch(Token::Float, f) => Node::float_from_str(f)?,
+            TokenMatch(Token::Integer, i) => Node::integer_from_str(i)?,
+            TokenMatch(Token::Reference, r) => Node::reference_from_str(r)?,
 
             TokenMatch(t, m) => return Err(Error::CodeSyntaxError {
                 message: format!("Invalid left-hand side expression ({:?})", t),
@@ -151,11 +140,14 @@ impl<'a> AstParser<'a> {
 
                 lhs = if op == "(" {
                     // function call
-                    let id = lhs.id_ref().ok_or(Error::CodeSyntaxError { 
-                        bad_input: lhs.to_string(), 
-                        line_number: 0, // XXX
-                        message: "Unable to get id for fn".to_string(),
-                    })?;
+                    let id = match *lhs {
+                        Node::Reference(id) => id,
+                        _ => return Err(Error::CodeSyntaxError { 
+                            bad_input: lhs.to_string(), 
+                            line_number: 0, // XXX
+                            message: "Unable to get id for fn".to_string(),
+                        }),
+                    };
 
                     let mut args = vec![];
 
@@ -174,7 +166,7 @@ impl<'a> AstParser<'a> {
                         }
                     }
 
-                    Box::new(FunctionCall { name: id, args, })
+                    Box::new(Node::FunctionCall { name: id, args })
                 } else {
                     return Err(Error::CodeSyntaxError {
                         bad_input: op.to_owned(),
@@ -195,7 +187,7 @@ impl<'a> AstParser<'a> {
                 self.lexer.next();
 
                 let rhs = self.expr_bp(single_expr, r_bp)?;
-                lhs = Box::new(InfixFunctionCall {
+                lhs = Box::new(Node::InfixFunctionCall {
                     left: lhs, 
                     operator: op.to_owned(), 
                     right: rhs,
@@ -242,87 +234,97 @@ mod tests {
 
     #[test]
     fn parse_integer() {
-        let equal_to: Ast = Box::new(Integer(1));
-
-        assert_eq!(&equal_to, &test_parse("1"));
+        assert_eq!(
+            test_parse("1"), 
+            Box::new(Node::Integer(1)));
     }
 
     #[test]
     fn parse_infix_function() {
-        let equal_to: Ast = Box::new(
-            InfixFunctionCall::new(Integer(1), "*", Integer(2)),
-        );
-
-        assert_eq!(&equal_to, &test_parse("1 * 2"));
+        assert_eq!(
+            test_parse("1 * 2"),
+            Box::new(Node::InfixFunctionCall {
+                left: Box::new(Node::Integer(1)),
+                operator: "*".to_owned(), 
+                right: Box::new(Node::Integer(2)),
+            }));
     }
 
     #[test]
     fn parse_function_call() {
-        let equal_to: Ast = Box::new(FunctionCall::new(
-            "foo",
-            vec![
-                Box::new(Reference::new("bar")),
-                Box::new(Integer(1)),
-                Box::new(Integer(2)),
-            ],
-        ));
-
-        assert_eq!(&equal_to, &test_parse("foo(bar, 1, 2)"));
+        assert_eq!(
+            test_parse("foo(bar, 1, 2)"),
+            Box::new(Node::FunctionCall {
+                name: "foo".to_owned(),
+                args: vec![
+                    Box::new(Node::Reference("bar".to_owned())),
+                    Box::new(Node::Integer(1)),
+                    Box::new(Node::Integer(2)),
+                ],
+            }));
     }
 
     #[test]
     fn parse_nested_function_call() {
-        let equal_to: Ast = Box::new(FunctionCall::new(
-            "foo",
-            vec![
-                Box::new(Integer(1)),
-                Box::new(InfixFunctionCall::new(Integer(2), "*", Integer(3))),
-            ],
-        ));
-
-        assert_eq!(&equal_to, &test_parse("foo(1, 2 * 3)"));
+        assert_eq!(
+            test_parse("foo(1, 2 * 3)"),
+            Box::new(Node::FunctionCall {
+                name: "foo".to_owned(),
+                args: vec![
+                    Box::new(Node::Integer(1)),
+                    Box::new(Node::InfixFunctionCall {
+                        left: Box::new(Node::Integer(2)),
+                        operator: "*".to_owned(),
+                        right: Box::new(Node::Integer(3))
+                    }),
+                ],
+            }));
     }
 
     #[test]
     fn parse_explicit_precedence() {
-        let equal_to: Ast = Box::new(
-            InfixFunctionCall::new(
-                InfixFunctionCall::new(
-                    Integer(1),
-                    "*",
-                    InfixFunctionCall::new(
-                        InfixFunctionCall::new(
-                            Integer(2),
-                            "+",
-                            Integer(3),
-                        ),
-                        "-",
-                        Integer(4),
-                    ),
-                ),
-                "/",
-                Integer(5),
-            )
-        );
-
-        assert_eq!(&equal_to, &test_parse("1 * ((2 + 3) - 4) / 5"));
+        assert_eq!(
+            test_parse("1 * ((2 + 3) - 4) / 5"),
+            Box::new(Node::InfixFunctionCall {
+                left: Box::new(Node::InfixFunctionCall {
+                    left: Box::new(Node::Integer(1)),
+                    operator: "*".to_owned(),
+                    right: Box::new(Node::InfixFunctionCall {
+                        left: Box::new(Node::InfixFunctionCall {
+                            left: Box::new(Node::Integer(2)),
+                            operator: "+".to_owned(),
+                            right: Box::new(Node::Integer(3)),
+                        }),
+                        operator: "-".to_owned(),
+                        right: Box::new(Node::Integer(4)),
+                    }),
+                }),
+                operator: "/".to_owned(),
+                right: Box::new(Node::Integer(5)),
+            }));
     }
 
     #[test]
     fn parse_infix_precedence() {
-        let equal_to: Ast = Box::new(
-            InfixFunctionCall::new(
-                InfixFunctionCall::new(
-                    InfixFunctionCall::new(Integer(1), "*", Integer(2)),
-                    "+",
-                    Integer(3),
-                ),
-                "-",
-                InfixFunctionCall::new(Integer(4), "/", Integer(5)),
-            )
-        );
-
-        assert_eq!(&equal_to, &test_parse("1 * 2 + 3 - 4 / 5"));
+        assert_eq!(
+            test_parse("1 * 2 + 3 - 4 / 5"),
+            Box::new(Node::InfixFunctionCall {
+                left: Box::new(Node::InfixFunctionCall {
+                    left: Box::new(Node::InfixFunctionCall {
+                        left: Box::new(Node::Integer(1)), 
+                        operator: "*".to_owned(), 
+                        right: Box::new(Node::Integer(2)),
+                    }),
+                    operator: "+".to_owned(),
+                    right: Box::new(Node::Integer(3)),
+                }),
+                operator: "-".to_owned(),
+                right: Box::new(Node::InfixFunctionCall {
+                    left: Box::new(Node::Integer(4)),
+                    operator: "/".to_owned(),
+                    right: Box::new(Node::Integer(5)),
+                }),
+            }));
     }
 
     #[test]

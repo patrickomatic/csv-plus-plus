@@ -4,9 +4,13 @@ use clap::Parser;
 use std::fmt;
 use crate::{CliArgs, CompilationTarget, Init, Options, OutputTarget, Result, SourceCode, Template};
 use crate::compiler::token_library::TokenLibrary;
+use crate::ast::{BuiltinFunction, BuiltinFunctions, BuiltinVariable, BuiltinVariables};
 
-#[derive(Debug)]
+// TODO: manually implement debug
+// #[derive(Debug)]
 pub struct Runtime {
+    pub builtin_functions: BuiltinFunctions,
+    pub builtin_variables: BuiltinVariables,
     pub options: Options,
     pub target: OutputTarget,
     pub source_code: SourceCode,
@@ -24,6 +28,8 @@ impl Runtime {
         let init = Init::from_cli_args(cli_args, &token_library)?;
 
         Ok(Self {
+            builtin_functions: BuiltinFunction::all(),
+            builtin_variables: BuiltinVariable::all(),
             options: init.options,
             target: init.output,
             source_code: init.source_code,

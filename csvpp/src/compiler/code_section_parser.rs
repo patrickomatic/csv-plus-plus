@@ -18,7 +18,7 @@
 use std::collections::HashMap;
 
 use crate::{Error, Result};
-use crate::ast::{Ast, Function, Functions, Variable, Variables};
+use crate::ast::{Ast, Functions, Node, Variables};
 use super::token_library::{Token, TokenLibrary, TokenMatch};
 use super::ast_lexer::AstLexer;
 use super::ast_parser::AstParser;
@@ -53,17 +53,14 @@ impl<'a> CodeSectionParser<'a> {
             match self.lexer.next() {
                 TokenMatch(Token::Eof, _) => break,
                 TokenMatch(Token::FunctionDefinition, _) => {
-                    let function = self.parse_fn_definition()?;
-                    let fn_name = function.name.clone();
-                    let ast: Ast = Box::new(function);
-
-                    functions.insert(fn_name, ast);
+                    let (fn_name, function) = self.parse_fn_definition()?;
+                    functions.insert(fn_name, Box::new(function));
                 },
                 TokenMatch(Token::Reference, r) => {
-                    let expr = self.parse_variable_assign()?;
-                    let variable: Ast = Box::new(Variable::new(r, expr));
-
-                    variables.insert(r.to_string(), variable);
+                    variables.insert(r.to_string(), Box::new(Node::Variable { 
+                        body: self.parse_variable_assign()?, 
+                        name: r.to_owned(),
+                    }));
                 },
                 TokenMatch(t, m) => {
                     return Err(Error::CodeSyntaxError {
@@ -101,7 +98,7 @@ impl<'a> CodeSectionParser<'a> {
     /// ```ebnf
     /// 'fn' <name-ref> '(' { <arg-ref> ',' } ')' <expr>
     /// ```
-    fn parse_fn_definition(&'a self) -> Result<Function> {
+    fn parse_fn_definition(&'a self) -> Result<(String, Node)> {
         // expect the function name (as a `Reference`)
         let name = match self.lexer.next() {
             TokenMatch(Token::Reference, r) => r,
@@ -147,11 +144,13 @@ impl<'a> CodeSectionParser<'a> {
             }
         }
 
-        // and finally the body is just a single expression
-        let body = self.parse_expr()?;
+        let function = Node::Function { 
+            name: name.to_owned(), 
+            args, 
+            body: self.parse_expr()?,
+        };
 
-        // Ok(Function::new( { args, body, name })
-        Ok(Function::new(name, args, body))
+        Ok((name.to_owned(), function))
     }
 
     fn parse_expr(&'a self) -> Result<Ast> {
@@ -164,7 +163,7 @@ impl<'a> CodeSectionParser<'a> {
 #[cfg(test)]
 mod tests {
     use crate::TokenLibrary;
-    use crate::ast::{InfixFunctionCall, Integer, Reference};
+    use crate::ast::Ast;
     use super::*;
 
     fn build_token_library() -> TokenLibrary {
@@ -181,12 +180,14 @@ mod tests {
         let foo = fns_and_vars.functions.get("foo").unwrap();
 
         let expected: Ast = Box::new(
-                   Function {
+                   Node::Function {
                        name: "foo".to_owned(),
                        args: vec!["a".to_string(), "b".to_string()],
-                       body: Box::new(
-                           InfixFunctionCall::new(Reference::new("a"), "+", Reference::new("b")),
-                       ),
+                       body: Box::new(Node::InfixFunctionCall {
+                           left: Box::new(Node::Reference("a".to_owned())), 
+                           operator: "+".to_owned(), 
+                           right: Box::new(Node::Reference("b".to_owned())),
+                       }),
                    });
             
         assert_eq!(foo, &expected);
@@ -198,12 +199,14 @@ mod tests {
         let foo = fns_and_vars.functions.get("foo").unwrap();
 
         let expected: Ast = Box::new(
-                   Function {
+                   Node::Function {
                        name: "foo".to_owned(),
                        args: vec![],
-                       body: Box::new(
-                           InfixFunctionCall::new(Integer(1), "*", Integer(2)),
-                       ),
+                       body: Box::new(Node::InfixFunctionCall {
+                           left: Box::new(Node::Integer(1)), 
+                           operator: "*".to_owned(), 
+                           right: Box::new(Node::Integer(2)),
+                       }),
                    });
 
         assert_eq!(foo, &expected);

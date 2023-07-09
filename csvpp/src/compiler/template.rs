@@ -7,8 +7,8 @@ use std::cell;
 use std::collections;
 use std::fmt;
 
-use crate::{Result, Runtime, Spreadsheet};
-use crate::ast::{BuiltinFunction, BuiltinVariable, Functions, Variables};
+use crate::{Result, Runtime, Spreadsheet, SpreadsheetCell};
+use crate::ast::{Ast, Functions, Variables};
 use super::code_section_parser::{CodeSection, CodeSectionParser};
 
 #[derive(Debug)]
@@ -48,7 +48,7 @@ impl Template {
 
         let template = Self::new(spreadsheet, code_section, runtime);
 
-        template.resolve_cell_variables(runtime)
+        template.eval(runtime)
     }
 
     /// Given a parsed code section and spreadsheet section, this function will assemble all of the
@@ -85,21 +85,79 @@ impl Template {
         Self {
             spreadsheet: cell::RefCell::new(spreadsheet),
 
-            functions: BuiltinFunction::all().into_iter()
-                .chain(code_section_fns)
-                .collect(),
+            functions: code_section_fns,
 
-            variables: BuiltinVariable::all().into_iter()
-                .chain(code_section_vars)
+            variables: code_section_vars
+                .into_iter()
                 .chain(spreadsheet_vars)
                 .chain(cli_vars.clone())
                 .collect(),
         }
     }
 
-    fn resolve_cell_variables(self, _runtime: &Runtime) -> Result<Self> {
-        // TODO
-        Ok(self)
+    // TODO:
+    // * do this in parallel (thread for each cell)
+    fn eval(&self, runtime: &Runtime) -> Result<Self> {
+        let spreadsheet = self.spreadsheet.borrow();
+
+        let mut evaled_rows = vec![];
+        for row in spreadsheet.cells.iter() {
+            evaled_rows.push(self.eval_row(&row, runtime)?);
+        }
+
+        Ok(Self {
+            functions: self.functions.clone(),
+            spreadsheet: cell::RefCell::new(Spreadsheet { cells: evaled_rows }),
+            variables: self.variables.clone(),
+        })
+    }
+
+    /// The idea here is just to keep looping as long as we are making progress eval()ing
+    fn eval_ast(&self, ast: &Ast, runtime: &Runtime) -> Result<Ast> {
+        let mut evaled_ast = ast.clone();
+        let mut last_round_refs = vec![];
+
+        loop {
+            let refs = self.extract_references(&evaled_ast);
+            if refs.is_empty() || refs == last_round_refs {
+                break
+            }
+
+            last_round_refs = refs;
+
+            // evaled_ast = self.eval_ast_
+            // self.eval_ast_functions(
+
+            // TODO
+        }
+
+        Ok(evaled_ast)
+    }
+
+    fn extract_references(&self, ast: &Ast) -> Vec<String> {
+        let refs = vec![];
+        // refs.push(
+        refs
+    }
+
+    fn eval_row(&self, row: &[SpreadsheetCell], runtime: &Runtime) -> Result<Vec<SpreadsheetCell>> {
+        let mut evaled_row = vec![];
+        for cell in row.iter() {
+            let evaled_ast = if let Some(ast) = &cell.ast {
+                Some(self.eval_ast(ast, runtime)?)
+            } else {
+                None
+            };
+
+            evaled_row.push(SpreadsheetCell {
+                ast: evaled_ast,
+                index: cell.index.clone(),
+                modifier: cell.modifier.clone(),
+                value: cell.value.clone(),
+            });
+        }
+
+        Ok(evaled_row)
     }
 
     // TODO hmm should this just move onto impl Runtime rather than taking a runtime

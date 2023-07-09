@@ -37,41 +37,6 @@ impl Reference {
     }
 }
 
-impl Reference {
-    pub fn new(reference: &str) -> Self {
-        Reference(reference.to_string())
-    }
-}
-
-impl Node for Reference {
-    fn as_any(&self) -> &dyn any::Any { self }
-
-    fn id_ref(&self) -> Option<NodeId> {
-        if self.is_definitely_a1_format() {
-            None
-        } else {
-            Some(self.0.clone())
-        }
-    }
-
-    fn node_eq(&self, other: &dyn any::Any) -> bool {
-        other.downcast_ref::<Self>().map_or(false, |o| self == o)
-    }
-}
-
-impl fmt::Display for Reference {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl str::FromStr for Reference {
-    type Err = Error;
-
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Ok(Reference::new(input))
-    }
-}
 
 #[cfg(test)]
 mod tests {

@@ -6,7 +6,7 @@ use std::fmt;
 use csv;
 
 use crate::{A1, Modifier, Result, Runtime};
-use crate::ast::{Ast, Reference, Variables};
+use crate::ast::{Ast, Node, Variables};
 use super::ast_parser::AstParser;
 use super::modifier_parser::ModifierParser;
 
@@ -72,7 +72,7 @@ impl Spreadsheet {
         let mut vars = HashMap::new();
         self.cells.iter().flatten().for_each(|c| {
             if let Some(var_id) = &c.modifier.var {
-                let reference: Ast = Box::new(Reference(c.index.to_string()));
+                let reference: Ast = Box::new(Node::Reference(c.index.to_string()));
                 vars.insert(var_id.to_owned(), reference);
             }
         });
