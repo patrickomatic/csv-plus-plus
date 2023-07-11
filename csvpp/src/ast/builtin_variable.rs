@@ -1,7 +1,7 @@
 //! # BuiltinVariable
 //!
-use std::collections::HashMap;
-
+use std::collections;
+use std::fmt;
 use crate::{A1, Error, Result};
 use super::{Node, VariableEval, VariableName};
 
@@ -17,8 +17,8 @@ impl BuiltinVariable {
     //   * colref
     //   * colleft
     //   * colright
-    pub fn all() -> HashMap<String, BuiltinVariable> {
-        let mut vars = HashMap::new();
+    pub fn all() -> collections::HashMap<String, BuiltinVariable> {
+        let mut vars = collections::HashMap::new();
 
         // `colnum` - The number of the current column.  
         vars = Self::def_var(vars, "colnum", |a1| {
@@ -97,10 +97,10 @@ impl BuiltinVariable {
     }
 
     fn def_var<F>(
-        mut vars: HashMap<String, BuiltinVariable>, 
+        mut vars: collections::HashMap<String, BuiltinVariable>, 
         name: &str, 
         eval: F,
-    ) -> HashMap<String, BuiltinVariable>
+    ) -> collections::HashMap<String, BuiltinVariable>
     where F: Fn(&A1) -> Result<Node> + 'static {
         vars.insert(
             name.to_string(), 
@@ -112,3 +112,12 @@ impl BuiltinVariable {
         vars
     }
 }
+
+impl fmt::Debug for BuiltinVariable {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BuiltinVariable")
+            .field("name", &self.name)
+            .finish_non_exhaustive()
+    }
+}
+

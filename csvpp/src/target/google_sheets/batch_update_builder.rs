@@ -10,7 +10,7 @@ use super::google_sheets_modifier;
 
 pub struct BatchUpdateBuilder<'a> {
     runtime: &'a Runtime,
-    template: &'a Template,
+    template: &'a Template<'a>,
 }
 
 impl<'a> BatchUpdateBuilder<'a> {
@@ -20,9 +20,6 @@ impl<'a> BatchUpdateBuilder<'a> {
 
     /// Loops over each row of the spreadsheet, building up `UpdateCellsRequest`s.  
     /// 
-    // TODO:
-    // 
-    // * it needs to be limited to chunks of 1000 
     pub fn build(&self) -> api::BatchUpdateSpreadsheetRequest {
         let requests = self.batch_update_cells_requests();
         // TODO: I might not need to do this...

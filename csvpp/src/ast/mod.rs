@@ -2,19 +2,21 @@
 //!
 //! `Node` represents a building block of the parsed language, with a 
 //!
+use serde::{Deserialize, Serialize};
 use std::collections;
 use crate::{A1, Result};
 
 mod display;
-// mod eval;
+mod eval;
 mod from_str;
 
 mod builtin_function;
 mod builtin_variable;
-// mod references;
+mod references;
 
 pub use builtin_function::BuiltinFunction;
 pub use builtin_variable::BuiltinVariable;
+pub use references::AstReferences;
 
 type FunctionArgs = Vec<String>;
 type FunctionName = String;
@@ -31,8 +33,7 @@ pub type Ast = Box<Node>;
 pub type FunctionEval = Box<dyn Fn(&A1, &[Node]) -> Result<Node>>;
 pub type VariableEval = Box<dyn Fn(&A1) -> Result<Node>>;
 
-// TODO Serialize + Deserialize
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum Node {
     Boolean(bool),
     DateTime(chrono::DateTime<chrono::Utc>),

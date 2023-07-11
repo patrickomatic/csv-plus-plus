@@ -5,8 +5,6 @@
 //! boundaries/spacing but neither of those will work very well for us when handling complex types
 //! like double-quotes strings.
 use regex::Regex;
-// use std::fmt;
-
 use crate::Error;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -73,15 +71,15 @@ impl TokenLibrary {
             comment: TokenMatcher::new(r"(?m)#.*", Token::Comment)?,
             code_section_eof: TokenMatcher::new(r"---", Token::CodeSectionEof)?,
             close_paren: TokenMatcher::new(r"\)", Token::CloseParen)?,
-// const DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S %Z";
             date_time: TokenMatcher::new(r"(?x)
-
+                                         # just a date (and optional TZ)
                                          (?<date0>\d{2,4}-\d{1,2}-\d{1,2})\s*(?<tz0>\w+)?
-                                         |
+                                         | 
+                                         # just a time (and an optional TZ)
                                          (?<time1>\d+:\d{1,2}(\d+)?)\s*(?<tz1>\w+)?
                                          |
+                                         # a time and date
                                          (?<date2>\d{2,4}-\d{1,2}-\d{1,2})\s+(?<time2>\d+:\d{1,2}(\d+)?)\s*(?<tz2>\w+)?
-
                                         ", Token::DateTime)?,
             double_quoted_string: 
                 TokenMatcher::new(r#""(?:[^"\\]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*""#, Token::DoubleQuotedString)?,
@@ -105,7 +103,7 @@ mod tests {
     }
 
     #[test]
-    fn boolean() {
+    fn build_boolean() {
         assert!(token_library().boolean_true.1.is_match("true"));
         assert!(token_library().boolean_false.1.is_match("false"));
 
@@ -114,17 +112,17 @@ mod tests {
     }
 
     #[test]
-    fn code_section_eof() {
+    fn build_code_section_eof() {
         assert!(token_library().code_section_eof.1.is_match("---"));
     }
 
     #[test]
-    fn comment() {
+    fn build_comment() {
         assert!(token_library().comment.1.is_match("# this is a comment"));
     }
 
     #[test]
-    fn date_time() {
+    fn build_date_time() {
         assert!(token_library().date_time.1.is_match("2022-01-12"));
         assert!(token_library().date_time.1.is_match("2022-01-12 EST"));
         assert!(token_library().date_time.1.is_match("2022-01-12 11:00"));
@@ -132,7 +130,7 @@ mod tests {
     }
 
     #[test]
-    fn double_quoted_string() {
+    fn build_double_quoted_string() {
         assert!(token_library().double_quoted_string.1.is_match("\"this is a string\""));
         assert!(token_library().double_quoted_string.1.is_match("\"with an \\\" escaped quote\""));
 
@@ -141,7 +139,7 @@ mod tests {
     }
 
     #[test]
-    fn integer() {
+    fn build_integer() {
         assert!(token_library().integer.1.is_match("555"));
         assert!(token_library().integer.1.is_match("-555"));
 
@@ -149,7 +147,7 @@ mod tests {
     }
 
     #[test]
-    fn float() {
+    fn build_float() {
         assert!(token_library().float.1.is_match("555.55"));
         assert!(token_library().float.1.is_match("-555.55"));
 
@@ -157,7 +155,7 @@ mod tests {
     }
 
     #[test]
-    fn reference() {
+    fn build_reference() {
         assert!(token_library().reference.1.is_match("foo"));
         assert!(token_library().reference.1.is_match("A1:B2"));
         assert!(token_library().reference.1.is_match("Foo!A1:B2"));

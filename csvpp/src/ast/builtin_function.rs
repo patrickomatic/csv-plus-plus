@@ -1,8 +1,8 @@
 //! # BuiltinFunction
 //!
 use std::collections;
+use std::fmt;
 use std::str::FromStr;
-
 use crate::{A1, Error, Result};
 use super::{FunctionEval, FunctionName, Node};
 
@@ -53,3 +53,12 @@ impl BuiltinFunction {
         }
     }
 }
+
+impl fmt::Debug for BuiltinFunction {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BuiltinFunction")
+            .field("name", &self.name)
+            .finish_non_exhaustive()
+    }
+}
+
