@@ -2,12 +2,14 @@
 use std::error;
 use std::fmt;
 use std::path::PathBuf;
-
-use crate::{A1, OutputTarget};
+use crate::OutputTarget;
 
 #[derive(Clone, Debug)]
 pub enum Error {
-    A1BuilderError(String),
+    A1ParseError {
+        bad_input: String,
+        message: String,
+    },
     // TODO we could have a codesyntax error in a cell
     CodeSyntaxError {
         bad_input: String,
@@ -15,7 +17,7 @@ pub enum Error {
         message: String,
     },
     CellSyntaxError {
-        index: A1,
+        index: a1_notation::A1,
         message: String,
     },
     InitError(String),
@@ -26,7 +28,7 @@ pub enum Error {
     },
     ModifierSyntaxError {
         bad_input: String,
-        index: A1,
+        index: a1_notation::A1,
         message: String,
     },
     RgbSyntaxError {
@@ -47,8 +49,10 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // TODO: anything else to do when in verbose mode?
         match self {
-            Error::A1BuilderError(message) => 
-                write!(f, "Error parsing A1 expression: {}", message),
+            Error::A1ParseError { bad_input, message } => {
+                writeln!(f, "Error parsing A1 value: {}", message)?;
+                write!(f, "bad input: {}", bad_input)
+            },
             Error::CodeSyntaxError { bad_input, line_number, message } => {
                 writeln!(f, "{}: {}", line_number, message)?;
                 write!(f, "bad input: {}", bad_input)
@@ -80,6 +84,17 @@ impl fmt::Display for Error {
     }
 }
 
+impl From<a1_notation::Error> for Error {
+    fn from(err: a1_notation::Error) -> Self {
+        match err {
+            a1_notation::Error::A1BuilderError(m) =>
+                Error::InitError(format!("Error building parsing A1 format: {}", m)),
+            a1_notation::Error::A1ParseError { bad_input, message } =>
+                Error::A1ParseError { bad_input, message },
+        }
+    }
+}
+
 impl error::Error for Error {}
 
 #[cfg(test)]
@@ -89,7 +104,7 @@ mod tests {
     #[test]
     fn display_cell_syntax_error() {
         let message = Error::CellSyntaxError {
-            index: A1::builder().xy(1, 5).build().unwrap(),
+            index: a1_notation::A1::builder().xy(1, 5).build().unwrap(),
             message: "foo".to_string(),
         };
 
@@ -111,7 +126,7 @@ mod tests {
     fn display_modifier_syntax_error() {
         let message = Error::ModifierSyntaxError {
             bad_input: "bad_input".to_string(),
-            index: A1::builder().xy(0, 1).build().unwrap(),
+            index: a1_notation::A1::builder().xy(0, 1).build().unwrap(),
             message: "foo".to_string(),
         };
 

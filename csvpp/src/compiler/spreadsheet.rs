@@ -1,11 +1,11 @@
 //! # Spreadsheet
 //!
 //!
-use std::collections::HashMap;
+use a1_notation;
+use std::collections;
 use std::fmt;
 use csv;
-
-use crate::{A1, Modifier, Result, Runtime};
+use crate::{Modifier, Result, Runtime};
 use crate::ast::{Ast, Node, Variables};
 use super::ast_parser::AstParser;
 use super::modifier_parser::ModifierParser;
@@ -13,13 +13,13 @@ use super::modifier_parser::ModifierParser;
 #[derive(Debug)]
 pub struct SpreadsheetCell {
     pub ast: Option<Ast>,
-    pub index: A1,
+    pub index: a1_notation::A1,
     pub modifier: Modifier,
     pub value: String,
 }
 
 impl SpreadsheetCell {
-    pub fn parse(input: &str, index: A1, row_modifier: Modifier, runtime: &Runtime) -> Result<(SpreadsheetCell, Modifier)> {
+    pub fn parse(input: &str, index: a1_notation::A1, row_modifier: Modifier, runtime: &Runtime) -> Result<(SpreadsheetCell, Modifier)> {
         let parsed_modifiers = ModifierParser::parse(input, index, row_modifier)?;
 
         Ok((SpreadsheetCell {
@@ -69,7 +69,7 @@ impl Spreadsheet {
     // 
     // NOTE: we could also store these in a HashMap on the Spreadsheet as we build it
     pub fn variables(&self) -> Variables {
-        let mut vars = HashMap::new();
+        let mut vars = collections::HashMap::new();
         self.cells.iter().flatten().for_each(|c| {
             if let Some(var_id) = &c.modifier.var {
                 let reference: Ast = Box::new(Node::Reference(c.index.to_string()));
@@ -96,7 +96,7 @@ impl Spreadsheet {
         let csv_parsed_row = &record_result.unwrap_or(csv::StringRecord::new());
 
         for (cell_index, unparsed_value) in csv_parsed_row.into_iter().enumerate() {
-            let a1 = A1::builder().xy(cell_index, row_index).build()?;
+            let a1 = a1_notation::A1::builder().xy(cell_index, row_index).build()?;
             let (cell, rm) = SpreadsheetCell::parse(unparsed_value, a1, row_modifier, runtime)?;
 
             row_modifier = rm;

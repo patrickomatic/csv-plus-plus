@@ -3,7 +3,7 @@
 use std::collections;
 use std::fmt;
 use std::str::FromStr;
-use crate::{A1, Error, Result};
+use crate::{Error, Result};
 use super::{FunctionEval, FunctionName, Node};
 
 pub struct BuiltinFunction {
@@ -19,7 +19,7 @@ impl BuiltinFunction {
             name: "cellabove".to_owned(),
             eval: Box::new(|_a1, args| {
                 let r = Self::verify_one_arg("cellabove", args)?;
-                let p = A1::from_str(&r)?;
+                let p = a1_notation::A1::from_str(&r)?;
 
                 Ok(Node::Reference(p.to_string()))
             })

@@ -28,7 +28,6 @@
 //! =foo   ,=foo + 2   ,=bar(foo)
 //! ```
 //!
-mod a1;
 mod ast;
 mod compiler;
 mod cli_args;
@@ -42,7 +41,6 @@ mod runtime;
 mod source_code;
 mod target;
 
-pub use a1::A1;
 pub use cli_args::CliArgs;
 pub use compiler::spreadsheet::{Spreadsheet, SpreadsheetCell};
 pub use compiler::template::Template;

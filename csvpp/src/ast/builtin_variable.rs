@@ -2,7 +2,7 @@
 //!
 use std::collections;
 use std::fmt;
-use crate::{A1, Error, Result};
+use crate::{Error, Result};
 use super::{Node, VariableEval, VariableName};
 
 pub struct BuiltinVariable {
@@ -41,7 +41,7 @@ impl BuiltinVariable {
         // `rowabove` - A (row-relative) reference to the row above the current cell.
         vars = Self::def_var(vars, "rowabove", |a1| {
             if let Some(y) = a1.y() {
-                let a1_above = A1::builder().y((y - 1).max(0)).build()?;
+                let a1_above = a1_notation::A1::builder().y((y - 1).max(0)).build()?;
                 Ok(Node::Reference(a1_above.to_string()))
             } else {
                 Err(Error::CodeSyntaxError {
@@ -55,7 +55,7 @@ impl BuiltinVariable {
         // `rowbelow` - A (row-relative) reference to the row below the current cell.
         vars = Self::def_var(vars, "rowbelow", |a1| {
             if let Some(y) = a1.y() {
-                let a1_below = A1::builder().y(y + 1).build()?;
+                let a1_below = a1_notation::A1::builder().y(y + 1).build()?;
                 Ok(Node::Reference(a1_below.to_string()))
             } else {
                 Err(Error::CodeSyntaxError {
@@ -82,7 +82,7 @@ impl BuiltinVariable {
         // `rowref` - A reference to the current row.  
         vars = Self::def_var(vars, "rowref", |a1| {
             if let Some(y) = a1.y() {
-                let row_a1 = A1::builder().y(y).build()?;
+                let row_a1 = a1_notation::A1::builder().y(y).build()?;
                 Ok(Node::Reference(row_a1.to_string()))
             } else {
                 Err(Error::CodeSyntaxError {
@@ -101,7 +101,7 @@ impl BuiltinVariable {
         name: &str, 
         eval: F,
     ) -> collections::HashMap<String, BuiltinVariable>
-    where F: Fn(&A1) -> Result<Node> + 'static {
+    where F: Fn(&a1_notation::A1) -> Result<Node> + 'static {
         vars.insert(
             name.to_string(), 
             Self {

@@ -6,8 +6,6 @@
 //!     lowercase the stuff outside the modifier definition
 //! * get quoted strings working
 use std::str::FromStr;
-
-use crate::a1::A1;
 use crate::{Error, Result, Rgb};
 use crate::modifier::*;
 use super::modifier_lexer::{ModifierLexer, Token};
@@ -22,13 +20,13 @@ pub struct ParsedModifiers {
     pub modifier: Modifier,
     pub row_modifier: Modifier,
     pub value: String,
-    pub index: A1,
+    pub index: a1_notation::A1,
 }
 
 impl<'a> ModifierParser<'a> {
     pub fn parse(
         input: &str, 
-        index: A1, 
+        index: a1_notation::A1, 
         row_modifier: Modifier,
     ) -> Result<ParsedModifiers> {
         let lexer = &mut ModifierLexer::new(input);
@@ -45,7 +43,7 @@ impl<'a> ModifierParser<'a> {
     /// returns (modifier, row_modifier)
     pub fn parse_all_modifiers(
         lexer: &mut ModifierLexer,
-        index: &A1,
+        index: &a1_notation::A1,
         row_modifier: Modifier,
     ) -> Result<(Modifier, Modifier)> {
         let mut new_modifier: Option<Modifier> = None;
@@ -56,7 +54,7 @@ impl<'a> ModifierParser<'a> {
             if is_row_modifier && index.x() != Some(0) {
                 return Err(Error::ModifierSyntaxError {
                     bad_input: "![[".to_owned(),
-                    index: A1::builder().xy(0, 0).build()?, // XXX
+                    index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
                     message: "You can only define a row modifier in the first cell".to_owned(),
                 })
             }
@@ -122,7 +120,7 @@ impl<'a> ModifierParser<'a> {
                 Err(e) => return Err(Error::ModifierSyntaxError {
                     message: format!("Error parsing expand= repetitions: {}", e),
                     bad_input: amount_string,
-                    index: A1::builder().xy(0, 0).build()?, // XXX
+                    index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
                 }),
             }
         } else {
@@ -159,7 +157,7 @@ impl<'a> ModifierParser<'a> {
             Err(e) => return Err(Error::ModifierSyntaxError {
                 message: format!("Error parsing fontsize: {}", e),
                 bad_input: font_size_string,
-                index: A1::builder().xy(0, 0).build()?, // XXX
+                index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
             }),
         }
 
@@ -221,7 +219,7 @@ impl<'a> ModifierParser<'a> {
             "va" | "valign"         => self.valign_modifier(),
             _ => Err(Error::ModifierSyntaxError {
                 bad_input: modifier_name.to_string(),
-                index: A1::builder().xy(0, 0).build()?, // XXX
+                index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
                 message: format!("Unrecognized modifier: {}", &modifier_name),
             }),
         }
@@ -249,7 +247,7 @@ mod tests {
     fn test_parse(input: &str) -> ParsedModifiers {
         ModifierParser::parse(
             input,
-            A1::builder().xy(0, 0).build().unwrap(),
+            a1_notation::A1::builder().xy(0, 0).build().unwrap(),
             Modifier::new(true),
         ).unwrap()
     }

@@ -1,9 +1,9 @@
 use std::collections;
-use crate::{A1, Result};
+use crate::Result;
 use super::{Ast, Node};
 
 impl Node {
-    pub fn eval_functions(&self, _functions: Vec<String>, _position: &A1) -> Result<Node> {
+    pub fn eval_functions(&self, _functions: Vec<String>, _position: &a1_notation::A1) -> Result<Node> {
         /*
         Ok(match self {
             Self::Function { args, name, body } =>

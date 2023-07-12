@@ -3,6 +3,15 @@
 version = 3
 
 [[package]]
+name = "a1_notation"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1247172579ac5acaf610c74bf6a49c75b4e6ba77b0dddc2a1dc67cc6c7eaca5b"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "aho-corasick"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -245,6 +254,7 @@ dependencies = [
 name = "csvpp"
 version = "0.1.0"
 dependencies = [
+ "a1_notation",
  "chrono",
  "clap",
  "csv",

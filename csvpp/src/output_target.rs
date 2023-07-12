@@ -2,7 +2,6 @@
 //!
 use std::fmt;
 use std::path;
-
 use crate::{CliArgs, CompilationTarget, Error, Result, Runtime};
 use crate::target;
 
@@ -19,9 +18,9 @@ pub enum OutputTarget {
 impl OutputTarget {
     pub fn from_cli_args(cli_args: &CliArgs) -> Result<Self> {
         if let Some(sheet_id) = &cli_args.google_sheet_id {
-            Ok(Self::from_google_sheet_id(sheet_id.to_string()))?
+            Ok(Self::from_google_sheet_id(sheet_id.to_string())?)
         } else if let Some(filename) = &cli_args.output_filename {
-            Ok(Self::from_filename(filename.to_path_buf()))?
+            Ok(Self::from_filename(filename.to_path_buf())?)
         } else {
             Err(Error::InitError(
                     "Must specify either -g/--google-sheet-id or -o/--output-filename".to_string()))

@@ -14,7 +14,6 @@
 //     lowercase the stuff outside the modifier definition
 //
 // * get quoted strings working
-use crate::a1::A1;
 use crate::{Error, Result};
 
 #[derive(Debug, PartialEq)]
@@ -109,7 +108,7 @@ impl ModifierLexer {
             Err(Error::ModifierSyntaxError {
                 message: format!("Error parsing input, expected '{}'", substring),
                 bad_input: input.to_string(),
-                index: A1::builder().xy(0, 0).build()?, // XXX
+                index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
             })
         }
     }
@@ -154,7 +153,7 @@ impl ModifierLexer {
             Err(Error::ModifierSyntaxError {
                 message: "Expected a modifier definition (i.e. format/halign/etc)".to_owned(),
                 bad_input: input.to_string(),
-                index: A1::builder().xy(0, 0).build()?, // XXX
+                index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
             })
         } else {
             self.input = input[matched.len()..].to_string();

@@ -6,11 +6,12 @@
 // TODO: 
 //
 // * maybe rename this to Scope?
+use a1_notation;
 use flexbuffers;
 use std::cell;
 use std::collections;
 use std::fmt;
-use crate::{A1, Result, Runtime, Spreadsheet, SpreadsheetCell};
+use crate::{Result, Runtime, Spreadsheet, SpreadsheetCell};
 use crate::ast::{Ast, AstReferences, BuiltinVariable, Functions, Variables};
 use super::code_section_parser::{CodeSection, CodeSectionParser};
 
@@ -105,7 +106,7 @@ impl<'a> Template<'a> {
     }
 
     /// The idea here is just to keep looping as long as we are making progress eval()ing
-    fn eval_ast(&self, ast: &Ast, index: &A1) -> Result<Ast> {
+    fn eval_ast(&self, ast: &Ast, index: &a1_notation::A1) -> Result<Ast> {
         let mut evaled_ast = *ast.clone();
         let mut last_round_refs = AstReferences::default();
 
@@ -156,7 +157,7 @@ impl<'a> Template<'a> {
 
     /// Variables can all be resolved in one go - we just loop them by name and resolve the ones
     /// that we can and leave the rest alone.
-    fn resolve_variables(&self, var_names: Vec<String>, index: &A1) -> Result<collections::HashMap<String, Ast>> {
+    fn resolve_variables(&self, var_names: Vec<String>, index: &a1_notation::A1) -> Result<collections::HashMap<String, Ast>> {
         let mut resolved_vars = collections::HashMap::new();
 
         for var_name in var_names {
@@ -169,11 +170,11 @@ impl<'a> Template<'a> {
     }
 
     // TODO: should this even be an Option? can it ever fail without an error?
-    pub fn resolve_function(&self, _fn_name: &str, _index: &A1) -> Result<Option<Ast>> {
+    pub fn resolve_function(&self, _fn_name: &str, _index: &a1_notation::A1) -> Result<Option<Ast>> {
         todo!()
     }
 
-    fn resolve_variable(&self, var_name: &str, index: &A1) -> Result<Option<Ast>> {
+    fn resolve_variable(&self, var_name: &str, index: &a1_notation::A1) -> Result<Option<Ast>> {
         Ok(
             if let Some(value) = self.variables.get(var_name) {
                 Some(value.to_owned())
