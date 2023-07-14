@@ -11,8 +11,8 @@ use flexbuffers;
 use std::cell;
 use std::collections;
 use std::fmt;
-use crate::{Result, Runtime, Spreadsheet, SpreadsheetCell};
-use crate::ast::{Ast, AstReferences, BuiltinVariable, Functions, Variables};
+use crate::{Error, Result, Runtime, Spreadsheet, SpreadsheetCell};
+use crate::ast::{Ast, AstReferences, BuiltinFunction, BuiltinVariable, Functions, Variables};
 use super::code_section_parser::{CodeSection, CodeSectionParser};
 
 #[derive(Debug)]
@@ -105,7 +105,8 @@ impl<'a> Template<'a> {
         })
     }
 
-    /// The idea here is just to keep looping as long as we are making progress eval()ing
+    /// The idea here is just to keep looping as long as we are making progress eval()ing.
+    /// Progress being defined as `.extract_references()` returning the same result twice in a row
     fn eval_ast(&self, ast: &Ast, index: &a1_notation::A1) -> Result<Ast> {
         let mut evaled_ast = *ast.clone();
         let mut last_round_refs = AstReferences::default();
@@ -115,11 +116,23 @@ impl<'a> Template<'a> {
             if refs.is_empty() || refs == last_round_refs {
                 break
             }
-
             last_round_refs = refs.clone();
 
-            evaled_ast = evaled_ast.eval_functions(refs.functions, index)?;
-            evaled_ast = evaled_ast.eval_variables(self.resolve_variables(refs.variables, index)?)?;
+            evaled_ast = evaled_ast
+                .eval_variables(self.resolve_variables(refs.variables, index)?)?
+                .eval_functions(refs.functions, |fn_id, args| {
+                    if let Some(function) = self.functions.get(fn_id) {
+                        Ok(function.clone())
+                    } else if let Some(BuiltinFunction { eval, .. }) = self.runtime.builtin_functions.get(fn_id) {
+                        Ok(Box::new(eval(index, &args)?))
+                    } else {
+                        Err(Error::CodeSyntaxError {
+                            bad_input: fn_id.to_string(),
+                            line_number: 0, // XXX
+                            message: "Could not find function".to_owned(),
+                        })
+                    }
+                })?;
         }
 
         Ok(Box::new(evaled_ast))
@@ -146,13 +159,13 @@ impl<'a> Template<'a> {
     }
 
     pub fn is_function_defined(&self, fn_name: &str) -> bool {
-        self.runtime.builtin_functions.contains_key(fn_name) 
-            || self.functions.contains_key(fn_name)
+        self.functions.contains_key(fn_name)
+            || self.runtime.builtin_functions.contains_key(fn_name) 
     }
 
     pub fn is_variable_defined(&self, var_name: &str) -> bool {
-        self.runtime.builtin_variables.contains_key(var_name) 
-            || self.variables.contains_key(var_name)
+        self.variables.contains_key(var_name)
+            || self.runtime.builtin_variables.contains_key(var_name) 
     }
 
     /// Variables can all be resolved in one go - we just loop them by name and resolve the ones
@@ -167,11 +180,6 @@ impl<'a> Template<'a> {
         }
 
         Ok(resolved_vars)
-    }
-
-    // TODO: should this even be an Option? can it ever fail without an error?
-    pub fn resolve_function(&self, _fn_name: &str, _index: &a1_notation::A1) -> Result<Option<Ast>> {
-        todo!()
     }
 
     fn resolve_variable(&self, var_name: &str, index: &a1_notation::A1) -> Result<Option<Ast>> {

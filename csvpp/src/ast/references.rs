@@ -7,6 +7,25 @@ pub struct AstReferences {
     pub variables: Vec<VariableName>,
 }
 
+impl AstReferences {
+    pub fn is_empty(&self) -> bool {
+        self.functions.is_empty() && self.variables.is_empty()
+    }
+}
+
+impl Node {
+    /// Does a depth first search on `ast` and parses out all identifiers that might be able to be
+    /// eval()ed
+    pub fn extract_references(&self, template: &Template) -> AstReferences {
+        let mut fns = vec![];
+        let mut vars = vec![];
+
+        extract_dfs(&Box::new(self.clone()), template, &mut fns, &mut vars);
+
+        AstReferences { functions: fns, variables: vars }
+    }
+}
+
 fn extract_dfs(
     ast: &Ast, 
     template: &Template, 
@@ -24,29 +43,11 @@ fn extract_dfs(
             }
         },
 
+        // take any references corresponding do a defined variable
         Node::Reference(r) if template.is_variable_defined(r) => 
             vars.push(r.to_string()),
 
         _ => (),
-    }
-}
-
-impl Node {
-    /// Does a depth first search on `ast` and parses out all identifiers that might be able to be
-    /// eval()ed
-    pub fn extract_references(&self, template: &Template) -> AstReferences {
-        let mut fns = vec![];
-        let mut vars = vec![];
-
-        extract_dfs(&Box::new(self.clone()), template, &mut fns, &mut vars);
-
-        AstReferences { functions: fns, variables: vars }
-    }
-}
-
-impl AstReferences {
-    pub fn is_empty(&self) -> bool {
-        self.functions.is_empty() && self.variables.is_empty()
     }
 }
 
@@ -82,9 +83,11 @@ mod tests {
 
     #[test]
     fn extract_references_functions() {
+        // TODO
     }
 
     #[test]
     fn extract_references_variables() {
+        // TODO
     }
 }

@@ -30,7 +30,7 @@ pub type BuiltinVariables =  collections::HashMap<VariableName, BuiltinVariable>
 
 pub type Ast = Box<Node>;
 
-pub type FunctionEval = Box<dyn Fn(&a1_notation::A1, &[Node]) -> Result<Node>>;
+pub type FunctionEval = Box<dyn Fn(&a1_notation::A1, &[Ast]) -> Result<Node>>;
 pub type VariableEval = Box<dyn Fn(&a1_notation::A1) -> Result<Node>>;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]

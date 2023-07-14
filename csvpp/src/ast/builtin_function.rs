@@ -4,7 +4,7 @@ use std::collections;
 use std::fmt;
 use std::str::FromStr;
 use crate::{Error, Result};
-use super::{FunctionEval, FunctionName, Node};
+use super::{Ast, FunctionEval, FunctionName, Node};
 
 pub struct BuiltinFunction {
     pub eval: FunctionEval,
@@ -34,7 +34,7 @@ impl BuiltinFunction {
 
     /// For now all functions take a Reference as a single arg - we can elaborate on this in the
     /// future.
-    fn verify_one_arg(fn_name: &str, args: &[Node]) -> Result<String> {
+    fn verify_one_arg(fn_name: &str, args: &[Ast]) -> Result<String> {
         if args.len() != 1 {
             return Err(Error::CodeSyntaxError {
                 bad_input: args.len().to_string(), // XXX figure out a way to format this
@@ -43,7 +43,7 @@ impl BuiltinFunction {
             })
         } 
 
-        match &args[0] {
+        match &*args[0] {
             Node::Reference(r) => Ok(r.to_owned()),
             n => Err(Error::CodeSyntaxError {
                 bad_input: n.to_string(),

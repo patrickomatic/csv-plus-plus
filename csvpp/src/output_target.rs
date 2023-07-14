@@ -85,45 +85,53 @@ mod tests {
 
     #[test]
     fn from_cli_args_csv() {
-        let mut cli_args = CliArgs::default();
-        cli_args.output_filename = Some(PathBuf::from("foo.csv"));
-
+        let cli_args = CliArgs {
+            output_filename: Some(PathBuf::from("foo.csv")),
+            ..Default::default()
+        };
         let output_target = OutputTarget::from_cli_args(&cli_args).unwrap();
+
         assert_eq!(output_target, OutputTarget::Csv(PathBuf::from("foo.csv")))
     }
 
     #[test]
     fn from_cli_args_excel() {
-        let mut cli_args = CliArgs::default();
-        cli_args.output_filename = Some(PathBuf::from("foo.xlsx"));
-
+        let cli_args = CliArgs {
+            output_filename: Some(PathBuf::from("foo.xlsx")),
+            ..Default::default()
+        };
         let output_target = OutputTarget::from_cli_args(&cli_args).unwrap();
+
         assert_eq!(output_target, OutputTarget::Excel(PathBuf::from("foo.xlsx")))
     }
 
     #[test]
     fn from_cli_args_google_sheets() {
-        let mut cli_args = CliArgs::default();
-        cli_args.google_sheet_id = Some("abc".to_string());
-
+        let cli_args = CliArgs {
+            google_sheet_id: Some("abc".to_string()),
+            ..Default::default()
+        };
         let output_target = OutputTarget::from_cli_args(&cli_args).unwrap();
+
         assert_eq!(output_target, OutputTarget::GoogleSheets("abc".to_string()));
     }
 
     #[test]
     fn from_cli_args_open_document() {
-        let mut cli_args = CliArgs::default();
-        cli_args.output_filename = Some(PathBuf::from("foo.ods"));
-
+        let cli_args = CliArgs {
+            output_filename: Some(PathBuf::from("foo.ods")),
+            ..Default::default()
+        };
         let output_target = OutputTarget::from_cli_args(&cli_args).unwrap();
+
         assert_eq!(output_target, OutputTarget::OpenDocument(PathBuf::from("foo.ods")))
     }
 
     #[test]
     fn from_cli_args_invalid() {
         let cli_args = CliArgs::default();
-
         let output_target = OutputTarget::from_cli_args(&cli_args);
+
         assert!(output_target.is_err());
     }
 }
