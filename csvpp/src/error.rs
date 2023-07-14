@@ -31,6 +31,10 @@ pub enum Error {
         index: a1_notation::A1,
         message: String,
     },
+    ObjectWriteError {
+        filename: PathBuf,
+        message: String,
+    },
     RgbSyntaxError {
         bad_input: String,
         message: String,
@@ -70,6 +74,8 @@ impl fmt::Display for Error {
                 writeln!(f, "Cell->{}: {}", index, message)?;
                 write!(f, "bad input: {}", bad_input)
             },
+            Error::ObjectWriteError { filename, message } =>
+                writeln!(f, "Error writing object file [{}]: {}", filename.display(), message),
             Error::RgbSyntaxError { bad_input, message } => {
                 writeln!(f, "Error parsing RGB value: {}", message)?;
                 write!(f, "bad input: {}", bad_input)

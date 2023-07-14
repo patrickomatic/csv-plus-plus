@@ -2,6 +2,7 @@
 //!
 //!
 use a1_notation;
+use serde::{Deserialize, Serialize};
 use std::collections;
 use std::fmt;
 use csv;
@@ -10,7 +11,7 @@ use crate::ast::{Ast, Node, Variables};
 use super::ast_parser::AstParser;
 use super::modifier_parser::ModifierParser;
 
-#[derive(Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SpreadsheetCell {
     pub ast: Option<Ast>,
     pub index: a1_notation::A1,
@@ -19,7 +20,12 @@ pub struct SpreadsheetCell {
 }
 
 impl SpreadsheetCell {
-    pub fn parse(input: &str, index: a1_notation::A1, row_modifier: Modifier, runtime: &Runtime) -> Result<(SpreadsheetCell, Modifier)> {
+    pub fn parse(
+        input: &str,
+        index: a1_notation::A1,
+        row_modifier: Modifier,
+        runtime: &Runtime,
+    ) -> Result<(SpreadsheetCell, Modifier)> {
         let parsed_modifiers = ModifierParser::parse(input, index, row_modifier)?;
 
         Ok((SpreadsheetCell {
@@ -46,7 +52,7 @@ impl fmt::Display for SpreadsheetCell {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Spreadsheet {
     pub cells: Vec<Vec<SpreadsheetCell>>,
 }

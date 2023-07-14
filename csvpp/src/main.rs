@@ -6,6 +6,7 @@
 //! ```
 //! 
 // TODO:
+// 
 // * reduce the amount of things that are exported publicly 
 //   * make the ASTs private
 //
@@ -19,8 +20,6 @@
 // * writing object files via Serde?
 //
 // * make sure the --verbose output is actually useful
-//
-// * extract the A1-notation stuff into a separate crate
 //
 // * target the lowest versions of all dependencies
 //
@@ -44,8 +43,7 @@ fn compile_from_cli() -> Result<(), Box<Error>> {
         println!("{}", runtime);
     }
 
-    // TODO write (and read) object files
-    // template.write_compiled_template(&options, &template);
+    template.write_object_file(&runtime.source_code)?;
 
     target.write(&template)?;
 

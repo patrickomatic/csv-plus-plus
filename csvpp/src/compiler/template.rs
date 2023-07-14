@@ -8,10 +8,14 @@
 // * maybe rename this to Scope?
 use a1_notation;
 use flexbuffers;
+use serde::{Deserialize, Serialize};
 use std::cell;
 use std::collections;
+use std::convert;
 use std::fmt;
-use crate::{Error, Result, Runtime, Spreadsheet, SpreadsheetCell};
+use std::fs;
+use std::path;
+use crate::{Error, Result, Runtime, SourceCode, Spreadsheet, SpreadsheetCell};
 use crate::ast::{Ast, AstReferences, BuiltinFunction, BuiltinVariable, Functions, Variables};
 use super::code_section_parser::{CodeSection, CodeSectionParser};
 
@@ -21,6 +25,25 @@ pub struct Template<'a> {
     pub spreadsheet: cell::RefCell<Spreadsheet>,
     pub variables: Variables,
     runtime: &'a Runtime,
+}
+
+/// A template stripped down to just it's serializable fields.  This is internal to this module and
+/// should be converted as we read from or write to the object files.
+#[derive(Deserialize, Serialize)]
+struct TemplateAtRest {
+    pub functions: Functions,
+    pub spreadsheet: Spreadsheet,
+    pub variables: Variables,
+}
+
+impl convert::From<&Template<'_>> for TemplateAtRest {
+    fn from(template: &Template) -> Self {
+        TemplateAtRest { 
+            functions: template.functions.clone(),
+            spreadsheet: template.spreadsheet.borrow().clone(),
+            variables: template.variables.clone(), 
+        }
+    }
 }
 
 impl fmt::Display for Template<'_> {
@@ -172,7 +195,6 @@ impl<'a> Template<'a> {
     /// that we can and leave the rest alone.
     fn resolve_variables(&self, var_names: Vec<String>, index: &a1_notation::A1) -> Result<collections::HashMap<String, Ast>> {
         let mut resolved_vars = collections::HashMap::new();
-
         for var_name in var_names {
             if let Some(val) = self.resolve_variable(&var_name, index)? {
                 resolved_vars.insert(var_name, val);
@@ -194,52 +216,142 @@ impl<'a> Template<'a> {
         )
     }
 
-    // TODO hmm should this just move onto impl Runtime rather than taking a runtime
-    pub fn write_object_code(runtime: &Runtime) {
-        let _object_code_filename = runtime.source_code.object_code_filename();
-        let mut _s = flexbuffers::FlexbufferSerializer::new();
-        // self.serialize(&mut s).unwrap();
-        // TODO: write `s` to a file
+    /* TODO: read and use object files for linking
+    fn from_template_at_rest(&self) -> Self {
         todo!()
+    }
+    */
+
+    pub fn write_object_file(&self, source_code: &SourceCode) -> Result<path::PathBuf> {
+        let object_code_filename = source_code.object_code_filename();
+        let mut s = flexbuffers::FlexbufferSerializer::new();
+
+        let template_at_rest = TemplateAtRest::from(self);
+        template_at_rest.serialize(&mut s).unwrap();
+        fs::write(&object_code_filename, "").map_err(|e| {
+            Error::ObjectWriteError { 
+                filename: object_code_filename.clone(),
+                message: format!("Error writing object file: {}", e),
+            }
+        })?;
+
+        Ok(object_code_filename)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    // use super::*;
+    use std::cell;
+    use std::path;
+    use super::*;
+    use crate::CliArgs;
+    use crate::ast::Node;
 
-    #[test]
-    fn new() {
-        // TODO
+    fn build_runtime() -> Runtime {
+        let cli_args = CliArgs {
+            input_filename: path::PathBuf::from("foo.csvpp"),
+            google_sheet_id: Some("abc123".to_string()),
+            ..Default::default()
+        };
+        Runtime::new(cli_args).unwrap()
     }
 
-    /*
+    fn build_template(runtime: &Runtime) -> Template {
+        Template {
+            functions: collections::HashMap::new(),
+            variables: collections::HashMap::new(),
+            runtime,
+            spreadsheet: cell::RefCell::new(Spreadsheet::default()),
+        }
+    }
+
+    // TODO cover deeper use cases on compile
+    #[test]
+    fn compile() {
+        let runtime = build_runtime();
+        let template = Template::compile(&runtime);
+
+        assert!(template.is_ok());
+    }
+
     #[test]
     fn display() {
-        let template = Template::default();
+        let runtime = build_runtime();
+        let template = build_template(&runtime);
+
         assert_eq!(r#"variables: {}
 functions: {}
 rows: 0"#, template.to_string());
-   k}
-    */
+   }
 
     #[test]
     fn is_function_defined_true() {
-        // TODO
+        let runtime = build_runtime();
+        let mut template = build_template(&runtime);
+        template.functions.insert("foo".to_string(), Box::new(Node::Integer(42)));
+
+        assert!(template.is_function_defined("foo"));
+    }
+
+    #[test]
+    fn is_function_defined_builtin_true() {
+        let mut runtime = build_runtime();
+        runtime.builtin_functions.insert("foo".to_string(), BuiltinFunction {
+            name: "foo".to_owned(),
+            eval: Box::new(|_a1, _args| Ok(Node::Integer(42)))
+        });
+        let template = build_template(&runtime);
+
+        assert!(template.is_function_defined("foo"));
     }
 
     #[test]
     fn is_variable_defined_true() {
-        // TODO
+        let runtime = build_runtime();
+        let mut template = build_template(&runtime);
+        template.variables.insert("foo".to_string(), Box::new(Node::Integer(42)));
+
+        assert!(template.is_variable_defined("foo"));
     }
 
     #[test]
-    fn resolve_function() {
-        // TODO
+    fn is_variable_defined_builtin_true() {
+        let mut runtime = build_runtime();
+        runtime.builtin_variables.insert("foo".to_string(), BuiltinVariable {
+            name: "foo".to_owned(),
+            eval: Box::new(|_a1| Ok(Node::Integer(42)))
+        });
+        let template = build_template(&runtime);
+
+        assert!(template.is_variable_defined("foo"));
     }
 
     #[test]
-    fn resolve_variable() {
-        // TODO
+    fn new_with_code_section() {
+        let runtime = build_runtime();
+        let mut functions = collections::HashMap::new();
+        functions.insert("foo".to_string(), Box::new(Node::Integer(1)));
+        let mut variables = collections::HashMap::new();
+        variables.insert("bar".to_string(), Box::new(Node::Integer(2)));
+        let code_section = CodeSection { functions, variables };
+        let template = Template::new(
+            Spreadsheet::default(),
+            Some(code_section),
+            &runtime);
+
+        assert!(template.functions.contains_key("foo"));
+        assert!(template.variables.contains_key("bar"));
+    }
+    
+    #[test]
+    fn new_without_code_section() {
+        let runtime = build_runtime();
+        let template = Template::new(
+            Spreadsheet::default(),
+            None,
+            &runtime);
+
+        assert!(template.functions.is_empty());
+        assert!(template.variables.is_empty());
     }
 }

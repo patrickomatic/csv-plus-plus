@@ -8,17 +8,18 @@
 //! algorithms.
 //!
 use std::fmt;
-use std::io::{BufRead, BufReader};
-use std::fs::File;
-use std::path::PathBuf;
-
+use std::io;
+use std::io::BufRead;
+use std::fs;
+use std::path;
 use crate::{Error, Result};
+use crate::compiler::token_library::CODE_SECTION_SEPARATOR;
 
 type LineCount = u16;
 
 #[derive(Debug)]
 pub struct SourceCode {
-    pub filename: PathBuf,
+    pub filename: path::PathBuf,
     pub lines: LineCount,
     pub length_of_code_section: LineCount,
     pub length_of_csv_section: LineCount,
@@ -42,21 +43,19 @@ impl fmt::Display for SourceCode {
 impl SourceCode {
     /// Open the source code and do a rough first pass where we split the code section from the CSV
     /// section by looking for `---`.
-    pub fn open(filename: PathBuf) -> Result<SourceCode>  {
+    pub fn open(filename: path::PathBuf) -> Result<SourceCode>  {
         let mut total_lines = 0;
         let mut separator_line: Option<LineCount> = None;
         let mut code_section_str = String::from("");
         let mut csv_section = String::from("");
 
         let file = Self::open_file(&filename)?;
-
-        let reader = BufReader::new(file);
+        let reader = io::BufReader::new(file);
 
         for line in reader.lines() {
             match line {
                 Ok(l) => {
-                    // TODO: use the token library to get this as a regex
-                    if l.trim() == "---" {
+                    if l.trim() == CODE_SECTION_SEPARATOR {
                         separator_line = Some(total_lines + 1);
                         continue;
                     } 
@@ -93,14 +92,14 @@ impl SourceCode {
         })
     }
 
-    pub fn object_code_filename(&self) -> PathBuf {
+    pub fn object_code_filename(&self) -> path::PathBuf {
         let mut f = self.filename.clone();
         f.set_extension("csvpo");
         f
     }
 
-    fn open_file(filename: &PathBuf) -> Result<File> {
-        File::open(filename).map_err(|error| Error::SourceCodeError {
+    fn open_file(filename: &path::PathBuf) -> Result<fs::File> {
+        fs::File::open(filename).map_err(|error| Error::SourceCodeError {
                 filename: filename.to_path_buf(),
                 message: format!("Error opening file: {}", error),
             })
@@ -113,7 +112,7 @@ mod tests {
 
     fn build_source_code() -> SourceCode {
         SourceCode {
-            filename: PathBuf::from("test.csvpp".to_string()),
+            filename: path::PathBuf::from("test.csvpp".to_string()),
             lines: 25,
             length_of_code_section: 10,
             length_of_csv_section: 15,
@@ -132,6 +131,8 @@ mod tests {
 
     #[test]
     fn object_code_filename() {
-        assert_eq!(PathBuf::from("test.csvpo"), build_source_code().object_code_filename());
+        assert_eq!(
+            path::PathBuf::from("test.csvpo"), 
+            build_source_code().object_code_filename());
     }
 }

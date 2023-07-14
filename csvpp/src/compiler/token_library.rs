@@ -7,6 +7,8 @@
 use regex::Regex;
 use crate::Error;
 
+pub const CODE_SECTION_SEPARATOR: &str = "---";
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Token {
     Boolean,
