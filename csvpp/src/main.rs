@@ -33,7 +33,7 @@ fn compile_from_cli() -> Result<(), Box<Error>> {
 
     if runtime.options.backup {
         if runtime.options.verbose {
-            println!("Backing up output file: {}", &runtime.target)
+            println!("Backing up output file: {}", &runtime.output)
         }
 
         target.write_backup()?;

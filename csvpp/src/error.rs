@@ -2,7 +2,7 @@
 use std::error;
 use std::fmt;
 use std::path::PathBuf;
-use crate::OutputTarget;
+use crate::Output;
 
 #[derive(Clone, Debug)]
 pub enum Error {
@@ -44,7 +44,7 @@ pub enum Error {
         message: String,
     },
     TargetWriteError {
-        target: OutputTarget,
+        target: Output,
         message: String,
     },
 }

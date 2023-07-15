@@ -1,6 +1,9 @@
 use std::collections;
 use std::fmt;
+use crate::{CliArgs, Result};
 use crate::ast::Ast;
+use crate::compiler::ast_parser::AstParser;
+use crate::compiler::token_library::TokenLibrary;
 
 #[derive(Debug)]
 pub struct Options {
@@ -13,11 +16,28 @@ pub struct Options {
 }
 
 impl Options {
+    pub fn from_cli_args(cli_args: &CliArgs, tl: &TokenLibrary) -> Result<Self> {
+        let key_values_as_str = cli_args
+            .key_values
+            .iter()
+            .map(|s| s.as_str())
+            .collect();
+
+        Ok(Options {
+            backup: cli_args.backup,
+            google_account_credentials: cli_args.google_account_credentials.clone(),
+            key_values: AstParser::parse_key_value_str(key_values_as_str, tl)?,
+            offset: (cli_args.x_offset, cli_args.y_offset),
+            overwrite_values: !cli_args.safe,
+            verbose: cli_args.verbose,
+        })
+    }
+    
     pub fn redacted_google_account_credentials(&self) -> String {
         if self.google_account_credentials.is_some() { 
-            "...set but redacted...".to_owned()
+            "...redacted...".to_owned()
         } else {
-            "none".to_owned()
+            "none".to_string()
         }
     }
 }
@@ -51,6 +71,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn default() {
+        let options = Options::default();
+
+        assert_eq!(options.backup, false);
+        assert_eq!(options.google_account_credentials, None);
+        assert_eq!(options.key_values, collections::HashMap::new());
+        assert_eq!(options.offset, (0, 0));
+        assert_eq!(options.overwrite_values, true);
+        assert_eq!(options.verbose, false);
+    }
+
+    #[test]
     fn display() {
         let options = Options::default();
 
@@ -60,5 +92,14 @@ key_values: {}
 offset: (0, 0)
 overwrite_values: true
 verbose: false"#, options.to_string());
+    }
+
+    #[test]
+    fn from_cli_args() {
+        let cli_args = CliArgs::default();
+        let token_library = TokenLibrary::build().unwrap();
+        let options = Options::from_cli_args(&cli_args, &token_library);
+
+        assert!(options.is_ok());
     }
 }

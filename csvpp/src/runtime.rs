@@ -2,7 +2,7 @@
 //!
 use clap::Parser;
 use std::fmt;
-use crate::{CliArgs, CompilationTarget, Init, Options, OutputTarget, Result, SourceCode};
+use crate::{CliArgs, CompilationTarget, Options, Output, Result, SourceCode};
 use crate::compiler::token_library::TokenLibrary;
 use crate::ast::{BuiltinFunction, BuiltinFunctions, BuiltinVariable, BuiltinVariables};
 
@@ -11,7 +11,7 @@ pub struct Runtime {
     pub builtin_functions: BuiltinFunctions,
     pub builtin_variables: BuiltinVariables,
     pub options: Options,
-    pub target: OutputTarget,
+    pub output: Output,
     pub source_code: SourceCode,
     pub token_library: TokenLibrary,
 }
@@ -23,20 +23,19 @@ impl Runtime {
 
     pub fn new(cli_args: CliArgs) -> Result<Self> {
         let token_library = TokenLibrary::build()?;
-        let init = Init::from_cli_args(cli_args, &token_library)?;
 
         Ok(Self {
             builtin_functions: BuiltinFunction::all(),
             builtin_variables: BuiltinVariable::all(),
-            options: init.options,
-            target: init.output,
-            source_code: init.source_code,
-            token_library: TokenLibrary::build()?,
+            options: Options::from_cli_args(&cli_args, &token_library)?,
+            output: Output::from_cli_args(&cli_args)?,
+            source_code: SourceCode::open(cli_args.input_filename)?,
+            token_library,
         })
     }
 
     pub fn target<'a>(&'a self) -> Result<Box<dyn CompilationTarget + 'a>> {
-        self.target.compilation_target(self)
+        self.output.compilation_target(self)
     }
 }
 

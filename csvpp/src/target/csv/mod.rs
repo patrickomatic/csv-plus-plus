@@ -9,7 +9,7 @@ use std::fmt;
 use std::fs;
 use std::io;
 
-use crate::{Error, OutputTarget, Result, Runtime, SpreadsheetCell, Template};
+use crate::{Error, Output, Result, Runtime, SpreadsheetCell, Template};
 use super::CompilationTarget;
 use super::file_backer_upper;
 
@@ -29,12 +29,6 @@ impl ExistingValue {
     pub fn empty_value() -> String {
         "".to_string()
     }
-
-    /*
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-    */
 }
 
 impl fmt::Display for ExistingValue {
@@ -49,7 +43,7 @@ pub struct ExistingValues {
 }
 
 impl ExistingValues {
-    pub fn read(path: &path::PathBuf, target: &OutputTarget) -> Result<Self> {
+    pub fn read(path: &path::PathBuf, target: &Output) -> Result<Self> {
         let file = match fs::File::open(path) {
             Ok(f) => f,
             Err(e) => return match e.kind() {
@@ -89,12 +83,12 @@ impl CompilationTarget for Csv<'_> {
     fn write(&self, template: &Template) -> Result<()> {
         // TODO rather than passing target, let it throw a different error and catch it and attach
         // target
-        let existing_values = ExistingValues::read(&self.path, &self.runtime.target)?;
+        let existing_values = ExistingValues::read(&self.path, &self.runtime.output)?;
         let new_values = template.spreadsheet.borrow();
         let mut writer = csv::Writer::from_path(&self.path).map_err(|e|
             Error::TargetWriteError {
                 message: format!("Unable to open target file for writing: {:?}", e),
-                target: self.runtime.target.clone(),
+                target: self.runtime.output.clone(),
             })?;
 
         for (index, row) in existing_values.cells.iter().enumerate() {
@@ -104,7 +98,7 @@ impl CompilationTarget for Csv<'_> {
         writer.flush().map_err(|e|
             Error::TargetWriteError {
                 message: format!("Unable to finish writing to target: {}", e),
-                target: self.runtime.target.clone(),
+                target: self.runtime.output.clone(),
             })?;
 
         Ok(())

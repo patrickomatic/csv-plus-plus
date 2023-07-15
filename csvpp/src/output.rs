@@ -1,4 +1,4 @@
-//! # OutputTarget
+//! # Output
 //!
 use std::fmt;
 use std::path;
@@ -8,14 +8,14 @@ use crate::target;
 type GoogleSheetID = String;
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum OutputTarget {
+pub enum Output {
     Csv(path::PathBuf),
     Excel(path::PathBuf),
     OpenDocument(path::PathBuf),
     GoogleSheets(GoogleSheetID),
 }
 
-impl OutputTarget {
+impl Output {
     pub fn from_cli_args(cli_args: &CliArgs) -> Result<Self> {
         if let Some(sheet_id) = &cli_args.google_sheet_id {
             Ok(Self::from_google_sheet_id(sheet_id.to_string())?)
@@ -66,7 +66,7 @@ impl OutputTarget {
     }
 }
 
-impl fmt::Display for OutputTarget {
+impl fmt::Display for Output {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::GoogleSheets(id) => 
@@ -89,9 +89,9 @@ mod tests {
             output_filename: Some(PathBuf::from("foo.csv")),
             ..Default::default()
         };
-        let output_target = OutputTarget::from_cli_args(&cli_args).unwrap();
+        let output_target = Output::from_cli_args(&cli_args).unwrap();
 
-        assert_eq!(output_target, OutputTarget::Csv(PathBuf::from("foo.csv")))
+        assert_eq!(output_target, Output::Csv(PathBuf::from("foo.csv")))
     }
 
     #[test]
@@ -100,9 +100,9 @@ mod tests {
             output_filename: Some(PathBuf::from("foo.xlsx")),
             ..Default::default()
         };
-        let output_target = OutputTarget::from_cli_args(&cli_args).unwrap();
+        let output_target = Output::from_cli_args(&cli_args).unwrap();
 
-        assert_eq!(output_target, OutputTarget::Excel(PathBuf::from("foo.xlsx")))
+        assert_eq!(output_target, Output::Excel(PathBuf::from("foo.xlsx")))
     }
 
     #[test]
@@ -111,9 +111,9 @@ mod tests {
             google_sheet_id: Some("abc".to_string()),
             ..Default::default()
         };
-        let output_target = OutputTarget::from_cli_args(&cli_args).unwrap();
+        let output_target = Output::from_cli_args(&cli_args).unwrap();
 
-        assert_eq!(output_target, OutputTarget::GoogleSheets("abc".to_string()));
+        assert_eq!(output_target, Output::GoogleSheets("abc".to_string()));
     }
 
     #[test]
@@ -122,15 +122,15 @@ mod tests {
             output_filename: Some(PathBuf::from("foo.ods")),
             ..Default::default()
         };
-        let output_target = OutputTarget::from_cli_args(&cli_args).unwrap();
+        let output_target = Output::from_cli_args(&cli_args).unwrap();
 
-        assert_eq!(output_target, OutputTarget::OpenDocument(PathBuf::from("foo.ods")))
+        assert_eq!(output_target, Output::OpenDocument(PathBuf::from("foo.ods")))
     }
 
     #[test]
     fn from_cli_args_invalid() {
         let cli_args = CliArgs::default();
-        let output_target = OutputTarget::from_cli_args(&cli_args);
+        let output_target = Output::from_cli_args(&cli_args);
 
         assert!(output_target.is_err());
     }
