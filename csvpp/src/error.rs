@@ -44,7 +44,7 @@ pub enum Error {
         message: String,
     },
     TargetWriteError {
-        target: Output,
+        output: Output,
         message: String,
     },
 }
@@ -84,8 +84,8 @@ impl fmt::Display for Error {
                 writeln!(f, "Error reading source: {}", filename.display())?;
                 write!(f, "{}", message)
             },
-            Error::TargetWriteError { target, message } => 
-                write!(f, "Error writing to {}: {}", target, message),
+            Error::TargetWriteError { output, message } => 
+                write!(f, "Error writing to {}: {}", output, message),
         }
     }
 }
@@ -114,7 +114,7 @@ mod tests {
             message: "foo".to_string(),
         };
 
-        assert_eq!("Cell->F2: foo", message.to_string());
+        assert_eq!("Cell->B6: foo", message.to_string());
     }
 
     #[test]
@@ -136,6 +136,6 @@ mod tests {
             message: "foo".to_string(),
         };
 
-        assert_eq!("Cell->B1: foo\nbad input: bad_input", message.to_string());
+        assert_eq!("Cell->A2: foo\nbad input: bad_input", message.to_string());
     }
 }
