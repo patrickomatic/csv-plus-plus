@@ -13,14 +13,26 @@ pub struct GoogleSheetsModifier<'a>(pub &'a Modifier);
 
 impl<'a> GoogleSheetsModifier<'a> {
     pub fn cell_format(&self) -> Option<api::CellFormat> {
-        // XXX return None if nothing is set
+        let borders = self.borders();
+        let background_color_style = self.color_style(&self.0.color);
+        let horizontal_alignment = self.horizontal_alignment();
+        let number_format = self.number_format();
+        let text_format = self.text_format();
+        let vertical_alignment = self.vertical_alignment();
+
+        
+        if borders.is_none() && background_color_style.is_none() && horizontal_alignment.is_none()
+                && number_format.is_none() && text_format.is_none() && vertical_alignment.is_none() {
+            return None
+        }
+
         Some(api::CellFormat {
-            background_color_style: self.color_style(&self.0.color),
-            borders: self.borders(),
-            horizontal_alignment: self.horizontal_alignment(),
-            number_format: self.number_format(),
-            text_format: self.text_format(),
-            vertical_alignment: self.vertical_alignment(),
+            background_color_style,
+            borders,
+            horizontal_alignment,
+            number_format,
+            text_format,
+            vertical_alignment,
             ..Default::default()
         })
     }
@@ -87,6 +99,14 @@ impl<'a> GoogleSheetsModifier<'a> {
         }
     }
 
+    fn format_as_option(&self, format: &modifier::TextFormat) -> Option<bool> {
+        if self.0.formats.contains(format) {
+            Some(true)
+        } else {
+            None
+        }
+    }
+
     fn horizontal_alignment(&self) -> Option<String> {
         self.0.horizontal_align.clone().map(|ha| {
             match ha {
@@ -97,27 +117,52 @@ impl<'a> GoogleSheetsModifier<'a> {
         })
     }
 
+    /// https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/cells#numberformat
     /// https://docs.rs/google-sheets4/latest/google_sheets4/api/struct.NumberFormat.html
     fn number_format(&self) -> Option<api::NumberFormat> {
-        todo!();
-        Some(api::NumberFormat {
-            ..Default::default()
+        self.0.number_format.clone().map(|nf| {
+            let nf_type = match nf {
+                modifier::NumberFormat::Currency => "CURRENCY",
+                modifier::NumberFormat::Date => "DATE",
+                modifier::NumberFormat::DateTime => "DATE_TIME",
+                modifier::NumberFormat::Number => "NUMBER",
+                modifier::NumberFormat::Percent => "PERCENT",
+                modifier::NumberFormat::Text => "TEXT",
+                modifier::NumberFormat::Time => "TIME",
+                modifier::NumberFormat::Scientific => "SCIENTIFIC",
+            }.to_string();
+            
+            api::NumberFormat {
+                type_: Some(nf_type),
+                pattern: None,
+            }
         })
     }
 
-    pub fn text_format(&self) -> Option<api::TextFormat> {
-        // XXX return None if everything is empty
-        //
+    fn text_format(&self) -> Option<api::TextFormat> {
+        let bold = self.format_as_option(&modifier::TextFormat::Bold);
+        let font_family = self.0.font_family.clone();
+        let font_size = self.0.font_size.map(|fs| fs as i32);
+        let foreground_color_style = self.color_style(&self.0.font_color);
+        let italic = self.format_as_option(&modifier::TextFormat::Italic);
+        let strikethrough = self.format_as_option(&modifier::TextFormat::Strikethrough);
+        let underline = self.format_as_option(&modifier::TextFormat::Underline);
+
+        if font_family.is_none() && font_size.is_none() && foreground_color_style.is_none()
+                && bold.is_none() && italic.is_none() && strikethrough.is_none() && underline.is_none() {
+            return None
+        }
+
         Some(api::TextFormat {
-            bold: None.or(Some(self.0.formats.contains(&modifier::TextFormat::Bold))),
-            font_family: None.or(self.0.font_family.clone()),
-            font_size: None.or(self.0.font_size.map(|fs| fs as i32)),
+            bold,
+            font_family,
+            font_size, 
             foreground_color: None,
-            foreground_color_style: self.color_style(&self.0.font_color),
-            italic: None.or(Some(self.0.formats.contains(&modifier::TextFormat::Italic))),
+            foreground_color_style,
+            italic,
             link: None,
-            strikethrough: None.or(Some(self.0.formats.contains(&modifier::TextFormat::Strikethrough))),
-            underline: None.or(Some(self.0.formats.contains(&modifier::TextFormat::Underline))),
+            strikethrough,
+            underline,
         })
     }
 
@@ -129,5 +174,33 @@ impl<'a> GoogleSheetsModifier<'a> {
                 modifier::VerticalAlign::Bottom => "BOTTOM",
             }.to_string()
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::modifier;
+    use super::*;
+
+    #[test]
+    fn cell_format_none() {
+        let modifier = Modifier::default();
+        let gs_modifier = GoogleSheetsModifier(&modifier);
+        let cell_format = gs_modifier.cell_format();
+
+        dbg!(&cell_format);
+        assert!(cell_format.is_none());
+    }
+
+    #[test]
+    fn cell_format_some() {
+        let mut modifier = Modifier::default();
+        modifier.formats.insert(modifier::TextFormat::Bold);
+        modifier.vertical_align = Some(modifier::VerticalAlign::Top);
+        let gs_modifier = GoogleSheetsModifier(&modifier);
+        let cell_format = gs_modifier.cell_format().unwrap();
+
+        assert!(cell_format.text_format.is_some());
+        assert!(cell_format.vertical_alignment.is_some());
     }
 }

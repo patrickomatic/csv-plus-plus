@@ -3,52 +3,78 @@
 // TODO: 
 // * better error handling throughout (cleanup unwrap()s)
 //
+mod batch_update_builder;
+mod google_sheets_modifier;
+
 use google_sheets4::hyper;
 use google_sheets4::hyper_rustls;
 use google_sheets4::oauth2;
 use std::env;
 use std::path;
 use crate::{Error, Result, Runtime, Template};
-use super::CompilationTarget;
-
-mod batch_update_builder;
-mod google_sheets_modifier;
-
+use super::{CompilationTarget, ExistingCell, ExistingValues};
 use batch_update_builder::BatchUpdateBuilder;
 
 type SheetsHub = google_sheets4::Sheets<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>;
 
-#[derive(Debug)]
-pub enum CellValue { 
-    ExistingValue(google_sheets4::api::ExtendedValue),
-    Empty,
+type SheetsValue = google_sheets4::api::CellData;
+
+pub struct GoogleSheets<'a> {
+    async_runtime: tokio::runtime::Runtime,
+    credentials: path::PathBuf,
+    runtime: &'a Runtime,
+    pub sheet_id: String,
 }
 
-#[derive(Debug, Default)]
-pub struct ExistingValues {
-    pub cells: Vec<Vec<CellValue>>,
-}
-
-impl ExistingValues {
-    pub async fn read(hub: &SheetsHub, sheet_id: &str) -> Result<ExistingValues> {
-        Self::read_existing_cells(hub, sheet_id).await
+impl CompilationTarget for GoogleSheets<'_> {
+    fn write_backup(&self) -> Result<()> {
+        // TODO I think I need a drive client actually 
+        // let r = hub.spreadsheets().sheets_copy_to(...).doit().await
+        todo!();
     }
 
-    async fn read_existing_cells(hub: &SheetsHub, sheet_id: &str) -> Result<ExistingValues> {
+    fn write(&self, template: &Template) -> Result<()> {
+        self.async_runtime.block_on(async {
+            self.write_sheet(template).await
+        })
+    }
+}
+
+impl<'a> GoogleSheets<'a> {
+    pub fn new(runtime: &'a Runtime, sheet_id: &'a str) -> Result<Self> {
+        let credentials = Self::get_credentials(runtime)?;
+
+        let async_runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .map_err(|e| Error::TargetWriteError {
+                output: runtime.output.clone(),
+                message: format!("Error starting async runtime to write Google Sheets: {}", e),
+            })?;
+
+        Ok(Self {
+            async_runtime,
+            credentials,
+            sheet_id: sheet_id.to_owned(),
+            runtime,
+        })
+    }
+
+    async fn read_existing_cells(&self, hub: &SheetsHub) -> Result<ExistingValues<SheetsValue>> {
         let request = hub
             .spreadsheets()
-            .get(sheet_id)
+            .get(&self.sheet_id)
             .include_grid_data(true)
             .doit()
             .await;
 
-        let empty = Ok(Self::default());
+        let empty = Ok(ExistingValues::default());
 
         let spreadsheet = match request {
             Ok((_, s)) => s,
             Err(e) => match e {
                 // not necessarily unexpected - the target just doesn't exist yet (returned 404)
-                google_sheets4::Error::BadRequest(obj) if obj["error"]["code"].as_u64().is_some_and(|c| c == 404) 
+                google_sheets4::Error::BadRequest(obj) if obj["error"]["code"].as_u64().is_some_and(|c| c == 404)
                     => return empty,
                 _ 
                     => return Err(Error::InitError(format!("Error reading existing sheet: {}", e))),
@@ -87,77 +113,14 @@ impl ExistingValues {
             match &row.values {
                 Some(v) => {
                     existing_cells.push(v.iter().map(|cell| {
-                        match &cell.user_entered_value {
-                            Some(v) => CellValue::ExistingValue(v.clone()),
-                            None => CellValue::Empty,
-                        }
+                        ExistingCell::Value(cell.clone())
                     }).collect());
                 },
                 None => existing_cells.push(vec![]),
             }
         }
 
-        Ok(Self { cells: existing_cells })
-    }
-
-    // A shorter/more direct way of getting just the formula values.  This will not include any
-    // cell data which includes stuff like formatting
-    /*
-    async fn read_formula_values(hub: &SheetsHub, sheet_id: &str) -> Result<Vec<Vec<CellValue>>> {
-        let (_, body) = hub
-            .spreadsheets()
-            .values_get(sheet_id, "A1:Z1000")
-            .value_render_option("FORMULA")
-            .doit()
-            .await
-            .map_err(|e| Error::InitError(
-                    format!("Error reading existing sheet: {}", e)))?;
-
-        dbg!(body);
-        let ret = vec![vec![]];
-        Ok(ret)
-    }
-    */
-}
-
-pub struct GoogleSheets<'a> {
-    async_runtime: tokio::runtime::Runtime,
-    credentials: path::PathBuf,
-    runtime: &'a Runtime,
-    pub sheet_id: String,
-}
-
-impl CompilationTarget for GoogleSheets<'_> {
-    fn write_backup(&self) -> Result<()> {
-        // TODO I think I need a drive client actually 
-        // let r = hub.spreadsheets().sheets_copy_to(...).doit().await
-        todo!();
-    }
-
-    fn write(&self, template: &Template) -> Result<()> {
-        self.async_runtime.block_on(async {
-            self.write_sheet(template).await
-        })
-    }
-}
-
-impl<'a> GoogleSheets<'a> {
-    pub fn new(runtime: &'a Runtime, sheet_id: &'a str) -> Result<Self> {
-        let credentials = Self::get_credentials(runtime)?;
-
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            // TODO: use TargetError?
-            .map_err(|e| Error::InitError(
-                    format!("Error starting async runtime to write Google Sheets: {}", e)))?;
-
-        Ok(Self {
-            async_runtime: rt,
-            credentials,
-            sheet_id: sheet_id.to_owned(),
-            runtime,
-        })
+        Ok(ExistingValues { cells: existing_cells })
     }
 
     fn get_credentials(runtime: &'a Runtime) -> Result<path::PathBuf> {
@@ -208,24 +171,24 @@ impl<'a> GoogleSheets<'a> {
 
     async fn write_sheet(&self, template: &Template<'a>) -> Result<()> {
         let hub = self.sheets_hub().await;
+        let existing_values = self.read_existing_cells(&hub).await?;
+        let batch_update_request = BatchUpdateBuilder::new(self.runtime, template, &existing_values).build();
 
-        // XXX maybe move the read up and out of this function?
-        let existing_values = ExistingValues::read(&hub, &self.sheet_id).await?;
-
-        let batch_update_request = BatchUpdateBuilder::new(self.runtime, template).build();
-        let response = hub
-            .spreadsheets()
+        hub.spreadsheets()
             .batch_update(batch_update_request, &self.sheet_id)
             .doit()
             .await
-            .expect("Error making batch update request");
-
-        Ok(())
+            .map(|_i| ())
+            .map_err(|e| Error::TargetWriteError { 
+                output: self.runtime.output.clone(), 
+                message: format!("Error writing to Google Sheets: {}", e),
+            })
     }
 }
 
 #[cfg(test)]
 mod tests {
+    /*
     use std::path;
 
     use super::*;
@@ -240,7 +203,6 @@ mod tests {
         Runtime::new(cli_args).unwrap()
     }
     
-    /*
     fn build_template() -> Template {
         Template::default()
     }

@@ -2,31 +2,33 @@
 //!
 // TODO:
 // 
-// * fix unwraps
+// * fix unwraps to throw actual errors
 use google_sheets4::api;
 use std::str::FromStr;
 use crate::{Runtime, SpreadsheetCell, Template};
-use super::google_sheets_modifier;
+use crate::ast::Node;
+use super::{google_sheets_modifier, SheetsValue};
+use super::super::{merge_rows, MergeResult, ExistingValues};
 
 pub struct BatchUpdateBuilder<'a> {
+    existing_values: &'a ExistingValues<SheetsValue>,
     runtime: &'a Runtime,
     template: &'a Template<'a>,
 }
 
 impl<'a> BatchUpdateBuilder<'a> {
-    pub fn new(runtime: &'a Runtime, template: &'a Template) -> Self {
-        Self { runtime, template }
+    pub fn new(
+        runtime: &'a Runtime,
+        template: &'a Template,
+        existing_values: &'a ExistingValues<SheetsValue>,
+    ) -> Self {
+        Self { existing_values, runtime, template }
     }
 
     /// Loops over each row of the spreadsheet, building up `UpdateCellsRequest`s.  
-    /// 
     pub fn build(&self) -> api::BatchUpdateSpreadsheetRequest {
-        let requests = self.batch_update_cells_requests();
-        // TODO: I might not need to do this...
-        // requests.push(update_borders_request(template));
-
         api::BatchUpdateSpreadsheetRequest {
-            requests: Some(requests), 
+            requests: Some(self.batch_update_cells_requests()), 
             ..Default::default()
         }
     }
@@ -44,15 +46,26 @@ impl<'a> BatchUpdateBuilder<'a> {
             .collect()
     }
 
-    fn cell_data(&self, row: &[SpreadsheetCell]) -> Vec<api::CellData> {
+    fn cell_data(&self, row: &[MergeResult<SheetsValue>]) -> Vec<api::CellData> {
         row.iter()
             .map(|cell| {
-                let modifier = google_sheets_modifier::GoogleSheetsModifier(&cell.modifier);
-                api::CellData {
-                    user_entered_format: modifier.cell_format(),
-                    note: cell.modifier.note.clone(),
+                match cell {
+                    // just give back the data as we got it
+                    MergeResult::Existing(cell_data) => cell_data.clone(),
 
-                    ..Default::default()
+                    // TODO: can I just return None or something?
+                    MergeResult::Empty => api::CellData::default(),
+
+                    // build a new value
+                    MergeResult::New(cell) => {
+                        let modifier = google_sheets_modifier::GoogleSheetsModifier(&cell.modifier);
+                        api::CellData {
+                            user_entered_format: modifier.cell_format(),
+                            user_entered_value: self.user_entered_value(cell),
+                            note: cell.modifier.note.clone(),
+                            ..Default::default()
+                        }
+                    },
                 }
             })
             .collect()
@@ -64,7 +77,16 @@ impl<'a> BatchUpdateBuilder<'a> {
         spreadsheet
             .cells
             .iter()
-            .map(|row| api::RowData { values: Some(self.cell_data(row)) })
+            .enumerate()
+            .map(|(i, row)| {
+                let empty_row = vec![];
+                let existing_row = self.existing_values.cells.get(i).unwrap_or(&empty_row);
+                let merged_row = merge_rows(existing_row, row, &self.runtime.options);
+
+                api::RowData { 
+                    values: Some(self.cell_data(&merged_row)) 
+                }
+            })
             .collect()
     }
 
@@ -80,4 +102,59 @@ impl<'a> BatchUpdateBuilder<'a> {
             range: None,
         }
     }
+
+    fn user_entered_value(&self, cell: &SpreadsheetCell) -> Option<api::ExtendedValue> {
+        if let Some(ast) = &cell.ast {
+            Some(match *ast.clone() {
+                Node::Boolean(b) =>
+                    api::ExtendedValue {
+                        bool_value: Some(b),
+                        ..Default::default()
+                    },
+                Node::Text(t) =>
+                    api::ExtendedValue {
+                        string_value: Some(t),
+                        ..Default::default()
+                    },
+                Node::Float(f) => 
+                    api::ExtendedValue {
+                        number_value: Some(f),
+                        ..Default::default()
+                    },
+                Node::Integer(i) => 
+                    api::ExtendedValue {
+                        number_value: Some(i as f64),
+                        ..Default::default()
+                    },
+                _ => 
+                    api::ExtendedValue {
+                        formula_value: Some(ast.to_string()),
+                        ..Default::default()
+                    },
+            })
+        } else if cell.value.is_empty() {
+            None
+        } else {
+            Some(api::ExtendedValue {
+                string_value: Some(cell.value.clone()),
+                ..Default::default()
+            })
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    /*
+    use super::*;
+
+    fn build_runtime() -> Runtime {
+
+    }
+
+    #[test]
+    fn build() {
+        let 
+    }
+    */
 }

@@ -11,7 +11,7 @@ use crate::ast::{Ast, Node, Variables};
 use super::ast_parser::AstParser;
 use super::modifier_parser::ModifierParser;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct SpreadsheetCell {
     pub ast: Option<Ast>,
     pub index: a1_notation::A1,
@@ -52,7 +52,7 @@ impl fmt::Display for SpreadsheetCell {
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Spreadsheet {
     pub cells: Vec<Vec<SpreadsheetCell>>,
 }
