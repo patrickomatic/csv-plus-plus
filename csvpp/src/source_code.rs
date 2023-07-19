@@ -8,14 +8,12 @@
 //! algorithms.
 //!
 use std::fmt;
-use std::io;
-use std::io::BufRead;
 use std::fs;
 use std::path;
 use crate::{Error, Result};
 use crate::compiler::token_library::CODE_SECTION_SEPARATOR;
 
-type LineCount = u16;
+type LineCount = usize;
 
 #[derive(Debug)]
 pub struct SourceCode {
@@ -44,52 +42,36 @@ impl SourceCode {
     /// Open the source code and do a rough first pass where we split the code section from the CSV
     /// section by looking for `---`.
     pub fn open(filename: path::PathBuf) -> Result<SourceCode>  {
-        let mut total_lines = 0;
-        let mut separator_line: Option<LineCount> = None;
-        let mut code_section_str = String::from("");
-        let mut csv_section = String::from("");
-
-        let file = Self::open_file(&filename)?;
-        let reader = io::BufReader::new(file);
-
-        for line in reader.lines() {
-            match line {
-                Ok(l) => {
-                    if l.trim() == CODE_SECTION_SEPARATOR {
-                        separator_line = Some(total_lines + 1);
-                        continue;
-                    } 
-
-                    if separator_line.is_none() {
-                        code_section_str.push_str(&l);
-                        code_section_str.push('\n');
-                    } else {
-                        csv_section.push_str(&l);
-                        csv_section.push('\n');
-                    }
-
-                    total_lines += 1;
-                },
-                Err(message) => 
-                    return Err(Error::SourceCodeError {
-                        filename,
-                        message: format!("Error reading line {}: {}", total_lines, message),
-                    }),
+        let input = fs::read_to_string(&filename).map_err(|e| {
+            Error::SourceCodeError {
+                filename: filename.clone(),
+                message: format!("Error reading source code {}: {}", filename.display(), e),
             }
+        })?;
+
+        if let Some((code_section, csv_section)) = input.split_once(CODE_SECTION_SEPARATOR) {
+            let csv_lines = csv_section.lines().count();
+            let code_lines = code_section.lines().count();
+
+            Ok(SourceCode {
+                filename,
+                lines: csv_lines + code_lines,
+                length_of_code_section: code_lines,
+                length_of_csv_section: csv_lines,
+                csv_section: csv_section.trim().to_string(),
+                code_section: Some(code_section.trim().to_string()), 
+            })
+        } else {
+            let csv_lines = input.lines().count();
+            Ok(SourceCode {
+                filename,
+                lines: csv_lines,
+                length_of_code_section: 0,
+                length_of_csv_section: csv_lines,
+                csv_section: input.trim().to_owned(),
+                code_section: None, 
+            })
         }
-
-        let length_of_code_section = separator_line.unwrap_or(0);
-
-        let code_section = if separator_line.is_none() { None } else { Some(code_section_str) };
-
-        Ok(SourceCode {
-            filename,
-            lines: total_lines,
-            length_of_code_section,
-            length_of_csv_section: total_lines - length_of_code_section,
-            csv_section,
-            code_section, 
-        })
     }
 
     pub fn object_code_filename(&self) -> path::PathBuf {
@@ -97,18 +79,36 @@ impl SourceCode {
         f.set_extension("csvpo");
         f
     }
-
-    fn open_file(filename: &path::PathBuf) -> Result<fs::File> {
-        fs::File::open(filename).map_err(|error| Error::SourceCodeError {
-                filename: filename.to_path_buf(),
-                message: format!("Error opening file: {}", error),
-            })
-    }
 }
 
 #[cfg(test)]
 mod tests {
+    use rand::Rng;
+    use std::fs;
+    use std::path;
     use super::*;
+
+    struct Setup {
+        source: path::PathBuf,
+    }
+
+    impl Setup {
+        fn new(input: &str) -> Self {
+            let mut rng = rand::thread_rng();
+
+            let random_filename = format!("source_code_test_input{}.csvpp", rng.gen::<u64>());
+            let source_path = path::Path::new(&random_filename);
+            fs::write(source_path, input).unwrap();
+
+            Self { source: source_path.to_path_buf() }
+        }
+    }
+
+    impl Drop for Setup {
+        fn drop(&mut self) {
+            fs::remove_file(&self.source).unwrap();
+        }
+    }
 
     fn build_source_code() -> SourceCode {
         SourceCode {
@@ -134,5 +134,34 @@ mod tests {
         assert_eq!(
             path::PathBuf::from("test.csvpo"), 
             build_source_code().object_code_filename());
+    }
+
+    #[test]
+    fn open_no_code_section() {
+        let s = Setup::new("foo,bar,baz");
+        let source_code = SourceCode::open(s.source.clone()).unwrap();
+
+        assert_eq!(source_code.lines, 1);
+        assert_eq!(source_code.length_of_csv_section, 1);
+        assert_eq!(source_code.length_of_code_section, 0);
+        assert_eq!(source_code.code_section, None);
+        assert_eq!(source_code.csv_section, "foo,bar,baz".to_string());
+    }
+
+    #[test]
+    fn open_code_section() {
+        let s = Setup::new(r#"
+foo := 1
+
+---
+foo,bar,baz,=foo
+"#);
+        let source_code = SourceCode::open(s.source.clone()).unwrap();
+
+        assert_eq!(source_code.lines, 5);
+        assert_eq!(source_code.length_of_csv_section, 2);
+        assert_eq!(source_code.length_of_code_section, 3);
+        assert_eq!(source_code.code_section, Some("foo := 1".to_string()));
+        assert_eq!(source_code.csv_section, "foo,bar,baz,=foo".to_string());
     }
 }

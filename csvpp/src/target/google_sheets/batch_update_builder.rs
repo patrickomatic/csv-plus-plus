@@ -145,16 +145,33 @@ impl<'a> BatchUpdateBuilder<'a> {
 
 #[cfg(test)]
 mod tests {
-    /*
+    use std::path;
+    use crate::{CliArgs, Modifier, Spreadsheet};
     use super::*;
 
     fn build_runtime() -> Runtime {
-
+        let cli_args = CliArgs {
+            input_filename: path::PathBuf::from("foo.csvpp"),
+            google_sheet_id: Some("abc123".to_string()),
+            ..Default::default()
+        };
+        Runtime::new(cli_args).unwrap()
     }
 
     #[test]
     fn build() {
-        let 
+        let runtime = build_runtime();
+        let mut spreadsheet = Spreadsheet::default();
+        spreadsheet.cells.push(vec![SpreadsheetCell {
+            ast: None,
+            index: a1_notation::A1::builder().xy(0, 1).build().unwrap(),
+            value: "Test".to_string(),
+            modifier: Modifier::default(),
+        }]);
+        let template = Template::new(spreadsheet, None, &runtime);
+        let existing_values = ExistingValues::default();
+        let builder = BatchUpdateBuilder::new(&runtime, &template, &existing_values).build();
+
+        assert_eq!(1, builder.requests.unwrap().len());
     }
-    */
 }

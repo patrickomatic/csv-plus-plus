@@ -7,13 +7,11 @@
 //
 // * maybe rename this to Scope?
 use a1_notation;
-use flexbuffers;
 use serde::{Deserialize, Serialize};
 use std::cell;
 use std::collections;
 use std::convert;
 use std::fmt;
-use std::fs;
 use std::path;
 use crate::{Error, Result, Runtime, SourceCode, Spreadsheet, SpreadsheetCell};
 use crate::ast::{Ast, AstReferences, BuiltinFunction, BuiltinVariable, Functions, Variables};
@@ -224,16 +222,20 @@ impl<'a> Template<'a> {
 
     pub fn write_object_file(&self, source_code: &SourceCode) -> Result<path::PathBuf> {
         let object_code_filename = source_code.object_code_filename();
-        let mut s = flexbuffers::FlexbufferSerializer::new();
+        /* TODO spend some more time thinking about what would be a good representation
+        // let mut s = flexbuffers::FlexbufferSerializer::new();
 
         let template_at_rest = TemplateAtRest::from(self);
-        template_at_rest.serialize(&mut s).unwrap();
-        fs::write(&object_code_filename, "").map_err(|e| {
+        // let serializer = template_at_rest.serialize(&mut s).unwrap();
+        let file = fs::File::create(&object_code_filename).unwrap();
+        let writer = ciborium::into_writer(&template_at_rest, &file).unwrap();
+        fs::write(&object_code_filename, writer).map_err(|e| {
             Error::ObjectWriteError { 
                 filename: object_code_filename.clone(),
                 message: format!("Error writing object file: {}", e),
             }
         })?;
+        */
 
         Ok(object_code_filename)
     }

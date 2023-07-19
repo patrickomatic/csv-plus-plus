@@ -33,8 +33,13 @@ impl CompilationTarget for Csv<'_> {
                 output: self.runtime.output.clone(),
             })?;
 
-        for (index, row) in existing_values.cells.iter().enumerate() {
-            let output_row: Vec<String> = merge_rows(row, &new_values.cells[index], &self.runtime.options)
+        for (index, row) in new_values.cells.iter().enumerate() {
+            // let empty = vec![];
+            let output_row: Vec<String> = merge_rows(
+                    existing_values.cells.get(index).unwrap_or(&vec![].to_owned()), 
+                    row, 
+                    &self.runtime.options,
+                )
                 .iter()
                 .map(|cell| {
                     match cell {
