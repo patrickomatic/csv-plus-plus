@@ -14,7 +14,8 @@ and using shorthand:
 [[f=b/f=u]]foo,[[fs=20]]bar,baz
 ```
 
-And there can be a code section at the top, separated from the cells by a `---`
+You can also extract re-usable variables and functions by making a code section at the top, separated 
+from the cells by a `---`
 
 ```csvpp
 # you can define variables with `:=`
@@ -24,9 +25,8 @@ foo := 42
 fn bar(a, b)
   a + b
 
-# this means we're done defining variables and functions
 ---
 foo,=bar(10, 20),=foo
+some,other,values
 ```
-
 

@@ -3,9 +3,6 @@
 //! A `template` holds the final compiled state for a single csv++ source file, as well as managing
 //! evaluation and scope resolution.
 //!
-// TODO: 
-//
-// * maybe rename this to Scope?
 use a1_notation;
 use serde::{Deserialize, Serialize};
 use std::cell;
@@ -14,7 +11,7 @@ use std::convert;
 use std::fmt;
 use std::path;
 use crate::{Error, Result, Runtime, SourceCode, Spreadsheet, SpreadsheetCell};
-use crate::ast::{Ast, AstReferences, BuiltinFunction, BuiltinVariable, Functions, Variables};
+use crate::ast::{Ast, AstReferences, BuiltinFunction, BuiltinVariable, Functions, Node, Variables};
 use super::code_section_parser::{CodeSection, CodeSectionParser};
 
 #[derive(Debug)]
@@ -205,7 +202,11 @@ impl<'a> Template<'a> {
     fn resolve_variable(&self, var_name: &str, index: &a1_notation::A1) -> Result<Option<Ast>> {
         Ok(
             if let Some(value) = self.variables.get(var_name) {
-                Some(value.to_owned())
+                Some(Box::new(match &**value {
+                    Node::Variable { body, .. } => *body.clone(),
+                    n => n.clone(),
+                }))
+                // Some(value.to_owned())
             } else if let Some(BuiltinVariable { eval, .. }) = self.runtime.builtin_variables.get(var_name) {
                 Some(Box::new(eval(index)?))
             } else {
