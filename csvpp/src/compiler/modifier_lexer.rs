@@ -8,12 +8,8 @@
 //!
 //!
 // TODO:
-// * fix the row parsing logic (it doesn't apply row modifiers)
-//
 // * need to lowercase the input but we can't do it on the entire value because we don't want to
 //     lowercase the stuff outside the modifier definition
-//
-// * get quoted strings working
 use crate::{Error, Result};
 
 #[derive(Debug, PartialEq)]
@@ -40,7 +36,6 @@ impl ModifierLexer {
         Self { input: input.to_owned() }
     }
 
-    // TODO: can this just give over ownership?
     pub fn rest(&self) -> String {
         self.input.clone()
     }
@@ -66,20 +61,10 @@ impl ModifierLexer {
 
     pub fn maybe_take_token(&mut self, token: Token) -> Option<String> {
         match token {
-            Token::Equals =>            self.maybe_take("="),
-            Token::Slash =>             self.maybe_take("/"),
-            _ => todo!(), // TODO
-        }
-    }
-
-    fn maybe_take(&mut self, substring: &str) -> Option<String> {
-        let input = self.input.trim();
-
-        if let Some(without_match) = input.strip_prefix(substring) {
-            self.input = without_match.to_string();
-            Some(substring.to_string())
-        } else {
-            None
+            Token::Equals =>    self.maybe_take("="),
+            Token::Slash =>     self.maybe_take("/"),
+            _ =>
+                panic!("Cannot maybe take: {:?}", token),
         }
     }
 
@@ -95,6 +80,17 @@ impl ModifierLexer {
             Token::Slash =>             self.take("/"),
             Token::StartCellModifier => self.take("[["),
             Token::StartRowModifier =>  self.take("![["),
+        }
+    }
+
+    fn maybe_take(&mut self, substring: &str) -> Option<String> {
+        let input = self.input.trim();
+
+        if let Some(without_match) = input.strip_prefix(substring) {
+            self.input = without_match.to_string();
+            Some(substring.to_string())
+        } else {
+            None
         }
     }
 
@@ -114,8 +110,41 @@ impl ModifierLexer {
     }
 
     fn take_color(&mut self) -> Result<String> {
-        // XXX 
-        todo!();
+        let mut matched_alphas = 0;
+        let mut saw_hash = false;
+        let mut matched = "".to_string();
+
+        for c in self.input.trim().chars() {
+            if c == '#' && !saw_hash {
+                saw_hash = true;
+                matched.push(c);
+            } else if c.is_alphanumeric() {
+                if matched_alphas > 6 {
+                    return Err(Error::ModifierSyntaxError {
+                        message: format!("Unexpected RGB color character: '{}'", c),
+                        bad_input: self.input.to_string(),
+                        index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
+                    })
+                }
+
+                matched.push(c);
+                matched_alphas += 1;
+            } else {
+                // either we're done or it's a syntax error
+                if matched_alphas == 3 || matched_alphas == 6 {
+                    break;
+                }
+
+                return Err(Error::ModifierSyntaxError {
+                    message: format!("Invalid character when parsing RGB color: '{}'", c),
+                    bad_input: self.input.to_string(),
+                    index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
+                })
+            }
+        }
+
+        self.input = self.input[matched.len()..].to_string();
+        Ok(matched)
     }
 
     fn take_string(&mut self) -> Result<String> {
@@ -129,8 +158,45 @@ impl ModifierLexer {
     }
 
     fn take_single_quoted_string(&mut self) -> Result<String> {
-        // XXX
-        todo!();
+        let mut escape_mode = false;
+        let mut matched = "".to_string();
+        let mut start_quote = false;
+        let mut end_quote = false;
+        
+        for c in self.input.trim().chars() {
+            if start_quote {
+                if escape_mode {
+                    matched.push(c);
+                    escape_mode = false;
+                } else if c == '\\' {
+                    escape_mode = true;
+                } else if c == '\'' {
+                    end_quote = true;
+                    break;
+                } else {
+                    matched.push(c);
+                }
+            } else if c == '\'' {
+                start_quote = true;
+            } else {
+                return Err(Error::ModifierSyntaxError {
+                    message: "Expected a starting single quote".to_string(),
+                    bad_input: self.input.to_string(),
+                    index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
+                })
+            }
+        }
+
+        if start_quote && end_quote {
+            self.input = self.input[matched.len()..].to_string();
+            Ok(matched)
+        } else {
+            Err(Error::ModifierSyntaxError {
+                message: "Expected a start and ending quote".to_string(),
+                bad_input: self.input.to_string(),
+                index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
+            })
+        }
     }
 
     fn take_while<F>(
@@ -164,6 +230,128 @@ impl ModifierLexer {
 
 #[cfg(test)]
 mod tests {
-    // user super::*;
-    // TODO
+    use super::*;
+
+    #[test]
+    fn maybe_take_start_modifier_modifier() {
+        let mut lexer = ModifierLexer::new("[[");
+        assert_eq!(Some(Token::StartCellModifier), lexer.maybe_take_start_modifier());
+    }
+
+    #[test]
+    fn maybe_take_start_modifier_row_modifier() {
+        let mut lexer = ModifierLexer::new("![[");
+        assert_eq!(Some(Token::StartRowModifier), lexer.maybe_take_start_modifier());
+    }
+
+    #[test]
+    fn maybe_take_start_modifier_none() {
+        let mut lexer = ModifierLexer::new("foo");
+        assert_eq!(None, lexer.maybe_take_start_modifier());
+    }
+
+    #[test]
+    fn take_modifier_right_side() {
+        let mut lexer = ModifierLexer::new("=foo_bar");
+        assert_eq!("foo_bar", lexer.take_modifier_right_side().unwrap());
+    }
+
+    #[test]
+    fn take_modifier_right_side_invalid() {
+        let mut lexer = ModifierLexer::new("foo");
+        assert!(lexer.take_modifier_right_side().is_err());
+    }
+
+    #[test]
+    fn maybe_take_token_equals() {
+        let mut lexer = ModifierLexer::new("=");
+        assert_eq!(Some("=".to_string()), lexer.maybe_take_token(Token::Equals));
+    }
+
+    #[test]
+    fn maybe_take_token_slash() {
+        let mut lexer = ModifierLexer::new("/");
+        assert_eq!(Some("/".to_string()), lexer.maybe_take_token(Token::Slash));
+    }
+
+    #[test]
+    fn maybe_take_token_none() {
+        let mut lexer = ModifierLexer::new("foo");
+        assert_eq!(None, lexer.maybe_take_token(Token::Slash));
+    }
+
+    #[test]
+    fn take_token_color() {
+        let mut lexer = ModifierLexer::new("#ABC123");
+        assert_eq!("#ABC123", lexer.take_token(Token::Color).unwrap());
+    }
+
+    #[test]
+    fn take_token_color_shorthand() {
+        let mut lexer = ModifierLexer::new("#ABC");
+        assert_eq!("#ABC", lexer.take_token(Token::Color).unwrap());
+    }
+
+    #[test]
+    fn take_token_color_no_hash() {
+        let mut lexer = ModifierLexer::new("ABC123");
+        assert_eq!("ABC123", lexer.take_token(Token::Color).unwrap());
+    }
+
+    #[test]
+    fn take_token_end_modifier() {
+        let mut lexer = ModifierLexer::new("]]");
+        assert_eq!("]]", lexer.take_token(Token::EndModifier).unwrap());
+    }
+
+    #[test]
+    fn take_token_equals() {
+        let mut lexer = ModifierLexer::new(" = ");
+        assert_eq!("=", lexer.take_token(Token::Equals).unwrap());
+    }
+
+    #[test]
+    fn take_token_modifier_name() {
+        let mut lexer = ModifierLexer::new("foo");
+        assert_eq!("foo", lexer.take_token(Token::ModifierName).unwrap());
+    }
+
+    #[test]
+    fn take_token_positive_number() {
+        let mut lexer = ModifierLexer::new("15");
+        assert_eq!("15", lexer.take_token(Token::PositiveNumber).unwrap());
+    }
+
+    #[test]
+    fn take_token_string() {
+        let mut lexer = ModifierLexer::new("string");
+        assert_eq!("string", lexer.take_token(Token::String).unwrap());
+    }
+
+    #[test]
+    fn take_token_string_double_quoted() {
+        let mut lexer = ModifierLexer::new("'this is \\' a quoted string\\''");
+        assert_eq!("this is ' a quoted string'", lexer.take_token(Token::String).unwrap());
+    }
+
+    #[test]
+    fn take_token_slash() {
+        let mut lexer = ModifierLexer::new(" / ");
+        assert_eq!("/", lexer.take_token(Token::Slash).unwrap());
+    }
+
+    #[test]
+    fn take_token_invalid() {
+        let mut lexer = ModifierLexer::new("foo");
+        assert!(lexer.take_token(Token::PositiveNumber).is_err());
+    }
+
+    #[test]
+    fn rest() {
+        let mut lexer = ModifierLexer::new(" / = rest");
+        lexer.take_token(Token::Slash).unwrap();
+        lexer.take_token(Token::Equals).unwrap();
+
+        assert_eq!(" rest", lexer.rest());
+    }
 }
