@@ -1,8 +1,12 @@
 [package]
 authors = ["Patrick Carroll <patrick@patrickomatic.com>"]
 description = "Compile csvpp source code to a target spreadsheet format"
+homepage = "https://github.com/patrickomatic/csv-plus-plus"
+keywords = ["csv++", "csvpp", "csv", "excel", "google", "sheets", "opendocument", "xlsx", "xls", "odf"]
+license = "MIT"
 name = "csvpp"
-version = "0.1.0"
+repository = "https://github.com/patrickomatic/csv-plus-plus"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
@@ -10,10 +14,13 @@ a1_notation = "0.2.0"
 chrono = { version = "0.4.24", features = ["serde"] }
 clap = { version = "4.2.7", features = ["derive"] }
 csv = "1"
-flexbuffers = "2.0.0"
+google-drive3 = "*"
 google-sheets4 = "*"
 home = "^0.5"
 regex = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "^1.0"
 tokio = { version = "^1.0", features = ["full"] }
+
+[dev-dependencies]
+rand = "*"
