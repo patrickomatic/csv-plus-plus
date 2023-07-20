@@ -157,13 +157,19 @@ impl ModifierLexer {
         }
     }
 
+    #[allow(clippy::explicit_counter_loop)]
     fn take_single_quoted_string(&mut self) -> Result<String> {
         let mut escape_mode = false;
         let mut matched = "".to_string();
         let mut start_quote = false;
         let mut end_quote = false;
+        let mut consumed = 0;
         
         for c in self.input.trim().chars() {
+            // due to escaping rules, we don't always put what we consume on `matched`.  so we need
+            // to keep track of it separately
+            consumed += 1;
+
             if start_quote {
                 if escape_mode {
                     matched.push(c);
@@ -188,7 +194,7 @@ impl ModifierLexer {
         }
 
         if start_quote && end_quote {
-            self.input = self.input[matched.len()..].to_string();
+            self.input = self.input[consumed..].to_string();
             Ok(matched)
         } else {
             Err(Error::ModifierSyntaxError {
@@ -217,6 +223,7 @@ impl ModifierLexer {
 
         if matched.is_empty() {
             Err(Error::ModifierSyntaxError {
+                // XXX this message is misleading I think
                 message: "Expected a modifier definition (i.e. format/halign/etc)".to_owned(),
                 bad_input: input.to_string(),
                 index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
@@ -332,6 +339,8 @@ mod tests {
     fn take_token_string_double_quoted() {
         let mut lexer = ModifierLexer::new("'this is \\' a quoted string\\''");
         assert_eq!("this is ' a quoted string'", lexer.take_token(Token::String).unwrap());
+        // make sure it consumed `input` given the weird quoting rules
+        assert_eq!("", lexer.input);
     }
 
     #[test]

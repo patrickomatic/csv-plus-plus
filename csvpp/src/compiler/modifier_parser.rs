@@ -143,8 +143,8 @@ impl<'a> ModifierParser<'a> {
     fn font_family_modifier(&mut self) -> Result<()> {
         self.lexer.take_token(Token::Equals)?;
 
-        let color = self.lexer.take_token(Token::Color)?;
-        self.modifier.font_color = Some(Rgb::from_str(&color)?);
+        let font_family = self.lexer.take_token(Token::String)?;
+        self.modifier.font_family = Some(font_family);
         Ok(())
     }
 
@@ -177,6 +177,7 @@ impl<'a> ModifierParser<'a> {
     }
 
     fn note(&mut self) -> Result<()> {
+        self.lexer.take_token(Token::Equals)?;
         self.modifier.note = Some(self.lexer.take_token(Token::String)?);
         Ok(())
     }
@@ -264,12 +265,7 @@ mod tests {
 
     #[test]
     fn parse_modifier() {
-        let ParsedModifiers { 
-            value,
-            modifier,
-            row_modifier: _row_modifier,
-            index: _index,
-        } = test_parse("[[format=bold]]abc123");
+        let ParsedModifiers { value, modifier, .. } = test_parse("[[format=bold]]abc123");
 
         assert_eq!(value, "abc123");
 
@@ -278,12 +274,7 @@ mod tests {
 
     #[test]
     fn parse_multiple_modifiers() {
-        let ParsedModifiers { 
-            value,
-            modifier,
-            row_modifier: _row_modifier,
-            index: _index,
-        } = test_parse("[[format=italic/valign=top/expand]]abc123");
+        let ParsedModifiers { value, modifier, .. } = test_parse("[[format=italic/valign=top/expand]]abc123");
 
         assert_eq!(value, "abc123");
 
@@ -294,12 +285,7 @@ mod tests {
 
     #[test]
     fn parse_multiple_modifiers_shorthand() {
-        let ParsedModifiers { 
-            value,
-            modifier,
-            row_modifier: _row_modifier,
-            index: _index,
-        } = test_parse("[[ha=l/va=c/f=u/fs=12]]abc123");
+        let ParsedModifiers { value, modifier, .. } = test_parse("[[ha=l/va=c/f=u/fs=12]]abc123");
 
         assert_eq!(value, "abc123");
 
