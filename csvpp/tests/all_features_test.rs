@@ -84,4 +84,67 @@ fn composite_fn(a, b)
     assert!(target.write(&template).is_ok());
 }
 
-// TODO: fn test_all_features_shorthand_csv() {
+#[test]
+fn test_all_features_shorthand_csv() {
+    let s = common::Setup::new(r#"
+---
+ border        ,                                                      ,
+               ,[[b=t]]                 border=top                    ,
+               ,[[b=r]]                 border=right                  ,
+               ,[[b=b]]                 border=bottom                 ,
+               ,[[b=l]]                 border=left                   ,
+               ,[[b=a]]                 border=all                    ,
+               ,                                                      ,
+ borderstyle   ,                                                      ,
+               ,[[b=all/bs=dashed]]     border=all/borderstyle=dashed ,
+               ,[[b=all/bs=solid]]      border=all/borderstyle=solid  ,
+               ,                                                      ,
+ color         ,                                                      ,
+               ,[[c=FF0000]]            color=FF0000                  ,
+               ,[[c=ABC]]               color=ABC                     ,
+               ,                                                      ,
+ expand        ,                                                      ,
+ ![[e=3]]      ,                        expand=3                      ,
+               ,                                                      ,
+ fontcolor     ,                                                      ,
+               ,[[fc=FF0000]]           fontcolor=FF0000              ,
+               ,[[fc=ABC]]              fontcolor=ABC                 ,
+               ,                                                      ,
+ fontfamily    ,                                                      ,
+               ,[[ff='Comic Sans Ms']]  fontfamily='Comic Sans MS'    ,
+               ,[[ff='Helvetica']]      fontfamily='Helvetica'        ,
+               ,                                                      ,
+ fontsize      ,                                                      ,
+               ,[[fs=20]]               fontsize=20                   ,
+               ,[[fs=4]]                fontsize=4                    ,
+               ,                                                      ,
+ format        ,                                                      ,
+               ,[[f=b]]                 format=bold                   ,
+               ,[[f=i]]                 format=italic                 ,
+               ,[[f=u]]                 format=underline              ,
+               ,[[f=s]]                 format=strikethrough          ,
+               ,                                                      ,
+ halign        ,                                                      ,
+               ,[[ha=l]]                halign=left                   ,
+               ,[[ha=c]]                halign=center                 ,
+               ,[[ha=r]]                halign=right                  ,
+               ,                                                      ,
+ note          ,                                                      ,
+               ,[[n='this is a note']]  note='this is a note'         ,
+               ,                                                      ,
+ valign        ,                                                      ,
+               ,[[va=top]]              valign=top                    ,
+               ,[[va=center]]           valign=center                 ,
+               ,[[va=bottom]]           valign=bottom                 ,
+"#);
+    let template = Template::compile(&s.runtime).unwrap();
+    let target = s.runtime.target().unwrap();
+    assert!(target.write(&template).is_ok());
+}
+
+// TODO:
+// #[test]
+// fn test_all_features_excel() {
+//
+// #[test]
+// fn test_all_features_google_sheets() {
