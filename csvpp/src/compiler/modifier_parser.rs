@@ -256,9 +256,7 @@ mod tests {
     #[test]
     fn parse_no_modifier() {
         let parsed_modifiers = test_parse("abc123");
-
         assert_eq!(parsed_modifiers.value, "abc123");
-
         assert!(!parsed_modifiers.modifier.row_level);
         assert!(parsed_modifiers.row_modifier.row_level);
     }
@@ -266,18 +264,14 @@ mod tests {
     #[test]
     fn parse_modifier() {
         let ParsedModifiers { value, modifier, .. } = test_parse("[[format=bold]]abc123");
-
         assert_eq!(value, "abc123");
-
         assert!(modifier.formats.contains(&TextFormat::Bold));
     }
 
     #[test]
     fn parse_multiple_modifiers() {
         let ParsedModifiers { value, modifier, .. } = test_parse("[[format=italic/valign=top/expand]]abc123");
-
         assert_eq!(value, "abc123");
-
         assert!(modifier.formats.contains(&TextFormat::Italic));
         assert_eq!(modifier.vertical_align, Some(VerticalAlign::Top));
         assert_eq!(modifier.expand, Some(Expand { amount: None }));
@@ -286,12 +280,88 @@ mod tests {
     #[test]
     fn parse_multiple_modifiers_shorthand() {
         let ParsedModifiers { value, modifier, .. } = test_parse("[[ha=l/va=c/f=u/fs=12]]abc123");
-
         assert_eq!(value, "abc123");
-
         assert_eq!(modifier.font_size, Some(12));
         assert_eq!(modifier.horizontal_align, Some(HorizontalAlign::Left));
         assert_eq!(modifier.vertical_align, Some(VerticalAlign::Center));
         assert!(modifier.formats.contains(&TextFormat::Underline));
+    }
+
+    #[test]
+    fn parse_row_modifier() {
+        let ParsedModifiers { row_modifier, .. } = test_parse("![[format=bold]]abc123");
+        assert!(row_modifier.formats.contains(&TextFormat::Bold));
+    }
+
+    #[test]
+    fn parse_border() {
+        let ParsedModifiers { modifier, .. } = test_parse("[[border=top]]abc123");
+        assert!(modifier.borders.contains(&BorderSide::Top));
+    }
+
+    #[test]
+    fn parse_borderstyle() {
+        let ParsedModifiers { modifier, .. } = test_parse("[[b=t/bs=dotted]]abc123");
+        assert_eq!(modifier.border_style, Some(BorderStyle::Dotted));
+    }
+
+    #[test]
+    fn parse_color() {
+        let ParsedModifiers { modifier, .. } = test_parse("[[color=#ABC]]abc123");
+        assert!(modifier.color.is_some());
+    }
+
+    #[test]
+    fn parse_expand() {
+        let ParsedModifiers { modifier, .. } = test_parse("[[expand=20]]abc123");
+        assert!(modifier.expand.is_some());
+    }
+
+    #[test]
+    fn parse_fontcolor() {
+        let ParsedModifiers { modifier, .. } = test_parse("[[fontcolor=#ABC]]abc123");
+        assert!(modifier.font_color.is_some());
+    }
+
+    #[test]
+    fn parse_fontfamily() {
+        let ParsedModifiers { modifier, .. } = test_parse("[[fontfamily=Helvetica]]abc123");
+        assert_eq!(modifier.font_family, Some("Helvetica".to_string()));
+    }
+
+    #[test]
+    fn parse_fontsize() {
+        let ParsedModifiers { modifier, .. } = test_parse("[[fontsize=20]]abc123");
+        assert_eq!(modifier.font_size, Some(20));
+    }
+
+    #[test]
+    fn parse_format() {
+        let ParsedModifiers { modifier, .. } = test_parse("[[format=bold]]abc123");
+        assert!(modifier.formats.contains(&TextFormat::Bold));
+    }
+
+    #[test]
+    fn parse_halign() {
+        let ParsedModifiers { modifier, .. } = test_parse("[[halign=left]]abc123");
+        assert_eq!(modifier.horizontal_align, Some(HorizontalAlign::Left));
+    }
+
+    #[test]
+    fn parse_note() {
+        let ParsedModifiers { modifier, .. } = test_parse("[[note='foo']]abc123");
+        assert_eq!(modifier.note, Some("foo".to_string()));
+    }
+
+    #[test]
+    fn parse_numberformat() {
+        let ParsedModifiers { modifier, .. } = test_parse("[[numberformat=datetime]]abc123");
+        assert_eq!(modifier.number_format, Some(NumberFormat::DateTime));
+    }
+
+    #[test]
+    fn parse_valign() {
+        let ParsedModifiers { modifier, .. } = test_parse("[[valign=top]]abc123");
+        assert_eq!(modifier.vertical_align, Some(VerticalAlign::Top));
     }
 }
