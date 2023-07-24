@@ -2,8 +2,7 @@
 //!
 use serde::{Serialize, Deserialize};
 use std::str::FromStr;
-
-use crate::Error;
+use crate::InnerError;
 
 /// The possible values for aligning a cell vertically.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -14,18 +13,18 @@ pub enum VerticalAlign {
 }
 
 impl FromStr for VerticalAlign {
-    type Err = Error;
+    type Err = InnerError;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input.to_lowercase().as_str() {
             "b" | "bottom"    => Ok(Self::Bottom),
             "c" | "center"    => Ok(Self::Center),
             "t" | "top"       => Ok(Self::Top),
-            _ => Err(Error::InvalidModifier { 
-                message: "Invalid valign= value".to_string(),
-                bad_input: input.to_string(), 
-                possible_values: "bottom (b) | center (c) | top (t)".to_string(),
-            }),
+            _ => Err(InnerError::bad_input_with_possibilities(
+                input, 
+                "Invalid valign= value",
+                "bottom (b) | center (c) | top (t)",
+            )),
         }
     }
 }

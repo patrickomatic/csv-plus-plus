@@ -1,8 +1,7 @@
 //! # TextFormat
 use serde::{Serialize, Deserialize};
 use std::str::FromStr;
-
-use crate::Error;
+use crate::InnerError;
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Serialize)]
 pub enum TextFormat {
@@ -13,7 +12,7 @@ pub enum TextFormat {
 }
 
 impl FromStr for TextFormat {
-    type Err = Error;
+    type Err = InnerError;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input.to_lowercase().as_str() {
@@ -21,11 +20,11 @@ impl FromStr for TextFormat {
             "i" | "italic"        => Ok(Self::Italic),
             "s" | "strikethrough" => Ok(Self::Strikethrough),
             "u" | "underline"     => Ok(Self::Underline),
-            _ => Err(Error::InvalidModifier { 
-                message: "Invalid format= value".to_string(),
-                bad_input: input.to_string(), 
-                possible_values: "bold (b) | italic (i) | strikethrough (s) | underline (u)".to_string(),
-            }),
+            _ => Err(InnerError::bad_input_with_possibilities(
+                input, 
+                "Invalid format= value",
+                "bold (b) | italic (i) | strikethrough (s) | underline (u)",
+            )),
         }
     }
 }

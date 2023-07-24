@@ -3,7 +3,7 @@
 use std::collections;
 use std::fmt;
 use std::str::FromStr;
-use crate::{Error, Result};
+use crate::{InnerError, InnerResult};
 use super::{Ast, FunctionEval, FunctionName, Node};
 
 pub struct BuiltinFunction {
@@ -34,26 +34,23 @@ impl BuiltinFunction {
 
     /// For now all functions take a Reference as a single arg - we can elaborate on this in the
     /// future.
-    fn verify_one_arg(fn_name: &str, args: &[Ast]) -> Result<String> {
+    fn verify_one_arg(fn_name: &str, args: &[Ast]) -> InnerResult<String> {
         if args.len() != 1 {
-            return Err(Error::CodeSyntaxError {
-                bad_input: args.len().to_string(), // XXX figure out a way to format this
-                message: format!("Expected a single argument to `{}`", fn_name),
-                line_number: 0, // XXX
-            })
+            return Err(InnerError::bad_input(
+                &args.len().to_string(), // TODO figure out a way to format this
+                &format!("Expected a single argument to `{}`", fn_name)))
         } 
 
         match &*args[0] {
             Node::Reference(r) => Ok(r.to_owned()),
-            n => Err(Error::CodeSyntaxError {
-                bad_input: n.to_string(),
-                line_number: 0, // XXX
-                message: format!("Expected a cell reference as the only argumnent to `{}`", fn_name),
-            }),
+            n => Err(InnerError::bad_input(
+                n.to_string().as_str(),
+                &format!("Expected a cell reference as the only argumnent to `{}`", fn_name))),
         }
     }
 }
 
+/// Debug is manually implemented because we can't derive it for `eval`.
 impl fmt::Debug for BuiltinFunction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("BuiltinFunction")

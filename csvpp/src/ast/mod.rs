@@ -4,7 +4,7 @@
 //!
 use serde::{Deserialize, Serialize};
 use std::collections;
-use crate::Result;
+use crate::InnerResult;
 
 mod display;
 mod eval;
@@ -30,8 +30,8 @@ pub type BuiltinVariables =  collections::HashMap<VariableName, BuiltinVariable>
 
 pub type Ast = Box<Node>;
 
-pub type FunctionEval = Box<dyn Fn(&a1_notation::A1, &[Ast]) -> Result<Node>>;
-pub type VariableEval = Box<dyn Fn(&a1_notation::A1) -> Result<Node>>;
+pub type FunctionEval = Box<dyn Fn(&a1_notation::A1, &[Ast]) -> InnerResult<Node>>;
+pub type VariableEval = Box<dyn Fn(&a1_notation::A1) -> InnerResult<Node>>;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum Node {

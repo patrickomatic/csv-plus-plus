@@ -51,23 +51,21 @@ impl<'a> CodeSectionParser<'a> {
 
         loop {
             match self.lexer.next() {
-                TokenMatch(Token::Eof, _) => break,
-                TokenMatch(Token::FunctionDefinition, _) => {
+                TokenMatch { token: Token::Eof, .. } => break,
+                TokenMatch { token: Token::FunctionDefinition, .. } => {
                     let (fn_name, function) = self.parse_fn_definition()?;
                     functions.insert(fn_name, Box::new(function));
                 },
-                TokenMatch(Token::Reference, r) => {
+                TokenMatch { token: Token::Reference, str_match: r, .. } => {
                     variables.insert(r.to_string(), Box::new(Node::Variable { 
                         body: self.parse_variable_assign()?, 
                         name: r.to_owned(),
                     }));
                 },
-                TokenMatch(t, m) => {
-                    return Err(Error::CodeSyntaxError {
-                        message: format!("Expected an `fn` or variable definition (`:=`) operator but saw ({:?})", t),
-                        bad_input: m.to_string(),
-                        line_number: 0, // XXX
-                    })
+                token => {
+                    return Err(self.token_match_to_error(
+                            &token, 
+                            format!("Expected an `fn` or variable definition (`:=`) operator but saw ({:?})", token)))
                 },
             }
         }
@@ -79,17 +77,14 @@ impl<'a> CodeSectionParser<'a> {
     fn parse_variable_assign(&'a self) -> Result<Ast> {
         // they better give us a :=
         match self.lexer.next() {
-            TokenMatch(Token::VarAssign, _) => {
+            TokenMatch { token: Token::VarAssign, .. } => {
                 // consume an expression
                 Ok(self.parse_expr()?)
             }
-            TokenMatch(t, m) => {
-                Err(Error::CodeSyntaxError {
-                    message: format!("Expected a variable definition operator (`:=`) but saw ({:?})", t),
-                    bad_input: m.to_string(),
-                    line_number: 0, // XXX
-                })
-            }
+            token => 
+                Err(self.token_match_to_error(
+                        &token,
+                        format!("Expected a variable definition operator (`:=`) but saw ({:?})", token))),
         }
     }
 
@@ -101,23 +96,16 @@ impl<'a> CodeSectionParser<'a> {
     fn parse_fn_definition(&'a self) -> Result<(String, Node)> {
         // expect the function name (as a `Reference`)
         let name = match self.lexer.next() {
-            TokenMatch(Token::Reference, r) => r,
-            TokenMatch(t, m) => return Err(Error::CodeSyntaxError { 
-                bad_input: m.to_string(), 
-                line_number: 0,  // XXX
-                message: format!("Expected a function name but saw ({:?})", t),
-            }),
+            TokenMatch { token: Token::Reference, str_match: r, .. } => r,
+            token =>
+                return Err(self.token_match_to_error(&token, format!("Expected a function name but saw ({:?})", token))),
         };
 
         // expect a `(`
         match self.lexer.next() {
-            TokenMatch(Token::OpenParen, _) => (),
-            TokenMatch(t, m) => 
-                return Err(Error::CodeSyntaxError { 
-                    bad_input: m.to_string(), 
-                    line_number: 0,  // XXX
-                    message: format!("Expected `(` but saw ({:?})", t),
-                }),
+            TokenMatch { token: Token::OpenParen, .. } => (),
+            token => 
+                return Err(self.token_match_to_error(&token, format!("Expected `(` but saw ({:?})", token))),
         };
 
         let mut args = vec![];
@@ -127,20 +115,15 @@ impl<'a> CodeSectionParser<'a> {
         // expressions themselves.
         loop {
             match self.lexer.next() {
-                TokenMatch(Token::CloseParen, _) => {
+                TokenMatch { token: Token::CloseParen, .. } => {
                     break
                 },
-                TokenMatch(Token::Comma, _) => (),
-                TokenMatch(Token::Reference, r) => {
+                TokenMatch { token: Token::Comma, .. } => (),
+                TokenMatch { token: Token::Reference, str_match: r, .. } => {
                     args.push(r.to_string());
                 },
-                TokenMatch(t, m) => {
-                    return Err(Error::CodeSyntaxError { 
-                        bad_input: m.to_string(), 
-                        line_number: 0,  // XXX
-                        message: format!("Expected `(` but saw ({:?})", t),
-                    })
-                },
+                t => 
+                    return Err(self.token_match_to_error(&t, format!("Expected `(` but saw ({:?})", t.token))),
             }
         }
 
@@ -157,6 +140,14 @@ impl<'a> CodeSectionParser<'a> {
         // create an `AstParser` with a reference to our lexer so it can continue consuming our
         // stream of tokens
         AstParser::new(&self.lexer).expr_bp(true, 0)
+    }
+
+    fn token_match_to_error(&'a self, token: &TokenMatch, message: String) -> Error {
+        Error::CodeSyntaxError {
+            line_number: token.line_number,
+            message,
+            position: token.position,
+        }
     }
 }
 

@@ -107,7 +107,7 @@ mod tests {
         let new = vec![
             SpreadsheetCell {
                 ast: None,
-                index: A1::builder().xy(0, 0).build().unwrap(),
+                position: A1::builder().xy(0, 0).build().unwrap(),
                 modifier: Modifier::default(),
                 value: "new value".to_string(),
             }
@@ -131,7 +131,7 @@ mod tests {
 
         let cell = SpreadsheetCell {
             ast: None,
-            index: A1::builder().xy(0, 0).build().unwrap(),
+            position: A1::builder().xy(0, 0).build().unwrap(),
             modifier: Modifier::default(),
             value: "new value".to_string(),
         };
@@ -154,7 +154,7 @@ mod tests {
 
         let cell = SpreadsheetCell {
             ast: None,
-            index: A1::builder().xy(0, 0).build().unwrap(),
+            position: A1::builder().xy(0, 0).build().unwrap(),
             modifier: Modifier::default(),
             value: "new value".to_string(),
         };

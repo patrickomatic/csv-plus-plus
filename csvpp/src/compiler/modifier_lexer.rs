@@ -10,7 +10,7 @@
 // TODO:
 // * need to lowercase the input but we can't do it on the entire value because we don't want to
 //     lowercase the stuff outside the modifier definition
-use crate::{Error, Result};
+use crate::{InnerError, InnerResult};
 
 #[derive(Debug, PartialEq)]
 pub enum Token {
@@ -30,6 +30,7 @@ pub enum Token {
 pub struct ModifierLexer {
     input: String,
 }
+
 
 impl ModifierLexer {
     pub fn new(input: &str) -> Self {
@@ -54,7 +55,7 @@ impl ModifierLexer {
         }
     }
 
-    pub fn take_modifier_right_side(&mut self) -> Result<String> {
+    pub fn take_modifier_right_side(&mut self) -> InnerResult<String> {
         self.take_token(Token::Equals)?;
         self.take_token(Token::ModifierRightSide)
     }
@@ -68,7 +69,7 @@ impl ModifierLexer {
         }
     }
 
-    pub fn take_token(&mut self, token: Token) -> Result<String> {
+    pub fn take_token(&mut self, token: Token) -> InnerResult<String> {
         match token {
             Token::Color =>             self.take_color(),
             Token::EndModifier =>       self.take("]]"),
@@ -94,22 +95,18 @@ impl ModifierLexer {
         }
     }
 
-    fn take(&mut self, substring: &str) -> Result<String> {
+    fn take(&mut self, substring: &str) -> InnerResult<String> {
         let input = self.input.trim();
 
         if let Some(without_match) = input.strip_prefix(substring) {
             self.input = without_match.to_string();
             Ok(substring.to_string())
         } else {
-            Err(Error::ModifierSyntaxError {
-                message: format!("Error parsing input, expected '{}'", substring),
-                bad_input: input.to_string(),
-                index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
-            })
+            Err(InnerError::bad_input(input, &format!("Error parsing input, expected '{}'", substring)))
         }
     }
 
-    fn take_color(&mut self) -> Result<String> {
+    fn take_color(&mut self) -> InnerResult<String> {
         let mut matched_alphas = 0;
         let mut saw_hash = false;
         let mut matched = "".to_string();
@@ -120,11 +117,8 @@ impl ModifierLexer {
                 matched.push(c);
             } else if c.is_alphanumeric() {
                 if matched_alphas > 6 {
-                    return Err(Error::ModifierSyntaxError {
-                        message: format!("Unexpected RGB color character: '{}'", c),
-                        bad_input: self.input.to_string(),
-                        index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
-                    })
+                    return Err(InnerError::bad_input(
+                            &self.input, &format!("Unexpected RGB color character: '{}'", c)));
                 }
 
                 matched.push(c);
@@ -135,11 +129,8 @@ impl ModifierLexer {
                     break;
                 }
 
-                return Err(Error::ModifierSyntaxError {
-                    message: format!("Invalid character when parsing RGB color: '{}'", c),
-                    bad_input: self.input.to_string(),
-                    index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
-                })
+                return Err(InnerError::bad_input(
+                        &self.input, &format!("Invalid character when parsing RGB color: '{}'", c)))
             }
         }
 
@@ -147,7 +138,7 @@ impl ModifierLexer {
         Ok(matched)
     }
 
-    fn take_string(&mut self) -> Result<String> {
+    fn take_string(&mut self) -> InnerResult<String> {
         let input = self.input.trim();
 
         if input.starts_with('\'') {
@@ -158,7 +149,7 @@ impl ModifierLexer {
     }
 
     #[allow(clippy::explicit_counter_loop)]
-    fn take_single_quoted_string(&mut self) -> Result<String> {
+    fn take_single_quoted_string(&mut self) -> InnerResult<String> {
         let mut escape_mode = false;
         let mut matched = "".to_string();
         let mut start_quote = false;
@@ -185,11 +176,7 @@ impl ModifierLexer {
             } else if c == '\'' {
                 start_quote = true;
             } else {
-                return Err(Error::ModifierSyntaxError {
-                    message: "Expected a starting single quote".to_string(),
-                    bad_input: self.input.to_string(),
-                    index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
-                })
+                return Err(InnerError::bad_input(&self.input, "Expected a starting single quote"))
             }
         }
 
@@ -197,18 +184,14 @@ impl ModifierLexer {
             self.input = self.input[consumed..].to_string();
             Ok(matched)
         } else {
-            Err(Error::ModifierSyntaxError {
-                message: "Expected a start and ending quote".to_string(),
-                bad_input: self.input.to_string(),
-                index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
-            })
+            Err(InnerError::bad_input(&self.input, "Expected a start and ending quote"))
         }
     }
 
     fn take_while<F>(
         &mut self, 
         while_fn: F,
-    ) -> Result<String>
+    ) -> InnerResult<String>
     where F: Fn(char) -> bool {
         let input = self.input.trim();
         let mut matched = "".to_string();
@@ -222,12 +205,8 @@ impl ModifierLexer {
         }
 
         if matched.is_empty() {
-            Err(Error::ModifierSyntaxError {
-                // XXX this message is misleading I think
-                message: "Expected a modifier definition (i.e. format/halign/etc)".to_owned(),
-                bad_input: input.to_string(),
-                index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
-            })
+            // TODO this message is misleading I think
+            Err(InnerError::bad_input(input, "Expected a modifier definition (i.e. format/halign/etc)"))
         } else {
             self.input = input[matched.len()..].to_string();
             Ok(matched)
@@ -339,7 +318,7 @@ mod tests {
     fn take_token_string_double_quoted() {
         let mut lexer = ModifierLexer::new("'this is \\' a quoted string\\''");
         assert_eq!("this is ' a quoted string'", lexer.take_token(Token::String).unwrap());
-        // make sure it consumed `input` given the weird quoting rules
+        // make sure it consumed `input` given the quoting rules
         assert_eq!("", lexer.input);
     }
 

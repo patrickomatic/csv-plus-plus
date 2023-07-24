@@ -6,7 +6,7 @@
 //!     lowercase the stuff outside the modifier definition
 //! * get quoted strings working
 use std::str::FromStr;
-use crate::{Error, Result, Rgb};
+use crate::{Error, InnerError, InnerResult, Result, Rgb};
 use crate::modifier::*;
 use super::modifier_lexer::{ModifierLexer, Token};
 
@@ -20,43 +20,41 @@ pub struct ParsedModifiers {
     pub modifier: Modifier,
     pub row_modifier: Modifier,
     pub value: String,
-    pub index: a1_notation::A1,
+    pub position: a1_notation::A1,
 }
 
 impl<'a> ModifierParser<'a> {
     pub fn parse(
         input: &str, 
-        index: a1_notation::A1, 
+        position: a1_notation::A1, 
         row_modifier: Modifier,
     ) -> Result<ParsedModifiers> {
         let lexer = &mut ModifierLexer::new(input);
-        let (modifier, row_modifier) = Self::parse_all_modifiers(lexer, &index, row_modifier)?;
+        let (modifier, row_modifier) = Self::parse_all_modifiers(lexer, &position, row_modifier).map_err(|e| {
+            Error::ModifierSyntaxError { position: position.clone(), message: e.to_string() }
+        })?;
 
         Ok(ParsedModifiers {
             modifier,
             row_modifier,
             value: lexer.rest(),
-            index
+            position,
         })
     }
 
     /// returns (modifier, row_modifier)
-    pub fn parse_all_modifiers(
+    fn parse_all_modifiers(
         lexer: &mut ModifierLexer,
-        index: &a1_notation::A1,
+        position: &a1_notation::A1,
         row_modifier: Modifier,
-    ) -> Result<(Modifier, Modifier)> {
+    ) -> InnerResult<(Modifier, Modifier)> {
         let mut new_modifier: Option<Modifier> = None;
         let mut new_row_modifier: Option<Modifier> = None;
 
         while let Some(start_token) = lexer.maybe_take_start_modifier() {
             let is_row_modifier = start_token == Token::StartRowModifier;
-            if is_row_modifier && index.x() != Some(0) {
-                return Err(Error::ModifierSyntaxError {
-                    bad_input: "![[".to_owned(),
-                    index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
-                    message: "You can only define a row modifier in the first cell".to_owned(),
-                })
+            if is_row_modifier && position.x() != Some(0) {
+                return Err(InnerError::bad_input("![[", "You can only define a row modifier in the first cell"));
             }
 
             let mut modifier = Modifier::from(&new_row_modifier.clone().unwrap_or_else(|| row_modifier.clone()));
@@ -82,12 +80,12 @@ impl<'a> ModifierParser<'a> {
         ))
     }
 
-    fn border_modifier(&mut self) -> Result<()> {
+    fn border_modifier(&mut self) -> InnerResult<()> {
         self.modifier.borders.insert(BorderSide::from_str(&self.lexer.take_modifier_right_side()?)?);
         Ok(())
     }
 
-    fn border_color_modifier(&mut self) -> Result<()> {
+    fn border_color_modifier(&mut self) -> InnerResult<()> {
         self.lexer.take_token(Token::Equals)?;
 
         let color = self.lexer.take_token(Token::Color)?;
@@ -95,14 +93,14 @@ impl<'a> ModifierParser<'a> {
         Ok(())
     }
 
-    fn border_style_modifier(&mut self) -> Result<()> {
+    fn border_style_modifier(&mut self) -> InnerResult<()> {
         self.modifier.border_style = Some(
             BorderStyle::from_str(&self.lexer.take_modifier_right_side()?)?
         );
         Ok(())
     }
 
-    fn color_modifier(&mut self) -> Result<()> {
+    fn color_modifier(&mut self) -> InnerResult<()> {
         self.lexer.take_token(Token::Equals)?;
 
         let color = self.lexer.take_token(Token::Color)?;
@@ -111,17 +109,17 @@ impl<'a> ModifierParser<'a> {
         Ok(())
     }
 
-    fn expand_modifier(&mut self) -> Result<()> {
+    fn expand_modifier(&mut self) -> InnerResult<()> {
         let amount = if self.lexer.maybe_take_token(Token::Equals).is_some() {
             let amount_string = self.lexer.take_token(Token::PositiveNumber)?;
             
             match amount_string.parse::<usize>() {
-                Ok(n) => Some(n),
-                Err(e) => return Err(Error::ModifierSyntaxError {
-                    message: format!("Error parsing expand= repetitions: {}", e),
-                    bad_input: amount_string,
-                    index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
-                }),
+                Ok(n) => 
+                    Some(n),
+                Err(e) => 
+                    return Err(InnerError::bad_input(
+                            &amount_string, 
+                            &format!("Error parsing expand= repetitions: {}", e))),
             }
         } else {
             None
@@ -132,7 +130,7 @@ impl<'a> ModifierParser<'a> {
         Ok(())
     }
 
-    fn font_color_modifier(&mut self) -> Result<()> {
+    fn font_color_modifier(&mut self) -> InnerResult<()> {
         self.lexer.take_token(Token::Equals)?;
 
         let color = self.lexer.take_token(Token::Color)?;
@@ -140,7 +138,7 @@ impl<'a> ModifierParser<'a> {
         Ok(())
     }
 
-    fn font_family_modifier(&mut self) -> Result<()> {
+    fn font_family_modifier(&mut self) -> InnerResult<()> {
         self.lexer.take_token(Token::Equals)?;
 
         let font_family = self.lexer.take_token(Token::String)?;
@@ -148,59 +146,57 @@ impl<'a> ModifierParser<'a> {
         Ok(())
     }
 
-    fn font_size_modifier(&mut self) -> Result<()> {
+    fn font_size_modifier(&mut self) -> InnerResult<()> {
         self.lexer.take_token(Token::Equals)?;
 
         let font_size_string = self.lexer.take_token(Token::PositiveNumber)?;
         match font_size_string.parse::<u8>() {
             Ok(n) => self.modifier.font_size = Some(n),
-            Err(e) => return Err(Error::ModifierSyntaxError {
-                message: format!("Error parsing fontsize: {}", e),
-                bad_input: font_size_string,
-                index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
-            }),
+            Err(e) => return Err(InnerError::bad_input(
+                &font_size_string,
+                &format!("Error parsing fontsize: {}", e))),
         }
 
         Ok(())
     }
 
-    fn format_modifier(&mut self) -> Result<()> {
+    fn format_modifier(&mut self) -> InnerResult<()> {
         self.modifier.formats.insert(TextFormat::from_str(&self.lexer.take_modifier_right_side()?)?);
         Ok(())
     }
 
-    fn halign_modifier(&mut self) -> Result<()> {
+    fn halign_modifier(&mut self) -> InnerResult<()> {
         self.modifier.horizontal_align = Some(
             HorizontalAlign::from_str(&self.lexer.take_modifier_right_side()?)?
         );
         Ok(())
     }
 
-    fn note(&mut self) -> Result<()> {
+    fn note(&mut self) -> InnerResult<()> {
         self.lexer.take_token(Token::Equals)?;
         self.modifier.note = Some(self.lexer.take_token(Token::String)?);
         Ok(())
     }
 
-    fn number_format(&mut self) -> Result<()> {
+    fn number_format(&mut self) -> InnerResult<()> {
         self.modifier.number_format = Some(
             NumberFormat::from_str(&self.lexer.take_modifier_right_side()?)?
         );
         Ok(())
     }
 
-    fn valign_modifier(&mut self) -> Result<()> {
+    fn valign_modifier(&mut self) -> InnerResult<()> {
         self.modifier.vertical_align = Some(
             VerticalAlign::from_str(&self.lexer.take_modifier_right_side()?)?
         );
         Ok(())
     }
 
-    fn var_modifier(&mut self) -> Result<()> {
+    fn var_modifier(&mut self) -> InnerResult<()> {
         todo!();
     }
 
-    fn modifier(&mut self) -> Result<()> {
+    fn modifier(&mut self) -> InnerResult<()> {
         let modifier_name = self.lexer.take_token(Token::ModifierName)?;
 
         match modifier_name.as_str() {
@@ -218,15 +214,14 @@ impl<'a> ModifierParser<'a> {
             "nf" | "numberformat"   => self.number_format(),
             "v"  | "var"            => self.var_modifier(),
             "va" | "valign"         => self.valign_modifier(),
-            _ => Err(Error::ModifierSyntaxError {
-                bad_input: modifier_name.to_string(),
-                index: a1_notation::A1::builder().xy(0, 0).build()?, // XXX
-                message: format!("Unrecognized modifier: {}", &modifier_name),
-            }),
+            _ => 
+                Err(InnerError::bad_input(
+                        &modifier_name, 
+                        &format!("Unrecognized modifier: {}", &modifier_name))),
         }
     }
 
-    fn modifiers(&mut self) -> Result<()> {
+    fn modifiers(&mut self) -> InnerResult<()> {
         loop {
             self.modifier()?;
 

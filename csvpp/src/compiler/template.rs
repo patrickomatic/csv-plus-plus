@@ -10,7 +10,7 @@ use std::collections;
 use std::convert;
 use std::fmt;
 use std::path;
-use crate::{Error, Result, Runtime, SourceCode, Spreadsheet, SpreadsheetCell};
+use crate::{Error, InnerError, Result, Runtime, SourceCode, Spreadsheet, SpreadsheetCell};
 use crate::ast::{Ast, AstReferences, BuiltinFunction, BuiltinVariable, Functions, Node, Variables};
 use super::code_section_parser::{CodeSection, CodeSectionParser};
 
@@ -19,6 +19,7 @@ pub struct Template<'a> {
     pub functions: Functions,
     pub spreadsheet: cell::RefCell<Spreadsheet>,
     pub variables: Variables,
+    csv_line_number: usize,
     runtime: &'a Runtime,
 }
 
@@ -29,6 +30,7 @@ struct TemplateAtRest {
     pub functions: Functions,
     pub spreadsheet: Spreadsheet,
     pub variables: Variables,
+    csv_line_number: usize,
 }
 
 impl convert::From<&Template<'_>> for TemplateAtRest {
@@ -37,6 +39,7 @@ impl convert::From<&Template<'_>> for TemplateAtRest {
             functions: template.functions.clone(),
             spreadsheet: template.spreadsheet.borrow().clone(),
             variables: template.variables.clone(), 
+            csv_line_number: template.csv_line_number,
         }
     }
 }
@@ -95,6 +98,7 @@ impl<'a> Template<'a> {
 
         Self {
             runtime,
+            csv_line_number: runtime.source_code.length_of_code_section + 1,
             spreadsheet: cell::RefCell::new(spreadsheet),
             functions: code_section_fns,
             variables: code_section_vars
@@ -116,6 +120,7 @@ impl<'a> Template<'a> {
         }
 
         Ok(Self {
+            csv_line_number: self.csv_line_number,
             functions: self.functions.clone(),
             runtime: self.runtime,
             spreadsheet: cell::RefCell::new(Spreadsheet { cells: evaled_rows }),
@@ -125,7 +130,7 @@ impl<'a> Template<'a> {
 
     /// The idea here is just to keep looping as long as we are making progress eval()ing.
     /// Progress being defined as `.extract_references()` returning the same result twice in a row
-    fn eval_ast(&self, ast: &Ast, index: &a1_notation::A1) -> Result<Ast> {
+    fn eval_ast(&self, ast: &Ast, position: &a1_notation::A1) -> Result<Ast> {
         let mut evaled_ast = *ast.clone();
         let mut last_round_refs = AstReferences::default();
 
@@ -137,20 +142,18 @@ impl<'a> Template<'a> {
             last_round_refs = refs.clone();
 
             evaled_ast = evaled_ast
-                .eval_variables(self.resolve_variables(refs.variables, index)?)?
+                .eval_variables(self.resolve_variables(refs.variables, position)?)
+                .map_err(|e| self.inner_error_to_error(e, position))?
                 .eval_functions(refs.functions, |fn_id, args| {
                     if let Some(function) = self.functions.get(fn_id) {
                         Ok(function.clone())
                     } else if let Some(BuiltinFunction { eval, .. }) = self.runtime.builtin_functions.get(fn_id) {
-                        Ok(Box::new(eval(index, &args)?))
+                        Ok(Box::new(eval(position, &args)?))
                     } else {
-                        Err(Error::CodeSyntaxError {
-                            bad_input: fn_id.to_string(),
-                            line_number: 0, // XXX
-                            message: "Could not find function".to_owned(),
-                        })
+                        Err(InnerError::bad_input(fn_id, "Could not find function"))
                     }
-                })?;
+                })
+                .map_err(|e| self.inner_error_to_error(e, position))?;
         }
 
         Ok(Box::new(evaled_ast))
@@ -160,20 +163,32 @@ impl<'a> Template<'a> {
         let mut evaled_row = vec![];
         for cell in row.iter() {
             let evaled_ast = if let Some(ast) = &cell.ast {
-                Some(self.eval_ast(ast, &cell.index)?)
+                Some(self.eval_ast(ast, &cell.position)?)
             } else {
                 None
             };
 
             evaled_row.push(SpreadsheetCell {
                 ast: evaled_ast,
-                index: cell.index.clone(),
+                position: cell.position.clone(),
                 modifier: cell.modifier.clone(),
                 value: cell.value.clone(),
             });
         }
 
         Ok(evaled_row)
+    }
+
+    fn inner_error_to_error(
+        &self,
+        inner_error: InnerError,
+        position: &a1_notation::A1
+    ) -> Error {
+        Error::EvalError {
+            message: inner_error.to_string(),
+            position: position.clone(),
+            line_number: self.csv_line_number + position.x().unwrap(),
+        }
     }
 
     pub fn is_function_defined(&self, fn_name: &str) -> bool {
@@ -188,10 +203,14 @@ impl<'a> Template<'a> {
 
     /// Variables can all be resolved in one go - we just loop them by name and resolve the ones
     /// that we can and leave the rest alone.
-    fn resolve_variables(&self, var_names: Vec<String>, index: &a1_notation::A1) -> Result<collections::HashMap<String, Ast>> {
+    fn resolve_variables(
+        &self,
+        var_names: Vec<String>,
+        position: &a1_notation::A1,
+    ) -> Result<collections::HashMap<String, Ast>> {
         let mut resolved_vars = collections::HashMap::new();
         for var_name in var_names {
-            if let Some(val) = self.resolve_variable(&var_name, index)? {
+            if let Some(val) = self.resolve_variable(&var_name, position)? {
                 resolved_vars.insert(var_name, val);
             }
         }
@@ -199,7 +218,11 @@ impl<'a> Template<'a> {
         Ok(resolved_vars)
     }
 
-    fn resolve_variable(&self, var_name: &str, index: &a1_notation::A1) -> Result<Option<Ast>> {
+    fn resolve_variable(
+        &self,
+        var_name: &str,
+        position: &a1_notation::A1,
+    ) -> Result<Option<Ast>> {
         Ok(
             if let Some(value) = self.variables.get(var_name) {
                 Some(Box::new(match &**value {
@@ -208,7 +231,8 @@ impl<'a> Template<'a> {
                 }))
                 // Some(value.to_owned())
             } else if let Some(BuiltinVariable { eval, .. }) = self.runtime.builtin_variables.get(var_name) {
-                Some(Box::new(eval(index)?))
+                Some(Box::new(
+                        eval(position).map_err(|e| self.inner_error_to_error(e, position))?))
             } else {
                 None
             }
@@ -261,6 +285,7 @@ mod tests {
 
     fn build_template(runtime: &Runtime) -> Template {
         Template {
+            csv_line_number: 5,
             functions: collections::HashMap::new(),
             variables: collections::HashMap::new(),
             runtime,

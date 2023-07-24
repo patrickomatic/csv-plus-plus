@@ -1,8 +1,8 @@
+//! # BorderStyle
 //!
 use serde::{Serialize, Deserialize};
 use std::str::FromStr;
-
-use crate::Error;
+use crate::InnerError;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum BorderStyle {
@@ -15,7 +15,7 @@ pub enum BorderStyle {
 }
 
 impl FromStr for BorderStyle {
-    type Err = Error;
+    type Err = InnerError;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input.to_lowercase().as_str() {
@@ -25,12 +25,10 @@ impl FromStr for BorderStyle {
             "1"    | "solid"         => Ok(Self::Solid),
             "2"    | "solid_medium"  => Ok(Self::SolidMedium),
             "3"    | "solid_thick"   => Ok(Self::SolidThick),
-            _ => Err(Error::InvalidModifier {
-                message: "Invalid borderstyle= value".to_string(),
-                bad_input: input.to_string(),
-                possible_values: "dashed (dash) | dotted (dot) | double (dbl) \
-                                    | solid (1) | solid_medium (2) | solid_thick (3)".to_string(),
-            }),
+            _ => Err(InnerError::bad_input_with_possibilities(
+                input,
+                "Invalid borderstyle= value",
+                "dashed (dash) | dotted (dot) | double (dbl) | solid (1) | solid_medium (2) | solid_thick (3)")),
         }
     }
 }

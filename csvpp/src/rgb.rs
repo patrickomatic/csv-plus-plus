@@ -5,8 +5,7 @@ use serde::{Serialize, Deserialize};
 use std::convert;
 use std::fmt;
 use std::str::FromStr;
-
-use crate::{Error, Result};
+use crate::{InnerError, InnerResult};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Rgb {
@@ -31,26 +30,22 @@ impl fmt::Display for Rgb {
     }
 }
 
-fn string_to_hex(hex_code: &str, double_it: bool) -> Result<u8> {
+fn string_to_hex(hex_code: &str, double_it: bool) -> InnerResult<u8> {
     let hex_string = if double_it {
         hex_code.repeat(2)
     } else {
         hex_code.to_string()
     };
 
-    match u8::from_str_radix(&hex_string, 16) {
-        Ok(n) => Ok(n),
-        Err(e) => Err(Error::RgbSyntaxError {
-            bad_input: hex_code.to_string(),
-            message: format!("Invalid hex: {}", e),
-        }),
-    }
+    u8::from_str_radix(&hex_string, 16).map_err(|e| {
+        InnerError::rgb_syntax_error(hex_code, &format!("Invalid hex: {}", e))
+    })
 }
 
 impl FromStr for Rgb {
-    type Err = Error;
+    type Err = InnerError;
 
-    fn from_str(input: &str) -> Result<Self> {
+    fn from_str(input: &str) -> InnerResult<Self> {
         let start_at = if input.starts_with('#') { 1 } else { 0 };
         let input_len = input.len() - start_at;
 
@@ -67,13 +62,9 @@ impl FromStr for Rgb {
                 b: string_to_hex(&input[start_at+2 .. start_at+3], true)?,
             }
         } else {
-            return Err(Error::RgbSyntaxError {
-                message: format!(
-                    "\"{}\" must be a 3 or 6-character RGB string, optionally prefixed with '#'", 
-                    input,
-                ),
-                bad_input: input.to_string(),
-            })
+            return Err(InnerError::rgb_syntax_error(
+                    input, 
+                    &format!("\"{}\" must be a 3 or 6-character RGB string, optionally prefixed with '#'", input)))
         };
 
         Ok(rgb)

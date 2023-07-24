@@ -164,7 +164,7 @@ mod tests {
         let mut spreadsheet = Spreadsheet::default();
         spreadsheet.cells.push(vec![SpreadsheetCell {
             ast: None,
-            index: a1_notation::A1::builder().xy(0, 1).build().unwrap(),
+            position: a1_notation::A1::builder().xy(0, 1).build().unwrap(),
             value: "Test".to_string(),
             modifier: Modifier::default(),
         }]);

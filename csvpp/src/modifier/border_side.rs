@@ -4,8 +4,7 @@
 //!
 use serde::{Serialize, Deserialize};
 use std::str::FromStr;
-
-use crate::Error;
+use crate::InnerError;
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum BorderSide {
@@ -17,7 +16,7 @@ pub enum BorderSide {
 }
 
 impl FromStr for BorderSide {
-    type Err = Error;
+    type Err = InnerError;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input.to_lowercase().as_str() {
@@ -26,11 +25,11 @@ impl FromStr for BorderSide {
             "b" | "bottom"    => Ok(Self::Bottom),
             "l" | "left"      => Ok(Self::Left),
             "r" | "right"     => Ok(Self::Right),
-            _ => Err(Error::InvalidModifier {
-                message: "Invalid border= value".to_string(),
-                bad_input: input.to_string(),
-                possible_values: "all (a) | top (t) | bottom (b) | left (l) | right (r)".to_string(),
-            }),
+            _ => Err(InnerError::bad_input_with_possibilities(
+                input,
+                "Invalid border= value",
+                "all (a) | top (t) | bottom (b) | left (l) | right (r)",
+            )),
         }
     }
 }

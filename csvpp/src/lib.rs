@@ -44,7 +44,7 @@ pub use cli_args::CliArgs;
 pub use compiler::spreadsheet::{Spreadsheet, SpreadsheetCell};
 pub use compiler::template::Template;
 pub use compiler::token_library::TokenLibrary;
-pub use error::Error;
+pub use error::{Error, InnerError, Result, InnerResult};
 pub use modifier::Modifier;
 pub use options::Options;
 pub use output::Output;
@@ -53,4 +53,3 @@ pub use runtime::Runtime;
 pub use source_code::SourceCode;
 pub use target::CompilationTarget;
 
-pub type Result<T> = std::result::Result<T, Error>;

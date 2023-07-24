@@ -16,7 +16,7 @@
 // * Handle line numbers
 //
 use std::collections;
-use crate::{Error, Result, TokenLibrary};
+use crate::{Error, InnerError, InnerResult, Result, TokenLibrary};
 use crate::ast::{Ast, Node, Variables};
 use super::token_library::{Token, TokenMatch};
 use super::ast_lexer::*;
@@ -66,35 +66,45 @@ impl<'a> AstParser<'a> {
 
     /// The core pratt parser logic for parsing an expression of our AST.  
     pub fn expr_bp(&self, single_expr: bool, min_bp: u8) -> Result<Ast> {
-        let mut lhs = match self.lexer.next() {
+        let lhs_token = self.lexer.next();
+
+        let mut lhs = match lhs_token {
             // a starting parenthesis means we just need to recurse and consume (expect)
             // the close paren 
-            TokenMatch(Token::OpenParen, _) => {
+            TokenMatch { token: Token::OpenParen,  .. } => {
                 let expr = self.expr_bp(single_expr, 0)?;
                 match self.lexer.next() {
-                    TokenMatch(Token::CloseParen, _) => expr,
-                    TokenMatch(t, bad_input) => 
-                        return Err(Error::CodeSyntaxError {
-                            message: format!("Expected close parenthesis, received ({:?})", t),
-                            bad_input: bad_input.to_string(),
-                            line_number: 0, // XXX
-                        }),
+                    TokenMatch { token: Token::CloseParen, .. } => expr,
+                    token => 
+                        return self.syntax_error(
+                            &token,
+                            &format!("Expected close parenthesis, received ({:?})", token)),
                 }
             }
 
             // terminals
-            TokenMatch(Token::Boolean, b) => Node::boolean_from_str(b)?,
-            TokenMatch(Token::DateTime, d) => Node::datetime_from_str(d)?,
-            TokenMatch(Token::DoubleQuotedString, t) => Node::text_from_str(t)?,
-            TokenMatch(Token::Float, f) => Node::float_from_str(f)?,
-            TokenMatch(Token::Integer, i) => Node::integer_from_str(i)?,
-            TokenMatch(Token::Reference, r) => Node::reference_from_str(r)?,
+            TokenMatch { token: Token::Boolean, .. } => 
+                self.ast_from_str(&lhs_token, Node::boolean_from_str)?,
 
-            TokenMatch(t, m) => return Err(Error::CodeSyntaxError {
-                message: format!("Invalid left-hand side expression ({:?})", t),
-                bad_input: m.to_string(),
-                line_number: 0, // XXX
-            }),
+            TokenMatch { token: Token::DateTime, .. } => 
+                self.ast_from_str(&lhs_token, Node::datetime_from_str)?,
+
+            TokenMatch { token: Token::DoubleQuotedString, .. } => 
+                self.ast_from_str(&lhs_token, Node::text_from_str)?,
+
+            TokenMatch { token: Token::Float, .. } => 
+                self.ast_from_str(&lhs_token, Node::float_from_str)?,
+
+            TokenMatch { token: Token::Integer, .. } => 
+                self.ast_from_str(&lhs_token, Node::integer_from_str)?,
+
+            TokenMatch { token: Token::Reference, .. } => 
+                self.ast_from_str(&lhs_token, Node::reference_from_str)?,
+
+            _ =>
+                return self.syntax_error(
+                    &lhs_token,
+                    &format!("Invalid left-hand side expression ({:?})", lhs_token)),
         };
 
         loop {
@@ -102,32 +112,32 @@ impl<'a> AstParser<'a> {
                 // in the case where we're just looking for a single expr, we can terminate
                 // iteration when we see a reference (beginning of `foo := ...`) or `fn`. 
                 match self.lexer.peek() {
-                    TokenMatch(Token::Reference, _) 
-                        | TokenMatch(Token::FunctionDefinition, _) => break,
+                    TokenMatch { token: Token::Reference, .. } 
+                        | TokenMatch { token: Token::FunctionDefinition, .. } => break,
                     // otherwise do nothing and the next match statement will do it's thing
                     // (regardless of the `single_expr` context)
                     _ => (),
                 }
             }
 
-            let op = match self.lexer.peek() {
+            let op_token = self.lexer.peek();
+            let op = match op_token {
                 // end of an expression, stop looping
-                TokenMatch(Token::Comma, _) 
-                    | TokenMatch(Token::CloseParen, _) 
-                    | TokenMatch(Token::Eof, _) 
+                TokenMatch { token: Token::Comma, .. } 
+                    | TokenMatch { token: Token::CloseParen, .. }
+                    | TokenMatch { token: Token::Eof, .. } 
                     => break,
 
                 // an infix expression or a function definition
-                TokenMatch(Token::InfixOperator, op) 
-                    | TokenMatch(Token::OpenParen, op) 
+                TokenMatch { token: Token::InfixOperator, str_match: op, .. }
+                    | TokenMatch { token: Token::OpenParen, str_match: op, .. } 
                     => op,
 
                 // otherwise undefined
-                TokenMatch(token, v) => return Err(Error::CodeSyntaxError { 
-                    bad_input: v.to_string(), 
-                    line_number: 0, // XXX
-                    message: format!("Unexpected token ({:?})", token),
-                }),
+                _ =>
+                    return self.syntax_error(
+                        &op_token,
+                        &format!("Unexpected token ({:?})", &op_token.token)),
             };
 
             if let Some((l_bp, ())) = self.postfix_binding_power(op) {
@@ -142,11 +152,7 @@ impl<'a> AstParser<'a> {
                     // function call
                     let id = match *lhs {
                         Node::Reference(id) => id,
-                        _ => return Err(Error::CodeSyntaxError { 
-                            bad_input: lhs.to_string(), 
-                            line_number: 0, // XXX
-                            message: "Unable to get id for fn".to_string(),
-                        }),
+                        _ => return self.syntax_error(&op_token, "Unable to get id for fn"),
                     };
 
                     let mut args = vec![];
@@ -154,11 +160,11 @@ impl<'a> AstParser<'a> {
                     // consume arguments (expressions) until we see a close paren
                     loop {
                         match self.lexer.peek() {
-                            TokenMatch(Token::CloseParen, _) => {
+                            TokenMatch { token: Token::CloseParen, .. } => {
                                 self.lexer.next();
                                 break
                             },
-                            TokenMatch(Token::Comma, _) => {
+                            TokenMatch { token: Token::Comma, .. } => {
                                 self.lexer.next();
                             },
                             _ => 
@@ -168,11 +174,7 @@ impl<'a> AstParser<'a> {
 
                     Box::new(Node::FunctionCall { name: id, args })
                 } else {
-                    return Err(Error::CodeSyntaxError {
-                        bad_input: op.to_owned(),
-                        line_number: 0, // XXX
-                        message: "Unexpected infix operator".to_string(),
-                    })
+                    return self.syntax_error(&op_token, "Unexpected infix operator")
                 };
 
                 continue;
@@ -219,6 +221,25 @@ impl<'a> AstParser<'a> {
             "^"                         => (13, 14),
             _                           => return None,
 
+        })
+    }
+
+    fn syntax_error(&self, token: &TokenMatch, message: &str) -> Result<Ast> {
+        let inner_error = InnerError::bad_input(token.str_match, message);
+        Err(Error::CodeSyntaxError { 
+            line_number: token.line_number,
+            message: inner_error.to_string(),
+            position: token.position,
+        })
+    }
+
+    fn ast_from_str(&self, token: &TokenMatch, from_str_fn: fn(&str) -> InnerResult<Ast>) -> Result<Ast> {
+        from_str_fn(token.str_match).map_err(|e| {
+            Error::CodeSyntaxError {
+                line_number: token.line_number,
+                position: token.position,
+                message: e.to_string()
+            }
         })
     }
 }

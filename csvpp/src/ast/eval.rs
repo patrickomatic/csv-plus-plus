@@ -3,7 +3,7 @@
 //! The main functions for evaluating a function or variable.
 //!
 use std::collections;
-use crate::Result;
+use crate::InnerResult;
 use super::{Ast, Node};
 
 impl Node {
@@ -13,8 +13,8 @@ impl Node {
     pub fn eval_functions(
         &self,
         functions: Vec<String>,
-        resolve_fn: impl Fn(&str, Vec<Ast>) -> Result<Ast>
-    ) -> Result<Node> {
+        resolve_fn: impl Fn(&str, Vec<Ast>) -> InnerResult<Ast>
+    ) -> InnerResult<Node> {
         let mut evaled_ast = self.clone();
         for fn_name in functions {
             evaled_ast = evaled_ast.call_function(&fn_name, &resolve_fn)?;
@@ -25,7 +25,10 @@ impl Node {
 
     /// Use the mapping in `variable_values` to replace each variable referenced in the AST with
     /// it's given replacement.
-    pub fn eval_variables(&self, variable_values: collections::HashMap<String, Ast>) -> Result<Node> {
+    pub fn eval_variables(
+        &self,
+        variable_values: collections::HashMap<String, Ast>,
+    ) -> InnerResult<Node> {
         let mut evaled_ast = self.clone();
         for (var_id, replacement) in variable_values {
             evaled_ast = evaled_ast.replace_variable(&var_id, replacement);
@@ -49,8 +52,8 @@ impl Node {
     fn call_function(
         &self,
         fn_id: &str,
-        resolve_fn: &impl Fn(&str, Vec<Ast>) -> Result<Ast>
-    ) -> Result<Self> {
+        resolve_fn: &impl Fn(&str, Vec<Ast>) -> InnerResult<Ast>
+    ) -> InnerResult<Self> {
         match self {
             // handle a function that we're calling
             Self::FunctionCall { args, name } if name == fn_id =>

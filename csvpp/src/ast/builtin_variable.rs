@@ -2,7 +2,7 @@
 //!
 use std::collections;
 use std::fmt;
-use crate::{Error, Result};
+use crate::{InnerError, InnerResult};
 use super::{Node, VariableEval, VariableName};
 
 pub struct BuiltinVariable {
@@ -25,11 +25,9 @@ impl BuiltinVariable {
             if let Some(x) = a1.x() {
                 Ok(Node::Integer((x as i64) + 1))
             } else {
-                Err(Error::CodeSyntaxError {
-                    bad_input: a1.to_string(),
-                    line_number: 0, // XXX
-                    message: "Expected a cell reference with a column component".to_owned(),
-                })
+                Err(InnerError::bad_input(
+                    &a1.to_string(),
+                    "Expected a cell reference with a column component"))
             }
         });
 
@@ -44,11 +42,9 @@ impl BuiltinVariable {
                 let a1_above = a1_notation::A1::builder().y((y - 1).max(0)).build()?;
                 Ok(Node::Reference(a1_above.to_string()))
             } else {
-                Err(Error::CodeSyntaxError {
-                    bad_input: a1.to_string(),
-                    line_number: 0, // XXX
-                    message: "Expected a cell reference with a row component".to_owned(),
-                })
+                Err(InnerError::bad_input(
+                    &a1.to_string(),
+                    "Expected a cell reference with a row component"))
             }
         });
         
@@ -58,11 +54,9 @@ impl BuiltinVariable {
                 let a1_below = a1_notation::A1::builder().y(y + 1).build()?;
                 Ok(Node::Reference(a1_below.to_string()))
             } else {
-                Err(Error::CodeSyntaxError {
-                    bad_input: a1.to_string(),
-                    line_number: 0, // XXX
-                    message: "Expected a cell reference with a row component".to_owned(),
-                })
+                Err(InnerError::bad_input(
+                    &a1.to_string(),
+                    "Expected a cell reference with a row component"))
             }
         });
         
@@ -71,11 +65,9 @@ impl BuiltinVariable {
             if let Some(y) = a1.y() {
                 Ok(Node::Integer((y as i64) + 1))
             } else {
-                Err(Error::CodeSyntaxError {
-                    bad_input: a1.to_string(),
-                    line_number: 0, // XXX
-                    message: "Expected a cell reference with a row component".to_owned(),
-                })
+                Err(InnerError::bad_input(
+                    &a1.to_string(),
+                    "Expected a cell reference with a row component"))
             }
         });
 
@@ -85,11 +77,9 @@ impl BuiltinVariable {
                 let row_a1 = a1_notation::A1::builder().y(y).build()?;
                 Ok(Node::Reference(row_a1.to_string()))
             } else {
-                Err(Error::CodeSyntaxError {
-                    bad_input: a1.to_string(),
-                    line_number: 0, // XXX
-                    message: "Expected a cell reference with a row component".to_owned(),
-                })
+                Err(InnerError::bad_input(
+                        &a1.to_string(), 
+                        "Expected a cell reference with a row component"))
             }
         });
 
@@ -101,7 +91,7 @@ impl BuiltinVariable {
         name: &str, 
         eval: F,
     ) -> collections::HashMap<String, BuiltinVariable>
-    where F: Fn(&a1_notation::A1) -> Result<Node> + 'static {
+    where F: Fn(&a1_notation::A1) -> InnerResult<Node> + 'static {
         vars.insert(
             name.to_string(), 
             Self {

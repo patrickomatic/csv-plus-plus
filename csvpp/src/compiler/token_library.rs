@@ -13,16 +13,17 @@ pub const CODE_SECTION_SEPARATOR: &str = "---";
 pub enum Token {
     Boolean,
     CloseParen,
+    CodeSectionEof,
     Comma,
     Comment,
-    CodeSectionEof,
     DateTime,
     DoubleQuotedString,
     Eof,
-    InfixOperator,
-    Integer,
     Float,
     FunctionDefinition,
+    InfixOperator,
+    Integer,
+    Newline,
     OpenParen,
     Reference,
     VarAssign,
@@ -32,11 +33,17 @@ pub enum Token {
 pub struct TokenMatcher(pub Token, pub Regex);
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct TokenMatch<'a>(pub Token, pub &'a str);
+pub struct TokenMatch<'a> {
+    pub token: Token, 
+    pub str_match: &'a str,
+    pub line_number: usize,
+    pub position: usize,
+}
 
 impl TokenMatcher {
-    fn new(regex_str: &str, token: Token) -> Result<TokenMatcher, Error> {
-        match Regex::new(format!(r"^\s*{}", regex_str).as_str()) {
+    fn new(regex_str: &str, token: Token) -> Result<Self, Error> {
+        // this regex is tricky but it's for "all spaces but not newlines"
+        match Regex::new(format!(r"^[^\S\r\n]*{}", regex_str).as_str()) {
             Ok(r) =>
                 Ok(TokenMatcher(token, r)),
             Err(m) =>
@@ -59,6 +66,7 @@ pub struct TokenLibrary {
     pub integer: TokenMatcher,
     pub float: TokenMatcher,
     pub fn_def: TokenMatcher,
+    pub newline: TokenMatcher,
     pub open_paren: TokenMatcher,
     pub reference: TokenMatcher,
     pub var_assign: TokenMatcher,
@@ -89,6 +97,7 @@ impl TokenLibrary {
             integer: TokenMatcher::new(r"-?\d+", Token::Integer)?,
             float: TokenMatcher::new(r"-?\d+\.\d*", Token::Float)?,
             fn_def: TokenMatcher::new(r"fn", Token::FunctionDefinition)?,
+            newline: TokenMatcher::new(r"\n", Token::Newline)?,
             open_paren: TokenMatcher::new(r"\(", Token::OpenParen)?,
             reference: TokenMatcher::new(r"[$!\w:]+", Token::Reference)?,
             var_assign: TokenMatcher::new(r":=", Token::VarAssign)?,

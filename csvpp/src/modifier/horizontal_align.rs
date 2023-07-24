@@ -1,8 +1,7 @@
 //!
 use serde::{Serialize, Deserialize};
 use std::str::FromStr;
-
-use crate::Error;
+use crate::InnerError;
 
 /// The possible values for aligning a cell horizontally.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -13,18 +12,17 @@ pub enum HorizontalAlign {
 }
 
 impl FromStr for HorizontalAlign {
-    type Err = Error;
+    type Err = InnerError;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input.to_lowercase().as_str() {
             "c" | "center"  => Ok(Self::Center),
             "l" | "left"    => Ok(Self::Left),
             "r" | "right"   => Ok(Self::Right),
-            _ => Err(Error::InvalidModifier { 
-                message: "Invalid halign= value".to_string(),
-                bad_input: input.to_string(), 
-                possible_values: "center (c) | left (l) | right (r)".to_string(),
-            }),
+            _ => Err(InnerError::bad_input_with_possibilities(
+                input, 
+                "Invalid halign= value",
+                "center (c) | left (l) | right (r)"))
         }
     }
 }

@@ -14,7 +14,7 @@ use super::modifier_parser::ModifierParser;
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct SpreadsheetCell {
     pub ast: Option<Ast>,
-    pub index: a1_notation::A1,
+    pub position: a1_notation::A1,
     pub modifier: Modifier,
     pub value: String,
 }
@@ -22,15 +22,15 @@ pub struct SpreadsheetCell {
 impl SpreadsheetCell {
     pub fn parse(
         input: &str,
-        index: a1_notation::A1,
+        position: a1_notation::A1,
         row_modifier: Modifier,
         runtime: &Runtime,
     ) -> Result<(SpreadsheetCell, Modifier)> {
-        let parsed_modifiers = ModifierParser::parse(input, index, row_modifier)?;
+        let parsed_modifiers = ModifierParser::parse(input, position, row_modifier)?;
 
         Ok((SpreadsheetCell {
             ast: Self::parse_ast(&parsed_modifiers.value, runtime)?,
-            index: parsed_modifiers.index,
+            position: parsed_modifiers.position,
             modifier: parsed_modifiers.modifier,
             value: parsed_modifiers.value,
         }, parsed_modifiers.row_modifier))
@@ -78,7 +78,7 @@ impl Spreadsheet {
         let mut vars = collections::HashMap::new();
         self.cells.iter().flatten().for_each(|c| {
             if let Some(var_id) = &c.modifier.var {
-                let reference: Ast = Box::new(Node::Reference(c.index.to_string()));
+                let reference: Ast = Box::new(Node::Reference(c.position.to_string()));
                 vars.insert(var_id.to_owned(), reference);
             }
         });
@@ -102,7 +102,7 @@ impl Spreadsheet {
         let csv_parsed_row = &record_result.unwrap_or(csv::StringRecord::new());
 
         for (cell_index, unparsed_value) in csv_parsed_row.into_iter().enumerate() {
-            let a1 = a1_notation::A1::builder().xy(cell_index, row_index).build()?;
+            let a1 = a1_notation::A1::builder().xy(cell_index, row_index).build().unwrap();
             let (cell, rm) = SpreadsheetCell::parse(unparsed_value, a1, row_modifier, runtime)?;
 
             row_modifier = rm;
