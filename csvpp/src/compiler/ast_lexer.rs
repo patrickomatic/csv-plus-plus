@@ -86,7 +86,6 @@ impl<'a> AstLexer<'a> {
                 }
             }
 
-            dbg!(&p);
             if p.trim().is_empty() {
                 break;
             }

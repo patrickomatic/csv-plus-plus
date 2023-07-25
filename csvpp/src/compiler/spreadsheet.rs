@@ -143,6 +143,7 @@ mod tests {
             length_of_csv_section: 0,
             code_section: None,
             csv_section: csv_section.to_string(),
+            original: csv_section.to_string(),
         };
 
         runtime

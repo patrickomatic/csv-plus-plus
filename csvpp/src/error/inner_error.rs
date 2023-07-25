@@ -47,7 +47,6 @@ impl InnerError {
 
 impl fmt::Display for InnerError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // TODO: anything else to do when in verbose mode?
         match self {
             Self::BadInput { bad_input, message } => {
                 writeln!(f, "{}", message)?;

@@ -7,11 +7,15 @@
 //! After this both the code section and CSV section will be lexed and parsed using separate
 //! algorithms.
 //!
+use std::cmp;
 use std::fmt;
 use std::fs;
 use std::path;
 use crate::{Error, Result};
 use crate::compiler::token_library::CODE_SECTION_SEPARATOR;
+
+// how many lines above (and below) we'll show as context when highlighting error messages
+const LINES_IN_ERROR_CONTEXT: usize = 3;
 
 type LineCount = usize;
 
@@ -23,6 +27,7 @@ pub struct SourceCode {
     pub length_of_csv_section: LineCount,
     pub code_section: Option<String>,
     pub csv_section: String,
+    pub original: String,
 }
 
 impl fmt::Display for SourceCode {
@@ -60,6 +65,7 @@ impl SourceCode {
                 length_of_csv_section: csv_lines,
                 csv_section: csv_section.trim().to_string(),
                 code_section: Some(code_section.trim().to_string()), 
+                original: input,
             })
         } else {
             let csv_lines = input.lines().count();
@@ -70,8 +76,63 @@ impl SourceCode {
                 length_of_csv_section: csv_lines,
                 csv_section: input.trim().to_owned(),
                 code_section: None, 
+                original: input,
             })
         }
+    }
+
+    pub fn highlight_line(
+        &self,
+        line_number: usize,
+        position: usize
+    ) -> Vec<String> {
+        let lines = self.original
+            .lines()
+            .map(|l| l.to_string())
+            .collect::<Vec<String>>();
+
+        // we present the line number as 1-based to the user, but index the array starting at 0
+        let i = line_number - 1;
+        if i > lines.len() {
+            return vec![];
+        }
+
+        let start_index = cmp::max(0, i - LINES_IN_ERROR_CONTEXT);
+        let end_index = cmp::min(lines.len(), i + LINES_IN_ERROR_CONTEXT);
+
+        // start with 3 lines before, and also our highlight line
+        let mut lines_out = lines[start_index..i + 1].to_vec();
+
+        // draw something like this to highlight it:
+        // ```
+        //      foo!
+        // --------^
+        // ```
+        lines_out.push(format!("{}^", "-".repeat(position - 1)));
+
+        // and 3 lines after
+        lines_out.append(&mut lines[(i + 1)..end_index].to_vec());
+
+        // now format each line with line numbers
+        dbg!(line_number + LINES_IN_ERROR_CONTEXT);
+        let longest_line_number = (line_number + LINES_IN_ERROR_CONTEXT).to_string().len();
+        let mut line_count = line_number - LINES_IN_ERROR_CONTEXT - 1;
+
+        lines_out
+            .iter()
+            .enumerate()
+            .map(|(i, line)| {
+                // don't increment the line *after* the line we're highlighting.  because it's the 
+                // ----^ thing and it doesn't correspond to a source code row, it's highlighting the
+                // text above it
+                if i == LINES_IN_ERROR_CONTEXT + 1 {
+                    format!("{: <width$}:{}", " ", line, width = longest_line_number)
+                } else {
+                    line_count += 1;
+                    format!("{: <width$}:{}", line_count, line, width = longest_line_number)
+                }
+            })
+            .collect()
     }
 
     pub fn object_code_filename(&self) -> path::PathBuf {
@@ -118,6 +179,7 @@ mod tests {
             length_of_csv_section: 15,
             code_section: Some("\n".repeat(10)),
             csv_section: "foo,bar,baz".to_string(),
+            original: "\n\n\n\n\n\n\n\n\n\n---\nfoo,bar,baz".to_string(),
         }
     }
 
@@ -127,6 +189,46 @@ mod tests {
             "test.csvpp: total_lines: 25, csv_section: 15, code_section: 10", 
             build_source_code().to_string(),
         );
+    }
+
+    #[test]
+    fn highlight_line() {
+        let source_code = SourceCode {
+            filename: path::PathBuf::from("test.csvpp".to_string()),
+            lines: 25,
+            length_of_code_section: 10,
+            length_of_csv_section: 15,
+            code_section: Some("\n".repeat(10)),
+            csv_section: "foo,bar,baz".to_string(),
+            original: "
+# A comment
+
+var := 1
+other_var := 42
+
+something {
+    foo: bar
+}
+---
+foo,bar,baz
+            ".to_string(),
+        };
+
+        assert_eq!(
+            source_code.highlight_line(8, 6), 
+            vec![
+                "5 :other_var := 42",
+                "6 :",
+                "7 :something {",
+                "8 :    foo: bar",
+                "  :-----^",
+                "9 :}",
+                "10:---"
+            ]);
+    }
+
+    #[test]
+    fn highlight_line_at_top() {
     }
 
     #[test]
@@ -150,12 +252,12 @@ mod tests {
 
     #[test]
     fn open_code_section() {
-        let s = Setup::new(r#"
+        let s = Setup::new("
 foo := 1
 
 ---
 foo,bar,baz,=foo
-"#);
+");
         let source_code = SourceCode::open(s.source.clone()).unwrap();
 
         assert_eq!(source_code.lines, 5);

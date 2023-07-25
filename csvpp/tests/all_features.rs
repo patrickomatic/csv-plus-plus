@@ -4,15 +4,18 @@ mod common;
 #[test]
 fn test_all_features_csv() {
     let s = common::Setup::new(r#"
-# Welcome to the all_features.csvpp test. this is a comment
+## Welcome to the all_features.csvpp test. this is a comment
+##
 
 fn foo_fn(a, b, c) a + b * c
 
 # a variable
 bar := 42
 
+# a function that takes two args and calls another function
 fn composite_fn(a, b)
     foo_fn(a, b, bar) # a trailing comment
+
 ---
  border        ,                                                                 ,
                ,[[border=top]]                     border=top                    ,
@@ -81,13 +84,13 @@ fn composite_fn(a, b)
 "#);
     let template = Template::compile(&s.runtime).unwrap();
     let target = s.runtime.target().unwrap();
+
     assert!(target.write(&template).is_ok());
 }
 
 #[test]
-fn test_all_features_shorthand_csv() {
+fn test_all_features_shorthand_csv_no_code_section() {
     let s = common::Setup::new(r#"
----
  border        ,                                                      ,
                ,[[b=t]]                 border=top                    ,
                ,[[b=r]]                 border=right                  ,
@@ -139,6 +142,7 @@ fn test_all_features_shorthand_csv() {
 "#);
     let template = Template::compile(&s.runtime).unwrap();
     let target = s.runtime.target().unwrap();
+
     assert!(target.write(&template).is_ok());
 }
 

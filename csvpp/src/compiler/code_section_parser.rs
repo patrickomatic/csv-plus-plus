@@ -65,7 +65,7 @@ impl<'a> CodeSectionParser<'a> {
                 token => {
                     return Err(self.token_match_to_error(
                             &token, 
-                            format!("Expected an `fn` or variable definition (`:=`) operator but saw ({:?})", token)))
+                            format!("Expected an `fn` or variable definition (`:=`) operator but saw {}", token)))
                 },
             }
         }
@@ -84,7 +84,7 @@ impl<'a> CodeSectionParser<'a> {
             token => 
                 Err(self.token_match_to_error(
                         &token,
-                        format!("Expected a variable definition operator (`:=`) but saw ({:?})", token))),
+                        format!("Expected a variable definition operator (`:=`) but saw {}", token))),
         }
     }
 
@@ -98,14 +98,14 @@ impl<'a> CodeSectionParser<'a> {
         let name = match self.lexer.next() {
             TokenMatch { token: Token::Reference, str_match: r, .. } => r,
             token =>
-                return Err(self.token_match_to_error(&token, format!("Expected a function name but saw ({:?})", token))),
+                return Err(self.token_match_to_error(&token, format!("Expected a function name but saw {}", token))),
         };
 
         // expect a `(`
         match self.lexer.next() {
             TokenMatch { token: Token::OpenParen, .. } => (),
             token => 
-                return Err(self.token_match_to_error(&token, format!("Expected `(` but saw ({:?})", token))),
+                return Err(self.token_match_to_error(&token, format!("Expected `(` but saw {}", token))),
         };
 
         let mut args = vec![];
@@ -123,7 +123,7 @@ impl<'a> CodeSectionParser<'a> {
                     args.push(r.to_string());
                 },
                 t => 
-                    return Err(self.token_match_to_error(&t, format!("Expected `(` but saw ({:?})", t.token))),
+                    return Err(self.token_match_to_error(&t, format!("Expected `(` but saw {}", t))),
             }
         }
 

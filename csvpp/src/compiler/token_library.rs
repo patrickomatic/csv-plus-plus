@@ -5,6 +5,7 @@
 //! boundaries/spacing but neither of those will work very well for us when handling complex types
 //! like double-quotes strings.
 use regex::Regex;
+use std::fmt;
 use crate::Error;
 
 pub const CODE_SECTION_SEPARATOR: &str = "---";
@@ -32,14 +33,6 @@ pub enum Token {
 #[derive(Clone, Debug)]
 pub struct TokenMatcher(pub Token, pub Regex);
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct TokenMatch<'a> {
-    pub token: Token, 
-    pub str_match: &'a str,
-    pub line_number: usize,
-    pub position: usize,
-}
-
 impl TokenMatcher {
     fn new(regex_str: &str, token: Token) -> Result<Self, Error> {
         // this regex is tricky but it's for "all spaces but not newlines"
@@ -49,6 +42,20 @@ impl TokenMatcher {
             Err(m) =>
                 Err(Error::InitError(format!("Error compiling regex /{}/: {}", regex_str, m))),
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TokenMatch<'a> {
+    pub token: Token, 
+    pub str_match: &'a str,
+    pub line_number: usize,
+    pub position: usize,
+}
+
+impl fmt::Display for TokenMatch<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.str_match)
     }
 }
 
@@ -172,5 +179,17 @@ mod tests {
         assert!(token_library().reference.1.is_match("Foo!A1:B2"));
 
         assert!(!token_library().reference.1.is_match("*"));
+    }
+
+    #[test]
+    fn display_tokenmatch() {
+        let token_match = TokenMatch {
+            token: Token::Comma,
+            str_match: ",",
+            line_number: 22,
+            position: 3,
+        };
+
+        assert_eq!(",", token_match.to_string());
     }
 }
