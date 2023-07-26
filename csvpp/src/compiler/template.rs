@@ -10,8 +10,24 @@ use std::collections;
 use std::convert;
 use std::fmt;
 use std::path;
-use crate::{Error, InnerError, Result, Runtime, SourceCode, Spreadsheet, SpreadsheetCell};
-use crate::ast::{Ast, AstReferences, BuiltinFunction, BuiltinVariable, Functions, Node, Variables};
+use crate::{
+    Error,
+    InnerError,
+    Result,
+    Runtime,
+    SourceCode,
+    Spreadsheet,
+    SpreadsheetCell,
+};
+use crate::ast::{
+    Ast, 
+    AstReferences, 
+    BuiltinFunction,
+    BuiltinVariable,
+    Functions,
+    Node,
+    Variables,
+};
 use super::code_section_parser::{CodeSection, CodeSectionParser};
 
 #[derive(Debug)]
@@ -54,10 +70,10 @@ impl fmt::Display for Template<'_> {
 
 impl<'a> Template<'a> {
     pub fn compile(runtime: &'a Runtime) -> Result<Self> {
-        let spreadsheet = Spreadsheet::parse(runtime)?;
+        let spreadsheet = Spreadsheet::parse(&runtime.source_code)?;
 
         let code_section = if let Some(code_section_source) = &runtime.source_code.code_section {
-            Some(CodeSectionParser::parse(code_section_source, &runtime.token_library)?)
+            Some(CodeSectionParser::parse(code_section_source, &runtime.source_code)?)
         } else {
             None
         };
@@ -184,10 +200,13 @@ impl<'a> Template<'a> {
         inner_error: InnerError,
         position: &a1_notation::A1
     ) -> Error {
+        let line_number = self.csv_line_number + position.x().unwrap();
+        // let position = self.runtime.source_code.get_cell_position
         Error::EvalError {
+            // highlighted_lines: self.runtime.source_code.highlight_line(line_number, inner_error.position),
             message: inner_error.to_string(),
             position: position.clone(),
-            line_number: self.csv_line_number + position.x().unwrap(),
+            line_number,
         }
     }
 

@@ -16,10 +16,9 @@
 //! ```
 //!
 use std::collections::HashMap;
-
-use crate::{Error, Result};
+use crate::{Error, Result, SourceCode};
 use crate::ast::{Ast, Functions, Node, Variables};
-use super::token_library::{Token, TokenLibrary, TokenMatch};
+use super::token_library::{Token, TokenMatch};
 use super::ast_lexer::AstLexer;
 use super::ast_parser::AstParser;
 
@@ -31,15 +30,24 @@ pub struct CodeSection {
 
 pub struct CodeSectionParser<'a> {
     lexer: AstLexer<'a>,
+    source_code: &'a SourceCode,
 }
 
 /// A recursive descent parser which relies on `AstParser` for individual expressions.  As 
 /// mentioned above, the contract here is that this parser handles parsing a series of 
 /// function and variable references and delegates to `AstParser` for handling expressions
 impl<'a> CodeSectionParser<'a> {
-    pub fn parse(input: &'a str, tl: &'a TokenLibrary) -> Result<CodeSection> {
-        let lexer = AstLexer::new(input, tl)?;
-        let parser = CodeSectionParser { lexer };
+    pub fn parse(input: &'a str, source_code: &'a SourceCode) -> Result<CodeSection> {
+        let lexer = AstLexer::new(input).map_err(|e| {
+            Error::CodeSyntaxError { 
+                message: e.to_string(), 
+                line_number: e.line_number,
+                position: e.position, 
+                highlighted_lines: source_code.highlight_line(e.line_number, e.position),
+            }
+        })?;
+
+        let parser = CodeSectionParser { lexer, source_code };
         
         parser.parse_code_section()
     }
@@ -139,11 +147,12 @@ impl<'a> CodeSectionParser<'a> {
     fn parse_expr(&'a self) -> Result<Ast> {
         // create an `AstParser` with a reference to our lexer so it can continue consuming our
         // stream of tokens
-        AstParser::new(&self.lexer).expr_bp(true, 0)
+        AstParser::new(&self.lexer, Some(&self.source_code)).expr_bp(true, 0)
     }
 
     fn token_match_to_error(&'a self, token: &TokenMatch, message: String) -> Error {
         Error::CodeSyntaxError {
+            highlighted_lines: self.source_code.highlight_line(token.line_number, token.position),
             line_number: token.line_number,
             message,
             position: token.position,
@@ -153,16 +162,13 @@ impl<'a> CodeSectionParser<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::TokenLibrary;
+    use std::path;
     use crate::ast::Ast;
     use super::*;
 
-    fn build_token_library() -> TokenLibrary {
-        TokenLibrary::build().unwrap()
-    }
-
     fn test(input: &str) -> CodeSection {
-        CodeSectionParser::parse(input, &build_token_library()).unwrap()
+        let source_code = SourceCode::new(input, path::PathBuf::from("foo.csvpp")).unwrap();
+        CodeSectionParser::parse(input, &source_code).unwrap()
     }
     
     #[test]

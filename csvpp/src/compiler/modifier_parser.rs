@@ -1,12 +1,14 @@
 //! Module for lexing and parsing the modifiers on a cell.
 //!
 //! TODO:
-//! * fix the row parsing logic (it doesn't apply them)
 //! * need to lowercase the input but we can't do it on the entire value because we don't want to
 //!     lowercase the stuff outside the modifier definition
-//! * get quoted strings working
+//!
+//! * refactor the error handling to provide more contextual (better positioning) error messages
+//! that highlight exactly the problem
+//!
 use std::str::FromStr;
-use crate::{Error, InnerError, InnerResult, Result, Rgb};
+use crate::{Error, InnerError, InnerResult, Result, Rgb, SourceCode};
 use crate::modifier::*;
 use super::modifier_lexer::{ModifierLexer, Token};
 
@@ -26,12 +28,17 @@ pub struct ParsedModifiers {
 impl<'a> ModifierParser<'a> {
     pub fn parse(
         input: &str, 
+        source_code: &SourceCode,
         position: a1_notation::A1, 
         row_modifier: Modifier,
     ) -> Result<ParsedModifiers> {
         let lexer = &mut ModifierLexer::new(input);
         let (modifier, row_modifier) = Self::parse_all_modifiers(lexer, &position, row_modifier).map_err(|e| {
-            Error::ModifierSyntaxError { position: position.clone(), message: e.to_string() }
+            Error::ModifierSyntaxError {
+                line_number: source_code.csv_line_number(&position),
+                position: position.clone(),
+                message: e.to_string(),
+            }
         })?;
 
         Ok(ParsedModifiers {
@@ -238,11 +245,15 @@ impl<'a> ModifierParser<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::path;
     use super::*;
 
     fn test_parse(input: &str) -> ParsedModifiers {
+        let source_code = SourceCode::new(input, path::PathBuf::from("foo.csvpp")).unwrap();
+
         ModifierParser::parse(
             input,
+            &source_code,
             a1_notation::A1::builder().xy(0, 0).build().unwrap(),
             Modifier::new(true),
         ).unwrap()

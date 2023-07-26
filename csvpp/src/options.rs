@@ -3,7 +3,6 @@ use std::fmt;
 use crate::{CliArgs, Result};
 use crate::ast::Ast;
 use crate::compiler::ast_parser::AstParser;
-use crate::compiler::token_library::TokenLibrary;
 
 #[derive(Debug)]
 pub struct Options {
@@ -16,7 +15,7 @@ pub struct Options {
 }
 
 impl Options {
-    pub fn from_cli_args(cli_args: &CliArgs, tl: &TokenLibrary) -> Result<Self> {
+    pub fn from_cli_args(cli_args: &CliArgs) -> Result<Self> {
         let key_values_as_str = cli_args
             .key_values
             .iter()
@@ -26,7 +25,7 @@ impl Options {
         Ok(Options {
             backup: cli_args.backup,
             google_account_credentials: cli_args.google_account_credentials.clone(),
-            key_values: AstParser::parse_key_value_str(key_values_as_str, tl)?,
+            key_values: AstParser::parse_key_value_str(key_values_as_str)?,
             offset: (cli_args.x_offset, cli_args.y_offset),
             overwrite_values: !cli_args.safe,
             verbose: cli_args.verbose,
@@ -68,6 +67,7 @@ impl fmt::Display for Options {
 
 #[cfg(test)]
 mod tests {
+    use crate::CliArgs;
     use super::*;
 
     #[test]
@@ -97,8 +97,7 @@ verbose: false"#, options.to_string());
     #[test]
     fn from_cli_args() {
         let cli_args = CliArgs::default();
-        let token_library = TokenLibrary::build().unwrap();
-        let options = Options::from_cli_args(&cli_args, &token_library);
+        let options = Options::from_cli_args(&cli_args);
 
         assert!(options.is_ok());
     }

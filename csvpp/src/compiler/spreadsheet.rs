@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::collections;
 use std::fmt;
 use csv;
-use crate::{Modifier, Result, Runtime};
+use crate::{Modifier, Result, SourceCode};
 use crate::ast::{Ast, Node, Variables};
 use super::ast_parser::AstParser;
 use super::modifier_parser::ModifierParser;
@@ -24,21 +24,21 @@ impl SpreadsheetCell {
         input: &str,
         position: a1_notation::A1,
         row_modifier: Modifier,
-        runtime: &Runtime,
+        source_code: &SourceCode,
     ) -> Result<(SpreadsheetCell, Modifier)> {
-        let parsed_modifiers = ModifierParser::parse(input, position, row_modifier)?;
+        let parsed_modifiers = ModifierParser::parse(input, source_code, position, row_modifier)?;
 
         Ok((SpreadsheetCell {
-            ast: Self::parse_ast(&parsed_modifiers.value, runtime)?,
+            ast: Self::parse_ast(&parsed_modifiers.value, source_code)?,
             position: parsed_modifiers.position,
             modifier: parsed_modifiers.modifier,
             value: parsed_modifiers.value,
         }, parsed_modifiers.row_modifier))
     }
 
-    fn parse_ast(input: &str, runtime: &Runtime) -> Result<Option<Ast>> {
+    fn parse_ast(input: &str, source_code: &SourceCode) -> Result<Option<Ast>> {
         if let Some(without_equals) = input.strip_prefix('=') {
-            Ok(Some(AstParser::parse(without_equals, false, &runtime.token_library)?))
+            Ok(Some(AstParser::parse(without_equals, false, Some(source_code))?))
         } else {
             Ok(None)
         }
@@ -59,12 +59,12 @@ pub struct Spreadsheet {
 
 impl Spreadsheet {
     /// Parse the spreadsheet section of a csv++ source file.
-    pub fn parse(runtime: &Runtime) -> Result<Spreadsheet> {
-        let mut csv_reader = Self::csv_reader(runtime);
+    pub fn parse(source_code: &SourceCode) -> Result<Spreadsheet> {
+        let mut csv_reader = Self::csv_reader(source_code);
         let mut cells: Vec<Vec<SpreadsheetCell>> = vec![];
 
         for (row_index, result) in csv_reader.records().enumerate() {
-            let row = Self::parse_row(result, row_index, runtime)?;
+            let row = Self::parse_row(result, row_index, source_code)?;
             cells.push(row);
         }
 
@@ -86,16 +86,16 @@ impl Spreadsheet {
         vars
     }
 
-    fn csv_reader(runtime: &Runtime) -> csv::Reader<&[u8]> {
+    fn csv_reader(source_code: &SourceCode) -> csv::Reader<&[u8]> {
         csv::ReaderBuilder::new()
             .has_headers(false)
-            .from_reader(runtime.source_code.csv_section.as_bytes())
+            .from_reader(source_code.csv_section.as_bytes())
     }
 
     fn parse_row(
         record_result: std::result::Result<csv::StringRecord, csv::Error>,
         row_index: usize,
-        runtime: &Runtime,
+        source_code: &SourceCode,
     ) -> Result<Vec<SpreadsheetCell>> {
         let mut row: Vec<SpreadsheetCell> = vec![];
         let mut row_modifier = Modifier::new(true);
@@ -103,7 +103,7 @@ impl Spreadsheet {
 
         for (cell_index, unparsed_value) in csv_parsed_row.into_iter().enumerate() {
             let a1 = a1_notation::A1::builder().xy(cell_index, row_index).build().unwrap();
-            let (cell, rm) = SpreadsheetCell::parse(unparsed_value, a1, row_modifier, runtime)?;
+            let (cell, rm) = SpreadsheetCell::parse(unparsed_value, a1, row_modifier, source_code)?;
 
             row_modifier = rm;
             row.push(cell);
@@ -122,37 +122,19 @@ impl fmt::Display for Spreadsheet {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
+    use std::path;
     use super::*;
-    use crate::{CliArgs, Runtime, SourceCode};
+    use crate::SourceCode;
     use crate::modifier::TextFormat;
 
-    fn build_runtime(csv_section: &str) -> Runtime {
-        let cli_args = CliArgs {
-            input_filename: PathBuf::from("foo.csvpp"),
-            google_sheet_id: Some("abc123".to_string()),
-            ..Default::default()
-        };
-
-        let mut runtime = Runtime::new(cli_args).unwrap();
-        runtime.source_code = SourceCode {
-            filename: PathBuf::from("foo.csvpp"),
-            lines: 3,
-            length_of_code_section: 0,
-            length_of_csv_section: 0,
-            code_section: None,
-            csv_section: csv_section.to_string(),
-            original: csv_section.to_string(),
-        };
-
-        runtime
+    fn build_source_code(input: &str) -> SourceCode {
+        SourceCode::new(input, path::PathBuf::from("foo.csvpp")).unwrap()
     }
 
     #[test]
     fn parse_simple() {
-        let runtime = build_runtime("foo,bar,baz\n1,2,3\n");
-        let spreadsheet = Spreadsheet::parse(&runtime).unwrap();
+        let source_code = build_source_code("foo,bar,baz\n1,2,3\n");
+        let spreadsheet = Spreadsheet::parse(&source_code).unwrap();
 
         // 2 rows
         assert_eq!(spreadsheet.cells.len(), 2);
@@ -180,8 +162,8 @@ mod tests {
 
     #[test]
     fn parse_with_asts() {
-        let runtime = build_runtime("=1,=2 * 3,=foo\n");
-        let spreadsheet = Spreadsheet::parse(&runtime).unwrap();
+        let source_code = build_source_code("=1,=2 * 3,=foo\n");
+        let spreadsheet = Spreadsheet::parse(&source_code).unwrap();
 
         assert!(spreadsheet.cells[0][0].ast.is_some());
         assert!(spreadsheet.cells[0][1].ast.is_some());
@@ -190,8 +172,8 @@ mod tests {
 
     #[test]
     fn parse_with_modifiers() {
-        let runtime = build_runtime("[[f=b / fs=20]]foo");
-        let spreadsheet = Spreadsheet::parse(&runtime).unwrap();
+        let source_code = build_source_code("[[f=b / fs=20]]foo");
+        let spreadsheet = Spreadsheet::parse(&source_code).unwrap();
 
         assert!(spreadsheet.cells[0][0].modifier.formats.contains(&TextFormat::Bold));
         assert_eq!(spreadsheet.cells[0][0].modifier.font_size, Some(20))

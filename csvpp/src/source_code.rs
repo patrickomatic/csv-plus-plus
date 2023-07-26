@@ -54,6 +54,10 @@ impl SourceCode {
             }
         })?;
 
+        Self::new(input.as_str(), filename)
+    }
+
+    pub fn new(input: &str, filename: path::PathBuf) -> Result<SourceCode> {
         if let Some((code_section, csv_section)) = input.split_once(CODE_SECTION_SEPARATOR) {
             let csv_lines = csv_section.lines().count();
             let code_lines = code_section.lines().count();
@@ -65,7 +69,7 @@ impl SourceCode {
                 length_of_csv_section: csv_lines,
                 csv_section: csv_section.trim().to_string(),
                 code_section: Some(code_section.trim().to_string()), 
-                original: input,
+                original: input.to_owned(),
             })
         } else {
             let csv_lines = input.lines().count();
@@ -76,7 +80,7 @@ impl SourceCode {
                 length_of_csv_section: csv_lines,
                 csv_section: input.trim().to_owned(),
                 code_section: None, 
-                original: input,
+                original: input.to_owned(),
             })
         }
     }
@@ -97,11 +101,15 @@ impl SourceCode {
             return vec![];
         }
 
-        let start_index = cmp::max(0, i - LINES_IN_ERROR_CONTEXT);
-        let end_index = cmp::min(lines.len(), i + LINES_IN_ERROR_CONTEXT);
+        // let start_index = cmp::max(0, (i as isize) - (LINES_IN_ERROR_CONTEXT as isize)) as usize;
+        let start_index = i.saturating_sub(LINES_IN_ERROR_CONTEXT);
+        let end_index = cmp::min(lines.len(), i + LINES_IN_ERROR_CONTEXT + 1);
 
-        // start with 3 lines before, and also our highlight line
-        let mut lines_out = lines[start_index..i + 1].to_vec();
+        // start with 3 lines before, and also include our highlight line
+        let mut lines_out = lines[start_index..(i + 1)].to_vec();
+
+        // save the number of this line because we want to skip line-numbering it below
+        let skip_numbering_on = lines_out.len();
 
         // draw something like this to highlight it:
         // ```
@@ -114,10 +122,11 @@ impl SourceCode {
         lines_out.append(&mut lines[(i + 1)..end_index].to_vec());
 
         // now format each line with line numbers
-        dbg!(line_number + LINES_IN_ERROR_CONTEXT);
         let longest_line_number = (line_number + LINES_IN_ERROR_CONTEXT).to_string().len();
-        let mut line_count = line_number - LINES_IN_ERROR_CONTEXT - 1;
+        let mut line_count = line_number.saturating_sub(LINES_IN_ERROR_CONTEXT).saturating_sub(1);
 
+        // now iterate over it and apply lines numbers like `XX: some_code( ...` where XX is the
+        // line number
         lines_out
             .iter()
             .enumerate()
@@ -125,11 +134,11 @@ impl SourceCode {
                 // don't increment the line *after* the line we're highlighting.  because it's the 
                 // ----^ thing and it doesn't correspond to a source code row, it's highlighting the
                 // text above it
-                if i == LINES_IN_ERROR_CONTEXT + 1 {
-                    format!("{: <width$}:{}", " ", line, width = longest_line_number)
+                if i == skip_numbering_on {
+                    format!(" {: <width$}: {}", " ", line, width = longest_line_number)
                 } else {
                     line_count += 1;
-                    format!("{: <width$}:{}", line_count, line, width = longest_line_number)
+                    format!(" {: <width$}: {}", line_count, line, width = longest_line_number)
                 }
             })
             .collect()
@@ -140,11 +149,17 @@ impl SourceCode {
         f.set_extension("csvpo");
         f
     }
+
+    pub fn csv_line_number(&self, position: &a1_notation::A1) -> usize {
+        let row = position.x().unwrap();
+        self.length_of_code_section + 2 + row
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use rand::Rng;
+    use std::str::FromStr;
     use std::fs;
     use std::path;
     use super::*;
@@ -193,14 +208,8 @@ mod tests {
 
     #[test]
     fn highlight_line() {
-        let source_code = SourceCode {
-            filename: path::PathBuf::from("test.csvpp".to_string()),
-            lines: 25,
-            length_of_code_section: 10,
-            length_of_csv_section: 15,
-            code_section: Some("\n".repeat(10)),
-            csv_section: "foo,bar,baz".to_string(),
-            original: "
+        let source_code = SourceCode::new(
+            "
 # A comment
 
 var := 1
@@ -211,24 +220,50 @@ something {
 }
 ---
 foo,bar,baz
-            ".to_string(),
-        };
+            ",
+            path::PathBuf::from("test.csvpp"),
+        ).unwrap();
 
         assert_eq!(
             source_code.highlight_line(8, 6), 
             vec![
-                "5 :other_var := 42",
-                "6 :",
-                "7 :something {",
-                "8 :    foo: bar",
-                "  :-----^",
-                "9 :}",
-                "10:---"
+                " 5 : other_var := 42",
+                " 6 : ",
+                " 7 : something {",
+                " 8 :     foo: bar",
+                "   : -----^",
+                " 9 : }",
+                " 10: ---",
+                " 11: foo,bar,baz",
             ]);
     }
 
     #[test]
     fn highlight_line_at_top() {
+        let source_code = SourceCode::new(
+            "# A comment
+
+var := 1
+other_var := 42
+
+something {
+    foo: bar
+}
+---
+foo,bar,baz
+            ",
+            path::PathBuf::from("test.csvpp"),
+        ).unwrap();
+
+        assert_eq!(
+            source_code.highlight_line(1, 6), 
+            vec![
+                " 1: # A comment",
+                "  : -----^",
+                " 2: ",
+                " 3: var := 1",
+                " 4: other_var := 42",
+            ]);
     }
 
     #[test]
@@ -240,8 +275,9 @@ foo,bar,baz
 
     #[test]
     fn open_no_code_section() {
-        let s = Setup::new("foo,bar,baz");
-        let source_code = SourceCode::open(s.source.clone()).unwrap();
+        let source_code = SourceCode::new(
+            "foo,bar,baz", 
+            std::path::PathBuf::from("foo.csvpp")).unwrap();
 
         assert_eq!(source_code.lines, 1);
         assert_eq!(source_code.length_of_csv_section, 1);
@@ -265,5 +301,23 @@ foo,bar,baz,=foo
         assert_eq!(source_code.length_of_code_section, 3);
         assert_eq!(source_code.code_section, Some("foo := 1".to_string()));
         assert_eq!(source_code.csv_section, "foo,bar,baz,=foo".to_string());
+    }
+
+    #[test]
+    fn csv_line_number() {
+        let source_code = SourceCode::new(
+            "# A comment
+var := 1
+
+other_var := 42
+
+---
+foo,bar,baz
+foo1,bar1,baz1
+            ",
+            path::PathBuf::from("test.csvpp"),
+        ).unwrap();
+
+        assert_eq!(8, source_code.csv_line_number(&a1_notation::A1::from_str("B2").unwrap()));
     }
 }

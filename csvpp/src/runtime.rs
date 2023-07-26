@@ -3,7 +3,6 @@
 use clap::Parser;
 use std::fmt;
 use crate::{CliArgs, CompilationTarget, Options, Output, Result, SourceCode};
-use crate::compiler::token_library::TokenLibrary;
 use crate::ast::{BuiltinFunction, BuiltinFunctions, BuiltinVariable, BuiltinVariables};
 
 #[derive(Debug)]
@@ -13,7 +12,6 @@ pub struct Runtime {
     pub options: Options,
     pub output: Output,
     pub source_code: SourceCode,
-    pub token_library: TokenLibrary,
 }
 
 impl Runtime {
@@ -22,15 +20,12 @@ impl Runtime {
     }
 
     pub fn new(cli_args: CliArgs) -> Result<Self> {
-        let token_library = TokenLibrary::build()?;
-
         Ok(Self {
             builtin_functions: BuiltinFunction::all(),
             builtin_variables: BuiltinVariable::all(),
-            options: Options::from_cli_args(&cli_args, &token_library)?,
+            options: Options::from_cli_args(&cli_args)?,
             output: Output::from_cli_args(&cli_args)?,
             source_code: SourceCode::open(cli_args.input_filename)?,
-            token_library,
         })
     }
 
@@ -41,7 +36,7 @@ impl Runtime {
 
 impl fmt::Display for Runtime {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, r#"
+        write!(f, "
 # csv++
 
 ## Called with options
@@ -52,7 +47,7 @@ impl fmt::Display for Runtime {
 
 XXX
 
-"#, 
+", 
             self.options,
             // TODO self.template,
         )

@@ -7,15 +7,15 @@
 //! 
 // TODO:
 // 
+//
 // * reduce the amount of things that are exported publicly 
 //   * make the ASTs private
 //
-// * proper line numbers and indexes in error messages throughout
-//
 // * writing to:
 //   * Excel
-//   * GoogleSheets
 //   * OpenDocument
+//
+// * better contextual error messages when the error happens in a cell
 //
 // * writing object files via Serde?
 //

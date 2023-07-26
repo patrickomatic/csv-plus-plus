@@ -1,10 +1,15 @@
 //! # AstLexer
 //!
 use std::cell::RefCell;
+use std::fmt;
+use std::error;
 use std::rc::Rc;
-
-use crate::{Error, Result, TokenLibrary};
-use super::token_library::{Token, TokenMatch, TokenMatcher};
+use super::token_library::{
+    Token,
+    TokenLibrary,
+    TokenMatch,
+    TokenMatcher
+};
 
 pub struct AstLexer<'a> {
     tokens: Rc<RefCell<Vec<TokenMatch<'a>>>>,
@@ -40,11 +45,29 @@ fn whitespace_start(input: &str) -> usize {
     input.chars().take_while(|ch| ch.is_whitespace() && *ch != '\n').count()
 }
 
+/// Thrown for a token that we cannot match (we ran all the regexes provided by the token library
+/// and none matched)
+#[derive(Clone, Debug)]
+pub struct AstLexerError {
+    pub bad_input: String,
+    pub line_number: usize,
+    pub position: usize,
+}
+
+impl fmt::Display for AstLexerError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut shortened_bad_input = self.bad_input.clone();
+        shortened_bad_input.truncate(50);
+        write!(f, "Error parsing input.  Invalid token: {}", shortened_bad_input)
+    }
+}
+
+impl error::Error for AstLexerError {}
+
 impl<'a> AstLexer<'a> {
-    pub fn new(
-        input: &'a str,
-        token_library: &'a TokenLibrary
-    ) -> Result<AstLexer<'a>> {
+    pub fn new(input: &'a str) -> Result<AstLexer<'a>, AstLexerError> {
+        // TODO: ick: fix this unwrap
+        let token_library = TokenLibrary::build().unwrap();
         let mut line_number = 1;
         let mut position = 1;
 
@@ -54,7 +77,7 @@ impl<'a> AstLexer<'a> {
         loop {
             let mut matched = false;
 
-            for TokenMatcher(token, regex) in matchers_ordered(token_library).iter() {
+            for TokenMatcher(token, regex) in matchers_ordered(&token_library).iter() {
                 if let Some(m) = regex.find(p) {
                     if *token == Token::Newline {
                         // just count the newline but don't store it on `tokens`
@@ -92,8 +115,8 @@ impl<'a> AstLexer<'a> {
 
             if !matched {
                 // we did a round of all the tokens and didn't match any of them - invalid syntax
-                return Err(Error::CodeSyntaxError {
-                    message: format!("Error parsing input - invalid token: {}", p),
+                return Err(AstLexerError {
+                    bad_input: p.to_string(),
                     line_number,
                     position,
                 })
@@ -140,14 +163,9 @@ mod tests {
         TokenMatch { token, str_match, line_number, position }
     }
 
-    fn build_token_library() -> TokenLibrary {
-        TokenLibrary::build().unwrap()
-    }
-
     #[test]
     fn lexer_new() {
-        let tl = build_token_library();
-        let lexer = AstLexer::new("foo bar,\"a\",123 \n(d, b) + *", &tl).unwrap();
+        let lexer = AstLexer::new("foo bar,\"a\",123 \n(d, b) + *").unwrap();
 
         assert_eq!(lexer.next(), build_token_match(Token::Reference, "foo", 1, 1));
         assert_eq!(lexer.next(), build_token_match(Token::Reference, "bar", 1, 5));
@@ -168,8 +186,7 @@ mod tests {
 
     #[test]
     fn lexer_new_comment() {
-        let tl = build_token_library();
-        let lexer = AstLexer::new("# this is a comment\na_ref\n", &tl).unwrap();
+        let lexer = AstLexer::new("# this is a comment\na_ref\n").unwrap();
 
         assert_eq!(lexer.next(), build_token_match(Token::Reference, "a_ref", 2, 1));
         assert_eq!(lexer.next(), build_token_match(Token::Eof, "", 2, 6));
@@ -177,8 +194,7 @@ mod tests {
 
     #[test]
     fn lexer_new_newlines() {
-        let tl = build_token_library();
-        let lexer = AstLexer::new("\n foo \n bar", &tl).unwrap();
+        let lexer = AstLexer::new("\n foo \n bar").unwrap();
 
         assert_eq!(lexer.next(), build_token_match(Token::Reference, "foo", 2, 2));
         assert_eq!(lexer.next(), build_token_match(Token::Reference, "bar", 3, 2));
@@ -186,8 +202,7 @@ mod tests {
 
     #[test]
     fn lexer_peek() {
-        let tl = build_token_library();
-        let lexer = AstLexer::new("foo (bar) + baz", &tl).unwrap();
+        let lexer = AstLexer::new("foo (bar) + baz").unwrap();
 
         assert_eq!(lexer.peek(), build_token_match(Token::Reference, "foo", 1, 1));
         assert_eq!(lexer.peek(), build_token_match(Token::Reference, "foo", 1, 1));

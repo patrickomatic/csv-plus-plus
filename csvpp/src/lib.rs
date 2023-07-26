@@ -43,7 +43,6 @@ mod target;
 pub use cli_args::CliArgs;
 pub use compiler::spreadsheet::{Spreadsheet, SpreadsheetCell};
 pub use compiler::template::Template;
-pub use compiler::token_library::TokenLibrary;
 pub use error::{Error, InnerError, Result, InnerResult};
 pub use modifier::Modifier;
 pub use options::Options;
