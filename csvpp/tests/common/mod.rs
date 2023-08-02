@@ -10,14 +10,14 @@ pub struct Setup {
 }
 
 impl Setup {
-    pub fn new(input: &str) -> Self {
+    pub fn new(extension: &str, input: &str) -> Self {
         let mut rng = rand::thread_rng();
 
-        let input_filename = format!("integration_test_input{}.csv", rng.gen::<u64>());
+        let input_filename = format!("integration_test_input{}.{}", rng.gen::<u64>(), extension);
         let input_path = path::Path::new(&input_filename);
         fs::write(input_path, input).unwrap();
 
-        let output_filename = format!("integration_test_output{}.csv", rng.gen::<u64>());
+        let output_filename = format!("integration_test_output{}.{}", rng.gen::<u64>(), extension);
         let output_path = path::Path::new(&output_filename);
 
         let runtime = Runtime::new(CliArgs {

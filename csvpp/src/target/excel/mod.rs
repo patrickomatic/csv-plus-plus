@@ -3,17 +3,13 @@
 //! Functions for writing compiled templates to Excel
 //!
 mod excel_modifier;
+mod compilation_target;
+
 use std::ffi;
 use std::path;
 use crate::{Error, Result, Runtime, SpreadsheetCell, Template};
 use crate::ast::Node;
-use super::{
-    file_backer_upper,
-    merge_cell,
-    CompilationTarget,
-    ExistingCell,
-    MergeResult,
-};
+use super::{ merge_cell, ExistingCell, MergeResult };
 
 type ExcelValue = umya_spreadsheet::Cell;
 
@@ -21,34 +17,6 @@ type ExcelValue = umya_spreadsheet::Cell;
 pub struct Excel<'a> {
     path: path::PathBuf,
     runtime: &'a Runtime,
-}
-
-impl CompilationTarget for Excel<'_> {
-    fn write_backup(&self) -> Result<()> {
-        file_backer_upper::backup_file(&self.path)?;
-        Ok(())
-    }
-
-    fn write(&self, template: &Template) -> Result<()> {
-        let mut spreadsheet = self.open_spreadsheet()?;
-
-        self.create_worksheet(&mut spreadsheet)?;
-
-        // TODO: it would be nice to just return the worksheet rather than having a separate method
-        // to get it but I couldn't get the mutable references to work out.
-        let worksheet = self.get_worksheet_mut(&mut spreadsheet)?;
-
-        self.build_worksheet(template, worksheet)?;
-
-        umya_spreadsheet::writer::xlsx::write(&spreadsheet, self.path.clone()).map_err(|e| {
-            Error::TargetWriteError {
-                message: format!("Unable to write target file {}: {}", self.path.display(), e),
-                output: self.runtime.output.clone(),
-            }
-        })?;
-
-        Ok(())
-    }
 }
 
 impl<'a> Excel<'a> {

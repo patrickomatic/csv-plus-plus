@@ -1,9 +1,8 @@
 use csvpp::Template;
 mod common;
 
-#[test]
-fn test_all_features_csv() {
-    let s = common::Setup::new(r#"
+
+const ALL_FEATURES: &str = "
 ## Welcome to the all_features.csvpp test. this is a comment
 ##
 
@@ -62,14 +61,14 @@ fn composite_fn(a, b)
                ,[[note='this is a note']]          note='this is a note'         ,
                ,                                                                 ,
  numberformat  ,                                                                 ,
-               ,                                   numberformat=currency         ,[[numberformat=currency]]123456
-               ,                                   numberformat=date             ,[[numberformat=date]]123456
-               ,                                   numberformat=datetime         ,[[numberformat=datetime]]123456
-               ,                                   numberformat=number           ,[[numberformat=number]]123456
-               ,                                   numberformat=percent          ,[[numberformat=percent]]123456
-               ,                                   numberformat=text             ,[[numberformat=text]]123456
-               ,                                   numberformat=time             ,[[numberformat=time]]123456
-               ,                                   numberformat=scientific       ,[[numberformat=scientific]]123456
+               ,[[numberformat=currency]]          numberformat=currency         ,[[numberformat=currency]]123456
+               ,[[numberformat=date]]              numberformat=date             ,[[numberformat=date]]123456
+               ,[[numberformat=datetime]]          numberformat=datetime         ,[[numberformat=datetime]]123456
+               ,[[numberformat=number]]            numberformat=number           ,[[numberformat=number]]123456
+               ,[[numberformat=percent]]           numberformat=percent          ,[[numberformat=percent]]123456
+               ,[[numberformat=text]]              numberformat=text             ,[[numberformat=text]]123456
+               ,[[numberformat=time]]              numberformat=time             ,[[numberformat=time]]123456
+               ,[[numberformat=scientific]]        numberformat=scientific       ,[[numberformat=scientific]]123456
                ,                                                                 ,
  valign        ,                                                                 ,
                ,[[valign=top]]                     valign=top                    ,
@@ -80,17 +79,9 @@ fn composite_fn(a, b)
                ,depends_on_another                                               ,=depends_on_another
                ,my_function()                                                    ,=my_function()
                ,simple_var                                                       ,=simple_var
+";
 
-"#);
-    let template = Template::compile(&s.runtime).unwrap();
-    let target = s.runtime.target().unwrap();
-
-    assert!(target.write(&template).is_ok());
-}
-
-#[test]
-fn test_all_features_shorthand_csv_no_code_section() {
-    let s = common::Setup::new(r#"
+const ALL_FEATURES_SHORTHAND: &str = "
  border        ,                                                      ,
                ,[[b=t]]                 border=top                    ,
                ,[[b=r]]                 border=right                  ,
@@ -135,11 +126,44 @@ fn test_all_features_shorthand_csv_no_code_section() {
  note          ,                                                      ,
                ,[[n='this is a note']]  note='this is a note'         ,
                ,                                                      ,
+ numberformat  ,                                                      ,
+               ,[[nf=currency]]         numberformat=currency         ,[[numberformat=currency]]123456
+               ,[[nf=date]]             numberformat=date             ,[[numberformat=date]]123456
+               ,[[nf=datetime]]         numberformat=datetime         ,[[numberformat=datetime]]123456
+               ,[[nf=number]]           numberformat=number           ,[[numberformat=number]]123456
+               ,[[nf=percent]]          numberformat=percent          ,[[numberformat=percent]]123456
+               ,[[nf=text]]             numberformat=text             ,[[numberformat=text]]123456
+               ,[[nf=time]]             numberformat=time             ,[[numberformat=time]]123456
+               ,[[nf=scientific]]       numberformat=scientific       ,[[numberformat=scientific]]123456
+               ,                                                      ,
  valign        ,                                                      ,
                ,[[va=top]]              valign=top                    ,
                ,[[va=center]]           valign=center                 ,
                ,[[va=bottom]]           valign=bottom                 ,
-"#);
+
+";
+
+#[test]
+fn test_all_features_csv() {
+    let s = common::Setup::new("csv", ALL_FEATURES);
+    let template = Template::compile(&s.runtime).unwrap();
+    let target = s.runtime.target().unwrap();
+
+    assert!(target.write(&template).is_ok());
+}
+
+#[test]
+fn test_all_features_shorthand_csv_no_code_section() {
+    let s = common::Setup::new("csv", ALL_FEATURES_SHORTHAND);
+                               let template = Template::compile(&s.runtime).unwrap();
+    let target = s.runtime.target().unwrap();
+
+    assert!(target.write(&template).is_ok());
+}
+
+#[test]
+fn test_all_features_excel() {
+    let s = common::Setup::new("xlsx", ALL_FEATURES);
     let template = Template::compile(&s.runtime).unwrap();
     let target = s.runtime.target().unwrap();
 
@@ -148,7 +172,5 @@ fn test_all_features_shorthand_csv_no_code_section() {
 
 // TODO:
 // #[test]
-// fn test_all_features_excel() {
-//
-// #[test]
 // fn test_all_features_google_sheets() {
+// }

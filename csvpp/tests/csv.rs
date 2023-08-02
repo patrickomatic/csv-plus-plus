@@ -5,7 +5,7 @@ mod common;
 
 #[test]
 fn test_write_no_code_section() {
-    let s = common::Setup::new(r#"
+    let s = common::Setup::new("csv", r#"
 ---
 foo,bar,baz
 "#);
@@ -18,7 +18,7 @@ foo,bar,baz
 
 #[test]
 fn test_write_variable() {
-    let s = common::Setup::new(r#"
+    let s = common::Setup::new("csv", r#"
 foo := 1
 ---
 foo,bar,baz,=foo

@@ -3,7 +3,7 @@ mod common;
 
 #[test]
 fn test_syntax_error() {
-    let s = common::Setup::new(r#"
+    let s = common::Setup::new("csv", r#"
 ## Welcome to the all_features.csvpp test. this is a comment
 ##
 fn foo_fn<a, b, c> a + b * c
@@ -25,4 +25,3 @@ foo,bar
  5: ---
  6: foo,bar");
 }
-

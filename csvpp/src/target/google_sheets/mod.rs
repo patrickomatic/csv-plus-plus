@@ -6,6 +6,7 @@
 // * better error handling throughout (cleanup unwrap()s)
 //
 mod batch_update_builder;
+mod compilation_target;
 mod google_sheets_modifier;
 
 use google_sheets4::hyper;
@@ -14,7 +15,7 @@ use google_sheets4::oauth2;
 use std::env;
 use std::path;
 use crate::{Error, Result, Runtime, Template};
-use super::{CompilationTarget, ExistingCell, ExistingValues};
+use super::{ExistingCell, ExistingValues};
 use batch_update_builder::BatchUpdateBuilder;
 
 type SheetsHub = google_sheets4::Sheets<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>;
@@ -26,19 +27,6 @@ pub struct GoogleSheets<'a> {
     credentials: path::PathBuf,
     runtime: &'a Runtime,
     pub sheet_id: String,
-}
-
-impl CompilationTarget for GoogleSheets<'_> {
-    fn write_backup(&self) -> Result<()> {
-        // TODO note to myself: you use a drive client to do this, not a sheets client
-        todo!();
-    }
-
-    fn write(&self, template: &Template) -> Result<()> {
-        self.async_runtime.block_on(async {
-            self.write_sheet(template).await
-        })
-    }
 }
 
 impl<'a> GoogleSheets<'a> {
