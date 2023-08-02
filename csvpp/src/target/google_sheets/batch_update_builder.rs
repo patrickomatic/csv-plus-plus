@@ -7,8 +7,8 @@ use google_sheets4::api;
 use std::str::FromStr;
 use crate::{Runtime, SpreadsheetCell, Template};
 use crate::ast::Node;
+use crate::target::{merge_rows, MergeResult, ExistingValues};
 use super::{google_sheets_modifier, SheetsValue};
-use super::super::{merge_rows, MergeResult, ExistingValues};
 
 pub struct BatchUpdateBuilder<'a> {
     existing_values: &'a ExistingValues<SheetsValue>,
@@ -169,7 +169,7 @@ mod tests {
             modifier: Modifier::default(),
         }]);
         let template = Template::new(spreadsheet, None, &runtime);
-        let existing_values = ExistingValues::default();
+        let existing_values = ExistingValues { cells: vec![] };
         let builder = BatchUpdateBuilder::new(&runtime, &template, &existing_values).build();
 
         assert_eq!(1, builder.requests.unwrap().len());

@@ -2,7 +2,7 @@
 authors = ["Patrick Carroll <patrick@patrickomatic.com>"]
 description = "Compile csvpp source code to a target spreadsheet format"
 homepage = "https://github.com/patrickomatic/csv-plus-plus"
-keywords = ["csv++", "csvpp", "csv", "excel", "google", "sheets", "opendocument", "xlsx", "xls", "odf"]
+keywords = ["csv++", "csvpp", "csv", "spreadsheet", "excel", "google", "sheets", "opendocument", "xlsx", "xls", "odf"]
 license = "MIT"
 name = "csvpp"
 repository = "https://github.com/patrickomatic/csv-plus-plus"
@@ -21,6 +21,7 @@ regex = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "^1.0"
 tokio = { version = "^1.0", features = ["full"] }
+umya-spreadsheet = "^0.9"
 
 [dev-dependencies]
 rand = "*"

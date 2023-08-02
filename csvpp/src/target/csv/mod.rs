@@ -77,7 +77,7 @@ impl<'a> Csv<'a> {
             Ok(f) => f,
             Err(e) => return match e.kind() {
                 io::ErrorKind::NotFound => 
-                    Ok(ExistingValues::default()),
+                    Ok(ExistingValues { cells: vec![] }),
                 error => 
                     Err(Error::TargetWriteError {
                         message: format!("Error reading output: {}", error),

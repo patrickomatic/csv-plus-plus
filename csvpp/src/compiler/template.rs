@@ -248,10 +248,10 @@ impl<'a> Template<'a> {
                     Node::Variable { body, .. } => *body.clone(),
                     n => n.clone(),
                 }))
-                // Some(value.to_owned())
             } else if let Some(BuiltinVariable { eval, .. }) = self.runtime.builtin_variables.get(var_name) {
                 Some(Box::new(
-                        eval(position).map_err(|e| self.inner_error_to_error(e, position))?))
+                        eval(position).map_err(|e| 
+                                               self.inner_error_to_error(e, position))?))
             } else {
                 None
             }

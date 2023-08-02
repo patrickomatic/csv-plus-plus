@@ -33,6 +33,12 @@ impl FromStr for BorderStyle {
     }
 }
 
+impl Default for BorderStyle {
+    fn default() -> Self {
+        Self::Solid
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

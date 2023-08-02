@@ -1,6 +1,8 @@
 //! # GoogleSheets
 //!
 // TODO: 
+// * implement backing up
+//
 // * better error handling throughout (cleanup unwrap()s)
 //
 mod batch_update_builder;
@@ -28,8 +30,7 @@ pub struct GoogleSheets<'a> {
 
 impl CompilationTarget for GoogleSheets<'_> {
     fn write_backup(&self) -> Result<()> {
-        // TODO I think I need a drive client actually 
-        // let r = hub.spreadsheets().sheets_copy_to(...).doit().await
+        // TODO note to myself: you use a drive client to do this, not a sheets client
         todo!();
     }
 
@@ -68,7 +69,7 @@ impl<'a> GoogleSheets<'a> {
             .doit()
             .await;
 
-        let empty = Ok(ExistingValues::default());
+        let empty = Ok(ExistingValues { cells: vec![] });
 
         let spreadsheet = match request {
             Ok((_, s)) => s,
@@ -82,7 +83,7 @@ impl<'a> GoogleSheets<'a> {
         };
 
         // everything in this API is an Option<> so has to be unwrapped...
-        //
+        // TODO: there's probably a more rusty way to do this
         let sheets = match spreadsheet.sheets {
             Some(s) => s,
             None => return empty,

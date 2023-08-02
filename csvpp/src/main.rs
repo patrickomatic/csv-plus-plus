@@ -6,22 +6,23 @@
 //! ```
 //! 
 // TODO:
-// 
 //
 // * reduce the amount of things that are exported publicly 
 //   * make the ASTs private
+//   * make a bunch of things pub(crate)/pub(self)
 //
 // * writing to:
 //   * Excel
-//   * OpenDocument
 //
 // * better contextual error messages when the error happens in a cell
 //
 // * writing object files via Serde?
 //
-// * make sure the --verbose output is actually useful
+// * make --verbose output is actually useful
 //
 // * target the lowest versions of all dependencies
+//
+// * support text wrapping options
 //
 use csvpp::{Error, Runtime, Template};
 use std::process;

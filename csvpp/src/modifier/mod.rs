@@ -4,9 +4,6 @@
 //! like fonts, formatting, alignment, etc but there are a couple tricky things here like `var`
 //! which allows the user to bind variables to cells.
 //!
-use serde::{Serialize, Deserialize};
-use std::collections::HashSet;
-
 mod border_side;
 mod border_style;
 mod expand;
@@ -15,6 +12,8 @@ mod number_format;
 mod text_format;
 mod vertical_align;
 
+use serde::{Serialize, Deserialize};
+use std::collections::HashSet;
 pub use border_side::BorderSide;
 pub use border_style::BorderStyle;
 pub use expand::Expand;
@@ -22,7 +21,6 @@ pub use horizontal_align::HorizontalAlign;
 pub use number_format::NumberFormat;
 pub use text_format::TextFormat;
 pub use vertical_align::VerticalAlign;
-
 use crate::Rgb;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -61,5 +59,43 @@ impl Modifier {
             row_level: false,
             ..modifier.clone()
         }
+    }
+
+    /// With the exception of `row_level` - has anything been set on this Modifier?
+    pub fn is_empty(&self) -> bool {
+        // I wish this wasn 't so error prone
+        self.border_color.is_none() && self.border_style.is_none() && self.borders.is_empty()
+            && self.color.is_none() 
+            && self.expand.is_none()
+            && self.font_color.is_none() && self.font_family.is_none() && self.font_size.is_none()
+            && self.formats.is_empty()
+            && self.horizontal_align.is_none()
+            && self.note.is_none()
+            && self.number_format.is_none()
+            && self.var.is_none()
+            && self.vertical_align.is_none()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn is_empty_true() {
+        assert!(Modifier::default().is_empty());
+    }
+
+    #[test]
+    fn is_empty_false() {
+        let modifier = Modifier {
+            note: Some("this is a note".to_string()),
+            font_size: Some(12),
+            vertical_align: Some(VerticalAlign::Top),
+
+            ..Default::default()
+        };
+
+        assert!(!modifier.is_empty());
     }
 }
