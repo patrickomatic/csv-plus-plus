@@ -14,12 +14,12 @@ pub struct Rgb {
     pub b: u8,
 }
 
-impl convert::Into<(f32, f32, f32)> for &Rgb {
-    fn into(self) -> (f32, f32, f32) {
+impl convert::From<&Rgb> for (f32, f32, f32) {
+    fn from(value: &Rgb) -> (f32, f32, f32) {
         (
-            255.0 / self.r as f32,
-            255.0 / self.g as f32,
-            255.0 / self.b as f32,
+            255.0 / value.r as f32,
+            255.0 / value.g as f32,
+            255.0 / value.b as f32,
         )
     }
 }
@@ -76,6 +76,13 @@ mod tests {
     use super::*;
 
     #[test]
+    fn display_3_chars() {
+        let rgb = Rgb { r: 255, g: 0, b: 17 };
+
+        assert_eq!(rgb.to_string(), "#FF0011")
+    }
+
+    #[test]
     fn from_str_7_chars() {
         let rgb = Rgb::from_str("#00FF11").unwrap();
 
@@ -103,9 +110,12 @@ mod tests {
     }
 
     #[test]
-    fn display_3_chars() {
-        let rgb = Rgb { r: 255, g: 0, b: 17 };
+    fn from_rgb_tuple() {
+        let rgb = &Rgb::from_str("0B33F0").unwrap();
+        let tuple: (f32, f32, f32) = rgb.into();
 
-        assert_eq!(rgb.to_string(), "#FF0011")
+        assert_eq!(tuple.0, 0.0);
+        assert_eq!(tuple.1, 0.0);
+        assert_eq!(tuple.2, 0.0);
     }
 }
