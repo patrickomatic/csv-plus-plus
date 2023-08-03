@@ -67,8 +67,8 @@ impl SourceCode {
                 lines: csv_lines + code_lines,
                 length_of_code_section: code_lines,
                 length_of_csv_section: csv_lines,
-                csv_section: csv_section.trim().to_string(),
-                code_section: Some(code_section.trim().to_string()), 
+                csv_section: csv_section.to_string(),
+                code_section: Some(code_section.to_string()), 
                 original: input.to_owned(),
             })
         } else {
@@ -78,7 +78,7 @@ impl SourceCode {
                 lines: csv_lines,
                 length_of_code_section: 0,
                 length_of_csv_section: csv_lines,
-                csv_section: input.trim().to_owned(),
+                csv_section: input.to_owned(),
                 code_section: None, 
                 original: input.to_owned(),
             })
@@ -299,8 +299,8 @@ foo,bar,baz,=foo
         assert_eq!(source_code.lines, 5);
         assert_eq!(source_code.length_of_csv_section, 2);
         assert_eq!(source_code.length_of_code_section, 3);
-        assert_eq!(source_code.code_section, Some("foo := 1".to_string()));
-        assert_eq!(source_code.csv_section, "foo,bar,baz,=foo".to_string());
+        assert_eq!(source_code.code_section, Some("\nfoo := 1\n\n".to_string()));
+        assert_eq!(source_code.csv_section, "\nfoo,bar,baz,=foo\n".to_string());
     }
 
     #[test]

@@ -147,7 +147,7 @@ impl<'a> CodeSectionParser<'a> {
     fn parse_expr(&'a self) -> Result<Ast> {
         // create an `AstParser` with a reference to our lexer so it can continue consuming our
         // stream of tokens
-        AstParser::new(&self.lexer, Some(&self.source_code)).expr_bp(true, 0)
+        AstParser::new(&self.lexer, Some(self.source_code)).expr_bp(true, 0)
     }
 
     fn token_match_to_error(&'a self, token: &TokenMatch, message: String) -> Error {
@@ -177,16 +177,16 @@ mod tests {
         let foo = fns_and_vars.functions.get("foo").unwrap();
 
         let expected: Ast = Box::new(
-                   Node::Function {
-                       name: "foo".to_owned(),
-                       args: vec!["a".to_string(), "b".to_string()],
-                       body: Box::new(Node::InfixFunctionCall {
-                           left: Box::new(Node::Reference("a".to_owned())), 
-                           operator: "+".to_owned(), 
-                           right: Box::new(Node::Reference("b".to_owned())),
-                       }),
-                   });
-            
+            Node::Function {
+                name: "foo".to_owned(),
+                args: vec!["a".to_string(), "b".to_string()],
+                body: Box::new(Node::InfixFunctionCall {
+                    left: Box::new(Node::Reference("a".to_owned())), 
+                    operator: "+".to_owned(), 
+                    right: Box::new(Node::Reference("b".to_owned())),
+                }),
+            });
+
         assert_eq!(foo, &expected);
     }
 
@@ -196,15 +196,15 @@ mod tests {
         let foo = fns_and_vars.functions.get("foo").unwrap();
 
         let expected: Ast = Box::new(
-                   Node::Function {
-                       name: "foo".to_owned(),
-                       args: vec![],
-                       body: Box::new(Node::InfixFunctionCall {
-                           left: Box::new(Node::Integer(1)), 
-                           operator: "*".to_owned(), 
-                           right: Box::new(Node::Integer(2)),
-                       }),
-                   });
+            Node::Function {
+                name: "foo".to_owned(),
+                args: vec![],
+                body: Box::new(Node::InfixFunctionCall {
+                    left: Box::new(Node::Integer(1)), 
+                    operator: "*".to_owned(), 
+                    right: Box::new(Node::Integer(2)),
+                }),
+            });
 
         assert_eq!(foo, &expected);
     }
