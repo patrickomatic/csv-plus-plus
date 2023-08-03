@@ -50,7 +50,7 @@ impl fmt::Display for InnerError {
         match self {
             Self::BadInput { bad_input, message } => {
                 writeln!(f, "{}", message)?;
-                writeln!(f, "bad input: {}", bad_input)
+                write!(f, "bad input: {}", bad_input)
             },
             Self::BadInputWithPossibilities { message, bad_input, possible_values } => {
                 writeln!(f, "{}", message)?;
@@ -80,39 +80,40 @@ impl error::Error for InnerError {}
 
 #[cfg(test)]
 mod tests {
-    /* TODO
     use super::*;
 
     #[test]
-    fn display_cell_syntax_error() {
-        let message = Error::CellSyntaxError {
-            index: a1_notation::A1::builder().xy(1, 5).build().unwrap(),
-            message: "foo".to_string(),
-        };
-
-        assert_eq!("Cell->B6: foo", message.to_string());
-    }
-
-    #[test]
-    fn display_code_syntax_error() {
-        let message = Error::CodeSyntaxError {
-            line_number: 1,
-            message: "foo".to_string(),
+    fn display_bad_input() {
+        let message = InnerError::BadInput {
             bad_input: "bar".to_string(),
+            message: "it should be foo".to_string(),
         };
 
-        assert_eq!("1: foo\nbad input: bar", message.to_string());
+        assert_eq!("it should be foo
+bad input: bar", message.to_string());
     }
 
     #[test]
-    fn display_modifier_syntax_error() {
-        let message = Error::ModifierSyntaxError {
-            bad_input: "bad_input".to_string(),
-            index: a1_notation::A1::builder().xy(0, 1).build().unwrap(),
-            message: "foo".to_string(),
+    fn display_bad_input_with_possibilities() {
+        let message = InnerError::BadInputWithPossibilities {
+            bad_input: "bar".to_string(),
+            message: "it should be foo".to_string(),
+            possible_values: "foo | baz".to_string(),
         };
 
-        assert_eq!("Cell->A2: foo\nbad input: bad_input", message.to_string());
+        assert_eq!("it should be foo
+bad input: bar
+possible values: foo | baz", message.to_string());
     }
-    */
+
+    #[test]
+    fn display_rgb_syntax_error() {
+        let message = InnerError::RgbSyntaxError {
+            bad_input: "bar".to_string(),
+            message: "it should be foo".to_string(),
+        };
+
+        assert_eq!("Error parsing RGB value: it should be foo
+bad input: bar", message.to_string());
+    }
 }

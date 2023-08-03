@@ -3,6 +3,7 @@ use std::error;
 use std::fmt;
 use std::path::PathBuf;
 use crate::Output;
+use super::InnerError;
 
 #[derive(Clone, Debug)]
 pub enum Error {
@@ -11,8 +12,9 @@ pub enum Error {
         // TODO
         // highlighted_lines: Vec<String>,
         line_number: usize,
-        message: String,
+        // message: String,
         position: a1_notation::A1,
+        inner_error: InnerError,
     },
 
     /// A syntax error in the code section.
@@ -41,7 +43,8 @@ pub enum Error {
     ModifierSyntaxError {
         // TODO
         // highlighted_lines: Vec<String>,
-        message: String,
+        // message: String,
+        inner_error: InnerError,
         position: a1_notation::A1,
         line_number: usize,
     },
@@ -68,36 +71,39 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let highlighted_lines = match self {
-            Self::CellSyntaxError { line_number, message, position } => {
-                writeln!(f, "Syntax error in cell {} on line {}: {}", position, line_number, message)?;
+            Self::CellSyntaxError { line_number, inner_error, position } => {
+                writeln!(f, "Syntax error in cell {position} on line {line_number}")?;
+                writeln!(f, "{inner_error}")?;
                 None
             },
             Self::CodeSyntaxError { line_number, message, highlighted_lines, .. } => {
-                writeln!(f, "Syntax error on line {}: {}", line_number, message)?;
+                writeln!(f, "Syntax error on line {line_number}: {message}")?;
                 Some(highlighted_lines)
             },
             Self::EvalError { message, line_number, position, .. } => {
-                writeln!(f, "Error evaluating cell {} on line {}: {}", position, line_number, message)?;
+                writeln!(f, "Error evaluating formula in cell {position} on line {line_number}")?;
+                writeln!(f, "{message}")?;
                 None
             },
-            Self::ModifierSyntaxError { line_number, position, message } => {
-                writeln!(f, "Invalid modifier in cell {} on line {}: {}", position, line_number, message)?;
+            Self::ModifierSyntaxError { line_number, position, inner_error } => {
+                writeln!(f, "Invalid modifier definition in cell {position} on line {line_number}")?;
+                writeln!(f, "{inner_error}")?;
                 None
             },
             Self::InitError(message) => {
-                writeln!(f, "Error initializing: {}", message)?;
+                writeln!(f, "Error initializing: {message}")?;
                 None
             },
             Self::ObjectWriteError { filename, message } => {
-                writeln!(f, "Error writing object file {}: {}", filename.display(), message)?;
+                writeln!(f, "Error writing object file {}: {message}", filename.display())?;
                 None
             },
             Self::SourceCodeError { filename, message } => {
-                writeln!(f, "Error reading source {}: {}", filename.display(), message)?;
+                writeln!(f, "Error reading source {}: {message}", filename.display())?;
                 None
             },
             Self::TargetWriteError { output, message } => {
-                writeln!(f, "Error writing to {}: {}", output, message)?;
+                writeln!(f, "Error writing to {output}: {message}")?;
                 None
             },
         };
@@ -119,16 +125,23 @@ mod tests {
     use std::path;
     use std::str::FromStr;
     use super::*;
+    use super::super::InnerError;
 
     #[test]
     fn display_cell_syntax_error() {
         let message = Error::CellSyntaxError {
             line_number: 8,
             position: a1_notation::A1::builder().xy(1, 5).build().unwrap(),
-            message: "foo".to_string(),
+            inner_error: InnerError::BadInput {
+                bad_input: "foo".to_string(),
+                message: "You did a foo".to_string(),
+            },
         };
 
-        assert_eq!("Syntax error in cell B6 on line 8: foo\n", message.to_string());
+        assert_eq!("Syntax error in cell B6 on line 8
+You did a foo
+bad input: foo
+", message.to_string());
     }
 
     #[test]
@@ -140,7 +153,10 @@ mod tests {
             highlighted_lines: vec!["foo".to_string(), "bar".to_string()],
         };
 
-        assert_eq!("Syntax error on line 1: foo\nfoo\nbar\n", message.to_string());
+        assert_eq!("Syntax error on line 1: foo
+foo
+bar
+", message.to_string());
     }
 
     #[test]
@@ -151,7 +167,7 @@ mod tests {
             message: "foo".to_string(),
         };
 
-        assert_eq!("Error evaluating cell C3 on line 1: foo\n", message.to_string());
+        assert_eq!("Error evaluating formula in cell C3 on line 1\nfoo\n", message.to_string());
     }
 
     #[test]
@@ -159,10 +175,18 @@ mod tests {
         let message = Error::ModifierSyntaxError {
             line_number: 5,
             position: a1_notation::A1::builder().xy(0, 1).build().unwrap(),
-            message: "foo".to_string(),
+            inner_error: InnerError::BadInputWithPossibilities {
+                bad_input: "foo".to_string(),
+                message: "You did a foo".to_string(),
+                possible_values: "bar | baz".to_string(),
+            },
         };
 
-        assert_eq!("Invalid modifier in cell A2 on line 5: foo\n", message.to_string());
+        assert_eq!("Invalid modifier definition in cell A2 on line 5
+You did a foo
+bad input: foo
+possible values: bar | baz
+", message.to_string());
     }
 
     #[test]

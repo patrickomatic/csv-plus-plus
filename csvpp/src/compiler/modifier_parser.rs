@@ -37,7 +37,7 @@ impl<'a> ModifierParser<'a> {
             Error::ModifierSyntaxError {
                 line_number: source_code.csv_line_number(&position),
                 position: position.clone(),
-                message: e.to_string(),
+                inner_error: e,
             }
         })?;
 
