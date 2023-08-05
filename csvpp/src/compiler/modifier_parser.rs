@@ -1,11 +1,12 @@
 //! Module for lexing and parsing the modifiers on a cell.
 //!
 //! TODO:
+//!
 //! * need to lowercase the input but we can't do it on the entire value because we don't want to
 //!     lowercase the stuff outside the modifier definition
 //!
 //! * refactor the error handling to provide more contextual (better positioning) error messages
-//! that highlight exactly the problem
+//!     that highlight exactly the problem
 //!
 use std::str::FromStr;
 use crate::{Error, InnerError, InnerResult, Result, Rgb, SourceCode};
@@ -17,7 +18,7 @@ pub struct ModifierParser<'a> {
     modifier: &'a mut Modifier,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ParsedModifiers {
     pub modifier: Modifier,
     pub row_modifier: Modifier,
@@ -37,7 +38,7 @@ impl<'a> ModifierParser<'a> {
             Error::ModifierSyntaxError {
                 line_number: source_code.csv_line_number(&position),
                 position: position.clone(),
-                inner_error: e,
+                inner_error: Box::new(e),
             }
         })?;
 

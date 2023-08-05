@@ -10,14 +10,14 @@ use crate::ast::Node;
 use crate::target::{merge_rows, MergeResult, ExistingValues};
 use super::{google_sheets_modifier, SheetsValue};
 
-pub struct BatchUpdateBuilder<'a> {
+pub(crate) struct BatchUpdateBuilder<'a> {
     existing_values: &'a ExistingValues<SheetsValue>,
     runtime: &'a Runtime,
     template: &'a Template<'a>,
 }
 
 impl<'a> BatchUpdateBuilder<'a> {
-    pub fn new(
+    pub(crate) fn new(
         runtime: &'a Runtime,
         template: &'a Template,
         existing_values: &'a ExistingValues<SheetsValue>,
@@ -26,7 +26,7 @@ impl<'a> BatchUpdateBuilder<'a> {
     }
 
     /// Loops over each row of the spreadsheet, building up `UpdateCellsRequest`s.  
-    pub fn build(&self) -> api::BatchUpdateSpreadsheetRequest {
+    pub(crate) fn build(&self) -> api::BatchUpdateSpreadsheetRequest {
         api::BatchUpdateSpreadsheetRequest {
             requests: Some(self.batch_update_cells_requests()), 
             ..Default::default()
@@ -145,22 +145,15 @@ impl<'a> BatchUpdateBuilder<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::path;
-    use crate::{CliArgs, Modifier, Spreadsheet};
+    use crate::{Modifier, Spreadsheet};
+    use crate::test_utils::TestFile;
     use super::*;
-
-    fn build_runtime() -> Runtime {
-        let cli_args = CliArgs {
-            input_filename: path::PathBuf::from("foo.csvpp"),
-            google_sheet_id: Some("abc123".to_string()),
-            ..Default::default()
-        };
-        Runtime::new(cli_args).unwrap()
-    }
 
     #[test]
     fn build() {
-        let runtime = build_runtime();
+        let test_file = TestFile::new("csv", "");
+        let runtime = test_file.into();
+
         let mut spreadsheet = Spreadsheet::default();
         spreadsheet.cells.push(vec![SpreadsheetCell {
             ast: None,
@@ -168,6 +161,7 @@ mod tests {
             value: "Test".to_string(),
             modifier: Modifier::default(),
         }]);
+
         let template = Template::new(spreadsheet, None, &runtime);
         let existing_values = ExistingValues { cells: vec![] };
         let builder = BatchUpdateBuilder::new(&runtime, &template, &existing_values).build();

@@ -29,6 +29,31 @@ foo,bar,baz,=foo
     
     assert_eq!(
         s.read_output(),
-        r#"foo,bar,baz,1
+        r"foo,bar,baz,1
+");
+}
+
+#[test]
+fn test_write_expand() {
+    let s = common::Setup::new("csv", r#"
+commission_charge := 0.65 # the broker charges $0.65 a contract/share
+
+fees := commission_charge * celladjacent(D)
+profit := (celladjacent(B) * celladjacent(C)) - fees
+
+---
+![[format=bold/halign=center]]Date ,Purchase         ,Price  ,Quantity ,Profit     ,Fees
+![[expand=2]]                      ,[[format=bold]]  ,       ,         ,"=profit"  ,"=fees"
 "#);
+
+    let template = Template::compile(&s.runtime).unwrap();
+    let target = s.runtime.target().unwrap();
+    target.write(&template).unwrap();
+    
+    assert_eq!(
+        s.read_output(),
+              "Date,Purchase,Price,Quantity,Profit,Fees
+,,,,=((B2 * C2) - (0.65 * D2)),=(0.65 * D2)
+,,,,=((B3 * C3) - (0.65 * D3)),=(0.65 * D3)
+");
 }

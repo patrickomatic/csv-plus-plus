@@ -2,9 +2,9 @@ use crate::Template;
 use super::{Ast, FunctionName, Node, VariableName};
 
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct AstReferences {
-    pub functions: Vec<FunctionName>,
-    pub variables: Vec<VariableName>,
+pub(crate) struct AstReferences {
+    pub(crate) functions: Vec<FunctionName>,
+    pub(crate) variables: Vec<VariableName>,
 }
 
 impl AstReferences {
@@ -16,7 +16,7 @@ impl AstReferences {
 impl Node {
     /// Does a depth first search on `ast` and parses out all identifiers that might be able to be
     /// eval()ed
-    pub fn extract_references(&self, template: &Template) -> AstReferences {
+    pub(crate) fn extract_references(&self, template: &Template) -> AstReferences {
         let mut fns = vec![];
         let mut vars = vec![];
 
@@ -53,18 +53,9 @@ fn extract_dfs(
 
 #[cfg(test)]
 mod tests {
-    use std::path;
+    use crate::{Runtime, Spreadsheet};
+    use crate::test_utils::*;
     use super::*;
-    use crate::*;
-
-    fn build_runtime() -> Runtime {
-        let cli_args = CliArgs {
-            input_filename: path::PathBuf::from("foo.csvpp"),
-            google_sheet_id: Some("abc123".to_string()),
-            ..Default::default()
-        };
-        Runtime::new(cli_args).unwrap()
-    }
 
     fn build_template(runtime: &Runtime) -> Template {
         Template::new(Spreadsheet::default(), None, runtime)
@@ -72,7 +63,8 @@ mod tests {
 
     #[test]
     fn extract_references_empty() {
-        let runtime = build_runtime();
+        let test_file = TestFile::new("csv", "");
+        let runtime = test_file.into();
 
         let references = Node::extract_references(
             &Box::new(Node::Integer(5)), 

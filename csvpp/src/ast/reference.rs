@@ -26,7 +26,6 @@ impl Reference {
     /// "A1 format" ([\w!:_]) is a superset of the things that can be functions or variables
     /// ([\w_]).  So we know for sure when we're dealing with (some) A1 references if they have a
     /// character like `!` or `:` that wouldn't be allowed in a function name.  
-    ///
     pub fn is_definitely_a1_format(&self) -> bool {
         for c in self.0.chars() {
             if !c.is_alphanumeric() && c != '_' {
@@ -37,11 +36,9 @@ impl Reference {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
-
     use super::*;
     use super::super::*;
 

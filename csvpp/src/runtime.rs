@@ -56,21 +56,19 @@ XXX
 
 #[cfg(test)]
 mod tests {
-    use std::path;
+    use crate::test_utils::TestFile;
     use super::*;
-
-    fn build_runtime() -> Result<Runtime> {
-        let cli_args = CliArgs {
-            input_filename: path::PathBuf::from("foo.csvpp"),
-            google_sheet_id: Some("abc123".to_string()),
-            ..Default::default()
-        };
-        Runtime::new(cli_args)
-    }
 
     #[test]
     fn new() {
-        let runtime = build_runtime();
+        let test_file = TestFile::new("csv", "foo,bar,baz");
+        let cli_args = CliArgs {
+            input_filename: test_file.input_file.clone(),
+            google_sheet_id: Some("abc123".to_string()),
+            ..Default::default()
+        };
+        let runtime = Runtime::new(cli_args);
+
         assert!(runtime.is_ok());
     }
 

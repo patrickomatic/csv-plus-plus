@@ -6,17 +6,19 @@ use serde::{Deserialize, Serialize};
 use std::collections;
 use crate::InnerResult;
 
+/// traits that are implemented for `Node`
 mod display;
 mod eval;
 mod from_str;
 
+/// functionality related to ASTs
 mod builtin_function;
 mod builtin_variable;
 mod references;
 
 pub use builtin_function::BuiltinFunction;
 pub use builtin_variable::BuiltinVariable;
-pub use references::AstReferences;
+pub(crate) use references::AstReferences;
 
 type FunctionArgs = Vec<String>;
 type FunctionName = String;

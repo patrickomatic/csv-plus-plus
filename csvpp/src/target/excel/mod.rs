@@ -146,7 +146,7 @@ impl<'a> Excel<'a> {
 
     fn get_worksheet_mut(&'a self, spreadsheet: &'a mut umya_spreadsheet::Spreadsheet) -> Result<&'a mut umya_spreadsheet::Worksheet> {
         let sheet_name = &self.runtime.options.sheet_name;
-        spreadsheet.get_sheet_by_name_mut(&sheet_name).map_err(|e| {
+        spreadsheet.get_sheet_by_name_mut(sheet_name).map_err(|e| {
             Error::TargetWriteError {
                 message: format!("Unable to open worksheet {} in target file: {}", sheet_name, e),
                 output: self.runtime.output.clone(),
@@ -157,42 +157,14 @@ impl<'a> Excel<'a> {
 
 #[cfg(test)]
 mod tests {
-    use rand::Rng;
-    use std::fs;
-    use crate::CliArgs;
+    use crate::test_utils::TestFile;
     use super::*;
-
-    struct Setup {
-        output: path::PathBuf,
-    }
-
-    impl Setup {
-        fn new() -> Self {
-            let random_filename = format!("foobar{}.xlsx", rand::thread_rng().gen::<u64>());
-            Self { output: path::PathBuf::from(&random_filename) }
-        }
-    }
-    
-    impl Drop for Setup {
-        fn drop(&mut self) {
-            fs::remove_file(&self.output).unwrap();
-        }
-    }
-
-    fn build_runtime() -> Runtime {
-        let cli_args = CliArgs {
-            input_filename: path::PathBuf::from("foo.csvpp"),
-            output_filename: Some(path::PathBuf::from("foo.xlsx")),
-            ..Default::default()
-        };
-        Runtime::new(cli_args).unwrap()
-    }
 
     /*
     #[test]
     fn open_worksheet_does_exist() {
         let runtime = build_runtime();
-        let setup = Setup::new();
+        let setup = TestFile::new("xlsx", "");
         let spreadsheet = Excel::new(&runtime, setup.output).open_worksheet().unwrap();
 
         // assert!(spreadsheet.is_ok());
@@ -225,9 +197,9 @@ mod tests {
 
     #[test]
     fn write() {
-        let runtime = build_runtime();
-        let filename = path::PathBuf::from("foo.xlsx");
-        let target = Excel::new(&runtime, filename);
+        let test_file = TestFile::new("xlsx", "foo,bar,baz");
+        let runtime = test_file.clone().into();
+        let target = Excel::new(&runtime, test_file.output_file.clone());
         let template = Template::compile(&runtime).unwrap();
 
         // XXX

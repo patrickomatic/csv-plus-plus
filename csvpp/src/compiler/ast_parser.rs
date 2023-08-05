@@ -275,10 +275,14 @@ mod tests {
     }
 
     #[test]
+    fn parse_float() {
+        assert_eq!(test_parse("1.50"), Box::new(Node::Float(1.50)));
+        assert_eq!(test_parse("0.65"), Box::new(Node::Float(0.65)));
+    }
+
+    #[test]
     fn parse_integer() {
-        assert_eq!(
-            test_parse("1"), 
-            Box::new(Node::Integer(1)));
+        assert_eq!(test_parse("1"), Box::new(Node::Integer(1)));
     }
 
     #[test]

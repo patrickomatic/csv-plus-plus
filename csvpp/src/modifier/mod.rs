@@ -63,11 +63,15 @@ impl Modifier {
 
     /// With the exception of `row_level` - has anything been set on this Modifier?
     pub fn is_empty(&self) -> bool {
-        // I wish this wasn 't so error prone
-        self.border_color.is_none() && self.border_style.is_none() && self.borders.is_empty()
+        // I wish this wasn't so error prone
+        self.border_color.is_none()
+            && self.border_style.is_none() 
+            && self.borders.is_empty()
             && self.color.is_none() 
             && self.expand.is_none()
-            && self.font_color.is_none() && self.font_family.is_none() && self.font_size.is_none()
+            && self.font_color.is_none() 
+            && self.font_family.is_none() 
+            && self.font_size.is_none()
             && self.formats.is_empty()
             && self.horizontal_align.is_none()
             && self.note.is_none()

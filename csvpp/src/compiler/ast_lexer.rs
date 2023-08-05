@@ -33,8 +33,10 @@ fn matchers_ordered(tl: &TokenLibrary) -> [&TokenMatcher; 15] {
         &tl.open_paren,
         &tl.infix_operator,
         &tl.code_section_eof,
-        &tl.integer,
+        // float has to be happen before integer!  it needs to greedy match 1.5, where integer will
+        // also match the first part 1, but not the rest
         &tl.float,
+        &tl.integer,
         &tl.boolean_true,
         &tl.boolean_false,
         &tl.reference,
@@ -165,7 +167,7 @@ mod tests {
 
     #[test]
     fn lexer_new() {
-        let lexer = AstLexer::new("foo bar,\"a\",123 \n(d, b) + *").unwrap();
+        let lexer = AstLexer::new("foo bar,\"a\",123 \n(d, b) + * 0.25").unwrap();
 
         assert_eq!(lexer.next(), build_token_match(Token::Reference, "foo", 1, 1));
         assert_eq!(lexer.next(), build_token_match(Token::Reference, "bar", 1, 5));
@@ -180,8 +182,9 @@ mod tests {
         assert_eq!(lexer.next(), build_token_match(Token::CloseParen, ")", 2, 6));
         assert_eq!(lexer.next(), build_token_match(Token::InfixOperator, "+", 2, 8));
         assert_eq!(lexer.next(), build_token_match(Token::InfixOperator, "*", 2, 10));
-        assert_eq!(lexer.next(), build_token_match(Token::Eof, "", 2, 11));
-        assert_eq!(lexer.next(), build_token_match(Token::Eof, "", 2, 11));
+        assert_eq!(lexer.next(), build_token_match(Token::Float, "0.25", 2, 12));
+        assert_eq!(lexer.next(), build_token_match(Token::Eof, "", 2, 16));
+        assert_eq!(lexer.next(), build_token_match(Token::Eof, "", 2, 16));
     }
 
     #[test]

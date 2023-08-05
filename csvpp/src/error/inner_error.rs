@@ -4,7 +4,7 @@
 use std::error;
 use std::fmt;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum InnerError {
     BadInput {
         bad_input: String,

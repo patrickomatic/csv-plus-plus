@@ -85,6 +85,15 @@ impl SourceCode {
         }
     }
 
+    pub fn get_line(&self, line_number: usize) -> Option<String> {
+        self.original
+            .lines()
+            .map(|l| l.to_string())
+            .collect::<Vec<String>>()
+            .get(line_number - 1)
+            .map(|s| s.to_string())
+    }
+
     pub fn highlight_line(
         &self,
         line_number: usize,
@@ -97,6 +106,8 @@ impl SourceCode {
 
         // we present the line number as 1-based to the user, but index the array starting at 0
         let i = line_number - 1;
+
+        // are they requesting a line totally outside of the range?
         if i > lines.len() {
             return vec![];
         }
@@ -158,33 +169,10 @@ impl SourceCode {
 
 #[cfg(test)]
 mod tests {
-    use rand::Rng;
     use std::str::FromStr;
-    use std::fs;
     use std::path;
+    use crate::test_utils::TestFile;
     use super::*;
-
-    struct Setup {
-        source: path::PathBuf,
-    }
-
-    impl Setup {
-        fn new(input: &str) -> Self {
-            let mut rng = rand::thread_rng();
-
-            let random_filename = format!("source_code_test_input{}.csvpp", rng.gen::<u64>());
-            let source_path = path::Path::new(&random_filename);
-            fs::write(source_path, input).unwrap();
-
-            Self { source: source_path.to_path_buf() }
-        }
-    }
-
-    impl Drop for Setup {
-        fn drop(&mut self) {
-            fs::remove_file(&self.source).unwrap();
-        }
-    }
 
     fn build_source_code() -> SourceCode {
         SourceCode {
@@ -204,6 +192,18 @@ mod tests {
             "test.csvpp: total_lines: 25, csv_section: 15, code_section: 10", 
             build_source_code().to_string(),
         );
+    }
+
+    #[test]
+    fn get_line_none() {
+        let source_code = build_source_code();
+        assert_eq!(source_code.get_line(100), None);
+    }
+
+    #[test]
+    fn get_line_some() {
+        let source_code = build_source_code();
+        assert_eq!(source_code.get_line(11), Some("---".to_string()));
     }
 
     #[test]
@@ -288,13 +288,13 @@ foo,bar,baz
 
     #[test]
     fn open_code_section() {
-        let s = Setup::new("
+        let s = TestFile::new("csv", "
 foo := 1
 
 ---
 foo,bar,baz,=foo
 ");
-        let source_code = SourceCode::open(s.source.clone()).unwrap();
+        let source_code = SourceCode::open(s.input_file.clone()).unwrap();
 
         assert_eq!(source_code.lines, 5);
         assert_eq!(source_code.length_of_csv_section, 2);

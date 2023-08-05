@@ -9,12 +9,9 @@ use super::InnerError;
 pub enum Error {
     /// A syntax error in a formula in a cell.
     CellSyntaxError {
-        // TODO
-        // highlighted_lines: Vec<String>,
         line_number: usize,
-        // message: String,
         position: a1_notation::A1,
-        inner_error: InnerError,
+        inner_error: Box<InnerError>,
     },
 
     /// A syntax error in the code section.
@@ -28,8 +25,6 @@ pub enum Error {
     /// An error encountered when evaluating the formulas in a cell.  For example if a builtin
     /// funciton is called with the wrong number of arguments.
     EvalError {
-        // TODO
-        // highlighted_lines: Vec<String>,
         line_number: usize,
         message: String,
         position: a1_notation::A1,
@@ -41,10 +36,7 @@ pub enum Error {
 
     /// A syntax error encountered while parsing the modifiers of a cell.
     ModifierSyntaxError {
-        // TODO
-        // highlighted_lines: Vec<String>,
-        // message: String,
-        inner_error: InnerError,
+        inner_error: Box<InnerError>,
         position: a1_notation::A1,
         line_number: usize,
     },
@@ -73,6 +65,7 @@ impl fmt::Display for Error {
         let highlighted_lines = match self {
             Self::CellSyntaxError { line_number, inner_error, position } => {
                 writeln!(f, "Syntax error in cell {position} on line {line_number}")?;
+                // TODO: show the actual line too
                 writeln!(f, "{inner_error}")?;
                 None
             },
@@ -82,12 +75,19 @@ impl fmt::Display for Error {
             },
             Self::EvalError { message, line_number, position, .. } => {
                 writeln!(f, "Error evaluating formula in cell {position} on line {line_number}")?;
+                // TODO: show the actual line too
                 writeln!(f, "{message}")?;
                 None
             },
             Self::ModifierSyntaxError { line_number, position, inner_error } => {
                 writeln!(f, "Invalid modifier definition in cell {position} on line {line_number}")?;
                 writeln!(f, "{inner_error}")?;
+                // TODO: show the actual line too
+                /*
+                if let Some(full_line) = source_code.get_line(line_number) {
+                    writeln!(f, "Full line: {full_line}")?;
+                }
+                */
                 None
             },
             Self::InitError(message) => {
@@ -132,10 +132,10 @@ mod tests {
         let message = Error::CellSyntaxError {
             line_number: 8,
             position: a1_notation::A1::builder().xy(1, 5).build().unwrap(),
-            inner_error: InnerError::BadInput {
+            inner_error: Box::new(InnerError::BadInput {
                 bad_input: "foo".to_string(),
                 message: "You did a foo".to_string(),
-            },
+            }),
         };
 
         assert_eq!("Syntax error in cell B6 on line 8
@@ -175,11 +175,11 @@ bar
         let message = Error::ModifierSyntaxError {
             line_number: 5,
             position: a1_notation::A1::builder().xy(0, 1).build().unwrap(),
-            inner_error: InnerError::BadInputWithPossibilities {
+            inner_error: Box::new(InnerError::BadInputWithPossibilities {
                 bad_input: "foo".to_string(),
                 message: "You did a foo".to_string(),
                 possible_values: "bar | baz".to_string(),
-            },
+            }),
         };
 
         assert_eq!("Invalid modifier definition in cell A2 on line 5

@@ -8,49 +8,7 @@ use std::fmt;
 use csv;
 use crate::{Modifier, Result, SourceCode};
 use crate::ast::{Ast, Node, Variables};
-use super::ast_parser::AstParser;
-use super::modifier_parser::ModifierParser;
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct SpreadsheetCell {
-    pub ast: Option<Ast>,
-    pub position: a1_notation::A1,
-    pub modifier: Modifier,
-    pub value: String,
-}
-
-impl SpreadsheetCell {
-    pub fn parse(
-        input: &str,
-        position: a1_notation::A1,
-        row_modifier: Modifier,
-        source_code: &SourceCode,
-    ) -> Result<(SpreadsheetCell, Modifier)> {
-        let parsed_modifiers = ModifierParser::parse(input, source_code, position, row_modifier)?;
-
-        Ok((SpreadsheetCell {
-            ast: Self::parse_ast(&parsed_modifiers.value, source_code)?,
-            position: parsed_modifiers.position,
-            modifier: parsed_modifiers.modifier,
-            value: parsed_modifiers.value,
-        }, parsed_modifiers.row_modifier))
-    }
-
-    fn parse_ast(input: &str, source_code: &SourceCode) -> Result<Option<Ast>> {
-        if let Some(without_equals) = input.strip_prefix('=') {
-            Ok(Some(AstParser::parse(without_equals, false, Some(source_code))?))
-        } else {
-            Ok(None)
-        }
-    }
-}
-
-// TODO we might want a more dedicated function like to_formula
-impl fmt::Display for SpreadsheetCell {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.ast.clone().map(|a| a.to_string()).unwrap_or_else(|| self.value.clone()))
-    }
-}
+use super::spreadsheet_cell::SpreadsheetCell;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Spreadsheet {

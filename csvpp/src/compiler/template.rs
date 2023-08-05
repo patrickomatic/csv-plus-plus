@@ -78,7 +78,7 @@ impl<'a> Template<'a> {
             None
         };
 
-        Self::new(spreadsheet, code_section, runtime).eval()
+        Self::new(spreadsheet, code_section, runtime).expand().eval()
     }
 
     /// Given a parsed code section and spreadsheet section, this function will assemble all of the
@@ -122,6 +122,38 @@ impl<'a> Template<'a> {
                 .chain(spreadsheet_vars)
                 .chain(cli_vars.clone())
                 .collect(),
+        }
+    }
+
+    /// For each row of the spreadsheet, if it has an [[expand=]] modifier then we need to actually
+    /// expand it to that many rows.  
+    ///
+    /// This has to happen before eval()ing the cells because that process depends on them being in
+    /// their final location.
+    fn expand(self) -> Self {
+        let mut new_spreadsheet = Spreadsheet::default();
+        let s = self.spreadsheet.borrow_mut();
+
+        for row in s.cells.iter() {
+            if let Some(cell) = row.first() {
+                let row_num = cell.position.y().unwrap();
+                if let Some(e) = &cell.modifier.expand {
+                    let expand_amount = e.expand_amount();
+                    for offset in 0..expand_amount {
+                        new_spreadsheet.cells.push(
+                            row.iter()
+                                .map(|c| c.clone_to_row(row_num + offset))
+                                .collect());
+                    }
+                }
+            } else {
+                new_spreadsheet.cells.push(row.clone());
+            }
+        }
+
+        Self {
+            spreadsheet: cell::RefCell::new(new_spreadsheet),
+            ..self
         }
     }
 
@@ -287,15 +319,39 @@ impl<'a> Template<'a> {
 
 #[cfg(test)]
 mod tests {
+    use rand::Rng;
     use std::cell;
+    use std::fs;
     use std::path;
     use super::*;
     use crate::CliArgs;
     use crate::ast::Node;
 
-    fn build_runtime() -> Runtime {
+    struct Setup {
+        source: path::PathBuf,
+    }
+
+    impl Setup {
+        fn new(input: &str) -> Self {
+            let mut rng = rand::thread_rng();
+
+            let random_filename = format!("source_code_test_input{}.csvpp", rng.gen::<u64>());
+            let source_path = path::Path::new(&random_filename);
+            fs::write(source_path, input).unwrap();
+
+            Self { source: source_path.to_path_buf() }
+        }
+    }
+
+    impl Drop for Setup {
+        fn drop(&mut self) {
+            fs::remove_file(&self.source).unwrap();
+        }
+    }
+
+    fn build_runtime(source_file: &path::Path) -> Runtime {
         let cli_args = CliArgs {
-            input_filename: path::PathBuf::from("foo.csvpp"),
+            input_filename: source_file.to_path_buf(),
             google_sheet_id: Some("abc123".to_string()),
             ..Default::default()
         };
@@ -312,18 +368,29 @@ mod tests {
         }
     }
 
-    // TODO cover deeper use cases on compile
     #[test]
-    fn compile() {
-        let runtime = build_runtime();
+    fn compile_empty() {
+        let s = Setup::new("");
+        let runtime = build_runtime(&s.source);
         let template = Template::compile(&runtime);
 
         assert!(template.is_ok());
     }
 
     #[test]
+    fn compile_with_expand() {
+        let s = Setup::new("[[expand=10]]foo,bar,baz");
+        let runtime = build_runtime(&s.source);
+        let template = Template::compile(&runtime).unwrap();
+
+        let spreadsheet = template.spreadsheet.borrow();
+        assert_eq!(spreadsheet.cells.len(), 10);
+    }
+
+    #[test]
     fn display() {
-        let runtime = build_runtime();
+        let s = Setup::new("");
+        let runtime = build_runtime(&s.source);
         let template = build_template(&runtime);
 
         assert_eq!(r#"variables: {}
@@ -333,7 +400,8 @@ rows: 0"#, template.to_string());
 
     #[test]
     fn is_function_defined_true() {
-        let runtime = build_runtime();
+        let s = Setup::new("");
+        let runtime = build_runtime(&s.source);
         let mut template = build_template(&runtime);
         template.functions.insert("foo".to_string(), Box::new(Node::Integer(42)));
 
@@ -342,7 +410,8 @@ rows: 0"#, template.to_string());
 
     #[test]
     fn is_function_defined_builtin_true() {
-        let mut runtime = build_runtime();
+        let s = Setup::new("");
+        let mut runtime = build_runtime(&s.source);
         runtime.builtin_functions.insert("foo".to_string(), BuiltinFunction {
             name: "foo".to_owned(),
             eval: Box::new(|_a1, _args| Ok(Node::Integer(42)))
@@ -354,7 +423,8 @@ rows: 0"#, template.to_string());
 
     #[test]
     fn is_variable_defined_true() {
-        let runtime = build_runtime();
+        let s = Setup::new("");
+        let runtime = build_runtime(&s.source);
         let mut template = build_template(&runtime);
         template.variables.insert("foo".to_string(), Box::new(Node::Integer(42)));
 
@@ -363,7 +433,8 @@ rows: 0"#, template.to_string());
 
     #[test]
     fn is_variable_defined_builtin_true() {
-        let mut runtime = build_runtime();
+        let s = Setup::new("");
+        let mut runtime = build_runtime(&s.source);
         runtime.builtin_variables.insert("foo".to_string(), BuiltinVariable {
             name: "foo".to_owned(),
             eval: Box::new(|_a1| Ok(Node::Integer(42)))
@@ -375,7 +446,8 @@ rows: 0"#, template.to_string());
 
     #[test]
     fn new_with_code_section() {
-        let runtime = build_runtime();
+        let s = Setup::new("");
+        let runtime = build_runtime(&s.source);
         let mut functions = collections::HashMap::new();
         functions.insert("foo".to_string(), Box::new(Node::Integer(1)));
         let mut variables = collections::HashMap::new();
@@ -392,7 +464,8 @@ rows: 0"#, template.to_string());
     
     #[test]
     fn new_without_code_section() {
-        let runtime = build_runtime();
+        let s = Setup::new("");
+        let runtime = build_runtime(&s.source);
         let template = Template::new(
             Spreadsheet::default(),
             None,
