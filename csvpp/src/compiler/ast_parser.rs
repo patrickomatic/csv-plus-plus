@@ -276,101 +276,79 @@ mod tests {
 
     #[test]
     fn parse_float() {
-        assert_eq!(test_parse("1.50"), Box::new(Node::Float(1.50)));
-        assert_eq!(test_parse("0.65"), Box::new(Node::Float(0.65)));
+        assert_eq!(test_parse("1.50"), Box::new(1.50.into()));
+        assert_eq!(test_parse("0.65"), Box::new(0.65.into()));
     }
 
     #[test]
     fn parse_integer() {
-        assert_eq!(test_parse("1"), Box::new(Node::Integer(1)));
+        assert_eq!(test_parse("1"), Box::new(1.into()));
     }
 
     #[test]
     fn parse_infix_function() {
         assert_eq!(
             test_parse("1 * 2"),
-            Box::new(Node::InfixFunctionCall {
-                left: Box::new(Node::Integer(1)),
-                operator: "*".to_owned(), 
-                right: Box::new(Node::Integer(2)),
-            }));
+            Box::new(Node::infix_fn_call(1.into(), "*", 2.into())));
     }
 
     #[test]
     fn parse_function_call() {
         assert_eq!(
             test_parse("foo(bar, 1, 2)"),
-            Box::new(Node::FunctionCall {
-                name: "foo".to_owned(),
-                args: vec![
-                    Box::new(Node::Reference("bar".to_owned())),
-                    Box::new(Node::Integer(1)),
-                    Box::new(Node::Integer(2)),
-                ],
-            }));
+            Box::new(Node::fn_call(
+                "foo",
+                &[Node::reference("bar"), 1.into(), 2.into()],
+            )));
     }
 
     #[test]
     fn parse_nested_function_call() {
         assert_eq!(
             test_parse("foo(1, 2 * 3)"),
-            Box::new(Node::FunctionCall {
-                name: "foo".to_owned(),
-                args: vec![
-                    Box::new(Node::Integer(1)),
-                    Box::new(Node::InfixFunctionCall {
-                        left: Box::new(Node::Integer(2)),
-                        operator: "*".to_owned(),
-                        right: Box::new(Node::Integer(3))
-                    }),
+            Box::new(Node::fn_call(
+                "foo",
+                &[
+                    1.into(),
+                    Node::infix_fn_call(2.into(), "*", 3.into()),
                 ],
-            }));
+            )));
     }
 
     #[test]
     fn parse_explicit_precedence() {
         assert_eq!(
             test_parse("1 * ((2 + 3) - 4) / 5"),
-            Box::new(Node::InfixFunctionCall {
-                left: Box::new(Node::InfixFunctionCall {
-                    left: Box::new(Node::Integer(1)),
-                    operator: "*".to_owned(),
-                    right: Box::new(Node::InfixFunctionCall {
-                        left: Box::new(Node::InfixFunctionCall {
-                            left: Box::new(Node::Integer(2)),
-                            operator: "+".to_owned(),
-                            right: Box::new(Node::Integer(3)),
-                        }),
-                        operator: "-".to_owned(),
-                        right: Box::new(Node::Integer(4)),
-                    }),
-                }),
-                operator: "/".to_owned(),
-                right: Box::new(Node::Integer(5)),
-            }));
+            Box::new(
+                Node::infix_fn_call(
+                    Node::infix_fn_call(
+                        1.into(),
+                        "*",
+                        Node::infix_fn_call(
+                            Node::infix_fn_call(2.into(), "+", 3.into()),
+                            "-",
+                            4.into())),
+                "/",
+                5.into())));
     }
 
     #[test]
     fn parse_infix_precedence() {
         assert_eq!(
             test_parse("1 * 2 + 3 - 4 / 5"),
-            Box::new(Node::InfixFunctionCall {
-                left: Box::new(Node::InfixFunctionCall {
-                    left: Box::new(Node::InfixFunctionCall {
-                        left: Box::new(Node::Integer(1)), 
-                        operator: "*".to_owned(), 
-                        right: Box::new(Node::Integer(2)),
-                    }),
-                    operator: "+".to_owned(),
-                    right: Box::new(Node::Integer(3)),
-                }),
-                operator: "-".to_owned(),
-                right: Box::new(Node::InfixFunctionCall {
-                    left: Box::new(Node::Integer(4)),
-                    operator: "/".to_owned(),
-                    right: Box::new(Node::Integer(5)),
-                }),
-            }));
+            Box::new(Node::infix_fn_call(
+                Node::infix_fn_call(
+                    Node::infix_fn_call(1.into(), "*", 2.into()),
+                    "+",
+                    3.into(),
+                ),
+                "-",
+                Node::infix_fn_call(
+                    4.into(),
+                    "/",
+                    5.into(),
+                ),
+            )));
     }
 
     #[test]

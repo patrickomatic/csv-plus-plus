@@ -7,7 +7,7 @@ use std::collections;
 use std::fmt;
 use csv;
 use crate::{Modifier, Result, SourceCode};
-use crate::ast::{Ast, Node, Variables};
+use crate::ast::{Ast, Variables};
 use super::spreadsheet_cell::SpreadsheetCell;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -31,12 +31,13 @@ impl Spreadsheet {
 
     /// Extract all of the variables that were defined by cells contained in this spreadsheet
     // 
-    // NOTE: we could also store these in a HashMap on the Spreadsheet as we build it
+    // NOTE: we could also store these in a HashMap on the Spreadsheet as we build it rather than
+    // parsing them out at runtime
     pub fn variables(&self) -> Variables {
         let mut vars = collections::HashMap::new();
         self.cells.iter().flatten().for_each(|c| {
             if let Some(var_id) = &c.modifier.var {
-                let reference: Ast = Box::new(Node::Reference(c.position.to_string()));
+                let reference: Ast = Box::new(c.position.clone().into());
                 vars.insert(var_id.to_owned(), reference);
             }
         });
@@ -56,14 +57,18 @@ impl Spreadsheet {
         source_code: &SourceCode,
     ) -> Result<Vec<SpreadsheetCell>> {
         let mut row: Vec<SpreadsheetCell> = vec![];
-        let mut row_modifier = Modifier::new(true);
+        let mut row_modifier = Modifier::default();
         let csv_parsed_row = &record_result.unwrap_or(csv::StringRecord::new());
 
         for (cell_index, unparsed_value) in csv_parsed_row.into_iter().enumerate() {
             let a1 = a1_notation::A1::builder().xy(cell_index, row_index).build().unwrap();
-            let (cell, rm) = SpreadsheetCell::parse(unparsed_value, a1, row_modifier, source_code)?;
+            let cell = SpreadsheetCell::parse(unparsed_value, a1, &row_modifier, source_code)?;
 
-            row_modifier = rm;
+            // a row modifier was defined, so make sure it applies to cells going forward
+            if let Some(rm) = &cell.row_modifier {
+                row_modifier = rm.clone();
+            }
+
             row.push(cell);
         }
 
@@ -100,6 +105,14 @@ mod tests {
         // each row has 3 cells
         assert_eq!(spreadsheet.cells[0].len(), 3);
         assert_eq!(spreadsheet.cells[1].len(), 3);
+
+        // the cells have the correct positions
+        assert_eq!(spreadsheet.cells[0][0].position.to_string(), "A1");
+        assert_eq!(spreadsheet.cells[0][1].position.to_string(), "B1");
+        assert_eq!(spreadsheet.cells[0][2].position.to_string(), "C1");
+        assert_eq!(spreadsheet.cells[1][0].position.to_string(), "A2");
+        assert_eq!(spreadsheet.cells[1][1].position.to_string(), "B2");
+        assert_eq!(spreadsheet.cells[1][2].position.to_string(), "C2");
 
         // each row has a parsed value
         assert_eq!(spreadsheet.cells[0][0].value, "foo");
@@ -139,6 +152,12 @@ mod tests {
 
     #[test]
     fn parse_with_row_modifier() {
-        // TODO
+        let source_code = build_source_code("![[f=b]]foo,bar,baz");
+        let spreadsheet = Spreadsheet::parse(&source_code).unwrap();
+
+        dbg!(&spreadsheet.cells[0][0]);
+        assert!(spreadsheet.cells[0][0].modifier.formats.contains(&TextFormat::Bold));
+        assert!(spreadsheet.cells[0][1].modifier.formats.contains(&TextFormat::Bold));
+        assert!(spreadsheet.cells[0][2].modifier.formats.contains(&TextFormat::Bold));
     }
 }

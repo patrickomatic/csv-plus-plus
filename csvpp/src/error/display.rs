@@ -1,64 +1,5 @@
-//! Error handling functions
-use std::error;
+use super::Error;
 use std::fmt;
-use std::path::PathBuf;
-use crate::Output;
-use super::InnerError;
-
-#[derive(Clone, Debug)]
-pub enum Error {
-    /// A syntax error in a formula in a cell.
-    CellSyntaxError {
-        line_number: usize,
-        position: a1_notation::A1,
-        inner_error: Box<InnerError>,
-    },
-
-    /// A syntax error in the code section.
-    CodeSyntaxError {
-        highlighted_lines: Vec<String>,
-        line_number: usize,
-        message: String,
-        position: usize,
-    },
-    
-    /// An error encountered when evaluating the formulas in a cell.  For example if a builtin
-    /// funciton is called with the wrong number of arguments.
-    EvalError {
-        line_number: usize,
-        message: String,
-        position: a1_notation::A1,
-    },
-
-    /// An error while building the runtime or reading the source code.  These are typically not
-    /// due to user error.
-    InitError(String),
-
-    /// A syntax error encountered while parsing the modifiers of a cell.
-    ModifierSyntaxError {
-        inner_error: Box<InnerError>,
-        position: a1_notation::A1,
-        line_number: usize,
-    },
-
-    /// An error encountered while serializing the compiled template to an object file.
-    ObjectWriteError {
-        filename: PathBuf,
-        message: String,
-    },
-
-    /// An error ecountered reaading or doing an initial parse of the source code.
-    SourceCodeError {
-        filename: PathBuf,
-        message: String,
-    },
-
-    /// An error encountered while writing to the target.
-    TargetWriteError {
-        message: String,
-        output: Output,
-    },
-}
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -118,14 +59,11 @@ impl fmt::Display for Error {
     }
 }
 
-impl error::Error for Error {}
-
 #[cfg(test)]
 mod tests {
     use std::path;
-    use std::str::FromStr;
     use super::*;
-    use super::super::InnerError;
+    use super::super::{InnerError, Output};
 
     #[test]
     fn display_cell_syntax_error() {
@@ -162,7 +100,7 @@ bar
     #[test]
     fn display_eval_error() {
         let message = Error::EvalError {
-            position: a1_notation::A1::from_str("C3").unwrap(),
+            position: a1_notation::new("C3").unwrap(),
             line_number: 1,
             message: "foo".to_string(),
         };
@@ -174,7 +112,7 @@ bar
     fn display_modifier_syntax_error() {
         let message = Error::ModifierSyntaxError {
             line_number: 5,
-            position: a1_notation::A1::builder().xy(0, 1).build().unwrap(),
+            position: a1_notation::cell(0, 1),
             inner_error: Box::new(InnerError::BadInputWithPossibilities {
                 bad_input: "foo".to_string(),
                 message: "You did a foo".to_string(),
@@ -226,3 +164,4 @@ possible values: bar | baz
         assert_eq!("Error writing to foo.csvpp: foo\n", message.to_string());
     }
 }
+

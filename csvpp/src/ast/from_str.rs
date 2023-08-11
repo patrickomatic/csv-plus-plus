@@ -8,9 +8,9 @@ impl Node {
     pub fn boolean_from_str(input: &str) -> InnerResult<Ast> {
         let input_lower = input.to_lowercase();
         if input_lower == "true" {
-            Ok(Box::new(Self::Boolean(true)))
+            Ok(Box::new(true.into()))
         } else if input_lower == "false" {
-            Ok(Box::new(Self::Boolean(false)))
+            Ok(Box::new(false.into()))
         } else {
             Err(InnerError::bad_input(input, "Error parsing boolean value"))
         }
@@ -21,34 +21,34 @@ impl Node {
             Ok(d) => 
                 Ok(Box::new(Node::DateTime(chrono::DateTime::from_utc(d, chrono::Utc)))),
             Err(e) => 
-                Err(InnerError::bad_input(input, &format!("Unable to parse date: {}", e))),
+                Err(InnerError::bad_input(input, &format!("Unable to parse date: {e}"))),
         }
     }
 
     pub fn float_from_str(input: &str) -> InnerResult<Ast> {
         match input.parse::<f64>() {
-            Ok(i) => 
-                Ok(Box::new(Self::Float(i))),
+            Ok(f) => 
+                Ok(Box::new(f.into())),
             Err(e) => 
-                Err(InnerError::bad_input(input, &format!("Error parsing float value: {}", e))),
+                Err(InnerError::bad_input(input, &format!("Error parsing float value: {e}"))),
         }
     }
 
     pub fn integer_from_str(input: &str) -> InnerResult<Ast> {
         match input.parse::<i64>() {
             Ok(i) => 
-                Ok(Box::new(Self::Integer(i))),
+                Ok(Box::new(i.into())),
             Err(e) => 
-                Err(InnerError::bad_input(input, &format!("Error parsing integer value: {}", e))),
+                Err(InnerError::bad_input(input, &format!("Error parsing integer value: {e}"))),
         }
     }
 
     pub fn reference_from_str(input: &str) -> InnerResult<Ast> {
-        Ok(Box::new(Self::Reference(input.to_string())))
+        Ok(Box::new(Self::reference(input)))
     }
 
     pub fn text_from_str(input: &str) -> InnerResult<Ast> {
-        Ok(Box::new(Self::Text(input.to_string())))
+        Ok(Box::new(Self::text(input)))
     }
 }
 
@@ -105,11 +105,11 @@ mod tests {
 
     #[test]
     fn reference_from_str() {
-        assert_eq!(Node::Reference("bar".to_owned()), *Node::reference_from_str("bar").unwrap());
+        assert_eq!(Node::reference("bar"), *Node::reference_from_str("bar").unwrap());
     }
 
     #[test]
     fn text_from_str() {
-        assert_eq!(Node::Text("foo".to_owned()), *Node::text_from_str("foo").unwrap());
+        assert_eq!(Node::text("foo"), *Node::text_from_str("foo").unwrap());
     }
 }

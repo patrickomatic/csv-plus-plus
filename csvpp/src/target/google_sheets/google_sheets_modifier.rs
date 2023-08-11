@@ -188,7 +188,6 @@ mod tests {
         let gs_modifier = GoogleSheetsModifier(&modifier);
         let cell_format = gs_modifier.cell_format();
 
-        dbg!(&cell_format);
         assert!(cell_format.is_none());
     }
 

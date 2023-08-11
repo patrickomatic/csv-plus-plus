@@ -157,7 +157,6 @@ impl<'a> Excel<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::TestFile;
     use super::*;
 
     /*
@@ -193,17 +192,5 @@ mod tests {
     fn supports_extension_false() {
         assert!(!Excel::supports_extension(ffi::OsStr::new("foo")));
         assert!(!Excel::supports_extension(ffi::OsStr::new("csv")));
-    }
-
-    #[test]
-    fn write() {
-        let test_file = TestFile::new("xlsx", "foo,bar,baz");
-        let runtime = test_file.clone().into();
-        let target = Excel::new(&runtime, test_file.output_file.clone());
-        let template = Template::compile(&runtime).unwrap();
-
-        // XXX
-        // assert!(target.write(&template).is_ok());
-        // assert!(target.spreadsheet.is_none());
     }
 }

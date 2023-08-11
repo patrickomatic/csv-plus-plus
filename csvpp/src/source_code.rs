@@ -112,7 +112,6 @@ impl SourceCode {
             return vec![];
         }
 
-        // let start_index = cmp::max(0, (i as isize) - (LINES_IN_ERROR_CONTEXT as isize)) as usize;
         let start_index = i.saturating_sub(LINES_IN_ERROR_CONTEXT);
         let end_index = cmp::min(lines.len(), i + LINES_IN_ERROR_CONTEXT + 1);
 
@@ -169,7 +168,6 @@ impl SourceCode {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
     use std::path;
     use crate::test_utils::TestFile;
     use super::*;
@@ -318,6 +316,6 @@ foo1,bar1,baz1
             path::PathBuf::from("test.csvpp"),
         ).unwrap();
 
-        assert_eq!(8, source_code.csv_line_number(&a1_notation::A1::from_str("B2").unwrap()));
+        assert_eq!(8, source_code.csv_line_number(&a1_notation::new("B2").unwrap()));
     }
 }

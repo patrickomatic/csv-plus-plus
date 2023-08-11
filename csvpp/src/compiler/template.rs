@@ -133,21 +133,26 @@ impl<'a> Template<'a> {
     fn expand(self) -> Self {
         let mut new_spreadsheet = Spreadsheet::default();
         let s = self.spreadsheet.borrow_mut();
+        let mut row_num = 0;
 
         for row in s.cells.iter() {
             if let Some(cell) = row.first() {
-                let row_num = cell.position.y().unwrap();
-                if let Some(e) = &cell.modifier.expand {
-                    let expand_amount = e.expand_amount();
-                    for offset in 0..expand_amount {
+                if let Some(e) = &cell.expand() {
+                    let expand_amount = e.expand_amount(row_num);
+                    for _ in 0..expand_amount {
                         new_spreadsheet.cells.push(
                             row.iter()
-                                .map(|c| c.clone_to_row(row_num + offset))
+                                .map(|c| c.clone_to_row(row_num))
                                 .collect());
+                        row_num += 1;
                     }
+                } else {
+                    new_spreadsheet.cells.push(row.clone());
+                    row_num += 1;
                 }
             } else {
                 new_spreadsheet.cells.push(row.clone());
+                row_num += 1;
             }
         }
 
@@ -192,7 +197,7 @@ impl<'a> Template<'a> {
             evaled_ast = evaled_ast
                 .eval_variables(self.resolve_variables(refs.variables, position)?)
                 .map_err(|e| self.inner_error_to_error(e, position))?
-                .eval_functions(refs.functions, |fn_id, args| {
+                .eval_functions(&refs.functions, |fn_id, args| {
                     if let Some(function) = self.functions.get(fn_id) {
                         Ok(function.clone())
                     } else if let Some(BuiltinFunction { eval, .. }) = self.runtime.builtin_functions.get(fn_id) {
@@ -220,6 +225,7 @@ impl<'a> Template<'a> {
                 ast: evaled_ast,
                 position: cell.position.clone(),
                 modifier: cell.modifier.clone(),
+                row_modifier: cell.row_modifier.clone(),
                 value: cell.value.clone(),
             });
         }
@@ -319,44 +325,9 @@ impl<'a> Template<'a> {
 
 #[cfg(test)]
 mod tests {
-    use rand::Rng;
     use std::cell;
-    use std::fs;
-    use std::path;
     use super::*;
-    use crate::CliArgs;
-    use crate::ast::Node;
-
-    struct Setup {
-        source: path::PathBuf,
-    }
-
-    impl Setup {
-        fn new(input: &str) -> Self {
-            let mut rng = rand::thread_rng();
-
-            let random_filename = format!("source_code_test_input{}.csvpp", rng.gen::<u64>());
-            let source_path = path::Path::new(&random_filename);
-            fs::write(source_path, input).unwrap();
-
-            Self { source: source_path.to_path_buf() }
-        }
-    }
-
-    impl Drop for Setup {
-        fn drop(&mut self) {
-            fs::remove_file(&self.source).unwrap();
-        }
-    }
-
-    fn build_runtime(source_file: &path::Path) -> Runtime {
-        let cli_args = CliArgs {
-            input_filename: source_file.to_path_buf(),
-            google_sheet_id: Some("abc123".to_string()),
-            ..Default::default()
-        };
-        Runtime::new(cli_args).unwrap()
-    }
+    use crate::test_utils::TestFile;
 
     fn build_template(runtime: &Runtime) -> Template {
         Template {
@@ -370,27 +341,53 @@ mod tests {
 
     #[test]
     fn compile_empty() {
-        let s = Setup::new("");
-        let runtime = build_runtime(&s.source);
+        let test_file = TestFile::new("csv", "");
+        let runtime = test_file.into();
         let template = Template::compile(&runtime);
 
         assert!(template.is_ok());
     }
 
     #[test]
-    fn compile_with_expand() {
-        let s = Setup::new("[[expand=10]]foo,bar,baz");
-        let runtime = build_runtime(&s.source);
+    fn compile_simple() {
+        let test_file = TestFile::new("csv", "---\nfoo,bar,baz\n1,2,3");
+        let runtime = test_file.into();
         let template = Template::compile(&runtime).unwrap();
 
-        let spreadsheet = template.spreadsheet.borrow();
-        assert_eq!(spreadsheet.cells.len(), 10);
+        assert_eq!(template.spreadsheet.borrow().cells.len(), 2);
+    }
+
+    #[test]
+    fn compile_with_expand_finite() {
+        let test_file = TestFile::new("xlsx", "![[expand=10]]foo,bar,baz");
+        let runtime = test_file.into();
+        let template = Template::compile(&runtime).unwrap();
+
+        assert_eq!(template.spreadsheet.borrow().cells.len(), 10);
+    }
+    
+    #[test]
+    fn compile_with_expand_infinite() {
+        let test_file = TestFile::new("xlsx", "![[expand]]foo,bar,baz");
+        let runtime = test_file.into();
+        let template = Template::compile(&runtime).unwrap();
+
+        assert_eq!(template.spreadsheet.borrow().cells.len(), 1000);
+    }
+
+    #[test]
+    fn compile_with_expand_multiple() {
+        let test_file = TestFile::new("xlsx", "![[e=10]]foo,bar,baz\n![[e]]1,2,3");
+        let runtime = test_file.into();
+        let template = Template::compile(&runtime).unwrap();
+
+        assert_eq!(template.spreadsheet.borrow().cells.len(), 1000);
     }
 
     #[test]
     fn display() {
-        let s = Setup::new("");
-        let runtime = build_runtime(&s.source);
+        let test_file = TestFile::new("csv", "");
+        let runtime = test_file.into();
         let template = build_template(&runtime);
 
         assert_eq!(r#"variables: {}
@@ -400,21 +397,21 @@ rows: 0"#, template.to_string());
 
     #[test]
     fn is_function_defined_true() {
-        let s = Setup::new("");
-        let runtime = build_runtime(&s.source);
+        let test_file = TestFile::new("csv", "");
+        let runtime = test_file.into();
         let mut template = build_template(&runtime);
-        template.functions.insert("foo".to_string(), Box::new(Node::Integer(42)));
+        template.functions.insert("foo".to_string(), Box::new(42.into()));
 
         assert!(template.is_function_defined("foo"));
     }
 
     #[test]
     fn is_function_defined_builtin_true() {
-        let s = Setup::new("");
-        let mut runtime = build_runtime(&s.source);
+        let test_file = TestFile::new("csv", "");
+        let mut runtime: Runtime = test_file.into();
         runtime.builtin_functions.insert("foo".to_string(), BuiltinFunction {
             name: "foo".to_owned(),
-            eval: Box::new(|_a1, _args| Ok(Node::Integer(42)))
+            eval: Box::new(|_a1, _args| Ok(42.into()))
         });
         let template = build_template(&runtime);
 
@@ -423,21 +420,21 @@ rows: 0"#, template.to_string());
 
     #[test]
     fn is_variable_defined_true() {
-        let s = Setup::new("");
-        let runtime = build_runtime(&s.source);
+        let test_file = TestFile::new("csv", "");
+        let runtime = test_file.into();
         let mut template = build_template(&runtime);
-        template.variables.insert("foo".to_string(), Box::new(Node::Integer(42)));
+        template.variables.insert("foo".to_string(), Box::new(42.into()));
 
         assert!(template.is_variable_defined("foo"));
     }
 
     #[test]
     fn is_variable_defined_builtin_true() {
-        let s = Setup::new("");
-        let mut runtime = build_runtime(&s.source);
+        let test_file = TestFile::new("csv", "");
+        let mut runtime: Runtime = test_file.into();
         runtime.builtin_variables.insert("foo".to_string(), BuiltinVariable {
             name: "foo".to_owned(),
-            eval: Box::new(|_a1| Ok(Node::Integer(42)))
+            eval: Box::new(|_a1| Ok(42.into()))
         });
         let template = build_template(&runtime);
 
@@ -446,12 +443,12 @@ rows: 0"#, template.to_string());
 
     #[test]
     fn new_with_code_section() {
-        let s = Setup::new("");
-        let runtime = build_runtime(&s.source);
+        let test_file = TestFile::new("csv", "");
+        let runtime = test_file.into();
         let mut functions = collections::HashMap::new();
-        functions.insert("foo".to_string(), Box::new(Node::Integer(1)));
+        functions.insert("foo".to_string(), Box::new(1.into()));
         let mut variables = collections::HashMap::new();
-        variables.insert("bar".to_string(), Box::new(Node::Integer(2)));
+        variables.insert("bar".to_string(), Box::new(2.into()));
         let code_section = CodeSection { functions, variables };
         let template = Template::new(
             Spreadsheet::default(),
@@ -464,8 +461,8 @@ rows: 0"#, template.to_string());
     
     #[test]
     fn new_without_code_section() {
-        let s = Setup::new("");
-        let runtime = build_runtime(&s.source);
+        let test_file = TestFile::new("csv", "");
+        let runtime = test_file.into();
         let template = Template::new(
             Spreadsheet::default(),
             None,

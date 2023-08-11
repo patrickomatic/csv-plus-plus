@@ -41,7 +41,7 @@ fn compile_from_cli() -> Result<(), Box<Error>> {
     }
 
     if runtime.options.verbose {
-        println!("{}", runtime);
+        println!("{runtime}");
     }
 
     template.write_object_file(&runtime.source_code)?;
@@ -54,7 +54,7 @@ fn compile_from_cli() -> Result<(), Box<Error>> {
 fn main() {
     if let Err(e) = compile_from_cli() {
         // TODO do more in verbose mode?
-        eprintln!("{}", e);
+        eprintln!("{e}");
         process::exit(1)
     }
 }

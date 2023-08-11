@@ -65,15 +65,13 @@ impl<'a> CodeSectionParser<'a> {
                     functions.insert(fn_name, Box::new(function));
                 },
                 TokenMatch { token: Token::Reference, str_match: r, .. } => {
-                    variables.insert(r.to_string(), Box::new(Node::Variable { 
-                        body: self.parse_variable_assign()?, 
-                        name: r.to_owned(),
-                    }));
+                    variables.insert(r.to_string(), 
+                                     Box::new(Node::var(r, *self.parse_variable_assign()?)));
                 },
                 token => {
                     return Err(self.token_match_to_error(
                             &token, 
-                            format!("Expected an `fn` or variable definition (`:=`) operator but saw {}", token)))
+                            format!("Expected an `fn` or variable definition (`:=`) operator but saw `{token}`")))
                 },
             }
         }
@@ -92,7 +90,7 @@ impl<'a> CodeSectionParser<'a> {
             token => 
                 Err(self.token_match_to_error(
                         &token,
-                        format!("Expected a variable definition operator (`:=`) but saw {}", token))),
+                        format!("Expected a variable definition operator (`:=`) but saw `{token}`"))),
         }
     }
 
@@ -106,14 +104,14 @@ impl<'a> CodeSectionParser<'a> {
         let name = match self.lexer.next() {
             TokenMatch { token: Token::Reference, str_match: r, .. } => r,
             token =>
-                return Err(self.token_match_to_error(&token, format!("Expected a function name but saw {}", token))),
+                return Err(self.token_match_to_error(&token, format!("Expected a function name but saw `{token}`"))),
         };
 
         // expect a `(`
         match self.lexer.next() {
             TokenMatch { token: Token::OpenParen, .. } => (),
             token => 
-                return Err(self.token_match_to_error(&token, format!("Expected `(` but saw {}", token))),
+                return Err(self.token_match_to_error(&token, format!("Expected `(` but saw `{token}`"))),
         };
 
         let mut args = vec![];
@@ -131,7 +129,7 @@ impl<'a> CodeSectionParser<'a> {
                     args.push(r.to_string());
                 },
                 t => 
-                    return Err(self.token_match_to_error(&t, format!("Expected `(` but saw {}", t))),
+                    return Err(self.token_match_to_error(&t, format!("Expected `(` but saw `{t}`"))),
             }
         }
 
@@ -177,15 +175,8 @@ mod tests {
         let foo = fns_and_vars.functions.get("foo").unwrap();
 
         let expected: Ast = Box::new(
-            Node::Function {
-                name: "foo".to_owned(),
-                args: vec!["a".to_string(), "b".to_string()],
-                body: Box::new(Node::InfixFunctionCall {
-                    left: Box::new(Node::Reference("a".to_owned())), 
-                    operator: "+".to_owned(), 
-                    right: Box::new(Node::Reference("b".to_owned())),
-                }),
-            });
+            Node::fn_def("foo", &["a", "b"], 
+                          Node::infix_fn_call(Node::reference("a"), "+", Node::reference("b"))));
 
         assert_eq!(foo, &expected);
     }
@@ -196,15 +187,10 @@ mod tests {
         let foo = fns_and_vars.functions.get("foo").unwrap();
 
         let expected: Ast = Box::new(
-            Node::Function {
-                name: "foo".to_owned(),
-                args: vec![],
-                body: Box::new(Node::InfixFunctionCall {
-                    left: Box::new(Node::Integer(1)), 
-                    operator: "*".to_owned(), 
-                    right: Box::new(Node::Integer(2)),
-                }),
-            });
+            Node::fn_def(
+                "foo", 
+                &[], 
+                Node::infix_fn_call(1.into(), "*", 2.into())));
 
         assert_eq!(foo, &expected);
     }

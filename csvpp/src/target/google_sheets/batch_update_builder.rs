@@ -160,6 +160,7 @@ mod tests {
             position: a1_notation::A1::builder().xy(0, 1).build().unwrap(),
             value: "Test".to_string(),
             modifier: Modifier::default(),
+            row_modifier: None,
         }]);
 
         let template = Template::new(spreadsheet, None, &runtime);

@@ -13,13 +13,13 @@ pub use google_sheets::GoogleSheets;
 pub use open_document::OpenDocument;
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum ExistingCell<V: Clone> {
+pub(crate) enum ExistingCell<V: Clone> {
     Value(V),
     Empty,
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct ExistingValues<V: Clone> {
+pub(crate) struct ExistingValues<V: Clone> {
     cells: Vec<Vec<ExistingCell<V>>>,
 }
 
@@ -33,13 +33,13 @@ pub trait CompilationTarget {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum MergeResult<V: Clone> {
+pub(crate) enum MergeResult<V: Clone> {
     Existing(V),
     New(SpreadsheetCell),
     Empty,
 }
 
-pub fn merge_rows<V: Clone>(
+fn merge_rows<V: Clone>(
     existing_row: &[ExistingCell<V>],
     template_row: &[SpreadsheetCell],
     options: &Options,
@@ -109,6 +109,7 @@ mod tests {
                 ast: None,
                 position: A1::builder().xy(0, 0).build().unwrap(),
                 modifier: Modifier::default(),
+                row_modifier: None,
                 value: "new value".to_string(),
             }
         ];
@@ -133,6 +134,7 @@ mod tests {
             ast: None,
             position: A1::builder().xy(0, 0).build().unwrap(),
             modifier: Modifier::default(),
+            row_modifier: None,
             value: "new value".to_string(),
         };
         assert_eq!(
@@ -156,6 +158,7 @@ mod tests {
             ast: None,
             position: A1::builder().xy(0, 0).build().unwrap(),
             modifier: Modifier::default(),
+            row_modifier: None,
             value: "new value".to_string(),
         };
         assert_eq!(

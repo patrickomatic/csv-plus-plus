@@ -37,30 +37,11 @@ pub struct Modifier {
     pub horizontal_align: Option<HorizontalAlign>,
     pub note: Option<String>,
     pub number_format: Option<NumberFormat>,
-    pub row_level: bool,
     pub var: Option<String>,
     pub vertical_align: Option<VerticalAlign>,
 }
 
 impl Modifier {
-    pub fn new(row_level: bool) -> Self {
-        Self {
-            row_level,
-            ..Self::default()
-        }
-    }
-
-    /// Copy the values from `modifier` and allocate a new one.  This is a common procedure
-    /// because as we're parsing, we take the row modifier and use it to initialize each of the
-    /// cell modifiers.  This is also why the `row_level` always gets set to `false` - this should
-    /// always be `false` by default.  It's the only field we don't wanna carry over.
-    pub fn from(modifier: &Modifier) -> Self {
-        Self {
-            row_level: false,
-            ..modifier.clone()
-        }
-    }
-
     /// With the exception of `row_level` - has anything been set on this Modifier?
     pub fn is_empty(&self) -> bool {
         // I wish this wasn't so error prone

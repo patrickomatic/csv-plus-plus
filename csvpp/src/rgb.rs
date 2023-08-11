@@ -21,7 +21,6 @@ fn safe_scale_to_1(value: u8) -> f32 {
 
 impl convert::From<&Rgb> for (f32, f32, f32) {
     fn from(value: &Rgb) -> (f32, f32, f32) {
-        dbg!(value);
         (
             safe_scale_to_1(value.r),
             safe_scale_to_1(value.g),

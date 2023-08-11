@@ -12,12 +12,12 @@ impl Node {
     /// resolution function requires being called with the `arguments` at the call site.
     pub fn eval_functions(
         &self,
-        functions: Vec<String>,
+        functions: &[String],
         resolve_fn: impl Fn(&str, Vec<Ast>) -> InnerResult<Ast>
     ) -> InnerResult<Node> {
         let mut evaled_ast = self.clone();
         for fn_name in functions {
-            evaled_ast = evaled_ast.call_function(&fn_name, &resolve_fn)?;
+            evaled_ast = evaled_ast.call_function(fn_name, &resolve_fn)?;
         }
 
         Ok(evaled_ast)
@@ -93,22 +93,18 @@ impl Node {
             Self::FunctionCall { args, name } => {
                 let mut called_args = vec![];
                 for arg in args {
-                    called_args.push(Box::new(arg.call_function(fn_id, resolve_fn)?));
+                    called_args.push(arg.call_function(fn_id, resolve_fn)?);
                 }
 
-                Ok(Node::FunctionCall {
-                    args: called_args,
-                    name: name.to_string(),
-                })
+                Ok(Node::fn_call(name, &called_args))
             },
 
             // also recurse for infix functions
             Self::InfixFunctionCall { left, operator, right } => {
-                Ok(Node::InfixFunctionCall {
-                    left: Box::new(left.call_function(fn_id, resolve_fn)?),
-                    operator: operator.clone(),
-                    right: Box::new(right.call_function(fn_id, resolve_fn)?),
-                })
+                Ok(Node::infix_fn_call(
+                        left.call_function(fn_id, resolve_fn)?,
+                        operator,
+                        right.call_function(fn_id, resolve_fn)?))
             },
 
             // otherwise just don't modify it
@@ -123,21 +119,17 @@ impl Node {
                 // recursively call for each arg to a function
                 let mut replaced_args = vec![];
                 for arg in args {
-                    replaced_args.push(Box::new(arg.replace_variable(var_id, replacement.clone())));
+                    replaced_args.push(arg.replace_variable(var_id, replacement.clone()));
                 }
 
-                Node::FunctionCall {
-                    args: replaced_args,
-                    name: name.to_string(),
-                }
+                Node::fn_call(name, &replaced_args)
             },
 
             Node::InfixFunctionCall { left, operator, right } =>
-                Node::InfixFunctionCall { 
-                    left: Box::new(left.replace_variable(var_id, replacement.clone())), 
-                    operator: operator.clone(), 
-                    right: Box::new(right.replace_variable(var_id, replacement.clone())),
-                },
+                Node::infix_fn_call(
+                    left.replace_variable(var_id, replacement.clone()), 
+                    operator, 
+                    right.replace_variable(var_id, replacement.clone())),
 
             // a reference matching our variable - take the replacement
             Node::Reference(r) if var_id == r => *replacement,
@@ -154,156 +146,110 @@ mod tests {
 
     #[test]
     fn eval_functions_nomatch() {
-        let ast = Box::new(Node::Reference("foo".to_owned()));
+        let ast = Box::new(Node::reference("foo"));
 
         assert_eq!(
             ast, 
-            Box::new(ast.eval_functions(vec!["bar".to_owned(), "baz".to_owned()], |_fn_id, _args| {
-                Ok(Box::new(Node::Integer(42)))
+            Box::new(ast.eval_functions(&["bar".to_owned(), "baz".to_owned()], |_fn_id, _args| {
+                Ok(Box::new(42.into()))
             }).unwrap()));
     }
 
     #[test]
     fn eval_functions_builtin() {
-        let ast = Box::new(Node::FunctionCall { 
-            args: vec![],
-            name: "foo_builtin".to_owned(),
-        });
+        let ast = Box::new(Node::fn_call("foo_builtin", &[]));
 
         assert_eq!(
-            Box::new(Node::Integer(42)),
-            Box::new(ast.eval_functions(vec!["foo_builtin".to_owned()], |_fn_id, _args| {
-                Ok(Box::new(Node::Integer(42)))
+            Box::new(42.into()),
+            Box::new(ast.eval_functions(&["foo_builtin".to_owned()], |_fn_id, _args| {
+                Ok(Box::new(42.into()))
             }).unwrap()));
     }
 
     #[test]
     fn eval_functions_user_defined() {
-        let ast = Box::new(Node::FunctionCall { 
-            args: vec![
-                Box::new(Node::Integer(1)),
-                Box::new(Node::Integer(2)),
-            ],
-            name: "my_func".to_owned(),
-        });
+        let ast = Box::new(Node::fn_call("my_func", &[1.into(), 2.into()]));
 
         assert_eq!(
-            Box::new(Node::InfixFunctionCall {
-                left: Box::new(Node::Integer(1)),
-                operator: "+".to_string(),
-                right: Box::new(Node::Integer(2)),
-            }),
-            Box::new(ast.eval_functions(vec!["my_func".to_owned()], |_fn_id, _args| {
-                Ok(Box::new(Node::Function {
-                    name: "my_func".to_owned(),
-                    args: vec!["a".to_string(), "b".to_string()],
-                    body: Box::new(Node::InfixFunctionCall { 
-                        left: Box::new(Node::Reference("a".to_string())), 
-                        operator: "+".to_string(), 
-                        right: Box::new(Node::Reference("b".to_string())), 
-                    }),
-                }))
+            Box::new(Node::infix_fn_call(1.into(), "+", 2.into())),
+
+            Box::new(ast.eval_functions(&["my_func".to_owned()], |_fn_id, _args| {
+                Ok(Box::new(Node::fn_def("my_func", &["a", "b"],
+                    Node::infix_fn_call(Node::reference("a"), "+", Node::reference("b")))))
             }).unwrap()));
     }
 
     #[test]
     fn eval_variables_nomatch() {
-        let ast = Box::new(Node::Reference("foo".to_owned()));
+        let ast = Box::new(Node::reference("foo"));
         let mut values = collections::HashMap::new();
-        values.insert("bar".to_string(), Box::new(Node::Integer(1)));
+        values.insert("bar".to_string(), Box::new(1.into()));
 
         assert_eq!(Box::new(ast.eval_variables(values).unwrap()), ast);
     }
 
     #[test]
     fn eval_variables_replaced() {
-        let ast = Box::new(Node::Reference("foo".to_owned()));
+        let ast = Box::new(Node::reference("foo"));
         let mut values = collections::HashMap::new();
-        values.insert("foo".to_string(), Box::new(Node::Integer(1)));
+        values.insert("foo".to_string(), Box::new(1.into()));
 
         assert_eq!(
             Box::new(ast.eval_variables(values).unwrap()),
-            Box::new(Node::Integer(1)));
+            Box::new(1.into()));
     }
 
     #[test]
     fn eval_variables_multiple() {
-        let ast = Box::new(Node::FunctionCall {
-            name: "my_func".to_owned(),
-            args: vec![
-                Box::new(Node::Reference("foo".to_owned())),
-                Box::new(Node::Reference("bar".to_owned())),
-            ],
-        });
+        let ast = Box::new(Node::fn_call(
+            "my_func",
+            &[Node::reference("foo"), Node::reference("bar")],
+        ));
         let mut values = collections::HashMap::new();
-        values.insert("foo".to_string(), Box::new(Node::Integer(1)));
-        values.insert("bar".to_string(), Box::new(Node::Integer(2)));
+        values.insert("foo".to_string(), Box::new(1.into()));
+        values.insert("bar".to_string(), Box::new(2.into()));
 
         assert_eq!(
             Box::new(ast.eval_variables(values).unwrap()),
-            Box::new(Node::FunctionCall {
-                name: "my_func".to_owned(),
-                args: vec![Box::new(Node::Integer(1)), Box::new(Node::Integer(2))],
-            }));
+            Box::new(Node::fn_call("my_func", &[1.into(), 2.into()])));
     }
 
     #[test]
     fn eval_variables_nested_fn_call() {
-        let ast = Box::new(Node::FunctionCall {
-            name: "outer_func".to_owned(),
-            args: vec![
-                Box::new(Node::FunctionCall {
-                    name: "my_func".to_owned(),
-                    args: vec![
-                        Box::new(Node::Reference("foo".to_owned())),
-                        Box::new(Node::Reference("bar".to_owned())),
-                    ],
-                }),
-            ],
-        });
+        let ast = Box::new(
+            Node::fn_call("outer_func",
+                          &[Node::fn_call("my_func", 
+                                              &[Node::reference("foo"), Node::reference("bar")])],
+        ));
         let mut values = collections::HashMap::new();
-        values.insert("foo".to_string(), Box::new(Node::Integer(1)));
-        values.insert("bar".to_string(), Box::new(Node::Integer(2)));
+        values.insert("foo".to_string(), Box::new(1.into()));
+        values.insert("bar".to_string(), Box::new(2.into()));
 
         assert_eq!(
             Box::new(ast.eval_variables(values).unwrap()),
-            Box::new(Node::FunctionCall {
-                name: "outer_func".to_owned(),
-                args: vec![
-                    Box::new(Node::FunctionCall {
-                        name: "my_func".to_owned(),
-                        args: vec![Box::new(Node::Integer(1)), Box::new(Node::Integer(2))],
-                    }),
-                ],
-            }));
+            Box::new(Node::fn_call("outer_func", &[
+                    Node::fn_call("my_func", &[1.into(), 2.into()])])));
     }
 
     #[test]
     fn eval_variables_nested_infix_fn_call() {
-        let ast = Box::new(Node::InfixFunctionCall {
-            left: Box::new(Node::FunctionCall {
-                name: "my_func".to_owned(),
-                args: vec![
-                    Box::new(Node::Reference("foo".to_owned())),
-                    Box::new(Node::Reference("bar".to_owned())),
-                ],
-            }),
-            operator: "*".to_owned(),
-            right: Box::new(Node::Integer(5)),
-        });
+        let ast = Box::new(Node::infix_fn_call(
+            Node::fn_call(
+                "my_func",
+                &[Node::reference("foo"), Node::reference("bar")],
+            ),
+            "*",
+            5.into()));
+
         let mut values = collections::HashMap::new();
-        values.insert("foo".to_string(), Box::new(Node::Integer(3)));
-        values.insert("bar".to_string(), Box::new(Node::Integer(4)));
+        values.insert("foo".to_string(), Box::new(3.into()));
+        values.insert("bar".to_string(), Box::new(4.into()));
 
         assert_eq!(
             Box::new(ast.eval_variables(values).unwrap()),
-            Box::new(Node::InfixFunctionCall {
-                left: Box::new(Node::FunctionCall {
-                    name: "my_func".to_owned(),
-                    args: vec![Box::new(Node::Integer(3)), Box::new(Node::Integer(4))],
-                }),
-                operator: "*".to_owned(),
-                right: Box::new(Node::Integer(5)),
-            }));
+            Box::new(Node::infix_fn_call(
+                Node::fn_call("my_func", &[3.into(), 4.into()]),
+                "*",
+                5.into())));
     }
 }

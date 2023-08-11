@@ -2,9 +2,11 @@
 //!
 //! `Node` represents a building block of the parsed language, with a 
 //!
-use serde::{Deserialize, Serialize};
 use std::collections;
 use crate::InnerResult;
+
+mod node;
+pub use node::Node;
 
 /// traits that are implemented for `Node`
 mod display;
@@ -34,32 +36,3 @@ pub type Ast = Box<Node>;
 
 pub type FunctionEval = Box<dyn Fn(&a1_notation::A1, &[Ast]) -> InnerResult<Node>>;
 pub type VariableEval = Box<dyn Fn(&a1_notation::A1) -> InnerResult<Node>>;
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub enum Node {
-    Boolean(bool),
-    DateTime(chrono::DateTime<chrono::Utc>),
-    Float(f64),
-    Function { 
-        args: FunctionArgs,
-        body: Ast,
-        name: FunctionName, 
-    },
-    FunctionCall {
-        args: Vec<Ast>,
-        name: FunctionName,
-    },
-    InfixFunctionCall { 
-        left: Ast,
-        operator: FunctionName,
-        right: Ast,
-    },
-    Integer(i64),
-    Reference(String),
-    Text(String),
-    Variable {
-        body: Ast,
-        name: FunctionName, 
-    },
-}
-
