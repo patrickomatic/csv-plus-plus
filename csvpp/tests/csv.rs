@@ -4,7 +4,7 @@ use csvpp::Template;
 mod common;
 
 #[test]
-fn test_write_no_code_section() {
+fn write_no_code_section() {
     let s = common::Setup::new("csv", r#"
 ---
 foo,bar,baz
@@ -17,7 +17,7 @@ foo,bar,baz
 }
 
 #[test]
-fn test_write_variable() {
+fn write_variable() {
     let s = common::Setup::new("csv", r#"
 foo := 1
 ---
@@ -34,7 +34,7 @@ foo,bar,baz,=foo
 }
 
 #[test]
-fn test_write_expand() {
+fn write_expand() {
     let s = common::Setup::new("csv", r#"
 commission_charge := 0.65 # the broker charges $0.65 a contract/share
 
@@ -52,8 +52,8 @@ profit := (celladjacent(B) * celladjacent(C)) - fees
     
     assert_eq!(
         s.read_output(),
-              "Date,Purchase,Price,Quantity,Profit,Fees
-,,,,=((B2 * C2) - (0.65 * D2)),=(0.65 * D2)
-,,,,=((B3 * C3) - (0.65 * D3)),=(0.65 * D3)
+        "Date,Purchase         ,Price  ,Quantity ,Profit     ,Fees
+,,       ,         ,((B2 * C2) - (0.65 * D2)),(0.65 * D2)
+,,       ,         ,((B3 * C3) - (0.65 * D3)),(0.65 * D3)
 ");
 }

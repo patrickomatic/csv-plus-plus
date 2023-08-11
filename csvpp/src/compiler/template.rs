@@ -239,9 +239,7 @@ impl<'a> Template<'a> {
         position: &a1_notation::A1
     ) -> Error {
         let line_number = self.csv_line_number + position.x().unwrap();
-        // let position = self.runtime.source_code.get_cell_position
         Error::EvalError {
-            // highlighted_lines: self.runtime.source_code.highlight_line(line_number, inner_error.position),
             message: inner_error.to_string(),
             position: position.clone(),
             line_number,

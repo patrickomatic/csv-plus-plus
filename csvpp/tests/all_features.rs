@@ -144,7 +144,7 @@ const ALL_FEATURES_SHORTHAND: &str = "
 ";
 
 #[test]
-fn test_all_features_csv() {
+fn all_features_csv() {
     let s = common::Setup::new("csv", ALL_FEATURES);
     let template = Template::compile(&s.runtime).unwrap();
     let target = s.runtime.target().unwrap();
@@ -153,7 +153,7 @@ fn test_all_features_csv() {
 }
 
 #[test]
-fn test_all_features_shorthand_csv_no_code_section() {
+fn all_features_shorthand_csv_no_code_section() {
     let s = common::Setup::new("csv", ALL_FEATURES_SHORTHAND);
                                let template = Template::compile(&s.runtime).unwrap();
     let target = s.runtime.target().unwrap();
@@ -162,7 +162,7 @@ fn test_all_features_shorthand_csv_no_code_section() {
 }
 
 #[test]
-fn test_all_features_excel() {
+fn all_features_excel() {
     let s = common::Setup::new("xlsx", ALL_FEATURES);
     let template = Template::compile(&s.runtime).unwrap();
     let target = s.runtime.target().unwrap();
@@ -172,5 +172,5 @@ fn test_all_features_excel() {
 
 // TODO:
 // #[test]
-// fn test_all_features_google_sheets() {
+// fn all_features_google_sheets() {
 // }

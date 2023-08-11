@@ -155,7 +155,6 @@ mod tests {
         let source_code = build_source_code("![[f=b]]foo,bar,baz");
         let spreadsheet = Spreadsheet::parse(&source_code).unwrap();
 
-        dbg!(&spreadsheet.cells[0][0]);
         assert!(spreadsheet.cells[0][0].modifier.formats.contains(&TextFormat::Bold));
         assert!(spreadsheet.cells[0][1].modifier.formats.contains(&TextFormat::Bold));
         assert!(spreadsheet.cells[0][2].modifier.formats.contains(&TextFormat::Bold));

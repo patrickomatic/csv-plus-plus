@@ -40,20 +40,20 @@ impl BuiltinFunction {
             } else {
                 Err(InnerError::bad_input(
                         &first_arg.to_string(),
-                        "Expected arg to cellabove() to have an X component" ))
+                        "Expected arg to cellbelow() to have an X component" ))
             }
         });
 
-        fns = Self::def_fn(fns, "celladjacent", |_, first_arg| {
+        fns = Self::def_fn(fns, "celladjacent", |current, first_arg| {
             if let Some(x) = first_arg.x() {
-                Ok(first_arg
+                Ok(current
                    .clone()
                    .with_x(x)
                    .into())
             } else {
                 Err(InnerError::bad_input(
                         &first_arg.to_string(),
-                        "Expected arg to cellabove() to have an X component" ))
+                        "Expected arg to celladjacent() to have an X component" ))
             }
         });
 
@@ -110,27 +110,33 @@ mod tests {
     #[test]
     fn all_cellabove() {
         let fns = BuiltinFunction::all();
-        let a1 = a1_notation::cell(0, 0);
+        let current = a1_notation::cell(0, 0);
         let cellabove = fns.get("cellabove").unwrap();
 
         assert_eq!(
-            (cellabove.eval)(&a1, &[Box::new(Node::reference("C3"))]).unwrap(),
+            (cellabove.eval)(&current, &[Box::new(Node::reference("C3"))]).unwrap(),
             Node::reference("C2"));
+    }
+
+    #[test]
+    fn all_celladjacent() {
+        let fns = BuiltinFunction::all();
+        let current = a1_notation::cell(0, 0);
+        let celladjacent = fns.get("celladjacent").unwrap();
+
+        assert_eq!(
+            (celladjacent.eval)(&current, &[Box::new(Node::reference("C"))]).unwrap(),
+            Node::reference("C1"));
     }
 
     #[test]
     fn all_cellbelow() {
         let fns = BuiltinFunction::all();
-        let a1 = a1_notation::cell(0, 0);
+        let current = a1_notation::cell(0, 0);
         let cellbelow = fns.get("cellbelow").unwrap();
 
         assert_eq!(
-            (cellbelow.eval)(&a1, &[Box::new(Node::reference("C3"))]).unwrap(),
+            (cellbelow.eval)(&current, &[Box::new(Node::reference("C3"))]).unwrap(),
             Node::reference("C4"));
-    }
-
-    #[test]
-    fn debug() {
-        // TODO
     }
 }

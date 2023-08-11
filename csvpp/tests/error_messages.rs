@@ -2,7 +2,7 @@ use csvpp::Template;
 mod common;
 
 #[test]
-fn test_syntax_error_in_code_section() {
+fn syntax_error_in_code_section() {
     let s = common::Setup::new("csv", r#"
 ## Welcome to the all_features.csvpp test. this is a comment
 ##
@@ -14,7 +14,7 @@ foo,bar
 
     assert_eq!(
         template.unwrap_err().to_string(),
-        "Syntax error on line 4: Expected `(` but saw <
+        "Syntax error on line 4: Expected `(` but saw `<`
  1: 
  2: ## Welcome to the all_features.csvpp test. this is a comment
  3: ##
@@ -26,7 +26,7 @@ foo,bar
 }
 
 #[test]
-fn test_syntax_error_in_modifier_definition() {
+fn syntax_error_in_modifier_definition() {
     let s = common::Setup::new("csv", r#"
 ---
 foo,bar,[[format=bold ,foo
@@ -42,7 +42,7 @@ bad input:
 }
 
 #[test]
-fn test_bad_choice_in_modifier_with_possibilities() {
+fn bad_choice_in_modifier_with_possibilities() {
     let s = common::Setup::new("csv", r#"
 ---
 foo,bar,[[b=foo]],foo
