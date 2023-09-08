@@ -35,7 +35,7 @@ foo,bar,[[format=bold ,foo
 
     assert_eq!(
         template.unwrap_err().to_string(),
-        "Invalid modifier definition in cell C1 on line 5
+        "Invalid modifier definition in cell C1 on line 3
 Error parsing input, expected ']]'
 bad input: 
 ");
@@ -51,7 +51,7 @@ foo,bar,[[b=foo]],foo
 
     assert_eq!(
         template.unwrap_err().to_string(),
-        "Invalid modifier definition in cell C1 on line 5
+        "Invalid modifier definition in cell C1 on line 3
 Invalid border= value
 bad input: foo
 possible values: all (a) | top (t) | bottom (b) | left (l) | right (r)

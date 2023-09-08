@@ -11,6 +11,7 @@ pub use node::Node;
 /// traits that are implemented for `Node`
 mod display;
 mod eval;
+mod from;
 mod from_str;
 
 /// functionality related to ASTs
@@ -22,6 +23,8 @@ pub use builtin_function::BuiltinFunction;
 pub use builtin_variable::BuiltinVariable;
 pub(crate) use references::AstReferences;
 
+pub type Ast = Box<Node>;
+
 type FunctionArgs = Vec<String>;
 type FunctionName = String;
 type VariableName = String;
@@ -32,7 +35,5 @@ pub type Variables =  collections::HashMap<VariableName, Ast>;
 pub type BuiltinFunctions = collections::HashMap<FunctionName, BuiltinFunction>;
 pub type BuiltinVariables =  collections::HashMap<VariableName, BuiltinVariable>;
 
-pub type Ast = Box<Node>;
-
-pub type FunctionEval = Box<dyn Fn(&a1_notation::A1, &[Ast]) -> InnerResult<Node>>;
-pub type VariableEval = Box<dyn Fn(&a1_notation::A1) -> InnerResult<Node>>;
+pub type FunctionEval = Box<dyn Fn(a1_notation::Address, &[Ast]) -> InnerResult<Node>>;
+pub type VariableEval = Box<dyn Fn(a1_notation::Address) -> InnerResult<Node>>;

@@ -85,7 +85,7 @@ fn merge_cell<V: Clone>(
 
 #[cfg(test)]
 mod tests {
-    use a1_notation::A1;
+    use a1_notation::Address;
     use crate::Modifier;
     use super::*;
 
@@ -107,7 +107,7 @@ mod tests {
         let new = vec![
             SpreadsheetCell {
                 ast: None,
-                position: A1::builder().xy(0, 0).build().unwrap(),
+                position: Address::new(0, 0),
                 modifier: Modifier::default(),
                 row_modifier: None,
                 value: "new value".to_string(),
@@ -132,7 +132,7 @@ mod tests {
 
         let cell = SpreadsheetCell {
             ast: None,
-            position: A1::builder().xy(0, 0).build().unwrap(),
+            position: Address::new(0, 0),
             modifier: Modifier::default(),
             row_modifier: None,
             value: "new value".to_string(),
@@ -156,7 +156,7 @@ mod tests {
 
         let cell = SpreadsheetCell {
             ast: None,
-            position: A1::builder().xy(0, 0).build().unwrap(),
+            position: Address::new(0, 0),
             modifier: Modifier::default(),
             row_modifier: None,
             value: "new value".to_string(),

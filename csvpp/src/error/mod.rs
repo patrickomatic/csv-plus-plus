@@ -16,7 +16,7 @@ pub enum Error {
     /// A syntax error in a formula in a cell.
     CellSyntaxError {
         line_number: usize,
-        position: a1_notation::A1,
+        position: a1_notation::Address,
         inner_error: Box<InnerError>,
     },
 
@@ -33,7 +33,7 @@ pub enum Error {
     EvalError {
         line_number: usize,
         message: String,
-        position: a1_notation::A1,
+        position: a1_notation::Address,
     },
 
     /// An error while building the runtime or reading the source code.  These are typically not
@@ -43,7 +43,7 @@ pub enum Error {
     /// A syntax error encountered while parsing the modifiers of a cell.
     ModifierSyntaxError {
         inner_error: Box<InnerError>,
-        position: a1_notation::A1,
+        position: a1_notation::Address,
         line_number: usize,
     },
 
@@ -64,6 +64,14 @@ pub enum Error {
         message: String,
         output: Output,
     },
+
+    /*
+    VariableOutOfScope {
+        message: String,
+        position: a1_notation::Address,
+        line_number: usize,
+    }
+    */
 }
 
 impl error::Error for Error {}

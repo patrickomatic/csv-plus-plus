@@ -3,13 +3,14 @@
 //! A `template` holds the final compiled state for a single csv++ source file, as well as managing
 //! evaluation and scope resolution.
 //!
-use a1_notation;
+use a1_notation::{A1, Address};
 use serde::{Deserialize, Serialize};
 use std::cell;
 use std::collections;
 use std::convert;
 use std::fmt;
 use std::path;
+use std::str::FromStr;
 use crate::{
     Error,
     InnerError,
@@ -142,7 +143,7 @@ impl<'a> Template<'a> {
                     for _ in 0..expand_amount {
                         new_spreadsheet.cells.push(
                             row.iter()
-                                .map(|c| c.clone_to_row(row_num))
+                                .map(|c| c.clone_to_row(row_num.into()))
                                 .collect());
                         row_num += 1;
                     }
@@ -183,7 +184,7 @@ impl<'a> Template<'a> {
 
     /// The idea here is just to keep looping as long as we are making progress eval()ing.
     /// Progress being defined as `.extract_references()` returning the same result twice in a row
-    fn eval_ast(&self, ast: &Ast, position: &a1_notation::A1) -> Result<Ast> {
+    fn eval_ast(&self, ast: &Ast, position: Address) -> Result<Ast> {
         let mut evaled_ast = *ast.clone();
         let mut last_round_refs = AstReferences::default();
 
@@ -216,14 +217,14 @@ impl<'a> Template<'a> {
         let mut evaled_row = vec![];
         for cell in row.iter() {
             let evaled_ast = if let Some(ast) = &cell.ast {
-                Some(self.eval_ast(ast, &cell.position)?)
+                Some(self.eval_ast(ast, cell.position)?)
             } else {
                 None
             };
 
             evaled_row.push(SpreadsheetCell {
                 ast: evaled_ast,
-                position: cell.position.clone(),
+                position: cell.position,
                 modifier: cell.modifier.clone(),
                 row_modifier: cell.row_modifier.clone(),
                 value: cell.value.clone(),
@@ -236,12 +237,12 @@ impl<'a> Template<'a> {
     fn inner_error_to_error(
         &self,
         inner_error: InnerError,
-        position: &a1_notation::A1
+        position: Address,
     ) -> Error {
-        let line_number = self.csv_line_number + position.x().unwrap();
+        let line_number = self.csv_line_number + position.row.y;
         Error::EvalError {
             message: inner_error.to_string(),
-            position: position.clone(),
+            position,
             line_number,
         }
     }
@@ -261,7 +262,7 @@ impl<'a> Template<'a> {
     fn resolve_variables(
         &self,
         var_names: Vec<String>,
-        position: &a1_notation::A1,
+        position: Address,
     ) -> Result<collections::HashMap<String, Ast>> {
         let mut resolved_vars = collections::HashMap::new();
         for var_name in var_names {
@@ -273,17 +274,38 @@ impl<'a> Template<'a> {
         Ok(resolved_vars)
     }
 
-    fn resolve_variable(
-        &self,
-        var_name: &str,
-        position: &a1_notation::A1,
-    ) -> Result<Option<Ast>> {
+    fn resolve_variable(&self, var_name: &str, position: Address) -> Result<Option<Ast>> {
         Ok(
             if let Some(value) = self.variables.get(var_name) {
-                Some(Box::new(match &**value {
-                    Node::Variable { body, .. } => *body.clone(),
+                let value_from_var = match &**value {
+                    Node::Variable { body, scope, .. } => {
+                        if let Some(expand) = scope {
+                            let pos: A1 = (*expand).into();
+                            if pos.contains(&position.into()) {
+                                // XXX store the address more directly, don't do this parsing every
+                                // time we resolve...
+                                let address = Address::from_str(&body.to_string()).unwrap();
+                                address.with_y(position.row.y).into()
+                            } else {
+                                return Err(Error::InitError(
+                                        format!("Variable `{var_name}` can only be referenced inside the `expand` where it was defined")))
+
+                                /* XXX return a proper error
+                                return Err(Error::VariableOutOfScope {
+                                    message: format!("Variable `{var_name}` can only be referenced inside the `expand` where it was defined"),
+                                    position: position.clone(),
+                                    line_number: 100,
+                                })
+                                */
+                            }
+                        } else {
+                            *body.clone()
+                        }
+                    },
                     n => n.clone(),
-                }))
+                };
+
+                Some(Box::new(value_from_var))
             } else if let Some(BuiltinVariable { eval, .. }) = self.runtime.builtin_variables.get(var_name) {
                 Some(Box::new(
                         eval(position).map_err(|e| 

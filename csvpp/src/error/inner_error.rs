@@ -68,8 +68,6 @@ impl fmt::Display for InnerError {
 impl From<a1_notation::Error> for InnerError {
     fn from(err: a1_notation::Error) -> Self {
         match err {
-            a1_notation::Error::A1BuilderError(m) =>
-                InnerError::bad_input(&m, &format!("Error building parsing A1 format: {}", m)),
             a1_notation::Error::A1ParseError { bad_input, message } =>
                 InnerError::bad_input(&bad_input, &message),
         }

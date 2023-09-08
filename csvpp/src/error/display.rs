@@ -69,7 +69,7 @@ mod tests {
     fn display_cell_syntax_error() {
         let message = Error::CellSyntaxError {
             line_number: 8,
-            position: a1_notation::A1::builder().xy(1, 5).build().unwrap(),
+            position: a1_notation::Address::new(1, 5),
             inner_error: Box::new(InnerError::BadInput {
                 bad_input: "foo".to_string(),
                 message: "You did a foo".to_string(),
@@ -100,7 +100,7 @@ bar
     #[test]
     fn display_eval_error() {
         let message = Error::EvalError {
-            position: a1_notation::new("C3").unwrap(),
+            position: a1_notation::Address::new(2, 2),
             line_number: 1,
             message: "foo".to_string(),
         };
@@ -112,7 +112,7 @@ bar
     fn display_modifier_syntax_error() {
         let message = Error::ModifierSyntaxError {
             line_number: 5,
-            position: a1_notation::cell(0, 1),
+            position: a1_notation::Address::new(0, 1),
             inner_error: Box::new(InnerError::BadInputWithPossibilities {
                 bad_input: "foo".to_string(),
                 message: "You did a foo".to_string(),

@@ -157,7 +157,7 @@ mod tests {
         let mut spreadsheet = Spreadsheet::default();
         spreadsheet.cells.push(vec![SpreadsheetCell {
             ast: None,
-            position: a1_notation::A1::builder().xy(0, 1).build().unwrap(),
+            position: a1_notation::Address::new(0, 1),
             value: "Test".to_string(),
             modifier: Modifier::default(),
             row_modifier: None,

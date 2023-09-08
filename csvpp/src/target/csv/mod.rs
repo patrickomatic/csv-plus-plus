@@ -23,8 +23,6 @@ impl CompilationTarget for Csv<'_> {
     }
 
     fn write(&self, template: &Template) -> Result<()> {
-        // TODO rather than passing target, let it throw a different error and catch it and attach
-        // target
         let existing_values = Self::read(&self.path, &self.runtime.output)?;
         let new_values = template.spreadsheet.borrow();
         let mut writer = csv::Writer::from_path(&self.path).map_err(|e|

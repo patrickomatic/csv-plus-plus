@@ -43,7 +43,7 @@ impl<'a> Excel<'a> {
         for row in &s.cells {
             for cell in row {
                 let merged_cell = merge_cell(
-                    &self.get_existing_cell(&cell.position, worksheet),
+                    &self.get_existing_cell(cell.position, worksheet),
                     Some(cell),
                     &self.runtime.options,
                 );
@@ -70,6 +70,7 @@ impl<'a> Excel<'a> {
         Ok(())
     }
 
+    // TODO: turn into an impl?
     fn set_value(
         &self,
         existing_cell: &mut umya_spreadsheet::Cell,
@@ -104,7 +105,7 @@ impl<'a> Excel<'a> {
 
     fn get_existing_cell(
         &self,
-        position: &a1_notation::A1,
+        position: a1_notation::Address,
         worksheet: &umya_spreadsheet::Worksheet,
     ) -> ExistingCell<ExcelValue> {
         let cell_value = worksheet.get_cell(position.to_string());

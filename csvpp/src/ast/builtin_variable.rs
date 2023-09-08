@@ -1,8 +1,9 @@
 //! # BuiltinVariable
 //!
+use a1_notation::{Address, RangeOrCell};
+use crate::InnerResult;
 use std::collections;
 use std::fmt;
-use crate::{InnerError, InnerResult};
 use super::{Node, VariableEval, VariableName};
 
 pub struct BuiltinVariable {
@@ -11,11 +12,8 @@ pub struct BuiltinVariable {
 }
 
 impl BuiltinVariable {
-    fn new<F: Fn(&a1_notation::A1) -> InnerResult<Node> + 'static>(name: &str, eval: F) -> Self {
-        Self {
-            name: name.to_string(),
-            eval: Box::new(eval),
-        }
+    fn new<F: Fn(a1_notation::Address) -> InnerResult<Node> + 'static>(name: &str, eval: F) -> Self {
+        Self { name: name.to_string(), eval: Box::new(eval) }
     }
 
     // TODO: better names for these!  I dunno what it is but I don't like these, it feels
@@ -24,110 +22,66 @@ impl BuiltinVariable {
         let mut vars = collections::HashMap::new();
 
         // `colleft` - A (column-relative) reference to the column left of the current cell.
-        vars = Self::def_var(vars, "colleft", |a1| {
-            if let Some(c) = a1.clone().shift_left(1).column() {
-                Ok(c.into())
-            } else {
-                Err(InnerError::bad_input(
-                    &a1.to_string(),
-                    "Expected a cell reference with a column component"))
-            }
+        vars = def_var(vars, "colleft", |a1| {
+            let col: RangeOrCell = a1.shift_left(1).column.into();
+            Ok(col.into())
         });
         
         // `colright` - A (column-relative) reference to the column right of the current cell.
-        vars = Self::def_var(vars, "colright", |a1| {
-            if let Some(c) = a1.clone().shift_right(1).column() {
-                Ok(c.into())
-            } else {
-                Err(InnerError::bad_input(
-                    &a1.to_string(),
-                    "Expected a cell reference with a column component"))
-            }
+        vars = def_var(vars, "colright", |a1| {
+            let col: RangeOrCell = a1.shift_right(1).column.into();
+            Ok(col.into())
         });
 
         // `colnum` - The number of the current column.  
-        vars = Self::def_var(vars, "colnum", |a1| {
-            if let Some(x) = a1.x() {
-                Ok(((x as i64) + 1).into())
-            } else {
-                Err(InnerError::bad_input(
-                    &a1.to_string(),
-                    "Expected a cell reference with a column component"))
-            }
+        vars = def_var(vars, "colnum", |a1| {
+            Ok(((a1.column.x as i64) + 1).into())
         });
 
         // `cellref` - A reference to the current cell.  
-        vars = Self::def_var(vars, "cellref", |a1| {
-            Ok(a1.clone().into())
-        });
+        vars = def_var(vars, "cellref", |a1| { Ok(a1.into()) });
         
         // `colref` - A reference to the current column.  
-        vars = Self::def_var(vars, "colref", |a1| {
-            if let Some(x) = a1.x() {
-                Ok(a1_notation::column(x).into())
-            } else {
-                Err(InnerError::bad_input(
-                        &a1.to_string(), 
-                        "Expected a cell reference with a column component"))
-            }
+        vars = def_var(vars, "colref", |a1| {
+            let col: RangeOrCell = a1.column.into();
+            Ok(col.into())
         });
 
         // `rowabove` - A (row-relative) reference to the row above the current cell.
-        vars = Self::def_var(vars, "rowabove", |a1| {
-            if let Some(c) = a1.clone().shift_up(1).column() {
-                Ok(c.into())
-            } else {
-                Err(InnerError::bad_input(
-                    &a1.to_string(),
-                    "Expected a cell reference with a row component"))
-            }
+        vars = def_var(vars, "rowabove", |a1| {
+            let row: RangeOrCell = a1.shift_up(1).row.into();
+            Ok(row.into())
         });
         
         // `rowbelow` - A (row-relative) reference to the row below the current cell.
-        vars = Self::def_var(vars, "rowbelow", |a1| {
-            if let Some(c) = a1.clone().shift_down(1).column() {
-                Ok(c.into())
-            } else {
-                Err(InnerError::bad_input(
-                    &a1.to_string(),
-                    "Expected a cell reference with a row component"))
-            }
+        vars = def_var(vars, "rowbelow", |a1| {
+            let row: RangeOrCell = a1.shift_down(1).row.into();
+            Ok(row.into())
         });
         
         // `rownum` - The number of the current row.  Starts at 1.
-        vars = Self::def_var(vars, "rownum", |a1| {
-            if let Some(y) = a1.y() {
-                Ok(((y as i64) + 1).into())
-            } else {
-                Err(InnerError::bad_input(
-                    &a1.to_string(),
-                    "Expected a cell reference with a row component"))
-            }
+        vars = def_var(vars, "rownum", |a1| {
+            Ok(((a1.row.y as i64) + 1).into())
         });
 
         // `rowref` - A reference to the current row.  
-        vars = Self::def_var(vars, "rowref", |a1| {
-            if let Some(y) = a1.y() {
-                Ok(a1_notation::row(y).into())
-            } else {
-                Err(InnerError::bad_input(
-                        &a1.to_string(), 
-                        "Expected a cell reference with a row component"))
-            }
+        vars = def_var(vars, "rowref", |a1| {
+            let row: RangeOrCell = a1.row.into();
+            Ok(row.into())
         });
 
         vars
     }
+}
 
-    fn def_var<F>(
-        mut vars: collections::HashMap<String, BuiltinVariable>, 
-        name: &str, 
-        eval: F,
-    ) -> collections::HashMap<String, BuiltinVariable>
-    where F: Fn(&a1_notation::A1) -> InnerResult<Node> + 'static {
-        vars.insert(name.to_string(), Self::new(name, eval));
-        vars
-    }
+fn def_var<F>(
+    mut vars: collections::HashMap<String, BuiltinVariable>, 
+    name: &str, 
+    eval: F,
+) -> collections::HashMap<String, BuiltinVariable>
+where F: Fn(Address) -> InnerResult<Node> + 'static {
+    vars.insert(name.to_string(), BuiltinVariable::new(name, eval));
+    vars
 }
 
 impl fmt::Debug for BuiltinVariable {
@@ -138,3 +92,16 @@ impl fmt::Debug for BuiltinVariable {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn colleft() {
+        let vars = BuiltinVariable::all();
+        let current = Address::new(4, 0);
+        let colleft = vars.get("colleft").unwrap();
+
+        assert_eq!((colleft.eval)(current).unwrap(), Node::reference("D:D"));
+    }
+}

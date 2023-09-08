@@ -50,7 +50,7 @@ impl SourceCode {
         let input = fs::read_to_string(&filename).map_err(|e| {
             Error::SourceCodeError {
                 filename: filename.clone(),
-                message: format!("Error reading source code {}: {}", filename.display(), e),
+                message: format!("Error reading source code {}: {e}", filename.display()),
             }
         })?;
 
@@ -160,8 +160,8 @@ impl SourceCode {
         f
     }
 
-    pub fn csv_line_number(&self, position: &a1_notation::A1) -> usize {
-        let row = position.x().unwrap();
+    pub fn csv_line_number(&self, position: a1_notation::Address) -> usize {
+        let row = position.row.y;
         self.length_of_code_section + 2 + row
     }
 }
@@ -316,6 +316,6 @@ foo1,bar1,baz1
             path::PathBuf::from("test.csvpp"),
         ).unwrap();
 
-        assert_eq!(8, source_code.csv_line_number(&a1_notation::new("B2").unwrap()));
+        assert_eq!(8, source_code.csv_line_number(a1_notation::Address::new(1, 1)));
     }
 }

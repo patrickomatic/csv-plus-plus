@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use crate::Expand;
 use super::{Ast, FunctionArgs, FunctionName};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -26,11 +27,12 @@ pub enum Node {
     Variable {
         body: Ast,
         name: FunctionName, 
+        scope: Option<Expand>,
     },
 }
 
 /// Most of these just make testing easier to not have to call .to_string() constantly, but they're
-/// also nice for some of the code that the builtins call.
+/// also nice for some of the code that the builtins call and need to build ASTs.
 impl Node {
     #[cfg(test)]
     pub(crate) fn fn_def(name: &str, args: &[&str], body: Self) -> Self {
@@ -64,65 +66,12 @@ impl Node {
         Self::Text(t.to_string())
     }
 
-    pub(crate) fn var(name: &str, body: Self) -> Self {
+    pub(crate) fn var(name: &str, body: Self, scope: Option<Expand>) -> Self {
         Self::Variable {
             name: name.to_string(),
             body: Box::new(body),
+            scope,
         }
     }
 }
 
-impl From<bool> for Node {
-    fn from(value: bool) -> Self {
-        Node::Boolean(value)
-    }
-}
-
-impl From<chrono::DateTime<chrono::Utc>> for Node {
-    fn from(value: chrono::DateTime<chrono::Utc>) -> Self {
-        Self::DateTime(value)
-    }
-}
-
-impl From<f64> for Node {
-    fn from(value: f64) -> Self {
-        Node::Float(value)
-    }
-}
-
-impl From<isize> for Node {
-    fn from(value: isize) -> Self {
-        Node::Integer(value as i64)
-    }
-}
-
-impl From<i64> for Node {
-    fn from(value: i64) -> Self {
-        Node::Integer(value)
-    }
-}
-
-impl From<i32> for Node {
-    fn from(value: i32) -> Self {
-        Node::Integer(value as i64)
-    }
-}
-
-impl From<a1_notation::A1> for Node {
-    fn from(value: a1_notation::A1) -> Self {
-        Node::Reference(value.to_string())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::str::FromStr;
-    use super::*;
-
-    #[test]
-    fn node_from_a1_notation() {
-        let a1 = a1_notation::A1::from_str("A1").unwrap();
-
-        assert_eq!(Node::reference("A1"), a1.into());
-    }
-}

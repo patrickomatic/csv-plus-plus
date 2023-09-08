@@ -6,7 +6,6 @@
 //!
 mod border_side;
 mod border_style;
-mod expand;
 mod horizontal_align;
 mod number_format;
 mod text_format;
@@ -16,12 +15,11 @@ use serde::{Serialize, Deserialize};
 use std::collections::HashSet;
 pub use border_side::BorderSide;
 pub use border_style::BorderStyle;
-pub use expand::Expand;
 pub use horizontal_align::HorizontalAlign;
 pub use number_format::NumberFormat;
 pub use text_format::TextFormat;
 pub use vertical_align::VerticalAlign;
-use crate::Rgb;
+use crate::{Expand, Rgb};
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Modifier {

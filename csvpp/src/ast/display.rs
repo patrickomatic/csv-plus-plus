@@ -34,7 +34,7 @@ impl fmt::Display for Node {
 
             Self::Text(t) => write!(f, "\"{t}\""),
 
-            Self::Variable { body, name } => 
+            Self::Variable { body, name, .. } => 
                 write!(f, "{name} := {body}"),
         }
     }
@@ -110,7 +110,7 @@ mod tests {
     }
 
     #[test]
-    fn display() {
-        assert_eq!("foo := 1", Node::var("foo", 1.into()).to_string());
+    fn display_var() {
+        assert_eq!("foo := 1", Node::var("foo", 1.into(), None).to_string());
     }
 }

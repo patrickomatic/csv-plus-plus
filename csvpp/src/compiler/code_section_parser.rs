@@ -66,7 +66,7 @@ impl<'a> CodeSectionParser<'a> {
                 },
                 TokenMatch { token: Token::Reference, str_match: r, .. } => {
                     variables.insert(r.to_string(), 
-                                     Box::new(Node::var(r, *self.parse_variable_assign()?)));
+                                     Box::new(Node::var(r, *self.parse_variable_assign()?, None)));
                 },
                 token => {
                     return Err(self.token_match_to_error(

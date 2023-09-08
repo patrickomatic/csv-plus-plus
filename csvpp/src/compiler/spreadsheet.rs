@@ -7,7 +7,7 @@ use std::collections;
 use std::fmt;
 use csv;
 use crate::{Modifier, Result, SourceCode};
-use crate::ast::{Ast, Variables};
+use crate::ast::{Node, Variables};
 use super::spreadsheet_cell::SpreadsheetCell;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -35,10 +35,18 @@ impl Spreadsheet {
     // parsing them out at runtime
     pub fn variables(&self) -> Variables {
         let mut vars = collections::HashMap::new();
+
         self.cells.iter().flatten().for_each(|c| {
             if let Some(var_id) = &c.modifier.var {
-                let reference: Ast = Box::new(c.position.clone().into());
-                vars.insert(var_id.to_owned(), reference);
+                // if the variable is defined within an expand, we need to capture that it's scoped
+                // to that expand
+                let reference = if let Some(e) = c.row_modifier.clone().and_then(|rm| rm.expand) {
+                    Node::var(var_id, c.position.into(), Some(e))
+                } else {
+                    Node::var(var_id, c.position.into(), None)
+                };
+
+                vars.insert(var_id.to_owned(), Box::new(reference));
             }
         });
 
@@ -61,7 +69,7 @@ impl Spreadsheet {
         let csv_parsed_row = &record_result.unwrap_or(csv::StringRecord::new());
 
         for (cell_index, unparsed_value) in csv_parsed_row.into_iter().enumerate() {
-            let a1 = a1_notation::A1::builder().xy(cell_index, row_index).build().unwrap();
+            let a1 = a1_notation::Address::new(cell_index, row_index);
             let cell = SpreadsheetCell::parse(unparsed_value, a1, &row_modifier, source_code)?;
 
             // a row modifier was defined, so make sure it applies to cells going forward
@@ -85,10 +93,11 @@ impl fmt::Display for Spreadsheet {
 
 #[cfg(test)]
 mod tests {
+    use a1_notation::Address;
+    use crate::modifier::TextFormat;
+    use crate::{Expand, SourceCode};
     use std::path;
     use super::*;
-    use crate::SourceCode;
-    use crate::modifier::TextFormat;
 
     fn build_source_code(input: &str) -> SourceCode {
         SourceCode::new(input, path::PathBuf::from("foo.csvpp")).unwrap()
@@ -158,5 +167,83 @@ mod tests {
         assert!(spreadsheet.cells[0][0].modifier.formats.contains(&TextFormat::Bold));
         assert!(spreadsheet.cells[0][1].modifier.formats.contains(&TextFormat::Bold));
         assert!(spreadsheet.cells[0][2].modifier.formats.contains(&TextFormat::Bold));
+    }
+
+    #[test]
+    fn variables_unscoped() {
+        let spreadsheet = Spreadsheet {
+            cells: vec![
+                vec![
+                    SpreadsheetCell {
+                        ast: None,
+                        position: Address::new(0, 0),
+                        modifier: Modifier {
+                            var: Some("foo".to_string()),
+                            ..Default::default()
+                        },
+                        row_modifier: None,
+                        value: "".to_string(),
+                    },
+                    SpreadsheetCell {
+                        ast: None,
+                        position: Address::new(1, 1),
+                        modifier: Modifier {
+                            var: Some("bar".to_string()),
+                            ..Default::default()
+                        },
+                        row_modifier: None,
+                        value: "".to_string(),
+                    },
+                ]],
+        };
+
+        let variables = spreadsheet.variables();
+        assert_eq!(**variables.get("foo").unwrap(), 
+                   Node::var("foo", Address::new(0, 0).into(), None));
+        assert_eq!(**variables.get("bar").unwrap(), 
+                   Node::var("bar", Address::new(1, 1).into(), None));
+    }
+
+    #[test]
+    fn variables_with_scope() {
+        let spreadsheet = Spreadsheet {
+            cells: vec![
+                vec![
+                    SpreadsheetCell {
+                        ast: None,
+                        position: Address::new(0, 0),
+                        modifier: Modifier {
+                            var: Some("foo".to_string()),
+                            ..Default::default()
+                        },
+                        row_modifier: Some(Modifier {
+                            expand: Some(Expand::new(0, Some(10))),
+                            ..Default::default()
+                        }),
+                        value: "".to_string(),
+                    },
+                    SpreadsheetCell {
+                        ast: None,
+                        position: Address::new(1, 1),
+                        modifier: Modifier {
+                            var: Some("bar".to_string()),
+                            ..Default::default()
+                        },
+                        row_modifier: Some(Modifier {
+                            expand: Some(Expand::new(10, Some(100))),
+                            ..Default::default()
+                        }),
+                        value: "".to_string(),
+                    },
+                ]],
+        };
+
+        let variables = spreadsheet.variables();
+        assert_eq!(**variables.get("foo").unwrap(), 
+                   Node::var("foo", Address::new(0, 0).into(), 
+                             Some(Expand { amount: Some(10), start_row: 0.into() })));
+        assert_eq!(**variables.get("bar").unwrap(), 
+                   Node::var("bar", Address::new(1, 1).into(), 
+                             Some(Expand { amount: Some(100), start_row: 10.into() })));
     }
 }
