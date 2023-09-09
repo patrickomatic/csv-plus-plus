@@ -19,7 +19,7 @@ variables and functions:
 # you can define variables with `:=`
 multiplier := 5
 
-# functions look like this have a single expression as their body
+# functions look like this and have a single expression as their body
 fn my_fn(a, b)
   multiplier * SUM(a, b)
 
