@@ -1,3 +1,7 @@
+## main
+
+* Fix cellabove/cellbelow/celladjacent to all take columns (A/B/C/etc)
+
 ## v0.3.0
 
 Complete rewrite in Rust, which also includes:
