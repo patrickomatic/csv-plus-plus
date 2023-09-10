@@ -1,29 +1,5 @@
 //! # csv+++
 //!
-//! # Examples
-//!
-//! ```
-//! ```
-//! 
-// TODO:
-//
-// * reduce the amount of things that are exported publicly 
-//   * make the ASTs private
-//   * make a bunch of things pub(crate)/pub(self)
-//
-// * writing to:
-//   * Excel
-//
-// * better contextual error messages when the error happens in a cell
-//
-// * writing object files via Serde?
-//
-// * make --verbose output is actually useful
-//
-// * target the lowest versions of all dependencies
-//
-// * support text wrapping options
-//
 use csvpp::{Error, Runtime, Template};
 use std::process;
 

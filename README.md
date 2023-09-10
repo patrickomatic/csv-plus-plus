@@ -42,6 +42,7 @@ Complex function    , Column 1  , Column 2 ,
 =my_complex_fn(a, b), [[var=a]] , [[var=b]],
 ```
 
+
 ## Expands
 
 Another useful feature is to define a range of rows which expand out (either infinitely or by a
@@ -57,9 +58,36 @@ This will expand the second row and repeat it 10 times in the final spreadsheet.
 it to be repeated until the end of the spreadsheet just leave off the `=10` and specify it as 
 `![[expand]]`.
 
+
 ## Variable Scoping
 
-TODO
+The variable scoping semantics are pretty unique because every function call is evaluated relative
+to the cell where it is used.  As you've seen above you can use `[[var=...]]` to bind a variable
+name to a given cell.  As an example of scoping semantics we'll use this csv++ template:
+
+```csvpp
+foo_from_code_section := 42
+
+---
+[[var=bar_outside_expand]] ,                         ,                 ,                     ,                       ,
+![[expand=2]]bar           , [[var=bar_in_expand]]   , =bar_in_expand  , =bar_outside_expand , =foo_from_code_section,
+```
+
+which will compile to:
+
+```csv
+bar  ,     , =B2 , =A1 , =42
+bar  ,     , =B3 , =A1 , =42
+```
+
+Breaking this down:
+
+* `foo_from_code_section` - Is always `42` no matter where it is used.
+* `bar_in_expand` - Since it is defined within an `![[expand]]`, it's value depends on the final
+  row, which will be `B2` or `B3`
+* `bar_outside_expand` - Will always be `A1`, pointing to the cell where it was defined.  There
+  is no relative aspect to it since it's not defined in an `expand`.
+
 
 ## Builtin Functions & Variables
 
