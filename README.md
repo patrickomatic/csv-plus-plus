@@ -67,7 +67,6 @@ name to a given cell.  As an example of scoping semantics we'll use this csv++ t
 
 ```csvpp
 foo_from_code_section := 42
-
 ---
 [[var=bar_outside_expand]] ,                         ,                 ,                     ,                       ,
 ![[expand=2]]bar           , [[var=bar_in_expand]]   , =bar_in_expand  , =bar_outside_expand , =foo_from_code_section,
@@ -76,6 +75,7 @@ foo_from_code_section := 42
 which will compile to:
 
 ```csv
+     ,     ,     ,     ,
 bar  ,     , =B2 , =A1 , =42
 bar  ,     , =B3 , =A1 , =42
 ```
