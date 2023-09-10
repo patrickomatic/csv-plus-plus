@@ -91,6 +91,8 @@ For a full list of formatting features, take a look at the [language reference](
 ### Additional Reading
 
 * [Installation](docs/INSTALL.md)
-* [Changelog](docs/CHANGELOG.md)
 * [Language Reference](docs/LANGUAGE_REFERENCE.md)
+* [All Features Example](tests/all_features.rs)
+* [csv++ Examples](https://github.com/patrickomatic/csvpp-examples)
+* [Changelog](docs/CHANGELOG.md)
 * [Feature Support Matrix](docs/feature_matrix.csvpp)
