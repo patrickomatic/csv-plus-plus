@@ -2,7 +2,7 @@
 
 # csv++
 
-csv++ is an extension of [CSV](https://en.wikipedia.org/wiki/Comma-separated_values) which allows
+csv++ is a superset of [CSV](https://en.wikipedia.org/wiki/Comma-separated_values) which allows
 you to author spreadsheets in a text file then compile that to your target spreadsheet (Excel, 
 Google Sheets or even back to CSV).
 
@@ -120,7 +120,6 @@ For a full list of formatting features, take a look at the [language reference](
 
 * [Installation](docs/INSTALL.md)
 * [Language Reference](docs/LANGUAGE_REFERENCE.md)
-* [All Features Example](tests/all_features.rs)
 * [csv++ Examples](https://github.com/patrickomatic/csvpp-examples)
 * [Changelog](docs/CHANGELOG.md)
 * [Feature Support Matrix](docs/feature_matrix.csvpp)

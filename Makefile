@@ -14,7 +14,7 @@ define tar_release
 	cd $(RELEASE_DIR) && tar -czf csvpp-$(VERSION)-$(1).tar.gz csvpp csv++ \
 		&& rm csvpp csv++
 
-	gpg --detach-sign --armor csvpp-$(VERSION)-$(1).tar.gz
+	cd $(RELEASE_DIR) && gpg --detach-sign --armor csvpp-$(VERSION)-$(1).tar.gz
 endef
 
 install:
