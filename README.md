@@ -88,6 +88,7 @@ For a full list of formatting features, take a look at the [language reference](
 
 ### Additional Reading
 
+* [Installation](docs/INSTALL.md)
 * [Changelog](docs/CHANGELOG.md)
 * [Language Reference](docs/LANGUAGE_REFERENCE.md)
 * [Target Spreadsheet Feature Support Matrix](docs/feature_matrix.csvpp)
