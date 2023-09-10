@@ -10,13 +10,11 @@ define tar_release
 	cp target/$(1)/release/csvpp$(2) $(RELEASE_DIR)/csv++
 	cp LICENSE.txt README.md $(RELEASE_DIR)/
 
-	tar_file=csvpp-$(VERSION)-$(1).tar.gz
-
 	# include README, docs and license?
-	cd $(RELEASE_DIR) && tar -czf $(tar_file) csvpp csv++ \
+	cd $(RELEASE_DIR) && tar -czf csvpp-$(VERSION)-$(1).tar.gz csvpp csv++ \
 		&& rm csvpp csv++
 
-	gpg --detach-sign --armor $(tar_file)
+	gpg --detach-sign --armor csvpp-$(VERSION)-$(1).tar.gz
 endef
 
 install:
