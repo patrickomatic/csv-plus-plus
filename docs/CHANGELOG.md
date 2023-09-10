@@ -1,4 +1,13 @@
-## main
+## v0.3.0
+
+Complete rewrite in Rust, which also includes:
+
+* shorthand notation for modifiers
+* much speed
+* a re-usable A1 library (a1\_notation)
+* better error messages since I've hand-written the parser
+
+## v0.2.1
 
 - Add a `-s`/`--safe` flag which changes the merge strategy to not overwrite existing values.  If the spreadsheet being written to has values where the csvpp template wants to write, they will be overwritten otherwise.
 
