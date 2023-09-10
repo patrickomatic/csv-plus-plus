@@ -5,7 +5,8 @@ the latest release, unpack it and put it in your $PATH.
 
 ## Installing From Source
 
-Just check out the [csv++ repository](https://github.com/patrickomatic/csv-plus-plus) and run:
+To install from source check out the [csv++ repository](https://github.com/patrickomatic/csv-plus-plus) 
+and run:
 
 ```bash
 cargo build --release
