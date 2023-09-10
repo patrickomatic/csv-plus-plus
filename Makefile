@@ -10,9 +10,13 @@ define tar_release
 	cp target/$(1)/release/csvpp$(2) $(RELEASE_DIR)/csv++
 	cp LICENSE.txt README.md $(RELEASE_DIR)/
 
+	tar_file=csvpp-$(VERSION)-$(1).tar.gz
+
 	# include README, docs and license?
-	cd $(RELEASE_DIR) && tar -czf csvpp-$(VERSION)-$(1).tar.gz csvpp csv++ \
+	cd $(RELEASE_DIR) && tar -czf $(tar_file) csvpp csv++ \
 		&& rm csvpp csv++
+
+	gpg --detach-sign --armor $(tar_file)
 endef
 
 install:
@@ -48,4 +52,5 @@ clean:
 		target/x86_64-apple-darwin \
 		target/aarch64-apple-darwin \
 		$(RELEASE_DIR)/README.md \
-		$(RELEASE_DIR)/LICENSE.txt
+		$(RELEASE_DIR)/LICENSE.txt \
+		$(RELEASE_DIR)/csvpp-$(VERSION)*.tar.gz
