@@ -120,6 +120,6 @@ For a full list of formatting features, take a look at the [language reference](
 
 * [Installation](docs/INSTALL.md)
 * [Language Reference](docs/LANGUAGE_REFERENCE.md)
-* [csv++ Examples](https://github.com/patrickomatic/csvpp-examples)
+* [Examples](https://github.com/patrickomatic/csvpp-examples)
 * [Changelog](docs/CHANGELOG.md)
 * [Feature Support Matrix](docs/feature_matrix.csvpp)
