@@ -1,5 +1,7 @@
 ## main
 
+### Bugfixes
+
 * Fix cellabove/cellbelow/celladjacent to all take columns (A/B/C/etc)
 
 ## v0.3.0

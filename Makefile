@@ -12,7 +12,11 @@ RELEASE_FILES := $(RELEASE_DIRS:=.tar.gz)
 RELEASE_FILE_SIGS := $(RELEASE_FILES:=.asc)
 
 .PHONY: all
-all: $(RELEASE_FILES) $(RELEASE_FILE_SIGS)
+all: tool-deps $(RELEASE_FILES) $(RELEASE_FILE_SIGS)
+
+.PHONY: tool-deps
+tool-deps:
+	cargo install cross cargo-deb
 
 $(RELEASE_DIR)/csvpp-$(VERSION)-%.tar.gz: RELEASE_DIR=$(@:.tar.gz=)
 
@@ -38,6 +42,10 @@ $(RELEASE_DIR)/csvpp-$(VERSION)-%.tar.gz:
 
 	cd release && tar -czf $(shell basename $@) $(shell basename $(RELEASE_DIR))
 
+$(RELEASE_DIR)/%.deb:
+	cargo deb
+
+%.deb.asc: %.deb
 %.tar.gz.asc: %.tar.gz
 	cd $(RELEASE_DIR) && gpg --detach-sign --armor $(shell basename $^)
 
