@@ -12,4 +12,4 @@ and run:
 cargo install
 ```
 
-This assume you've [installed Rust](https://www.rust-lang.org/tools/install)
+This assumes you've [installed Rust](https://www.rust-lang.org/tools/install)

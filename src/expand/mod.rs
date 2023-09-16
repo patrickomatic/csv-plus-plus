@@ -1,22 +1,25 @@
 //! # Expand
 //!
+use a1_notation::Row;
 use serde::{Serialize, Deserialize};
 use std::cmp;
+
+mod into;
 
 const ROW_MAX: usize = 1000;
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Expand {
     pub amount: Option<usize>,
-    pub start_row: a1_notation::Row,
+    pub start_row: Row,
 }
 
 impl Expand {
-    pub fn clone_to_row<R: Into<a1_notation::Row>>(&self, row: R) -> Self {
+    pub fn clone_to_row<R: Into<Row>>(&self, row: R) -> Self {
         Self { amount: self.amount, start_row: row.into() }
     }
 
-    pub fn end_row(&self) -> a1_notation::Row {
+    pub fn end_row(&self) -> Row {
         if let Some(a) = self.amount {
             cmp::min(self.start_row.y + a, ROW_MAX).into()
         } else {
@@ -24,19 +27,12 @@ impl Expand {
         }
     }
 
-    pub fn expand_amount<R: Into<a1_notation::Row>>(&self, row: R) -> usize {
+    pub fn expand_amount<R: Into<Row>>(&self, row: R) -> usize {
         self.amount.unwrap_or(ROW_MAX - row.into().y)
     }
 
-    pub fn new<R: Into<a1_notation::Row>>(start_row: R, amount: Option<usize>) -> Self {
+    pub fn new<R: Into<Row>>(start_row: R, amount: Option<usize>) -> Self {
         Self { amount, start_row: start_row.into() }
-    }
-}
-
-#[allow(clippy::from_over_into)]
-impl Into<a1_notation::A1> for Expand {
-    fn into(self) -> a1_notation::A1 {
-        a1_notation::row_range(self.start_row, self.end_row())
     }
 }
 

@@ -1,8 +1,13 @@
 ## main
 
+### Features
+
+* Ability to reference variables defined in an expand, outside of an expand.  If they're referenced inside an expand they'll resolve to their exact location, otherwise they resolve to the range represented by that column in the range.
+
 ### Bugfixes
 
 * Fix cellabove/cellbelow/celladjacent to all take columns (A/B/C/etc)
+* Reading and writing CSV with inconsistent column lengths would fail
 
 ## v0.3.0
 

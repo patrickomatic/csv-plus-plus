@@ -10,7 +10,6 @@ use std::collections;
 use std::convert;
 use std::fmt;
 use std::path;
-use std::str::FromStr;
 use crate::{
     Error,
     InnerError,
@@ -28,6 +27,7 @@ use crate::ast::{
     Functions,
     Node,
     Variables,
+    VariableValue,
 };
 use super::code_section_parser::{CodeSection, CodeSectionParser};
 
@@ -278,28 +278,26 @@ impl<'a> Template<'a> {
         Ok(
             if let Some(value) = self.variables.get(var_name) {
                 let value_from_var = match &**value {
-                    Node::Variable { body, scope, .. } => {
-                        if let Some(expand) = scope {
-                            let pos: A1 = (*expand).into();
-                            if pos.contains(&position.into()) {
-                                // XXX store the address more directly, don't do this parsing every
-                                // time we resolve...
-                                let address = Address::from_str(&body.to_string()).unwrap();
-                                address.with_y(position.row.y).into()
-                            } else {
-                                return Err(Error::InitError(
-                                        format!("Variable `{var_name}` can only be referenced inside the `expand` where it was defined")))
+                    Node::Variable { value, .. } => {
+                        match value {
+                            // absolute value, just turn it into a Ast
+                            VariableValue::Absolute(address) => (*address).into(),
 
-                                /* XXX return a proper error
-                                return Err(Error::VariableOutOfScope {
-                                    message: format!("Variable `{var_name}` can only be referenced inside the `expand` where it was defined"),
-                                    position: position.clone(),
-                                    line_number: 100,
-                                })
-                                */
+                            // already an AST, just clone it
+                            VariableValue::Ast(ast) => *ast.clone(),
+                            
+                            // it's relative to an expand - so if it's referenced inside the
+                            // expand, it's the value at that location.  If it's outside the expand
+                            // it's the range that it represents
+                            VariableValue::Relative { scope, column } => {
+                                let scope_a1: A1 = (*scope).into();
+                                if scope_a1.contains(&position.into()) {
+                                    position.with_x(column.x).into()
+                                } else {
+                                    let row_range: A1 = (*scope).into();
+                                    row_range.with_x(column.x).into()
+                                }
                             }
-                        } else {
-                            *body.clone()
                         }
                     },
                     n => n.clone(),

@@ -17,7 +17,7 @@
 //!
 use std::collections::HashMap;
 use crate::{Error, Result, SourceCode};
-use crate::ast::{Ast, Functions, Node, Variables};
+use crate::ast::{Ast, Functions, Node, Variables, VariableValue};
 use super::token_library::{Token, TokenMatch};
 use super::ast_lexer::AstLexer;
 use super::ast_parser::AstParser;
@@ -66,7 +66,10 @@ impl<'a> CodeSectionParser<'a> {
                 },
                 TokenMatch { token: Token::Reference, str_match: r, .. } => {
                     variables.insert(r.to_string(), 
-                                     Box::new(Node::var(r, *self.parse_variable_assign()?, None)));
+                                     Box::new(Node::Variable {
+                                         name: r.to_string(),
+                                         value: VariableValue::Ast(self.parse_variable_assign()?),
+                                     }));
                 },
                 token => {
                     return Err(self.token_match_to_error(

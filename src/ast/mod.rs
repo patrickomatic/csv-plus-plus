@@ -6,7 +6,7 @@ use std::collections;
 use crate::InnerResult;
 
 mod node;
-pub use node::Node;
+pub use node::{Node, VariableValue};
 
 /// traits that are implemented for `Node`
 mod display;

@@ -1,13 +1,10 @@
 //! Module for lexing and parsing the modifiers on a cell.
 //!
 //! TODO:
-//!
 //! * need to lowercase the input but we can't do it on the entire value because we don't want to
 //!     lowercase the stuff outside the modifier definition
 //!
-//! * refactor the error handling to provide more contextual (better positioning) error messages
-//!     that highlight exactly the problem
-//!
+use a1_notation::{Address, Row};
 use crate::{Error, Expand, InnerError, InnerResult, Result, Rgb, SourceCode};
 use crate::modifier::*;
 use std::str::FromStr;
@@ -29,7 +26,7 @@ impl<'a> ModifierParser<'a> {
     pub fn parse(
         input: &str, 
         source_code: &SourceCode,
-        position: a1_notation::Address,
+        position: Address,
         row_modifier: &Modifier,
     ) -> Result<ParsedCell> {
         let lexer = &mut ModifierLexer::new(input);
@@ -51,7 +48,7 @@ impl<'a> ModifierParser<'a> {
     /// returns (modifier, row_modifier)
     fn parse_all_modifiers(
         lexer: &mut ModifierLexer,
-        position: a1_notation::Address,
+        position: Address,
         row_modifier: &Modifier,
     ) -> InnerResult<(Option<Modifier>, Option<Modifier>)> {
         let mut new_modifier: Option<Modifier> = None;
@@ -200,7 +197,7 @@ impl<'a> ModifierParser<'a> {
         Ok(())
     }
 
-    fn modifier(&mut self, row: a1_notation::Row) -> InnerResult<()> {
+    fn modifier(&mut self, row: Row) -> InnerResult<()> {
         let modifier_name = self.lexer.take_token(Token::ModifierName)?;
 
         match modifier_name.as_str() {
@@ -225,7 +222,7 @@ impl<'a> ModifierParser<'a> {
         }
     }
 
-    fn modifiers(&mut self, row: a1_notation::Row) -> InnerResult<()> {
+    fn modifiers(&mut self, row: Row) -> InnerResult<()> {
         loop {
             self.modifier(row)?;
 
@@ -251,7 +248,7 @@ mod tests {
         ModifierParser::parse(
             input,
             &source_code,
-            a1_notation::Address::new(0, 0),
+            Address::new(0, 0),
             &Modifier::default(),
         ).unwrap()
     }

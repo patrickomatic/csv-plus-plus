@@ -1,5 +1,6 @@
+use a1_notation::A1;
 use std::fmt;
-use super::Node;
+use super::{Node, VariableValue};
 
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -34,8 +35,20 @@ impl fmt::Display for Node {
 
             Self::Text(t) => write!(f, "\"{t}\""),
 
-            Self::Variable { body, name, .. } => 
-                write!(f, "{name} := {body}"),
+            Self::Variable { name, value } => write!(f, "{name} := {value}"),
+        }
+    }
+}
+
+impl fmt::Display for VariableValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Absolute(address) => write!(f, "{address}"),
+            Self::Relative { scope, column } => {
+                let row_range: A1 = (*scope).into();
+                write!(f, "{}", row_range.with_x(column.x))
+            },
+            Self::Ast(ast) => write!(f, "{ast}"),
         }
     }
 }
@@ -101,16 +114,19 @@ mod tests {
 
     #[test]
     fn display_reference() {
-        assert_eq!("foo", Node::reference("foo").to_string());
+        assert_eq!("foo",
+                   Node::reference("foo").to_string());
     }
 
     #[test]
     fn display_text() {
-        assert_eq!("\"foo\"", Node::text("foo").to_string());
+        assert_eq!("\"foo\"",
+                   Node::text("foo").to_string());
     }
 
     #[test]
     fn display_var() {
-        assert_eq!("foo := 1", Node::var("foo", 1.into(), None).to_string());
+        assert_eq!("foo := 1", 
+                   Node::var("foo", VariableValue::Ast(Box::new(1.into()))).to_string());
     }
 }

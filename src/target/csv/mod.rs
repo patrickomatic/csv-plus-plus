@@ -25,11 +25,13 @@ impl CompilationTarget for Csv<'_> {
     fn write(&self, template: &Template) -> Result<()> {
         let existing_values = Self::read(&self.path, &self.runtime.output)?;
         let new_values = template.spreadsheet.borrow();
-        let mut writer = csv::Writer::from_path(&self.path).map_err(|e|
-            Error::TargetWriteError {
-                message: format!("Unable to open output file for writing: {:?}", e),
-                output: self.runtime.output.clone(),
-            })?;
+        let mut writer = csv::WriterBuilder::new()
+            .flexible(true)
+            .from_path(&self.path).map_err(|e|
+                Error::TargetWriteError {
+                    message: format!("Unable to open output file for writing: {:?}", e),
+                    output: self.runtime.output.clone(),
+                })?;
 
         for (index, row) in new_values.cells.iter().enumerate() {
             // let empty = vec![];
@@ -48,6 +50,7 @@ impl CompilationTarget for Csv<'_> {
                 })
                 .collect();
             
+            // TODO: throw instead of unwrap
             writer.write_record(output_row).unwrap();
         }
 
@@ -84,6 +87,7 @@ impl<'a> Csv<'a> {
             },
         };
         let mut reader = csv::ReaderBuilder::new()
+            .flexible(true)
             .has_headers(false)
             .from_reader(io::BufReader::new(file));
 

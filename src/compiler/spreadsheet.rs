@@ -7,7 +7,7 @@ use std::collections;
 use std::fmt;
 use csv;
 use crate::{Modifier, Result, SourceCode};
-use crate::ast::{Node, Variables};
+use crate::ast::{Node, Variables, VariableValue};
 use super::spreadsheet_cell::SpreadsheetCell;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -38,12 +38,19 @@ impl Spreadsheet {
 
         self.cells.iter().flatten().for_each(|c| {
             if let Some(var_id) = &c.modifier.var {
-                // if the variable is defined within an expand, we need to capture that it's scoped
-                // to that expand
-                let reference = if let Some(e) = c.row_modifier.clone().and_then(|rm| rm.expand) {
-                    Node::var(var_id, c.position.into(), Some(e))
+                let reference = if let Some(scope) = c.row_modifier.clone().and_then(|rm| rm.expand) {
+                    Node::Variable {
+                        name: var_id.clone(),
+                        value: VariableValue::Relative {
+                            scope,
+                            column: c.position.column,
+                        },
+                    }
                 } else {
-                    Node::var(var_id, c.position.into(), None)
+                    Node::Variable {
+                        name: var_id.clone(),
+                        value: VariableValue::Absolute(c.position),
+                    }
                 };
 
                 vars.insert(var_id.to_owned(), Box::new(reference));
@@ -199,9 +206,9 @@ mod tests {
 
         let variables = spreadsheet.variables();
         assert_eq!(**variables.get("foo").unwrap(), 
-                   Node::var("foo", Address::new(0, 0).into(), None));
+                   Node::var("foo", VariableValue::Absolute(Address::new(0, 0))));
         assert_eq!(**variables.get("bar").unwrap(), 
-                   Node::var("bar", Address::new(1, 1).into(), None));
+                   Node::var("bar", VariableValue::Absolute(Address::new(1, 1))));
     }
 
     #[test]
@@ -211,7 +218,7 @@ mod tests {
                 vec![
                     SpreadsheetCell {
                         ast: None,
-                        position: Address::new(0, 0),
+                        position: (0, 0).into(),
                         modifier: Modifier {
                             var: Some("foo".to_string()),
                             ..Default::default()
@@ -224,7 +231,7 @@ mod tests {
                     },
                     SpreadsheetCell {
                         ast: None,
-                        position: Address::new(1, 1),
+                        position: (1, 1).into(),
                         modifier: Modifier {
                             var: Some("bar".to_string()),
                             ..Default::default()
@@ -240,10 +247,16 @@ mod tests {
 
         let variables = spreadsheet.variables();
         assert_eq!(**variables.get("foo").unwrap(), 
-                   Node::var("foo", Address::new(0, 0).into(), 
-                             Some(Expand { amount: Some(10), start_row: 0.into() })));
+                   Node::var("foo", VariableValue::Relative {
+                       scope: Expand { amount: Some(10), start_row: 0.into() },
+                       column: 0.into(),
+                   }));
+                   // Node::var("foo", Address::new(0, 0).into(), 
+                             // Some()));
         assert_eq!(**variables.get("bar").unwrap(), 
-                   Node::var("bar", Address::new(1, 1).into(), 
-                             Some(Expand { amount: Some(100), start_row: 10.into() })));
+                   Node::var("bar", VariableValue::Relative {
+                       scope: Expand { amount: Some(100), start_row: 10.into() },
+                       column: 1.into(),
+                   }));
     }
 }

@@ -29,5 +29,4 @@ rand = "^0.8"
 maintainer = "Patrick Carroll <patrick@patrickomatic.com>"
 
 [profile.release]
-priority = "optional"
 strip = "debuginfo"
