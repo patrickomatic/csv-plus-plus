@@ -57,3 +57,43 @@ profit := (celladjacent(B) * celladjacent(C)) - fees
 ,,       ,         ,=((B3 * C3) - (0.65 * D3)),=(0.65 * D3)
 ");
 }
+
+#[test]
+fn odd_row_widths() {
+    let s = common::Setup::new("csv", r#"
+var1 := 42
+
+var2 := var1 + 5
+
+fn funky_fun(a, b) a + b
+
+---
+[[var=a1]]A1,foo,bar
+![[expand=10]],bar,=var2
+foo
+[[lock]]test,
+![[lock]]test1,test2,test3,
+"#);
+
+    let template = Template::compile(&s.runtime).unwrap();
+    let target = s.runtime.target().unwrap();
+    target.write(&template).unwrap();
+    
+    assert_eq!(
+        s.read_output(),
+        "A1,foo,bar,
+,bar,=(42 + 5),
+,bar,=(42 + 5),
+,bar,=(42 + 5),
+,bar,=(42 + 5),
+,bar,=(42 + 5),
+,bar,=(42 + 5),
+,bar,=(42 + 5),
+,bar,=(42 + 5),
+,bar,=(42 + 5),
+,bar,=(42 + 5),
+foo,,,
+test,,,
+test1,test2,test3,
+");
+}

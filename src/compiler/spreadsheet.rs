@@ -63,6 +63,7 @@ impl Spreadsheet {
     fn csv_reader(source_code: &SourceCode) -> csv::Reader<&[u8]> {
         csv::ReaderBuilder::new()
             .has_headers(false)
+            .flexible(true)
             .from_reader(source_code.csv_section.as_bytes())
     }
 

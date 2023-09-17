@@ -125,6 +125,7 @@ specifying formatting or various other modifiers to the cell.  Additionally a ro
 
 which will apply that modifier to all cells in the row.
 
+
 ### All Modifiers
 
 #### border = all | top | bottom | left | right
