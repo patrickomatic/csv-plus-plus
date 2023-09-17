@@ -20,6 +20,6 @@ jobs:
     - name: Lint
       run: cargo clippy -- -D warnings
     - name: Tests
-      run: cargo tests
-    - name: Code Coverage
-      uses: actions-rs/grcov@v0.1.5
+      run: cargo test
+    # - name: Code Coverage
+    # uses: actions-rs/grcov@v0.1.5
