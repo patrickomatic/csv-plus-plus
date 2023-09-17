@@ -89,6 +89,10 @@ impl Spreadsheet {
 
         Ok(row)
     }
+
+    pub fn widest_row(&self) -> usize {
+        self.cells.iter().map(|row| row.len()).max().unwrap_or(0)
+    }
 }
 
 impl fmt::Display for Spreadsheet {
@@ -258,5 +262,25 @@ mod tests {
                        scope: Expand { amount: Some(100), start_row: 10.into() },
                        column: 1.into(),
                    }));
+    }
+
+    #[test]
+    fn widest_row() {
+        let cell = SpreadsheetCell {
+            ast: None,
+            position: Address::new(0, 0),
+            modifier: Modifier::default(),
+            row_modifier: None,
+            value: "foo".to_string(),
+        };
+        let spreadsheet = Spreadsheet {
+            cells: vec![
+                vec![cell.clone()],
+                vec![cell.clone(), cell.clone()],
+                vec![cell.clone(), cell.clone(), cell.clone()],
+            ],
+        };
+
+        assert_eq!(spreadsheet.widest_row(), 3);
     }
 }

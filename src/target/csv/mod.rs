@@ -24,7 +24,10 @@ impl CompilationTarget for Csv<'_> {
 
     fn write(&self, template: &Template) -> Result<()> {
         let existing_values = Self::read(&self.path, &self.runtime.output)?;
+
         let new_values = template.spreadsheet.borrow();
+        let widest_row = new_values.widest_row();
+
         let mut writer = csv::WriterBuilder::new()
             .flexible(true)
             .from_path(&self.path).map_err(|e|
@@ -35,7 +38,7 @@ impl CompilationTarget for Csv<'_> {
 
         for (index, row) in new_values.cells.iter().enumerate() {
             // let empty = vec![];
-            let output_row: Vec<String> = merge_rows(
+            let mut output_row: Vec<String> = merge_rows(
                     existing_values.cells.get(index).unwrap_or(&vec![].to_owned()), 
                     row, 
                     &self.runtime.options,
@@ -49,6 +52,8 @@ impl CompilationTarget for Csv<'_> {
                     }
                 })
                 .collect();
+
+            output_row.resize(widest_row, "".to_string());
             
             // TODO: throw instead of unwrap
             writer.write_record(output_row).unwrap();
