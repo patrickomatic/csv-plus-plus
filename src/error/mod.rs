@@ -64,14 +64,6 @@ pub enum Error {
         message: String,
         output: Output,
     },
-
-    /*
-    VariableOutOfScope {
-        message: String,
-        position: a1_notation::Address,
-        line_number: usize,
-    }
-    */
 }
 
 impl error::Error for Error {}

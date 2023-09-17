@@ -20,7 +20,7 @@ impl Setup {
         let output_filename = format!("integration_test_output{}.{}", rng.gen::<u64>(), extension);
         let output_path = path::Path::new(&output_filename);
 
-        let runtime = Runtime::new(CliArgs {
+        let runtime = Runtime::try_from(&CliArgs {
             input_filename: input_path.to_path_buf(),
             output_filename: Some(output_path.to_path_buf()),
             ..Default::default()

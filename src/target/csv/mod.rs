@@ -2,71 +2,18 @@
 //!
 //! Functions for writing to CSV files
 //!
+use crate::{Error, Output, Result, Runtime};
 use std::path;
 use std::ffi;
 use std::fs;
 use std::io;
+use super::{ExistingCell, ExistingValues};
 
-use crate::{Error, Output, Result, Runtime, Template};
-use super::{CompilationTarget, ExistingCell, ExistingValues, MergeResult};
-use super::{file_backer_upper, merge_rows};
+mod compilation_target;
 
 pub struct Csv<'a> {
     path: path::PathBuf,
     runtime: &'a Runtime,
-}
-
-impl CompilationTarget for Csv<'_> {
-    fn write_backup(&self) -> Result<()> {
-        file_backer_upper::backup_file(&self.path)?;
-        Ok(())
-    }
-
-    fn write(&self, template: &Template) -> Result<()> {
-        let existing_values = Self::read(&self.path, &self.runtime.output)?;
-
-        let new_values = template.spreadsheet.borrow();
-        let widest_row = new_values.widest_row();
-
-        let mut writer = csv::WriterBuilder::new()
-            .flexible(true)
-            .from_path(&self.path).map_err(|e|
-                Error::TargetWriteError {
-                    message: format!("Unable to open output file for writing: {:?}", e),
-                    output: self.runtime.output.clone(),
-                })?;
-
-        for (index, row) in new_values.cells.iter().enumerate() {
-            // let empty = vec![];
-            let mut output_row: Vec<String> = merge_rows(
-                    existing_values.cells.get(index).unwrap_or(&vec![].to_owned()), 
-                    row, 
-                    &self.runtime.options,
-                )
-                .iter()
-                .map(|cell| {
-                    match cell {
-                        MergeResult::New(v) => v.to_string(),
-                        MergeResult::Existing(v) => v.to_string(),
-                        MergeResult::Empty => "".to_owned(),
-                    }
-                })
-                .collect();
-
-            output_row.resize(widest_row, "".to_string());
-            
-            // TODO: throw instead of unwrap
-            writer.write_record(output_row).unwrap();
-        }
-
-        writer.flush().map_err(|e|
-            Error::TargetWriteError {
-                message: format!("Unable to finish writing to output: {}", e),
-                output: self.runtime.output.clone(),
-            })?;
-
-        Ok(())
-    }
 }
 
 impl<'a> Csv<'a> {

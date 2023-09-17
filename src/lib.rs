@@ -81,7 +81,7 @@ pub(crate) mod test_utils {
     /// We frequently need to be able to produce a Runtime given a source file.
     impl From<TestFile> for Runtime {
         fn from(test_file: TestFile) -> Self {
-            Self::new(CliArgs {
+            Self::try_from(&CliArgs {
                 input_filename: test_file.input_file.clone(),
                 output_filename: Some(test_file.output_file.clone()),
                 ..Default::default()

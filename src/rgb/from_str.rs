@@ -1,39 +1,6 @@
-//! # Rgb
-//!
-//! RGB-parsing and formatting functionality
-use serde::{Serialize, Deserialize};
-use std::convert;
-use std::fmt;
-use std::str::FromStr;
 use crate::{InnerError, InnerResult};
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct Rgb {
-    pub r: u8,
-    pub g: u8,
-    pub b: u8,
-}
-
-fn safe_scale_to_1(value: u8) -> f32 {
-    let val = (value as f32) / 255.0;
-    if val == std::f32::INFINITY { 0.0 } else { val }
-}
-
-impl convert::From<&Rgb> for (f32, f32, f32) {
-    fn from(value: &Rgb) -> (f32, f32, f32) {
-        (
-            safe_scale_to_1(value.r),
-            safe_scale_to_1(value.g),
-            safe_scale_to_1(value.b),
-        )
-    }
-}
-
-impl fmt::Display for Rgb {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "#{:02X}{:02X}{:02X}", self.r, self.g, self.b)
-    }
-}
+use std::str::FromStr;
+use super::Rgb;
 
 fn string_to_hex(hex_code: &str, double_it: bool) -> InnerResult<u8> {
     let hex_string = if double_it {
@@ -69,7 +36,7 @@ impl FromStr for Rgb {
         } else {
             return Err(InnerError::rgb_syntax_error(
                     input, 
-                    &format!("\"{}\" must be a 3 or 6-character RGB string, optionally prefixed with '#'", input)))
+                    &format!("\"{input}\" must be a 3 or 6-character RGB string, optionally prefixed with '#'")))
         };
 
         Ok(rgb)
@@ -79,13 +46,6 @@ impl FromStr for Rgb {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn display_3_chars() {
-        let rgb = Rgb { r: 255, g: 0, b: 17 };
-
-        assert_eq!(rgb.to_string(), "#FF0011")
-    }
 
     #[test]
     fn from_str_7_chars() {
@@ -114,13 +74,4 @@ mod tests {
         assert_eq!(255, rgb.b);
     }
 
-    #[test]
-    fn from_rgb_tuple() {
-        let rgb = &Rgb::from_str("00FFAA").unwrap();
-        let tuple: (f32, f32, f32) = rgb.into();
-
-        assert_eq!(tuple.0, 0.0);
-        assert_eq!(tuple.1, 1.0);
-        assert_eq!(tuple.2, 0.666_666_7);
-    }
 }

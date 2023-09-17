@@ -8,11 +8,12 @@
 //! algorithms.
 //!
 use std::cmp;
-use std::fmt;
 use std::fs;
 use std::path;
 use crate::{Error, Result};
 use crate::compiler::token_library::CODE_SECTION_SEPARATOR;
+
+mod display;
 
 // how many lines above (and below) we'll show as context when highlighting error messages
 const LINES_IN_ERROR_CONTEXT: usize = 3;
@@ -30,31 +31,18 @@ pub struct SourceCode {
     pub original: String,
 }
 
-impl fmt::Display for SourceCode {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f, 
-            "{}: total_lines: {}, csv_section: {}, code_section: {}", 
-            self.filename.display(),
-            self.lines,
-            self.length_of_csv_section,
-            self.length_of_code_section,
-        )
-    }
-}
-
 impl SourceCode {
     /// Open the source code and do a rough first pass where we split the code section from the CSV
     /// section by looking for `---`.
-    pub fn open(filename: path::PathBuf) -> Result<SourceCode>  {
-        let input = fs::read_to_string(&filename).map_err(|e| {
+    pub fn open(filename: &path::PathBuf) -> Result<SourceCode>  {
+        let input = fs::read_to_string(filename).map_err(|e| {
             Error::SourceCodeError {
                 filename: filename.clone(),
                 message: format!("Error reading source code {}: {e}", filename.display()),
             }
         })?;
 
-        Self::new(input.as_str(), filename)
+        Self::new(input.as_str(), filename.clone())
     }
 
     pub fn new(input: &str, filename: path::PathBuf) -> Result<SourceCode> {
@@ -185,14 +173,6 @@ mod tests {
     }
 
     #[test]
-    fn display() {
-        assert_eq!(
-            "test.csvpp: total_lines: 25, csv_section: 15, code_section: 10", 
-            build_source_code().to_string(),
-        );
-    }
-
-    #[test]
     fn get_line_none() {
         let source_code = build_source_code();
         assert_eq!(source_code.get_line(100), None);
@@ -292,7 +272,7 @@ foo := 1
 ---
 foo,bar,baz,=foo
 ");
-        let source_code = SourceCode::open(s.input_file.clone()).unwrap();
+        let source_code = SourceCode::open(&s.input_file).unwrap();
 
         assert_eq!(source_code.lines, 5);
         assert_eq!(source_code.length_of_csv_section, 2);
