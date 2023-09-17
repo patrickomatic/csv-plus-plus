@@ -40,11 +40,12 @@ mod rgb;
 mod runtime;
 mod source_code;
 mod target;
+mod template;
 
 pub use cli_args::CliArgs;
 pub use compiler::spreadsheet::Spreadsheet;
 pub use compiler::spreadsheet_cell::SpreadsheetCell;
-pub use compiler::template::Template;
+pub use template::Template;
 pub use error::{Error, InnerError, Result, InnerResult};
 pub use expand::Expand;
 pub use modifier::Modifier;

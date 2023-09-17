@@ -161,7 +161,7 @@ possible values: bar | baz
             message: "foo".to_string(),
         };
 
-        assert_eq!("Error writing to foo.csvpp: foo\n", message.to_string());
+        assert_eq!("Error writing to Excel: foo.csvpp: foo\n", message.to_string());
     }
 }
 

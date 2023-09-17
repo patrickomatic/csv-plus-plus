@@ -69,10 +69,10 @@ impl Output {
 impl fmt::Display for Output {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::GoogleSheets(id) => 
-                write!(f, "Google Sheets[{}]", id),
-            Self::Csv(path) | Self::Excel(path) | Self::OpenDocument(path) => 
-                write!(f, "{}", path.to_str().unwrap()),
+            Self::GoogleSheets(id) => write!(f, "Google Sheets: {id}"),
+            Self::Csv(path) => write!(f, "CSV: {}", path.display()),
+            Self::Excel(path) => write!(f, "Excel: {}", path.display()),
+            Self::OpenDocument(path) => write!(f, "OpenDocument: {}", path.display()),
         }
     }
 }

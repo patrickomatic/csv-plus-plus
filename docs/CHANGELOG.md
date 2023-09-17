@@ -3,6 +3,7 @@
 ### Features
 
 * Ability to reference variables defined in an expand, outside of an expand.  If they're referenced inside an expand they'll resolve to their exact location, otherwise they resolve to the range represented by that column in the range.
+* More useful `-v/--verbose` output
 
 ### Bugfixes
 

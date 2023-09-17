@@ -97,8 +97,7 @@ impl Spreadsheet {
 
 impl fmt::Display for Spreadsheet {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // TODO: do something better
-        write!(f, "{}", self.cells.len())
+        write!(f, "total_rows: {}", self.cells.len())
     }
 }
 

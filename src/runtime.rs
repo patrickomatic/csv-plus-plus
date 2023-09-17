@@ -36,21 +36,12 @@ impl Runtime {
 
 impl fmt::Display for Runtime {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "
-# csv++
-
-## Called with options
-
-{}
-
-## Parsed template
-
-XXX
-
-", 
-            self.options,
-            // TODO self.template,
-        )
+        writeln!(f, "# CLI Options")?;
+        writeln!(f, "{}", self.options)?;
+        writeln!(f, "\n# Parsed Source Code")?;
+        writeln!(f, "{}", self.source_code)?;
+        writeln!(f, "\n# Output Target")?;
+        writeln!(f, "{}", self.output)
     }
 }
 
@@ -72,26 +63,17 @@ mod tests {
         assert!(runtime.is_ok());
     }
 
-    /*
     #[test]
     fn display() {
-        let runtime = build_runtime().unwrap();
-        assert_eq!(r#"
-# csv++
+        let test_file = TestFile::new("csv", "foo,bar,baz");
+        let cli_args = CliArgs {
+            input_filename: test_file.input_file.clone(),
+            google_sheet_id: Some("abc123".to_string()),
+            ..Default::default()
+        };
+        let runtime_str = Runtime::new(cli_args).unwrap().to_string();
 
-## Called with options
-
-backup: false
-google_account_credentials: none
-key_values: {}
-offset: (0, 0)
-overwrite_values: true
-verbose: false
-
-## Parsed template
-
-"#, runtime.to_string());
+        assert!(runtime_str.contains("CLI Options"));
     }
-    */
 }
 

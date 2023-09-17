@@ -4,18 +4,13 @@
 //! evaluation and scope resolution.
 //!
 use a1_notation::{A1, Address};
-use serde::{Deserialize, Serialize};
 use std::cell;
 use std::collections;
-use std::convert;
-use std::fmt;
-use std::path;
 use crate::{
     Error,
     InnerError,
     Result,
     Runtime,
-    SourceCode,
     Spreadsheet,
     SpreadsheetCell,
 };
@@ -29,7 +24,10 @@ use crate::ast::{
     Variables,
     VariableValue,
 };
-use super::code_section_parser::{CodeSection, CodeSectionParser};
+use crate::compiler::code_section_parser::{CodeSection, CodeSectionParser};
+
+mod display;
+mod template_at_rest;
 
 #[derive(Debug)]
 pub struct Template<'a> {
@@ -38,35 +36,6 @@ pub struct Template<'a> {
     pub variables: Variables,
     csv_line_number: usize,
     runtime: &'a Runtime,
-}
-
-/// A template stripped down to just it's serializable fields.  This is internal to this module and
-/// should be converted as we read from or write to the object files.
-#[derive(Deserialize, Serialize)]
-struct TemplateAtRest {
-    pub functions: Functions,
-    pub spreadsheet: Spreadsheet,
-    pub variables: Variables,
-    csv_line_number: usize,
-}
-
-impl convert::From<&Template<'_>> for TemplateAtRest {
-    fn from(template: &Template) -> Self {
-        TemplateAtRest { 
-            functions: template.functions.clone(),
-            spreadsheet: template.spreadsheet.borrow().clone(),
-            variables: template.variables.clone(), 
-            csv_line_number: template.csv_line_number,
-        }
-    }
-}
-
-impl fmt::Display for Template<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "variables: {:?}", &self.variables)?;
-        writeln!(f, "functions: {:?}", &self.functions)?;
-        write!(f, "rows: {}", self.spreadsheet.borrow().cells.len())
-    }
 }
 
 impl<'a> Template<'a> {
@@ -313,32 +282,6 @@ impl<'a> Template<'a> {
             }
         )
     }
-
-    /* TODO: read and use object files for linking
-    fn from_template_at_rest(&self) -> Self {
-        todo!()
-    }
-    */
-
-    pub fn write_object_file(&self, source_code: &SourceCode) -> Result<path::PathBuf> {
-        let object_code_filename = source_code.object_code_filename();
-        /* TODO spend some more time thinking about what would be a good representation
-        // let mut s = flexbuffers::FlexbufferSerializer::new();
-
-        let template_at_rest = TemplateAtRest::from(self);
-        // let serializer = template_at_rest.serialize(&mut s).unwrap();
-        let file = fs::File::create(&object_code_filename).unwrap();
-        let writer = ciborium::into_writer(&template_at_rest, &file).unwrap();
-        fs::write(&object_code_filename, writer).map_err(|e| {
-            Error::ObjectWriteError { 
-                filename: object_code_filename.clone(),
-                message: format!("Error writing object file: {}", e),
-            }
-        })?;
-        */
-
-        Ok(object_code_filename)
-    }
 }
 
 #[cfg(test)]
@@ -401,17 +344,6 @@ mod tests {
 
         assert_eq!(template.spreadsheet.borrow().cells.len(), 1000);
     }
-
-    #[test]
-    fn display() {
-        let test_file = TestFile::new("csv", "");
-        let runtime = test_file.into();
-        let template = build_template(&runtime);
-
-        assert_eq!(r#"variables: {}
-functions: {}
-rows: 0"#, template.to_string());
-   }
 
     #[test]
     fn is_function_defined_true() {

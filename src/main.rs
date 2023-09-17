@@ -5,7 +5,15 @@ use std::process;
 
 fn compile_from_cli() -> Result<(), Box<Error>> {
     let runtime = Runtime::from_cli_args()?;
+    if runtime.options.verbose {
+        println!("{runtime}");
+    }
+
     let template = Template::compile(&runtime)?;
+    if runtime.options.verbose {
+        println!("{template}");
+    }
+
     let target = runtime.target()?;
 
     if runtime.options.backup {
@@ -14,10 +22,6 @@ fn compile_from_cli() -> Result<(), Box<Error>> {
         }
 
         target.write_backup()?;
-    }
-
-    if runtime.options.verbose {
-        println!("{runtime}");
     }
 
     template.write_object_file(&runtime.source_code)?;
@@ -29,7 +33,6 @@ fn compile_from_cli() -> Result<(), Box<Error>> {
 
 fn main() {
     if let Err(e) = compile_from_cli() {
-        // TODO do more in verbose mode?
         eprintln!("{e}");
         process::exit(1)
     }
