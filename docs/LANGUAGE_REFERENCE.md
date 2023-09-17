@@ -18,18 +18,18 @@ to do everything you can in a spreadsheet but also define functions and variable
 
 Functions are defined by:
 
-```
-def <function-name> ( <arg1>, <arg2>, ... )
+```csvpp
+fn <function-name> ( <arg1>, <arg2>, ... )
 ```
 
 They can have any number of arguments and will be evaluated in the context of the cell in 
 which they are called.
 
 #### Examples
-```
-def minus_one(number) number - 1
+```csvpp
+fn minus_one(number) number - 1
 
-def profit(quantity) 
+fn profit(quantity) 
   (celladjacent(A) * quantity) - fees
 ```
 
@@ -43,7 +43,7 @@ and underscores), the expression `:=` and followed with a value:
 ```
 #### Examples
 
-```
+```csvpp
 foo := A3
 bar := SUM(celladjacent(A), foo)
 ```
@@ -88,7 +88,7 @@ semantics - all functions and variables are dynamically evaluated in the context
 they are used.  For example you can define a variable (or function) in the code section which 
 references cells relative to the place where they are used:
 
-```
+```csvpp
 # interest_rate is bound to cell B1 via the var= modifier below.
 # cell_adjacent(A) gives us a reference to the "Amount" value for each row
 interest_on_amount := interest_rate * cell_adjacent(A)
@@ -127,72 +127,117 @@ which will apply that modifier to all cells in the row.
 
 ### All Modifiers
 
-* `border` `=` `all | top | bottom | left | right`
-  - Sets a border on the given side (or all four sides if `all`).
-  - Can be repeated multiple times to set multiple borders.
+#### border = all | top | bottom | left | right
+Sets a border on the given side (or all four sides if `all`). Can be repeated multiple times to set multiple borders.
 
-* `bordercolor` `=` `HEX_COLOR`
-  - The color of the border, where `HEX_COLOR` is a 6-character hex color code.
+> ##### Alias: `b = a | t | b | l | r`
 
-* `borderstyle` `=` `dashed | dotted | double | solid | solid_medium | solid_thick`
-  - The style of the border. `solid` if a border is set and it is not specifieid.
 
-* `color` - 
-  - The color of the cell, where `HEX_COLOR` is a 6-character hex color code.
+#### bordercolor = HEX_COLOR
+The color of the border, where `HEX_COLOR` is a 6-character hex color code.
 
-* `expand` `=` `AMOUNT`
-  - Duplicate the row `AMOUNT` times.  If `AMOUNT` is not supplied, the row will be repeated for
-  the rest of the sheet.
+> ##### Alias `bc = HEX_COLOR`
 
-* `fontcolor` `=` `HEX_COLOR`
-  - The color of the font, where `HEX_COLOR` is a 6-character hex color code.
 
-* `fontfamily` `=` `Arial | Helvetica | ...`
-  - The font family to use.  It must be a valid font, compatible with your target spreadsheet
+#### borderstyle = dashed | dotted | double | solid | solid_medium | solid_thick
+The style of the border. `solid` is the default if a border is set and it is not specified.
 
-* `fontsize` `=` `INTEGER`
-  - The font size to use, as a whole number.
+> ##### Alias `bs = dash | dot | dbl | 1 | 2 | 3`
 
-* `format` `=` `bold | italic | underline | strikethrough`
-  - Applies the given format.
-  - Can be repeated multiple times to set multiple formats.
 
-* `freeze` - 
+#### color = HEX\_COLOR
+The color of the cell, where `HEX_COLOR` is a 6-character hex color code.
 
-* `halign` `=` `left | center | right`
-  - The horizontal alignment.
+> ##### Alias `c = HEX_COLOR`
 
-* `note` `=` `STRING`
-  - A note to associate with the cell.
 
-* `numberformat` `=` `currency | date | date_time | number | percent | text | time | scientific`
-  - The number format to apply to the cell.
+#### expand
+#### expand = AMOUNT
+Duplicate the row `AMOUNT` times.  If `AMOUNT` is not supplied, the row will be repeated for the rest of the sheet.
 
-* `validate`
+> ##### Alias `e = AMOUNT` (optional)
 
-* `valign` `=` `top | center | bottom`
-  - The vertical alignment.
 
-* `var` `=` `VARIABLE_ID`
-  - Bind a variable (specified by `VARIABLE_ID`) to reference this cell.
+#### fontcolor = HEX\_COLOR
+The color of the font, where `HEX_COLOR` is a 6-character hex color code.
+
+> ##### Alias `fc = HEX_COLOR`
+
+
+#### fontfamily = Arial | Helvetica | ...
+The font family to use.  It must be a valid font, compatible with your target spreadsheet
+
+> ##### Alias `ff = FONT_FAMILY`
+
+
+#### fontsize = INTEGER
+The font size to use, as a whole number.
+
+> ##### Alias `fs = INTEGER`
+
+
+#### format = bold | italic | strikethrough | underline
+Applies the given format. Can be repeated multiple times to set multiple formats.
+
+> ##### Alias `f = b | i | s | u`
+
+
+#### halign = left | center | right
+The horizontal alignment.
+
+> ##### Alias `ha = l | c | r`
+
+
+#### lock
+Prevent the cell or row from being modified.
+
+> ##### Alias `l`
+
+
+#### note = STRING
+A note to associate with the cell. The `STRING` should be quoted with single quotes and you can escape quotes like: `note='You\\'re taking a note'`
+
+> ##### Alias `n = STRING`
+
+
+#### numberformat = currency | date | datetime | number | percent | text | time | scientific
+The number format to apply to the cell.
+
+> ##### Alias `nf = c | d | dt | n | p | text | t | s`
+
+
+#### validate
+- TODO
+
+#### valign = bottom | center | top
+The vertical alignment.
+
+> ##### Alias `va = b | c | t`
+
+
+#### var = VARIABLE\_ID
+Bind a variable (specified by `VARIABLE_ID`) to reference this cell. TODO
+
+> ##### Alias `v = VARIABLE_ID`
+
 
 #### Examples
 
 * Align the second cell left, align the last cell to the center and make it bold and italicized:
 
-```
+```csvpp
 Date,[[align=left]]Amount,Quantity,[[align=center/format=bold italic]]Price
 ```
 
 * Underline and center-align an entire row:
 
-```
+```csvpp
 ![[align=center/format=underline]]Date,Amount,Quantity,Price
 ```
 
 * A header for the first row, then some formulas that repeat for each row for the rest of the spreadsheet:
 
-```
+```csvpp
 ![[align=center/format=bold]]Date,Price,Quantity,Profit
 ![[expand=1:]],,,"=MULTIPLY(cellref(B), cellref(C))"
 ```

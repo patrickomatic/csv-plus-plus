@@ -92,7 +92,26 @@ Breaking this down:
 
 ## Builtin Functions & Variables
 
-TODO
+csv++ comes with several built-in functions and variables that you can use. 
+
+### Variables
+
+* `cellnum` - The (integer) index of the cell being evaluated. Starts at 1
+* `cellref` - The current cell (for example A1, B1, etc)
+* `rowabove` - The row number of the row above the current one.  For example if the current cell
+  is `C5`, it's `4`.
+* `rowbelow` - The row number of the row below the current one.  If the current cell is `C5`, it
+  would be `6`.
+* `rownum` - The (integer) index of the row being evaluated. Starts at 1
+* `rowref` - The current row (for example A, B, ZZ, etc)
+
+### Functions
+
+* `cellabove(C)` - Get a reference to a cell on the row above.  For example if the current cell is
+  `C5`, calling `cellabove(A)` will yield `A4`.
+* `celladjacent(C)` - A reference to a cell on the the same row as the current cell.
+* `cellbelow(C)` - Returns a reference to a cell on the row below it.
+
 
 ## Formatting
 
