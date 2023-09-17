@@ -142,4 +142,4 @@ For a full list of formatting features, take a look at the [language reference](
 * [Language Reference](docs/LANGUAGE_REFERENCE.md)
 * [Examples](https://github.com/patrickomatic/csvpp-examples)
 * [Changelog](docs/CHANGELOG.md)
-* [Feature Support Matrix](docs/feature_matrix.csvpp)
+* [Want to Contribute?](docs/CONTRIBUTING.md)
