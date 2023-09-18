@@ -1,5 +1,5 @@
 use std::cmp;
-use crate::{Options, Result, SpreadsheetCell, Template};
+use crate::{Cell, Options, Result, Template};
 
 mod csv;
 mod excel;
@@ -35,13 +35,13 @@ pub trait CompilationTarget {
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum MergeResult<V: Clone> {
     Existing(V),
-    New(SpreadsheetCell),
+    New(Cell),
     Empty,
 }
 
 fn merge_rows<V: Clone>(
     existing_row: &[ExistingCell<V>],
-    template_row: &[SpreadsheetCell],
+    template_row: &[Cell],
     options: &Options,
 ) -> Vec<MergeResult<V>> {
     (0..cmp::max(existing_row.len(), template_row.len()))
@@ -56,7 +56,7 @@ fn merge_rows<V: Clone>(
 
 fn merge_cell<V: Clone>(
     existing: &ExistingCell<V>,
-    new: Option<&SpreadsheetCell>,
+    new: Option<&Cell>,
     options: &Options
 ) -> MergeResult<V> {
     if let Some(new_val) = new {
@@ -105,11 +105,10 @@ mod tests {
             ExistingCell::Value(3),
         ];
         let new = vec![
-            SpreadsheetCell {
+            Cell {
                 ast: None,
                 position: Address::new(0, 0),
                 modifier: Modifier::default(),
-                row_modifier: None,
                 value: "new value".to_string(),
             }
         ];
@@ -130,11 +129,10 @@ mod tests {
             MergeResult::Existing(1),
             merge_cell(&ExistingCell::Value(1), None, &options));
 
-        let cell = SpreadsheetCell {
+        let cell = Cell {
             ast: None,
             position: Address::new(0, 0),
             modifier: Modifier::default(),
-            row_modifier: None,
             value: "new value".to_string(),
         };
         assert_eq!(
@@ -154,11 +152,10 @@ mod tests {
             MergeResult::Existing(1),
             merge_cell(&ExistingCell::Value(1), None, &options));
 
-        let cell = SpreadsheetCell {
+        let cell = Cell {
             ast: None,
             position: Address::new(0, 0),
             modifier: Modifier::default(),
-            row_modifier: None,
             value: "new value".to_string(),
         };
         assert_eq!(

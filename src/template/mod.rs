@@ -7,12 +7,14 @@ use a1_notation::{A1, Address};
 use std::cell;
 use std::collections;
 use crate::{
+    Cell,
     Error,
     InnerError,
     Result,
+    Row,
+    RowModifier,
     Runtime,
     Spreadsheet,
-    SpreadsheetCell,
 };
 use crate::ast::{
     Ast, 
@@ -48,7 +50,9 @@ impl<'a> Template<'a> {
             None
         };
 
-        Self::new(spreadsheet, code_section, runtime).expand().eval()
+        Self::new(spreadsheet, code_section, runtime)
+            .eval_expands()
+            .eval_cells()
     }
 
     /// Given a parsed code section and spreadsheet section, this function will assemble all of the
@@ -100,28 +104,34 @@ impl<'a> Template<'a> {
     ///
     /// This has to happen before eval()ing the cells because that process depends on them being in
     /// their final location.
-    fn expand(self) -> Self {
+    fn eval_expands(self) -> Self {
         let mut new_spreadsheet = Spreadsheet::default();
         let s = self.spreadsheet.borrow_mut();
         let mut row_num = 0;
 
-        for row in s.cells.iter() {
-            if let Some(cell) = row.first() {
-                if let Some(e) = &cell.expand() {
-                    let expand_amount = e.expand_amount(row_num);
-                    for _ in 0..expand_amount {
-                        new_spreadsheet.cells.push(
-                            row.iter()
+        for row in s.rows.iter() {
+            if let Some(e) = row.modifier.expand {
+                let expand_amount = e.expand_amount(row_num);
+                let new_expand = e.clone_to_row(row_num);
+
+                for _ in 0..expand_amount {
+                    new_spreadsheet.rows.push(Row {
+                        row: row_num.into(),
+                        modifier: RowModifier {
+                            expand: Some(new_expand),
+                            ..row.modifier.clone()
+                        },
+                        cells: row
+                                .cells
+                                .iter()
                                 .map(|c| c.clone_to_row(row_num.into()))
-                                .collect());
-                        row_num += 1;
-                    }
-                } else {
-                    new_spreadsheet.cells.push(row.clone());
+                                .collect(),
+                    });
+
                     row_num += 1;
                 }
             } else {
-                new_spreadsheet.cells.push(row.clone());
+                new_spreadsheet.rows.push(row.clone());
                 row_num += 1;
             }
         }
@@ -134,11 +144,11 @@ impl<'a> Template<'a> {
 
     // TODO:
     // * do this in parallel (thread for each cell)
-    fn eval(&self) -> Result<Self> {
+    fn eval_cells(&self) -> Result<Self> {
         let spreadsheet = self.spreadsheet.borrow();
 
         let mut evaled_rows = vec![];
-        for row in spreadsheet.cells.iter() {
+        for row in spreadsheet.rows.iter() {
             evaled_rows.push(self.eval_row(row)?);
         }
 
@@ -146,7 +156,7 @@ impl<'a> Template<'a> {
             csv_line_number: self.csv_line_number,
             functions: self.functions.clone(),
             runtime: self.runtime,
-            spreadsheet: cell::RefCell::new(Spreadsheet { cells: evaled_rows }),
+            spreadsheet: cell::RefCell::new(Spreadsheet { rows: evaled_rows }),
             variables: self.variables.clone(),
         })
     }
@@ -182,25 +192,29 @@ impl<'a> Template<'a> {
         Ok(Box::new(evaled_ast))
     }
 
-    fn eval_row(&self, row: &[SpreadsheetCell]) -> Result<Vec<SpreadsheetCell>> {
-        let mut evaled_row = vec![];
-        for cell in row.iter() {
+    fn eval_row(&self, row: &Row) -> Result<Row> {
+        let mut cells = vec![];
+
+        for cell in row.cells.iter() {
             let evaled_ast = if let Some(ast) = &cell.ast {
                 Some(self.eval_ast(ast, cell.position)?)
             } else {
                 None
             };
 
-            evaled_row.push(SpreadsheetCell {
+            cells.push(Cell {
                 ast: evaled_ast,
                 position: cell.position,
                 modifier: cell.modifier.clone(),
-                row_modifier: cell.row_modifier.clone(),
                 value: cell.value.clone(),
             });
         }
 
-        Ok(evaled_row)
+        Ok(Row {
+            cells,
+            row: row.row,
+            modifier: row.modifier.clone(),
+        })
     }
 
     fn inner_error_to_error(
@@ -258,7 +272,7 @@ impl<'a> Template<'a> {
                             // it's relative to an expand - so if it's referenced inside the
                             // expand, it's the value at that location.  If it's outside the expand
                             // it's the range that it represents
-                            VariableValue::Relative { scope, column } => {
+                            VariableValue::ColumnRelative { scope, column } => {
                                 let scope_a1: A1 = (*scope).into();
                                 if scope_a1.contains(&position.into()) {
                                     position.with_x(column.x).into()
@@ -267,6 +281,23 @@ impl<'a> Template<'a> {
                                     row_range.with_x(column.x).into()
                                 }
                             }
+
+                            VariableValue::Row(row) => {
+                                let a1: a1_notation::A1 = (*row).into();
+                                a1.into()
+                            },
+
+                            VariableValue::RowRelative { scope, row } => {
+                                let scope_a1: A1 = (*scope).into();
+                                if scope_a1.contains(&position.into()) {
+                                    let row_a1: A1 = (*row).into();
+                                    row_a1.into()
+                                } else {
+                                    let row_range: A1 = (*scope).into();
+                                    row_range.into()
+                                }
+                            },
+
                         }
                     },
                     n => n.clone(),
@@ -314,7 +345,7 @@ mod tests {
         let runtime = test_file.into();
         let template = Template::compile(&runtime).unwrap();
 
-        assert_eq!(template.spreadsheet.borrow().cells.len(), 2);
+        assert_eq!(template.spreadsheet.borrow().rows.len(), 2);
     }
 
     #[test]
@@ -323,7 +354,7 @@ mod tests {
         let runtime = test_file.into();
         let template = Template::compile(&runtime).unwrap();
 
-        assert_eq!(template.spreadsheet.borrow().cells.len(), 10);
+        assert_eq!(template.spreadsheet.borrow().rows.len(), 10);
     }
     
     #[test]
@@ -332,7 +363,7 @@ mod tests {
         let runtime = test_file.into();
         let template = Template::compile(&runtime).unwrap();
 
-        assert_eq!(template.spreadsheet.borrow().cells.len(), 1000);
+        assert_eq!(template.spreadsheet.borrow().rows.len(), 1000);
     }
 
     #[test]
@@ -341,7 +372,7 @@ mod tests {
         let runtime = test_file.into();
         let template = Template::compile(&runtime).unwrap();
 
-        assert_eq!(template.spreadsheet.borrow().cells.len(), 1000);
+        assert_eq!(template.spreadsheet.borrow().rows.len(), 1000);
     }
 
     #[test]

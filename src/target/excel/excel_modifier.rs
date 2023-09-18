@@ -2,14 +2,13 @@
 //!
 //! Converts between a Modifier and an umya_spreadsheet::Style (which feature-wise actually happen
 //! to map pretty nicely)
-use std::convert;
 use crate::{Modifier, Rgb};
 use crate::modifier::{BorderSide, BorderStyle, HorizontalAlign, NumberFormat, TextFormat, VerticalAlign};
 
 // A Newtype around `Modifier` which allows us to have umya/excel-specific functionality
 pub(super) struct ExcelModifier(pub Modifier);
 
-impl convert::From<BorderStyle> for umya_spreadsheet::Border {
+impl From<BorderStyle> for umya_spreadsheet::Border {
     fn from(value: BorderStyle) -> Self {
         let mut b = umya_spreadsheet::Border::default();
         b.set_border_style(match value {
@@ -30,7 +29,7 @@ impl convert::From<BorderStyle> for umya_spreadsheet::Border {
     }
 }
 
-impl convert::From<ExcelModifier> for umya_spreadsheet::Style {
+impl From<ExcelModifier> for umya_spreadsheet::Style {
     fn from(value: ExcelModifier) -> Self {
         let mut style = umya_spreadsheet::Style::default();
 
@@ -44,7 +43,7 @@ impl convert::From<ExcelModifier> for umya_spreadsheet::Style {
     }
 }
 
-impl convert::From<HorizontalAlign> for umya_spreadsheet::HorizontalAlignmentValues {
+impl From<HorizontalAlign> for umya_spreadsheet::HorizontalAlignmentValues {
     fn from(value: HorizontalAlign) -> Self {
         match value {
             HorizontalAlign::Center =>
@@ -57,7 +56,7 @@ impl convert::From<HorizontalAlign> for umya_spreadsheet::HorizontalAlignmentVal
     }
 }
 
-impl convert::From<NumberFormat> for umya_spreadsheet::NumberingFormat {
+impl From<NumberFormat> for umya_spreadsheet::NumberingFormat {
     fn from(value: NumberFormat) -> Self {
         let mut nf = umya_spreadsheet::NumberingFormat::default();
         nf.set_format_code(match value {
@@ -83,7 +82,7 @@ impl convert::From<NumberFormat> for umya_spreadsheet::NumberingFormat {
     }
 }
 
-impl convert::From<Rgb> for umya_spreadsheet::Color {
+impl From<Rgb> for umya_spreadsheet::Color {
     fn from(value: Rgb) -> Self {
         let mut color = umya_spreadsheet::Color::default();
         color.set_argb(value.to_string());
@@ -91,7 +90,7 @@ impl convert::From<Rgb> for umya_spreadsheet::Color {
     }
 }
 
-impl convert::From<VerticalAlign> for umya_spreadsheet::VerticalAlignmentValues {
+impl From<VerticalAlign> for umya_spreadsheet::VerticalAlignmentValues {
     fn from(value: VerticalAlign) -> Self {
         match value {
             VerticalAlign::Center =>

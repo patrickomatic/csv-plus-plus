@@ -1,4 +1,4 @@
-use a1_notation::{Address, Column};
+use a1_notation::{Address, Column, Row};
 use crate::Expand;
 use serde::{Deserialize, Serialize};
 use super::{Ast, FunctionArgs, FunctionName};
@@ -75,8 +75,17 @@ pub enum VariableValue {
     Ast(Ast),
 
     /// It's scoped as a column relative to an expand
-    Relative {
+    ColumnRelative {
         column: Column,
+        scope: Expand,
+    },
+
+    /// It's scoped as a row
+    Row(Row),
+
+    /// It's scoped as a row relative to an expand
+    RowRelative {
+        row: Row,
         scope: Expand,
     },
 }

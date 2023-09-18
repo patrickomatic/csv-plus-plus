@@ -1,11 +1,8 @@
 //! # BatchUpdateBuilder
 //!
-// TODO:
-// 
-// * fix unwraps to throw actual errors
 use google_sheets4::api;
 use std::str::FromStr;
-use crate::{Runtime, SpreadsheetCell, Template};
+use crate::{Runtime, Cell, Template};
 use crate::ast::Node;
 use crate::target::{merge_rows, MergeResult, ExistingValues};
 use super::{google_sheets_modifier, SheetsValue};
@@ -47,7 +44,8 @@ impl<'a> BatchUpdateBuilder<'a> {
     }
 
     fn cell_data(&self, row: &[MergeResult<SheetsValue>]) -> Vec<api::CellData> {
-        row.iter()
+        row
+            .iter()
             .map(|cell| {
                 match cell {
                     // just give back the data as we got it
@@ -75,13 +73,13 @@ impl<'a> BatchUpdateBuilder<'a> {
         let spreadsheet = self.template.spreadsheet.borrow();
 
         spreadsheet
-            .cells
+            .rows
             .iter()
             .enumerate()
             .map(|(i, row)| {
                 let empty_row = vec![];
                 let existing_row = self.existing_values.cells.get(i).unwrap_or(&empty_row);
-                let merged_row = merge_rows(existing_row, row, &self.runtime.options);
+                let merged_row = merge_rows(existing_row, &row.cells, &self.runtime.options);
 
                 api::RowData { 
                     values: Some(self.cell_data(&merged_row)) 
@@ -103,7 +101,7 @@ impl<'a> BatchUpdateBuilder<'a> {
         }
     }
 
-    fn user_entered_value(&self, cell: &SpreadsheetCell) -> Option<api::ExtendedValue> {
+    fn user_entered_value(&self, cell: &Cell) -> Option<api::ExtendedValue> {
         if let Some(ast) = &cell.ast {
             Some(match *ast.clone() {
                 Node::Boolean(b) =>
@@ -145,7 +143,7 @@ impl<'a> BatchUpdateBuilder<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Modifier, Spreadsheet};
+    use crate::*;
     use crate::test_utils::TestFile;
     use super::*;
 
@@ -155,13 +153,17 @@ mod tests {
         let runtime = test_file.into();
 
         let mut spreadsheet = Spreadsheet::default();
-        spreadsheet.cells.push(vec![SpreadsheetCell {
-            ast: None,
-            position: a1_notation::Address::new(0, 1),
-            value: "Test".to_string(),
-            modifier: Modifier::default(),
-            row_modifier: None,
-        }]);
+        spreadsheet.rows.push(Row {
+            row: 1.into(),
+            modifier: RowModifier::default(),
+            cells: vec![
+                Cell {
+                    ast: None,
+                    position: a1_notation::Address::new(0, 1),
+                    value: "Test".to_string(),
+                    modifier: Modifier::default(),
+                }
+            ]});
 
         let template = Template::new(spreadsheet, None, &runtime);
         let existing_values = ExistingValues { cells: vec![] };

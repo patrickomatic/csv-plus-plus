@@ -11,6 +11,7 @@ mod number_format;
 mod text_format;
 mod vertical_align;
 
+use crate::{Expand, Rgb};
 use serde::{Serialize, Deserialize};
 use std::collections::HashSet;
 pub use border_side::BorderSide;
@@ -19,10 +20,29 @@ pub use horizontal_align::HorizontalAlign;
 pub use number_format::NumberFormat;
 pub use text_format::TextFormat;
 pub use vertical_align::VerticalAlign;
-use crate::{Expand, Rgb};
 
+/// All of the traits that can be set on a cell modifier
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Modifier {
+    pub border_color: Option<Rgb>,
+    pub border_style: Option<BorderStyle>,
+    pub borders: HashSet<BorderSide>,
+    pub color: Option<Rgb>,
+    pub font_color: Option<Rgb>,
+    pub font_family: Option<String>,
+    pub font_size: Option<u8>,
+    pub formats: HashSet<TextFormat>,
+    pub horizontal_align: Option<HorizontalAlign>,
+    pub lock: bool,
+    pub note: Option<String>,
+    pub number_format: Option<NumberFormat>,
+    pub var: Option<String>,
+    pub vertical_align: Option<VerticalAlign>,
+}
+
+/// Verrrry similar to `Modifier`, except `RowModifier` can also have an `expand`.
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct RowModifier {
     pub border_color: Option<Rgb>,
     pub border_style: Option<BorderStyle>,
     pub borders: HashSet<BorderSide>,
@@ -33,10 +53,32 @@ pub struct Modifier {
     pub font_size: Option<u8>,
     pub formats: HashSet<TextFormat>,
     pub horizontal_align: Option<HorizontalAlign>,
+    pub lock: bool,
     pub note: Option<String>,
     pub number_format: Option<NumberFormat>,
     pub var: Option<String>,
     pub vertical_align: Option<VerticalAlign>,
+}
+
+impl Into<Modifier> for RowModifier {
+    fn into(self) -> Modifier {
+        Modifier {
+            border_color: self.border_color,
+            border_style: self.border_style,
+            borders: self.borders.clone(),
+            color: self.color,
+            font_color: self.font_color,
+            font_family: self.font_family,
+            font_size: self.font_size,
+            formats: self.formats.clone(),
+            horizontal_align: self.horizontal_align,
+            lock: self.lock,
+            note: self.note,
+            number_format: self.number_format,
+            var: self.var,
+            vertical_align: self.vertical_align,
+        }
+    }
 }
 
 impl Modifier {
@@ -47,12 +89,12 @@ impl Modifier {
             && self.border_style.is_none() 
             && self.borders.is_empty()
             && self.color.is_none() 
-            && self.expand.is_none()
             && self.font_color.is_none() 
             && self.font_family.is_none() 
             && self.font_size.is_none()
             && self.formats.is_empty()
             && self.horizontal_align.is_none()
+            && !self.lock
             && self.note.is_none()
             && self.number_format.is_none()
             && self.var.is_none()

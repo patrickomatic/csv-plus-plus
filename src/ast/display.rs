@@ -44,11 +44,20 @@ impl fmt::Display for VariableValue {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Absolute(address) => write!(f, "{address}"),
-            Self::Relative { scope, column } => {
+
+            Self::Ast(ast) => write!(f, "{ast}"),
+
+            Self::ColumnRelative { scope, column } => {
                 let row_range: A1 = (*scope).into();
                 write!(f, "{}", row_range.with_x(column.x))
             },
-            Self::Ast(ast) => write!(f, "{ast}"),
+
+            Self::Row(row) => write!(f, "{row}"),
+
+            Self::RowRelative { scope, .. } => {
+                let row_range: A1 = (*scope).into();
+                write!(f, "{row_range}")
+            },
         }
     }
 }

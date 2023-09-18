@@ -1,60 +1,36 @@
 //! # csv++
 //!
-//! At the most basic, this is a tool that can take CSV file and output it to Excel, Google Sheets
-//! or OpenDocument.  However csv++ provides a superset of CSV which allows you to develop
-//! spreadsheets like you would code.
-//!
-//! You can specify formatting in the CSV:
-//!
-//! ```csvpp
-//! ![[format=bold/fontsize=20]]Header1     ,Header2    ,Header3
-//!                             foo         ,bar        ,baz
-//! ```
-//!
-//! or you can use short-hand notation:
-//!
-//! ```csvpp
-//! ![[f=b/fs=20]]Header1     ,Header2    ,Header3
-//!               foo         ,bar        ,baz
-//! ```
-//!
-//! You can also define a code section at the top with functions and variables:
-//!
-//! ```csvpp
-//! # define a variable that we can use in the code section and cells
-//! foo := 42
-//! fn bar(a) a + 3
-//! ---
-//! =foo   ,=foo + 2   ,=bar(foo)
-//! ```
-//!
 mod ast;
-mod compiler;
+mod cell;
 mod cli_args;
+mod compiler;
 mod error;
 mod expand;
 mod modifier;
 mod options;
 mod output;
 mod rgb;
+mod row;
 mod runtime;
 mod source_code;
+mod spreadsheet;
 mod target;
 mod template;
 
+pub use cell::Cell;
 pub use cli_args::CliArgs;
-pub use compiler::spreadsheet::Spreadsheet;
-pub use compiler::spreadsheet_cell::SpreadsheetCell;
-pub use template::Template;
 pub use error::{Error, InnerError, Result, InnerResult};
 pub use expand::Expand;
-pub use modifier::Modifier;
+pub use modifier::{Modifier, RowModifier};
 pub use options::Options;
 pub use output::Output;
 pub use rgb::Rgb;
+pub use row::Row;
 pub use runtime::Runtime;
 pub use source_code::SourceCode;
+pub use spreadsheet::Spreadsheet;
 pub use target::CompilationTarget;
+pub use template::Template;
 
 /// Some shared test utility functions.  
 #[cfg(test)]

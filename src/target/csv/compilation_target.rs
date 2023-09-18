@@ -21,10 +21,10 @@ impl CompilationTarget for Csv<'_> {
                     output: self.runtime.output.clone(),
                 })?;
 
-        for (index, row) in new_values.cells.iter().enumerate() {
+        for (index, row) in new_values.rows.iter().enumerate() {
             let mut output_row: Vec<String> = merge_rows(
                     existing_values.cells.get(index).unwrap_or(&vec![].to_owned()), 
-                    row, 
+                    &row.cells, 
                     &self.runtime.options,
                 )
                 .iter()

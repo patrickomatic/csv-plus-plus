@@ -2,14 +2,15 @@
 //!
 //! Functions for writing compiled templates to Excel
 //!
-mod excel_modifier;
-mod compilation_target;
-
+use a1_notation::Address;
 use std::ffi;
 use std::path;
-use crate::{Error, Result, Runtime, SpreadsheetCell, Template};
+use crate::{Cell, Error, Result, Runtime, Template};
 use crate::ast::Node;
-use super::{ merge_cell, ExistingCell, MergeResult };
+use super::{merge_cell, ExistingCell, MergeResult };
+
+mod excel_modifier;
+mod compilation_target;
 
 type ExcelValue = umya_spreadsheet::Cell;
 
@@ -40,8 +41,8 @@ impl<'a> Excel<'a> {
         worksheet: &mut umya_spreadsheet::Worksheet,
     ) -> Result<()> {
         let s = template.spreadsheet.borrow();
-        for row in &s.cells {
-            for cell in row {
+        for row in &s.rows {
+            for cell in &row.cells {
                 let merged_cell = merge_cell(
                     &self.get_existing_cell(cell.position, worksheet),
                     Some(cell),
@@ -65,16 +66,18 @@ impl<'a> Excel<'a> {
                     },
                 }
             }
+
+            
         }
 
         Ok(())
     }
 
-    // TODO: turn into an impl?
+    // TODO: turn into an impl (from/into)? the problem is we're mutating existing_cell...
     fn set_value(
         &self,
         existing_cell: &mut umya_spreadsheet::Cell,
-        cell: &SpreadsheetCell,
+        cell: &Cell,
     ) {
         if let Some(ast) = &cell.ast {
             match *ast.clone() {
@@ -94,7 +97,7 @@ impl<'a> Excel<'a> {
         }
     }
 
-    fn build_style(&self, cell: &SpreadsheetCell) -> Option<umya_spreadsheet::Style> {
+    fn build_style(&self, cell: &Cell) -> Option<umya_spreadsheet::Style> {
         let modifier = cell.modifier.clone();
         if modifier.is_empty() {
             return None
@@ -105,7 +108,7 @@ impl<'a> Excel<'a> {
 
     fn get_existing_cell(
         &self,
-        position: a1_notation::Address,
+        position: Address,
         worksheet: &umya_spreadsheet::Worksheet,
     ) -> ExistingCell<ExcelValue> {
         let cell_value = worksheet.get_cell(position.to_string());
