@@ -3,12 +3,12 @@
 mod ast;
 mod cell;
 mod cli_args;
-mod compiler;
 mod error;
 mod expand;
 mod modifier;
 mod options;
 mod output;
+mod parser;
 mod rgb;
 mod row;
 mod runtime;

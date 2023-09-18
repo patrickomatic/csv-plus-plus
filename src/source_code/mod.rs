@@ -11,7 +11,7 @@ use std::cmp;
 use std::fs;
 use std::path;
 use crate::{Error, Result};
-use crate::compiler::token_library::CODE_SECTION_SEPARATOR;
+use crate::parser::token_library::CODE_SECTION_SEPARATOR;
 
 mod display;
 

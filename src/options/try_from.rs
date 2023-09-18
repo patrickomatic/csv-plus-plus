@@ -1,5 +1,5 @@
 use crate::CliArgs;
-use crate::compiler::ast_parser::AstParser;
+use crate::parser::ast_parser::AstParser;
 use super::Options;
 
 impl TryFrom<&CliArgs> for Options {

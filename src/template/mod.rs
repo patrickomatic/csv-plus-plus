@@ -26,7 +26,7 @@ use crate::ast::{
     Variables,
     VariableValue,
 };
-use crate::compiler::code_section_parser::{CodeSection, CodeSectionParser};
+use crate::parser::code_section_parser::{CodeSection, CodeSectionParser};
 
 mod display;
 mod template_at_rest;

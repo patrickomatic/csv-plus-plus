@@ -4,8 +4,8 @@ use a1_notation::{Address, Row};
 use serde::{Deserialize, Serialize};
 use crate::{Modifier, Result, RowModifier, SourceCode};
 use crate::ast::Ast;
-use crate::compiler::ast_parser::AstParser;
-use crate::compiler::modifier_parser::ModifierParser;
+use crate::parser::ast_parser::AstParser;
+use crate::parser::modifier_parser::ModifierParser;
 
 mod display;
 
