@@ -60,6 +60,7 @@ pub struct RowModifier {
     pub vertical_align: Option<VerticalAlign>,
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<Modifier> for RowModifier {
     fn into(self) -> Modifier {
         Modifier {
