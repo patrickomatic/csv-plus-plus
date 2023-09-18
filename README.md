@@ -143,3 +143,4 @@ For a full list of formatting features, take a look at the [language reference](
 * [Examples](https://github.com/patrickomatic/csvpp-examples)
 * [Changelog](docs/CHANGELOG.md)
 * [Want to Contribute?](docs/CONTRIBUTING.md)
+* [csvpp on crates.io](https://crates.io/crates/csvpp)
