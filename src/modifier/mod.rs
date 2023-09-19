@@ -12,12 +12,12 @@ mod text_format;
 mod vertical_align;
 
 use crate::{Expand, Rgb};
-use serde::{Serialize, Deserialize};
-use std::collections::HashSet;
 pub use border_side::BorderSide;
 pub use border_style::BorderStyle;
 pub use horizontal_align::HorizontalAlign;
 pub use number_format::NumberFormat;
+use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 pub use text_format::TextFormat;
 pub use vertical_align::VerticalAlign;
 
@@ -87,11 +87,11 @@ impl Modifier {
     pub fn is_empty(&self) -> bool {
         // I wish this wasn't so error prone
         self.border_color.is_none()
-            && self.border_style.is_none() 
+            && self.border_style.is_none()
             && self.borders.is_empty()
-            && self.color.is_none() 
-            && self.font_color.is_none() 
-            && self.font_family.is_none() 
+            && self.color.is_none()
+            && self.font_color.is_none()
+            && self.font_family.is_none()
             && self.font_size.is_none()
             && self.formats.is_empty()
             && self.horizontal_align.is_none()

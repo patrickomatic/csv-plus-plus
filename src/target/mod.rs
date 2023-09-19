@@ -1,5 +1,5 @@
-use std::cmp;
 use crate::{Cell, Options, Result, Template};
+use std::cmp;
 
 mod csv;
 mod excel;
@@ -49,7 +49,8 @@ fn merge_rows<V: Clone>(
             merge_cell(
                 existing_row.get(i).unwrap_or(&ExistingCell::Empty),
                 template_row.get(i),
-                options)
+                options,
+            )
         })
         .collect()
 }
@@ -57,7 +58,7 @@ fn merge_rows<V: Clone>(
 fn merge_cell<V: Clone>(
     existing: &ExistingCell<V>,
     new: Option<&Cell>,
-    options: &Options
+    options: &Options,
 ) -> MergeResult<V> {
     if let Some(new_val) = new {
         match existing {
@@ -68,16 +69,13 @@ fn merge_cell<V: Clone>(
                 } else {
                     MergeResult::Existing(v.clone())
                 }
-            },
-            ExistingCell::Empty => 
-                MergeResult::New(new_val.clone()),
-
+            }
+            ExistingCell::Empty => MergeResult::New(new_val.clone()),
         }
     } else {
         // no new value - return existing or empty
         match existing {
-            ExistingCell::Value(v) => 
-                MergeResult::Existing(v.clone()),
+            ExistingCell::Value(v) => MergeResult::Existing(v.clone()),
             ExistingCell::Empty => MergeResult::Empty,
         }
     }
@@ -85,9 +83,9 @@ fn merge_cell<V: Clone>(
 
 #[cfg(test)]
 mod tests {
-    use a1_notation::Address;
-    use crate::Modifier;
     use super::*;
+    use crate::Modifier;
+    use a1_notation::Address;
 
     fn build_options(overwrite_values: bool) -> Options {
         Options {
@@ -104,14 +102,12 @@ mod tests {
             ExistingCell::Value(2),
             ExistingCell::Value(3),
         ];
-        let new = vec![
-            Cell {
-                ast: None,
-                position: Address::new(0, 0),
-                modifier: Modifier::default(),
-                value: "new value".to_string(),
-            }
-        ];
+        let new = vec![Cell {
+            ast: None,
+            position: Address::new(0, 0),
+            modifier: Modifier::default(),
+            value: "new value".to_string(),
+        }];
         let merged_row = merge_rows(existing.as_slice(), &new, &options);
 
         assert_eq!(3, merged_row.len());
@@ -123,11 +119,13 @@ mod tests {
 
         assert_eq!(
             MergeResult::Empty,
-            merge_cell(&ExistingCell::<usize>::Empty, None, &options));
+            merge_cell(&ExistingCell::<usize>::Empty, None, &options)
+        );
 
         assert_eq!(
             MergeResult::Existing(1),
-            merge_cell(&ExistingCell::Value(1), None, &options));
+            merge_cell(&ExistingCell::Value(1), None, &options)
+        );
 
         let cell = Cell {
             ast: None,
@@ -137,7 +135,8 @@ mod tests {
         };
         assert_eq!(
             MergeResult::Existing(1),
-            merge_cell(&ExistingCell::Value(1), Some(&cell), &options));
+            merge_cell(&ExistingCell::Value(1), Some(&cell), &options)
+        );
     }
 
     #[test]
@@ -146,11 +145,13 @@ mod tests {
 
         assert_eq!(
             MergeResult::Empty,
-            merge_cell(&ExistingCell::<usize>::Empty, None, &options));
+            merge_cell(&ExistingCell::<usize>::Empty, None, &options)
+        );
 
         assert_eq!(
             MergeResult::Existing(1),
-            merge_cell(&ExistingCell::Value(1), None, &options));
+            merge_cell(&ExistingCell::Value(1), None, &options)
+        );
 
         let cell = Cell {
             ast: None,
@@ -160,6 +161,7 @@ mod tests {
         };
         assert_eq!(
             MergeResult::New(cell.clone()),
-            merge_cell(&ExistingCell::Value(1), Some(&cell), &options));
+            merge_cell(&ExistingCell::Value(1), Some(&cell), &options)
+        );
     }
 }

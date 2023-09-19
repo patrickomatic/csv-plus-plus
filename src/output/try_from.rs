@@ -10,11 +10,11 @@ impl TryFrom<&CliArgs> for Output {
             Ok(Self::from_filename(filename.to_path_buf())?)
         } else {
             Err(crate::Error::InitError(
-                    "Must specify either -g/--google-sheet-id or -o/--output-filename".to_string()))
+                "Must specify either -g/--google-sheet-id or -o/--output-filename".to_string(),
+            ))
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -63,7 +63,10 @@ mod tests {
         };
         let output_target = Output::try_from(&cli_args).unwrap();
 
-        assert_eq!(output_target, Output::OpenDocument(PathBuf::from("foo.ods")))
+        assert_eq!(
+            output_target,
+            Output::OpenDocument(PathBuf::from("foo.ods"))
+        )
     }
 
     #[test]

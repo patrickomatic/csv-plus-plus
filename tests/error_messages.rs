@@ -3,13 +3,16 @@ mod common;
 
 #[test]
 fn syntax_error_in_code_section() {
-    let s = common::Setup::new("csv", r#"
+    let s = common::Setup::new(
+        "csv",
+        r#"
 ## Welcome to the all_features.csvpp test. this is a comment
 ##
 fn foo_fn<a, b, c> a + b * c
 ---
 foo,bar
-"#);
+"#,
+    );
     let template = Template::compile(&s.runtime);
 
     assert_eq!(
@@ -22,15 +25,19 @@ foo,bar
   : ---------^
  5: ---
  6: foo,bar
-");
+"
+    );
 }
 
 #[test]
 fn syntax_error_in_modifier_definition() {
-    let s = common::Setup::new("csv", r#"
+    let s = common::Setup::new(
+        "csv",
+        r#"
 ---
 foo,bar,[[format=bold ,foo
-"#);
+"#,
+    );
     let template = Template::compile(&s.runtime);
 
     assert_eq!(
@@ -38,15 +45,19 @@ foo,bar,[[format=bold ,foo
         "Invalid modifier definition in cell C1 on line 3
 Error parsing input, expected ']]'
 bad input: 
-");
+"
+    );
 }
 
 #[test]
 fn bad_choice_in_modifier_with_possibilities() {
-    let s = common::Setup::new("csv", r#"
+    let s = common::Setup::new(
+        "csv",
+        r#"
 ---
 foo,bar,[[b=foo]],foo
-"#);
+"#,
+    );
     let template = Template::compile(&s.runtime);
 
     assert_eq!(
@@ -55,5 +66,6 @@ foo,bar,[[b=foo]],foo
 Invalid border= value
 bad input: foo
 possible values: all (a) | top (t) | bottom (b) | left (l) | right (r)
-");
+"
+    );
 }

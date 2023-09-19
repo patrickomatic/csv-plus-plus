@@ -15,11 +15,21 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Install Rust
+      run: rustup component add rustfmt clippy
+
     - name: Build
       run: cargo build
-    - name: Lint
+
+    - name: Lint (clippy)
       run: cargo clippy -- -D warnings
+
+    - name: Lint (rustfmt)
+      run: cargo fmt --all -- --check
+
     - name: Tests
       run: cargo test
+
     # - name: Code Coverage
     # uses: actions-rs/grcov@v0.1.5

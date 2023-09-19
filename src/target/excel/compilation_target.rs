@@ -1,7 +1,7 @@
-//! 
-use crate::{Error, Result, Template};
-use super::Excel;
+//!
 use super::super::{file_backer_upper, CompilationTarget};
+use super::Excel;
+use crate::{Error, Result, Template};
 
 impl CompilationTarget for Excel<'_> {
     fn write_backup(&self) -> Result<()> {
@@ -33,8 +33,8 @@ impl CompilationTarget for Excel<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::TestFile;
     use super::*;
+    use crate::test_utils::TestFile;
 
     #[test]
     fn write() {

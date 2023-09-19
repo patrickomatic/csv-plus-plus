@@ -9,18 +9,18 @@
 //! <var_name> := <expr>
 //! ```
 //!
-//! or 
+//! or
 //!
 //! ```bnf
 //! fn <function_name>(<fn-arg-1>, <fn-arg-2>, ...) <expr>
 //! ```
 //!
-use std::collections::HashMap;
-use crate::{Error, Result, SourceCode};
-use crate::ast::{Ast, Functions, Node, Variables, VariableValue};
-use super::token_library::{Token, TokenMatch};
 use super::ast_lexer::AstLexer;
 use super::ast_parser::AstParser;
+use super::token_library::{Token, TokenMatch};
+use crate::ast::{Ast, Functions, Node, VariableValue, Variables};
+use crate::{Error, Result, SourceCode};
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct CodeSection {
@@ -33,22 +33,20 @@ pub struct CodeSectionParser<'a> {
     source_code: &'a SourceCode,
 }
 
-/// A recursive descent parser which relies on `AstParser` for individual expressions.  As 
-/// mentioned above, the contract here is that this parser handles parsing a series of 
+/// A recursive descent parser which relies on `AstParser` for individual expressions.  As
+/// mentioned above, the contract here is that this parser handles parsing a series of
 /// function and variable references and delegates to `AstParser` for handling expressions
 impl<'a> CodeSectionParser<'a> {
     pub fn parse(input: &'a str, source_code: &'a SourceCode) -> Result<CodeSection> {
-        let lexer = AstLexer::new(input).map_err(|e| {
-            Error::CodeSyntaxError { 
-                message: e.to_string(), 
-                line_number: e.line_number,
-                position: e.position, 
-                highlighted_lines: source_code.highlight_line(e.line_number, e.position),
-            }
+        let lexer = AstLexer::new(input).map_err(|e| Error::CodeSyntaxError {
+            message: e.to_string(),
+            line_number: e.line_number,
+            position: e.position,
+            highlighted_lines: source_code.highlight_line(e.line_number, e.position),
         })?;
 
         let parser = CodeSectionParser { lexer, source_code };
-        
+
         parser.parse_code_section()
     }
 
@@ -59,41 +57,61 @@ impl<'a> CodeSectionParser<'a> {
 
         loop {
             match self.lexer.next() {
-                TokenMatch { token: Token::Eof, .. } => break,
-                TokenMatch { token: Token::FunctionDefinition, .. } => {
+                TokenMatch {
+                    token: Token::Eof, ..
+                } => break,
+                TokenMatch {
+                    token: Token::FunctionDefinition,
+                    ..
+                } => {
                     let (fn_name, function) = self.parse_fn_definition()?;
                     functions.insert(fn_name, Box::new(function));
-                },
-                TokenMatch { token: Token::Reference, str_match: r, .. } => {
-                    variables.insert(r.to_string(), 
-                                     Box::new(Node::Variable {
-                                         name: r.to_string(),
-                                         value: VariableValue::Ast(self.parse_variable_assign()?),
-                                     }));
-                },
+                }
+                TokenMatch {
+                    token: Token::Reference,
+                    str_match: r,
+                    ..
+                } => {
+                    variables.insert(
+                        r.to_string(),
+                        Box::new(Node::Variable {
+                            name: r.to_string(),
+                            value: VariableValue::Ast(self.parse_variable_assign()?),
+                        }),
+                    );
+                }
                 token => {
                     return Err(self.token_match_to_error(
-                            &token, 
-                            format!("Expected an `fn` or variable definition (`:=`) operator but saw `{token}`")))
-                },
+                        &token,
+                        format!(
+                        "Expected an `fn` or variable definition (`:=`) operator but saw `{token}`"
+                    ),
+                    ))
+                }
             }
         }
 
-        Ok(CodeSection { functions, variables })
+        Ok(CodeSection {
+            functions,
+            variables,
+        })
     }
 
     /// parses a `:=` folloed by an `<expr>`
     fn parse_variable_assign(&'a self) -> Result<Ast> {
         // they better give us a :=
         match self.lexer.next() {
-            TokenMatch { token: Token::VarAssign, .. } => {
+            TokenMatch {
+                token: Token::VarAssign,
+                ..
+            } => {
                 // consume an expression
                 Ok(self.parse_expr()?)
             }
-            token => 
-                Err(self.token_match_to_error(
-                        &token,
-                        format!("Expected a variable definition operator (`:=`) but saw `{token}`"))),
+            token => Err(self.token_match_to_error(
+                &token,
+                format!("Expected a variable definition operator (`:=`) but saw `{token}`"),
+            )),
         }
     }
 
@@ -105,16 +123,30 @@ impl<'a> CodeSectionParser<'a> {
     fn parse_fn_definition(&'a self) -> Result<(String, Node)> {
         // expect the function name (as a `Reference`)
         let name = match self.lexer.next() {
-            TokenMatch { token: Token::Reference, str_match: r, .. } => r,
-            token =>
-                return Err(self.token_match_to_error(&token, format!("Expected a function name but saw `{token}`"))),
+            TokenMatch {
+                token: Token::Reference,
+                str_match: r,
+                ..
+            } => r,
+            token => {
+                return Err(self.token_match_to_error(
+                    &token,
+                    format!("Expected a function name but saw `{token}`"),
+                ))
+            }
         };
 
         // expect a `(`
         match self.lexer.next() {
-            TokenMatch { token: Token::OpenParen, .. } => (),
-            token => 
-                return Err(self.token_match_to_error(&token, format!("Expected `(` but saw `{token}`"))),
+            TokenMatch {
+                token: Token::OpenParen,
+                ..
+            } => (),
+            token => {
+                return Err(
+                    self.token_match_to_error(&token, format!("Expected `(` but saw `{token}`"))
+                )
+            }
         };
 
         let mut args = vec![];
@@ -124,21 +156,30 @@ impl<'a> CodeSectionParser<'a> {
         // expressions themselves.
         loop {
             match self.lexer.next() {
-                TokenMatch { token: Token::CloseParen, .. } => {
-                    break
-                },
-                TokenMatch { token: Token::Comma, .. } => (),
-                TokenMatch { token: Token::Reference, str_match: r, .. } => {
+                TokenMatch {
+                    token: Token::CloseParen,
+                    ..
+                } => break,
+                TokenMatch {
+                    token: Token::Comma,
+                    ..
+                } => (),
+                TokenMatch {
+                    token: Token::Reference,
+                    str_match: r,
+                    ..
+                } => {
                     args.push(r.to_string());
-                },
-                t => 
-                    return Err(self.token_match_to_error(&t, format!("Expected `(` but saw `{t}`"))),
+                }
+                t => {
+                    return Err(self.token_match_to_error(&t, format!("Expected `(` but saw `{t}`")))
+                }
             }
         }
 
-        let function = Node::Function { 
-            name: name.to_owned(), 
-            args, 
+        let function = Node::Function {
+            name: name.to_owned(),
+            args,
             body: self.parse_expr()?,
         };
 
@@ -153,7 +194,9 @@ impl<'a> CodeSectionParser<'a> {
 
     fn token_match_to_error(&'a self, token: &TokenMatch, message: String) -> Error {
         Error::CodeSyntaxError {
-            highlighted_lines: self.source_code.highlight_line(token.line_number, token.position),
+            highlighted_lines: self
+                .source_code
+                .highlight_line(token.line_number, token.position),
             line_number: token.line_number,
             message,
             position: token.position,
@@ -163,23 +206,25 @@ impl<'a> CodeSectionParser<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::path;
-    use crate::ast::Ast;
     use super::*;
+    use crate::ast::Ast;
+    use std::path;
 
     fn test(input: &str) -> CodeSection {
         let source_code = SourceCode::new(input, path::PathBuf::from("foo.csvpp")).unwrap();
         CodeSectionParser::parse(input, &source_code).unwrap()
     }
-    
+
     #[test]
     fn parse_function() {
         let fns_and_vars = test("fn foo(a, b) a + b");
         let foo = fns_and_vars.functions.get("foo").unwrap();
 
-        let expected: Ast = Box::new(
-            Node::fn_def("foo", &["a", "b"], 
-                          Node::infix_fn_call(Node::reference("a"), "+", Node::reference("b"))));
+        let expected: Ast = Box::new(Node::fn_def(
+            "foo",
+            &["a", "b"],
+            Node::infix_fn_call(Node::reference("a"), "+", Node::reference("b")),
+        ));
 
         assert_eq!(foo, &expected);
     }
@@ -189,23 +234,25 @@ mod tests {
         let fns_and_vars = test("fn foo() 1 * 2");
         let foo = fns_and_vars.functions.get("foo").unwrap();
 
-        let expected: Ast = Box::new(
-            Node::fn_def(
-                "foo", 
-                &[], 
-                Node::infix_fn_call(1.into(), "*", 2.into())));
+        let expected: Ast = Box::new(Node::fn_def(
+            "foo",
+            &[],
+            Node::infix_fn_call(1.into(), "*", 2.into()),
+        ));
 
         assert_eq!(foo, &expected);
     }
 
     #[test]
     fn parse_multiple_functions() {
-        let fns_and_vars = test(r#"
+        let fns_and_vars = test(
+            r#"
 fn foo()
     1 * 2
 fn bar(a, b)
     a + b
-"#);
+"#,
+        );
 
         assert_eq!(fns_and_vars.functions.len(), 2);
     }
@@ -219,12 +266,14 @@ fn bar(a, b)
 
     #[test]
     fn parse_variables_and_functions() {
-        let fns_and_vars = test(r#"
+        let fns_and_vars = test(
+            r#"
 fn foo_fn() 1 * 2
 foo_var := 3 * 4 + 5
 fn bar_fn(a, b) a + b
 bar_var := D1
-"#);
+"#,
+        );
 
         assert!(fns_and_vars.functions.get("foo_fn").is_some());
         assert!(fns_and_vars.functions.get("bar_fn").is_some());

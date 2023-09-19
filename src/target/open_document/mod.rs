@@ -4,9 +4,9 @@
 //!
 use std::path::PathBuf;
 
-use crate::{Result, Template};
 use super::file_backer_upper;
 use super::CompilationTarget;
+use crate::{Result, Template};
 
 pub struct OpenDocument {
     path: PathBuf,

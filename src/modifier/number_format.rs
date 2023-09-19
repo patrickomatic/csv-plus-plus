@@ -1,7 +1,7 @@
 //! # NumberFormat
-use serde::{Serialize, Deserialize};
-use std::str::FromStr;
 use crate::InnerError;
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum NumberFormat {
@@ -20,19 +20,20 @@ impl FromStr for NumberFormat {
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input.to_lowercase().as_str() {
-            "c"  | "currency"      => Ok(Self::Currency),
-            "d"  | "date"          => Ok(Self::Date),
-            "dt" | "datetime"      => Ok(Self::DateTime),
-            "n"  | "number"        => Ok(Self::Number),
-            "p"  | "percent"       => Ok(Self::Percent),
-            "text"                 => Ok(Self::Text),  // TODO: think of a shortcut!!!
-            "t"  | "time"          => Ok(Self::Time),
-            "s"  | "scientific"    => Ok(Self::Scientific),
+            "c" | "currency" => Ok(Self::Currency),
+            "d" | "date" => Ok(Self::Date),
+            "dt" | "datetime" => Ok(Self::DateTime),
+            "n" | "number" => Ok(Self::Number),
+            "p" | "percent" => Ok(Self::Percent),
+            "text" => Ok(Self::Text), // TODO: think of a shortcut!!!
+            "t" | "time" => Ok(Self::Time),
+            "s" | "scientific" => Ok(Self::Scientific),
             _ => Err(InnerError::bad_input_with_possibilities(
                 input,
                 "Invalid numberformat= value",
                 "currency (c) | date (d) | datetime (dt) | number (n) | percent (p) \
-                                    | text | time (t) | scientific (s)")),
+                                    | text | time (t) | scientific (s)",
+            )),
         }
     }
 }
@@ -44,8 +45,14 @@ mod tests {
     #[test]
     fn from_str_currency() {
         assert_eq!(NumberFormat::Currency, NumberFormat::from_str("c").unwrap());
-        assert_eq!(NumberFormat::Currency, NumberFormat::from_str("currency").unwrap());
-        assert_eq!(NumberFormat::Currency, NumberFormat::from_str("CURRENCY").unwrap());
+        assert_eq!(
+            NumberFormat::Currency,
+            NumberFormat::from_str("currency").unwrap()
+        );
+        assert_eq!(
+            NumberFormat::Currency,
+            NumberFormat::from_str("CURRENCY").unwrap()
+        );
     }
 
     #[test]
@@ -57,23 +64,44 @@ mod tests {
 
     #[test]
     fn from_str_datetime() {
-        assert_eq!(NumberFormat::DateTime, NumberFormat::from_str("dt").unwrap());
-        assert_eq!(NumberFormat::DateTime, NumberFormat::from_str("datetime").unwrap());
-        assert_eq!(NumberFormat::DateTime, NumberFormat::from_str("DATETIME").unwrap());
+        assert_eq!(
+            NumberFormat::DateTime,
+            NumberFormat::from_str("dt").unwrap()
+        );
+        assert_eq!(
+            NumberFormat::DateTime,
+            NumberFormat::from_str("datetime").unwrap()
+        );
+        assert_eq!(
+            NumberFormat::DateTime,
+            NumberFormat::from_str("DATETIME").unwrap()
+        );
     }
 
     #[test]
     fn from_str_number() {
         assert_eq!(NumberFormat::Number, NumberFormat::from_str("n").unwrap());
-        assert_eq!(NumberFormat::Number, NumberFormat::from_str("number").unwrap());
-        assert_eq!(NumberFormat::Number, NumberFormat::from_str("NUMBER").unwrap());
+        assert_eq!(
+            NumberFormat::Number,
+            NumberFormat::from_str("number").unwrap()
+        );
+        assert_eq!(
+            NumberFormat::Number,
+            NumberFormat::from_str("NUMBER").unwrap()
+        );
     }
 
     #[test]
     fn from_str_percent() {
         assert_eq!(NumberFormat::Percent, NumberFormat::from_str("p").unwrap());
-        assert_eq!(NumberFormat::Percent, NumberFormat::from_str("percent").unwrap());
-        assert_eq!(NumberFormat::Percent, NumberFormat::from_str("PERCENT").unwrap());
+        assert_eq!(
+            NumberFormat::Percent,
+            NumberFormat::from_str("percent").unwrap()
+        );
+        assert_eq!(
+            NumberFormat::Percent,
+            NumberFormat::from_str("PERCENT").unwrap()
+        );
     }
 
     #[test]
@@ -91,9 +119,18 @@ mod tests {
 
     #[test]
     fn from_str_scientific() {
-        assert_eq!(NumberFormat::Scientific, NumberFormat::from_str("s").unwrap());
-        assert_eq!(NumberFormat::Scientific, NumberFormat::from_str("scientific").unwrap());
-        assert_eq!(NumberFormat::Scientific, NumberFormat::from_str("SCIENTIFIC").unwrap());
+        assert_eq!(
+            NumberFormat::Scientific,
+            NumberFormat::from_str("s").unwrap()
+        );
+        assert_eq!(
+            NumberFormat::Scientific,
+            NumberFormat::from_str("scientific").unwrap()
+        );
+        assert_eq!(
+            NumberFormat::Scientific,
+            NumberFormat::from_str("SCIENTIFIC").unwrap()
+        );
     }
 
     #[test]

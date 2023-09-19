@@ -25,17 +25,24 @@ pub fn backup_file(filename: &path::PathBuf) -> Result<path::PathBuf> {
     let now = Local::now();
 
     // TODO use a TargetError instead
-    let filename_str = filename.to_str().ok_or(
-        Error::InitError("Unable to format output filename".to_owned()))?;
+    let filename_str = filename.to_str().ok_or(Error::InitError(
+        "Unable to format output filename".to_owned(),
+    ))?;
 
-    let file_stem = filename.file_stem().ok_or(
-        Error::InitError(format!("Unable to get base file for: {}", filename_str)))?;
+    let file_stem = filename.file_stem().ok_or(Error::InitError(format!(
+        "Unable to get base file for: {}",
+        filename_str
+    )))?;
 
-    let file_parent = filename.parent().ok_or(
-        Error::InitError(format!("Unable to get parent base file for: {}", filename_str)))?;
+    let file_parent = filename.parent().ok_or(Error::InitError(format!(
+        "Unable to get parent base file for: {}",
+        filename_str
+    )))?;
 
-    let file_extension = filename.extension().ok_or(
-        Error::InitError(format!("Unable to get extension for: {}", filename_str)))?;
+    let file_extension = filename.extension().ok_or(Error::InitError(format!(
+        "Unable to get extension for: {}",
+        filename_str
+    )))?;
 
     for time_format in BACKUP_FORMATS.iter() {
         let timestamp = now.format(time_format);
@@ -49,14 +56,19 @@ pub fn backup_file(filename: &path::PathBuf) -> Result<path::PathBuf> {
         }
 
         if let Err(e) = fs::copy(filename, &new_file) {
-            return Err(Error::InitError(
-                    format!("Error making backup of {}: {}", filename_str, e)))
+            return Err(Error::InitError(format!(
+                "Error making backup of {}: {}",
+                filename_str, e
+            )));
         }
 
         return Ok(new_file);
     }
 
-    Err(Error::InitError(format!("Unable to make backup of output file: {}", filename_str)))
+    Err(Error::InitError(format!(
+        "Unable to make backup of output file: {}",
+        filename_str
+    )))
 }
 
 #[cfg(test)]

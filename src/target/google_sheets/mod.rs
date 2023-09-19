@@ -1,6 +1,6 @@
 //! # GoogleSheets
 //!
-// TODO: 
+// TODO:
 // * implement backing up
 //
 // * better error handling throughout (cleanup unwrap()s)
@@ -9,14 +9,14 @@ mod batch_update_builder;
 mod compilation_target;
 mod google_sheets_modifier;
 
+use super::{ExistingCell, ExistingValues};
+use crate::{Error, Result, Runtime, Template};
+use batch_update_builder::BatchUpdateBuilder;
 use google_sheets4::hyper;
 use google_sheets4::hyper_rustls;
 use google_sheets4::oauth2;
 use std::env;
 use std::path;
-use crate::{Error, Result, Runtime, Template};
-use super::{ExistingCell, ExistingValues};
-use batch_update_builder::BatchUpdateBuilder;
 
 type SheetsHub = google_sheets4::Sheets<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>;
 
@@ -63,10 +63,17 @@ impl<'a> GoogleSheets<'a> {
             Ok((_, s)) => s,
             Err(e) => match e {
                 // not necessarily unexpected - the target just doesn't exist yet (returned 404)
-                google_sheets4::Error::BadRequest(obj) if obj["error"]["code"].as_u64().is_some_and(|c| c == 404)
-                    => return empty,
-                _ 
-                    => return Err(Error::InitError(format!("Error reading existing sheet: {}", e))),
+                google_sheets4::Error::BadRequest(obj)
+                    if obj["error"]["code"].as_u64().is_some_and(|c| c == 404) =>
+                {
+                    return empty
+                }
+                _ => {
+                    return Err(Error::InitError(format!(
+                        "Error reading existing sheet: {}",
+                        e
+                    )))
+                }
             },
         };
 
@@ -101,22 +108,27 @@ impl<'a> GoogleSheets<'a> {
         for row in row_data.iter() {
             match &row.values {
                 Some(v) => {
-                    existing_cells.push(v.iter().map(|cell| {
-                        ExistingCell::Value(cell.clone())
-                    }).collect());
-                },
+                    existing_cells.push(
+                        v.iter()
+                            .map(|cell| ExistingCell::Value(cell.clone()))
+                            .collect(),
+                    );
+                }
                 None => existing_cells.push(vec![]),
             }
         }
 
-        Ok(ExistingValues { cells: existing_cells })
+        Ok(ExistingValues {
+            cells: existing_cells,
+        })
     }
 
     fn get_credentials(runtime: &'a Runtime) -> Result<path::PathBuf> {
-        let home_path = home::home_dir().ok_or(
-            Error::InitError("Unable to get home directory".to_string()))?;
+        let home_path =
+            home::home_dir().ok_or(Error::InitError("Unable to get home directory".to_string()))?;
 
-        let adc_path = home_path.join(".config")
+        let adc_path = home_path
+            .join(".config")
             .join("gcloud")
             .join("application_default_credentials.json");
 
@@ -131,7 +143,7 @@ impl<'a> GoogleSheets<'a> {
                     "Could not find Google application credentials.  You must create a service account with \
                     access to your spreadsheet and supply the credentials via $GOOGLE_APPLICATION_CREDENTIALS, \
                     --google-account-credentials or putting them in \
-                    ~/.config/gcloud/application_default_credentials.json".to_owned()))
+                    ~/.config/gcloud/application_default_credentials.json".to_owned()));
         };
 
         Ok(creds_file)
@@ -154,22 +166,25 @@ impl<'a> GoogleSheets<'a> {
                     .https_or_http()
                     .enable_http1()
                     .enable_http2()
-                    .build()), 
-            auth)
+                    .build(),
+            ),
+            auth,
+        )
     }
 
     async fn write_sheet(&self, template: &Template<'a>) -> Result<()> {
         let hub = self.sheets_hub().await;
         let existing_values = self.read_existing_cells(&hub).await?;
-        let batch_update_request = BatchUpdateBuilder::new(self.runtime, template, &existing_values).build();
+        let batch_update_request =
+            BatchUpdateBuilder::new(self.runtime, template, &existing_values).build();
 
         hub.spreadsheets()
             .batch_update(batch_update_request, &self.sheet_id)
             .doit()
             .await
             .map(|_i| ())
-            .map_err(|e| Error::TargetWriteError { 
-                output: self.runtime.output.clone(), 
+            .map_err(|e| Error::TargetWriteError {
+                output: self.runtime.output.clone(),
                 message: format!("Error writing to Google Sheets: {}", e),
             })
     }
@@ -177,7 +192,7 @@ impl<'a> GoogleSheets<'a> {
 
 #[cfg(test)]
 mod tests {
-    /* TODO: need to 
+    /* TODO: need to
     use std::path;
 
     use super::*;
@@ -191,7 +206,7 @@ mod tests {
         };
         Runtime::new(cli_args).unwrap()
     }
-    
+
     fn build_template() -> Template {
         Template::default()
     }

@@ -2,15 +2,15 @@
 //!
 //! Functions for writing compiled templates to Excel
 //!
+use super::{merge_cell, ExistingCell, MergeResult};
+use crate::ast::Node;
+use crate::{Cell, Error, Result, Runtime, Template};
 use a1_notation::Address;
 use std::ffi;
 use std::path;
-use crate::{Cell, Error, Result, Runtime, Template};
-use crate::ast::Node;
-use super::{merge_cell, ExistingCell, MergeResult };
 
-mod excel_modifier;
 mod compilation_target;
+mod excel_modifier;
 
 type ExcelValue = umya_spreadsheet::Cell;
 
@@ -63,34 +63,23 @@ impl<'a> Excel<'a> {
                         if let Some(style) = self.build_style(&cell) {
                             e.set_style(style);
                         }
-                    },
+                    }
                 }
             }
-
-            
         }
 
         Ok(())
     }
 
     // TODO: turn into an impl (from/into)? the problem is we're mutating existing_cell...
-    fn set_value(
-        &self,
-        existing_cell: &mut umya_spreadsheet::Cell,
-        cell: &Cell,
-    ) {
+    fn set_value(&self, existing_cell: &mut umya_spreadsheet::Cell, cell: &Cell) {
         if let Some(ast) = &cell.ast {
             match *ast.clone() {
-                Node::Boolean(b) => 
-                    existing_cell.set_value_bool(b),
-                Node::Text(t) =>
-                    existing_cell.set_value_string(t),
-                Node::Float(f) =>
-                    existing_cell.set_value_number(f),
-                Node::Integer(i) =>
-                    existing_cell.set_value_number(i as f64),
-                _ => 
-                    existing_cell.set_formula(ast.to_string()),
+                Node::Boolean(b) => existing_cell.set_value_bool(b),
+                Node::Text(t) => existing_cell.set_value_string(t),
+                Node::Float(f) => existing_cell.set_value_number(f),
+                Node::Integer(i) => existing_cell.set_value_number(i as f64),
+                _ => existing_cell.set_formula(ast.to_string()),
             };
         } else if !cell.value.is_empty() {
             existing_cell.set_value_string(cell.value.clone());
@@ -100,7 +89,7 @@ impl<'a> Excel<'a> {
     fn build_style(&self, cell: &Cell) -> Option<umya_spreadsheet::Style> {
         let modifier = cell.modifier.clone();
         if modifier.is_empty() {
-            return None
+            return None;
         }
 
         Some(excel_modifier::ExcelModifier(modifier).into())
@@ -137,25 +126,34 @@ impl<'a> Excel<'a> {
 
         let existing = spreadsheet.get_sheet_by_name(&sheet_name);
         if existing.is_err() {
-            spreadsheet.new_sheet(&sheet_name).map_err(|e| {
-                Error::TargetWriteError {
-                    message: format!("Unable to create new worksheet {} in target file: {}", sheet_name, e),
+            spreadsheet
+                .new_sheet(&sheet_name)
+                .map_err(|e| Error::TargetWriteError {
+                    message: format!(
+                        "Unable to create new worksheet {} in target file: {}",
+                        sheet_name, e
+                    ),
                     output: self.runtime.output.clone(),
-                }
-            })?;
+                })?;
         }
 
         Ok(())
     }
 
-    fn get_worksheet_mut(&'a self, spreadsheet: &'a mut umya_spreadsheet::Spreadsheet) -> Result<&'a mut umya_spreadsheet::Worksheet> {
+    fn get_worksheet_mut(
+        &'a self,
+        spreadsheet: &'a mut umya_spreadsheet::Spreadsheet,
+    ) -> Result<&'a mut umya_spreadsheet::Worksheet> {
         let sheet_name = &self.runtime.options.sheet_name;
-        spreadsheet.get_sheet_by_name_mut(sheet_name).map_err(|e| {
-            Error::TargetWriteError {
-                message: format!("Unable to open worksheet {} in target file: {}", sheet_name, e),
+        spreadsheet
+            .get_sheet_by_name_mut(sheet_name)
+            .map_err(|e| Error::TargetWriteError {
+                message: format!(
+                    "Unable to open worksheet {} in target file: {}",
+                    sheet_name, e
+                ),
                 output: self.runtime.output.clone(),
-            }
-        })
+            })
     }
 }
 

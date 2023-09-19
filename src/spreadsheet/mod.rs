@@ -1,10 +1,10 @@
 //! # Spreadsheet
 //!
 //!
+use crate::ast::{Node, VariableValue, Variables};
+use crate::{Result, Row, SourceCode};
 use serde::{Deserialize, Serialize};
 use std::collections;
-use crate::{Result, SourceCode, Row};
-use crate::ast::{Node, Variables, VariableValue};
 
 mod display;
 
@@ -28,7 +28,7 @@ impl Spreadsheet {
     }
 
     /// Extract all of the variables that were defined by cells contained in this spreadsheet
-    // 
+    //
     // NOTE: we could also store these in a HashMap on the Spreadsheet as we build it rather than
     // parsing them out at runtime
     pub fn variables(&self) -> Variables {
@@ -90,17 +90,21 @@ impl Spreadsheet {
     }
 
     pub fn widest_row(&self) -> usize {
-        self.rows.iter().map(|row| row.cells.len()).max().unwrap_or(0)
+        self.rows
+            .iter()
+            .map(|row| row.cells.len())
+            .max()
+            .unwrap_or(0)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use a1_notation::Address;
+    use super::*;
     use crate::modifier::TextFormat;
     use crate::*;
+    use a1_notation::Address;
     use std::path;
-    use super::*;
 
     fn build_source_code(input: &str) -> SourceCode {
         SourceCode::new(input, path::PathBuf::from("foo.csvpp")).unwrap()
@@ -133,7 +137,7 @@ mod tests {
         assert_eq!(spreadsheet.rows[1].cells[0].value, "1");
         assert_eq!(spreadsheet.rows[1].cells[1].value, "2");
         assert_eq!(spreadsheet.rows[1].cells[2].value, "3");
-        
+
         // none have ASTs (didn't start with `=`)
         assert!(spreadsheet.rows[0].cells[0].ast.is_none());
         assert!(spreadsheet.rows[0].cells[1].ast.is_none());
@@ -158,7 +162,10 @@ mod tests {
         let source_code = build_source_code("[[f=b / fs=20]]foo");
         let spreadsheet = Spreadsheet::parse(&source_code).unwrap();
 
-        assert!(spreadsheet.rows[0].cells[0].modifier.formats.contains(&TextFormat::Bold));
+        assert!(spreadsheet.rows[0].cells[0]
+            .modifier
+            .formats
+            .contains(&TextFormat::Bold));
         assert_eq!(spreadsheet.rows[0].cells[0].modifier.font_size, Some(20))
     }
 
@@ -167,47 +174,58 @@ mod tests {
         let source_code = build_source_code("![[f=b]]foo,bar,baz");
         let spreadsheet = Spreadsheet::parse(&source_code).unwrap();
 
-        assert!(spreadsheet.rows[0].cells[0].modifier.formats.contains(&TextFormat::Bold));
-        assert!(spreadsheet.rows[0].cells[1].modifier.formats.contains(&TextFormat::Bold));
-        assert!(spreadsheet.rows[0].cells[2].modifier.formats.contains(&TextFormat::Bold));
+        assert!(spreadsheet.rows[0].cells[0]
+            .modifier
+            .formats
+            .contains(&TextFormat::Bold));
+        assert!(spreadsheet.rows[0].cells[1]
+            .modifier
+            .formats
+            .contains(&TextFormat::Bold));
+        assert!(spreadsheet.rows[0].cells[2]
+            .modifier
+            .formats
+            .contains(&TextFormat::Bold));
     }
 
     #[test]
     fn variables_unscoped() {
         let spreadsheet = Spreadsheet {
-            rows: vec![
-                Row {
-                    row: 0.into(),
-                    modifier: RowModifier::default(),
-                    cells: vec![
-                        Cell {
-                            ast: None,
-                            position: Address::new(0, 0),
-                            modifier: Modifier {
-                                var: Some("foo".to_string()),
-                                ..Default::default()
-                            },
-                            value: "".to_string(),
+            rows: vec![Row {
+                row: 0.into(),
+                modifier: RowModifier::default(),
+                cells: vec![
+                    Cell {
+                        ast: None,
+                        position: Address::new(0, 0),
+                        modifier: Modifier {
+                            var: Some("foo".to_string()),
+                            ..Default::default()
                         },
-                        Cell {
-                            ast: None,
-                            position: Address::new(1, 1),
-                            modifier: Modifier {
-                                var: Some("bar".to_string()),
-                                ..Default::default()
-                            },
-                            value: "".to_string(),
+                        value: "".to_string(),
+                    },
+                    Cell {
+                        ast: None,
+                        position: Address::new(1, 1),
+                        modifier: Modifier {
+                            var: Some("bar".to_string()),
+                            ..Default::default()
                         },
-                    ]
-                }
-            ],
+                        value: "".to_string(),
+                    },
+                ],
+            }],
         };
 
         let variables = spreadsheet.variables();
-        assert_eq!(**variables.get("foo").unwrap(), 
-                   Node::var("foo", VariableValue::Absolute(Address::new(0, 0))));
-        assert_eq!(**variables.get("bar").unwrap(), 
-                   Node::var("bar", VariableValue::Absolute(Address::new(1, 1))));
+        assert_eq!(
+            **variables.get("foo").unwrap(),
+            Node::var("foo", VariableValue::Absolute(Address::new(0, 0)))
+        );
+        assert_eq!(
+            **variables.get("bar").unwrap(),
+            Node::var("bar", VariableValue::Absolute(Address::new(1, 1)))
+        );
     }
 
     #[test]
@@ -220,17 +238,15 @@ mod tests {
                         expand: Some(Expand::new(0, Some(10))),
                         ..Default::default()
                     },
-                    cells: vec![
-                        Cell {
-                            ast: None,
-                            position: (0, 0).into(),
-                            modifier: Modifier {
-                                var: Some("foo".to_string()),
-                                ..Default::default()
-                            },
-                            value: "".to_string(),
+                    cells: vec![Cell {
+                        ast: None,
+                        position: (0, 0).into(),
+                        modifier: Modifier {
+                            var: Some("foo".to_string()),
+                            ..Default::default()
                         },
-                    ],
+                        value: "".to_string(),
+                    }],
                 },
                 Row {
                     row: 1.into(),
@@ -238,32 +254,46 @@ mod tests {
                         expand: Some(Expand::new(10, Some(100))),
                         ..Default::default()
                     },
-                    cells: vec![
-                        Cell {
-                            ast: None,
-                            position: (1, 1).into(),
-                            modifier: Modifier {
-                                var: Some("bar".to_string()),
-                                ..Default::default()
-                            },
-                            value: "".to_string(),
+                    cells: vec![Cell {
+                        ast: None,
+                        position: (1, 1).into(),
+                        modifier: Modifier {
+                            var: Some("bar".to_string()),
+                            ..Default::default()
                         },
-                    ],
+                        value: "".to_string(),
+                    }],
                 },
             ],
         };
 
         let variables = spreadsheet.variables();
-        assert_eq!(**variables.get("foo").unwrap(), 
-                   Node::var("foo", VariableValue::ColumnRelative {
-                       scope: Expand { amount: Some(10), start_row: 0.into() },
-                       column: 0.into(),
-                   }));
-        assert_eq!(**variables.get("bar").unwrap(), 
-                   Node::var("bar", VariableValue::ColumnRelative {
-                       scope: Expand { amount: Some(100), start_row: 10.into() },
-                       column: 1.into(),
-                   }));
+        assert_eq!(
+            **variables.get("foo").unwrap(),
+            Node::var(
+                "foo",
+                VariableValue::ColumnRelative {
+                    scope: Expand {
+                        amount: Some(10),
+                        start_row: 0.into()
+                    },
+                    column: 0.into(),
+                }
+            )
+        );
+        assert_eq!(
+            **variables.get("bar").unwrap(),
+            Node::var(
+                "bar",
+                VariableValue::ColumnRelative {
+                    scope: Expand {
+                        amount: Some(100),
+                        start_row: 10.into()
+                    },
+                    column: 1.into(),
+                }
+            )
+        );
     }
 
     #[test]
@@ -276,17 +306,17 @@ mod tests {
         };
         let spreadsheet = Spreadsheet {
             rows: vec![
-                Row { 
+                Row {
                     cells: vec![cell.clone()],
                     row: 0.into(),
                     modifier: RowModifier::default(),
                 },
-                Row { 
+                Row {
                     cells: vec![cell.clone(), cell.clone()],
                     row: 1.into(),
                     modifier: RowModifier::default(),
                 },
-                Row { 
+                Row {
                     cells: vec![cell.clone(), cell.clone(), cell.clone()],
                     row: 2.into(),
                     modifier: RowModifier::default(),

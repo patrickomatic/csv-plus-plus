@@ -3,30 +3,14 @@
 //! A `template` holds the final compiled state for a single csv++ source file, as well as managing
 //! evaluation and scope resolution.
 //!
-use a1_notation::{A1, Address};
-use std::cell;
-use std::collections;
-use crate::{
-    Cell,
-    Error,
-    InnerError,
-    Result,
-    Row,
-    RowModifier,
-    Runtime,
-    Spreadsheet,
-};
 use crate::ast::{
-    Ast, 
-    AstReferences, 
-    BuiltinFunction,
-    BuiltinVariable,
-    Functions,
-    Node,
-    Variables,
-    VariableValue,
+    Ast, AstReferences, BuiltinFunction, BuiltinVariable, Functions, Node, VariableValue, Variables,
 };
 use crate::parser::code_section_parser::{CodeSection, CodeSectionParser};
+use crate::{Cell, Error, InnerError, Result, Row, RowModifier, Runtime, Spreadsheet};
+use a1_notation::{Address, A1};
+use std::cell;
+use std::collections;
 
 mod display;
 mod template_at_rest;
@@ -45,7 +29,10 @@ impl<'a> Template<'a> {
         let spreadsheet = Spreadsheet::parse(&runtime.source_code)?;
 
         let code_section = if let Some(code_section_source) = &runtime.source_code.code_section {
-            Some(CodeSectionParser::parse(code_section_source, &runtime.source_code)?)
+            Some(CodeSectionParser::parse(
+                code_section_source,
+                &runtime.source_code,
+            )?)
         } else {
             None
         };
@@ -64,7 +51,7 @@ impl<'a> Template<'a> {
     /// Functions are just comprised of what is builtin and what the user puts in the code section.
     /// The code section functions can override builtins so the precedence is (with the lowest
     /// number being the one that is used):
-    /// 
+    ///
     /// 1. Functions in the code section
     /// 2. Builtin functions
     ///
@@ -77,7 +64,11 @@ impl<'a> Template<'a> {
     /// 3. Variables defined in the code section
     /// 4. Builtin variables
     ///
-    pub fn new(spreadsheet: Spreadsheet, code_section: Option<CodeSection>, runtime: &'a Runtime) -> Self {
+    pub fn new(
+        spreadsheet: Spreadsheet,
+        code_section: Option<CodeSection>,
+        runtime: &'a Runtime,
+    ) -> Self {
         let cli_vars = &runtime.options.key_values;
         let spreadsheet_vars = spreadsheet.variables();
         let (code_section_vars, code_section_fns) = if let Some(cs) = code_section {
@@ -122,10 +113,10 @@ impl<'a> Template<'a> {
                             ..row.modifier.clone()
                         },
                         cells: row
-                                .cells
-                                .iter()
-                                .map(|c| c.clone_to_row(row_num.into()))
-                                .collect(),
+                            .cells
+                            .iter()
+                            .map(|c| c.clone_to_row(row_num.into()))
+                            .collect(),
                     });
 
                     row_num += 1;
@@ -170,7 +161,7 @@ impl<'a> Template<'a> {
         loop {
             let refs = evaled_ast.extract_references(self);
             if refs.is_empty() || refs == last_round_refs {
-                break
+                break;
             }
             last_round_refs = refs.clone();
 
@@ -180,7 +171,9 @@ impl<'a> Template<'a> {
                 .eval_functions(&refs.functions, |fn_id, args| {
                     if let Some(function) = self.functions.get(fn_id) {
                         Ok(function.clone())
-                    } else if let Some(BuiltinFunction { eval, .. }) = self.runtime.builtin_functions.get(fn_id) {
+                    } else if let Some(BuiltinFunction { eval, .. }) =
+                        self.runtime.builtin_functions.get(fn_id)
+                    {
                         Ok(Box::new(eval(position, &args)?))
                     } else {
                         Err(InnerError::bad_input(fn_id, "Could not find function"))
@@ -217,11 +210,7 @@ impl<'a> Template<'a> {
         })
     }
 
-    fn inner_error_to_error(
-        &self,
-        inner_error: InnerError,
-        position: Address,
-    ) -> Error {
+    fn inner_error_to_error(&self, inner_error: InnerError, position: Address) -> Error {
         let line_number = self.csv_line_number + position.row.y;
         Error::EvalError {
             message: inner_error.to_string(),
@@ -231,13 +220,12 @@ impl<'a> Template<'a> {
     }
 
     pub fn is_function_defined(&self, fn_name: &str) -> bool {
-        self.functions.contains_key(fn_name)
-            || self.runtime.builtin_functions.contains_key(fn_name) 
+        self.functions.contains_key(fn_name) || self.runtime.builtin_functions.contains_key(fn_name)
     }
 
     pub fn is_variable_defined(&self, var_name: &str) -> bool {
         self.variables.contains_key(var_name)
-            || self.runtime.builtin_variables.contains_key(var_name) 
+            || self.runtime.builtin_variables.contains_key(var_name)
     }
 
     /// Variables can all be resolved in one go - we just loop them by name and resolve the ones
@@ -258,67 +246,67 @@ impl<'a> Template<'a> {
     }
 
     fn resolve_variable(&self, var_name: &str, position: Address) -> Result<Option<Ast>> {
-        Ok(
-            if let Some(value) = self.variables.get(var_name) {
-                let value_from_var = match &**value {
-                    Node::Variable { value, .. } => {
-                        match value {
-                            // absolute value, just turn it into a Ast
-                            VariableValue::Absolute(address) => (*address).into(),
+        Ok(if let Some(value) = self.variables.get(var_name) {
+            let value_from_var = match &**value {
+                Node::Variable { value, .. } => {
+                    match value {
+                        // absolute value, just turn it into a Ast
+                        VariableValue::Absolute(address) => (*address).into(),
 
-                            // already an AST, just clone it
-                            VariableValue::Ast(ast) => *ast.clone(),
-                            
-                            // it's relative to an expand - so if it's referenced inside the
-                            // expand, it's the value at that location.  If it's outside the expand
-                            // it's the range that it represents
-                            VariableValue::ColumnRelative { scope, column } => {
-                                let scope_a1: A1 = (*scope).into();
-                                if scope_a1.contains(&position.into()) {
-                                    position.with_x(column.x).into()
-                                } else {
-                                    let row_range: A1 = (*scope).into();
-                                    row_range.with_x(column.x).into()
-                                }
+                        // already an AST, just clone it
+                        VariableValue::Ast(ast) => *ast.clone(),
+
+                        // it's relative to an expand - so if it's referenced inside the
+                        // expand, it's the value at that location.  If it's outside the expand
+                        // it's the range that it represents
+                        VariableValue::ColumnRelative { scope, column } => {
+                            let scope_a1: A1 = (*scope).into();
+                            if scope_a1.contains(&position.into()) {
+                                position.with_x(column.x).into()
+                            } else {
+                                let row_range: A1 = (*scope).into();
+                                row_range.with_x(column.x).into()
                             }
-
-                            VariableValue::Row(row) => {
-                                let a1: a1_notation::A1 = (*row).into();
-                                a1.into()
-                            },
-
-                            VariableValue::RowRelative { scope, row } => {
-                                let scope_a1: A1 = (*scope).into();
-                                if scope_a1.contains(&position.into()) {
-                                    let row_a1: A1 = (*row).into();
-                                    row_a1.into()
-                                } else {
-                                    let row_range: A1 = (*scope).into();
-                                    row_range.into()
-                                }
-                            },
-
                         }
-                    },
-                    n => n.clone(),
-                };
 
-                Some(Box::new(value_from_var))
-            } else if let Some(BuiltinVariable { eval, .. }) = self.runtime.builtin_variables.get(var_name) {
-                Some(Box::new(
-                        eval(position).map_err(|e| self.inner_error_to_error(e, position))?))
-            } else {
-                None
-            }
-        )
+                        VariableValue::Row(row) => {
+                            let a1: a1_notation::A1 = (*row).into();
+                            a1.into()
+                        }
+
+                        VariableValue::RowRelative { scope, row } => {
+                            let scope_a1: A1 = (*scope).into();
+                            if scope_a1.contains(&position.into()) {
+                                let row_a1: A1 = (*row).into();
+                                row_a1.into()
+                            } else {
+                                let row_range: A1 = (*scope).into();
+                                row_range.into()
+                            }
+                        }
+                    }
+                }
+                n => n.clone(),
+            };
+
+            Some(Box::new(value_from_var))
+        } else if let Some(BuiltinVariable { eval, .. }) =
+            self.runtime.builtin_variables.get(var_name)
+        {
+            Some(Box::new(
+                eval(position).map_err(|e| self.inner_error_to_error(e, position))?,
+            ))
+        } else {
+            None
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::cell;
     use super::*;
     use crate::test_utils::TestFile;
+    use std::cell;
 
     fn build_template(runtime: &Runtime) -> Template {
         Template {
@@ -356,7 +344,7 @@ mod tests {
 
         assert_eq!(template.spreadsheet.borrow().rows.len(), 10);
     }
-    
+
     #[test]
     fn compile_with_expand_infinite() {
         let test_file = TestFile::new("xlsx", "![[expand]]foo,bar,baz");
@@ -380,7 +368,9 @@ mod tests {
         let test_file = TestFile::new("csv", "");
         let runtime = test_file.into();
         let mut template = build_template(&runtime);
-        template.functions.insert("foo".to_string(), Box::new(42.into()));
+        template
+            .functions
+            .insert("foo".to_string(), Box::new(42.into()));
 
         assert!(template.is_function_defined("foo"));
     }
@@ -389,10 +379,13 @@ mod tests {
     fn is_function_defined_builtin_true() {
         let test_file = TestFile::new("csv", "");
         let mut runtime: Runtime = test_file.into();
-        runtime.builtin_functions.insert("foo".to_string(), BuiltinFunction {
-            name: "foo".to_owned(),
-            eval: Box::new(|_a1, _args| Ok(42.into()))
-        });
+        runtime.builtin_functions.insert(
+            "foo".to_string(),
+            BuiltinFunction {
+                name: "foo".to_owned(),
+                eval: Box::new(|_a1, _args| Ok(42.into())),
+            },
+        );
         let template = build_template(&runtime);
 
         assert!(template.is_function_defined("foo"));
@@ -403,7 +396,9 @@ mod tests {
         let test_file = TestFile::new("csv", "");
         let runtime = test_file.into();
         let mut template = build_template(&runtime);
-        template.variables.insert("foo".to_string(), Box::new(42.into()));
+        template
+            .variables
+            .insert("foo".to_string(), Box::new(42.into()));
 
         assert!(template.is_variable_defined("foo"));
     }
@@ -412,10 +407,13 @@ mod tests {
     fn is_variable_defined_builtin_true() {
         let test_file = TestFile::new("csv", "");
         let mut runtime: Runtime = test_file.into();
-        runtime.builtin_variables.insert("foo".to_string(), BuiltinVariable {
-            name: "foo".to_owned(),
-            eval: Box::new(|_a1| Ok(42.into()))
-        });
+        runtime.builtin_variables.insert(
+            "foo".to_string(),
+            BuiltinVariable {
+                name: "foo".to_owned(),
+                eval: Box::new(|_a1| Ok(42.into())),
+            },
+        );
         let template = build_template(&runtime);
 
         assert!(template.is_variable_defined("foo"));
@@ -429,24 +427,21 @@ mod tests {
         functions.insert("foo".to_string(), Box::new(1.into()));
         let mut variables = collections::HashMap::new();
         variables.insert("bar".to_string(), Box::new(2.into()));
-        let code_section = CodeSection { functions, variables };
-        let template = Template::new(
-            Spreadsheet::default(),
-            Some(code_section),
-            &runtime);
+        let code_section = CodeSection {
+            functions,
+            variables,
+        };
+        let template = Template::new(Spreadsheet::default(), Some(code_section), &runtime);
 
         assert!(template.functions.contains_key("foo"));
         assert!(template.variables.contains_key("bar"));
     }
-    
+
     #[test]
     fn new_without_code_section() {
         let test_file = TestFile::new("csv", "");
         let runtime = test_file.into();
-        let template = Template::new(
-            Spreadsheet::default(),
-            None,
-            &runtime);
+        let template = Template::new(Spreadsheet::default(), None, &runtime);
 
         assert!(template.functions.is_empty());
         assert!(template.variables.is_empty());

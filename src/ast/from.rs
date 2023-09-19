@@ -1,5 +1,5 @@
-use a1_notation::{A1, Address, RangeOrCell};
 use super::Node;
+use a1_notation::{Address, RangeOrCell, A1};
 
 impl From<bool> for Node {
     fn from(value: bool) -> Self {

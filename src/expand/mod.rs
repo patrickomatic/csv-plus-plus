@@ -1,7 +1,7 @@
 //! # Expand
 //!
 use a1_notation::Row;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::cmp;
 
 mod into;
@@ -16,7 +16,10 @@ pub struct Expand {
 
 impl Expand {
     pub fn clone_to_row<R: Into<Row>>(&self, row: R) -> Self {
-        Self { amount: self.amount, start_row: row.into() }
+        Self {
+            amount: self.amount,
+            start_row: row.into(),
+        }
     }
 
     pub fn end_row(&self) -> Row {
@@ -32,7 +35,10 @@ impl Expand {
     }
 
     pub fn new<R: Into<Row>>(start_row: R, amount: Option<usize>) -> Self {
-        Self { amount, start_row: start_row.into() }
+        Self {
+            amount,
+            start_row: start_row.into(),
+        }
     }
 }
 
@@ -42,30 +48,46 @@ mod tests {
 
     #[test]
     fn clone_to_row() {
-        let expand = Expand { amount: Some(10), start_row: 0.into() };
+        let expand = Expand {
+            amount: Some(10),
+            start_row: 0.into(),
+        };
 
         assert_eq!(
             expand.clone_to_row(55),
-            Expand { amount: Some(10), start_row: 55.into() });
+            Expand {
+                amount: Some(10),
+                start_row: 55.into()
+            }
+        );
     }
 
     #[test]
     fn end_row_with_amount() {
-        let expand = Expand { amount: Some(10), start_row: 0.into() };
+        let expand = Expand {
+            amount: Some(10),
+            start_row: 0.into(),
+        };
 
         assert_eq!(expand.end_row(), 10.into());
     }
 
     #[test]
     fn end_row_without_amount() {
-        let expand = Expand { amount: None, start_row: 0.into() };
+        let expand = Expand {
+            amount: None,
+            start_row: 0.into(),
+        };
 
         assert_eq!(expand.end_row(), 1000.into());
     }
 
     #[test]
     fn expand_amount_finite() {
-        let expand = Expand { amount: Some(5), start_row: 0.into() };
+        let expand = Expand {
+            amount: Some(5),
+            start_row: 0.into(),
+        };
 
         assert_eq!(expand.expand_amount(0), 5);
         assert_eq!(expand.expand_amount(10), 5);
@@ -73,7 +95,10 @@ mod tests {
 
     #[test]
     fn expand_amount_infinite() {
-        let expand = Expand { amount: None, start_row: 0.into() };
+        let expand = Expand {
+            amount: None,
+            start_row: 0.into(),
+        };
 
         assert_eq!(expand.expand_amount(0), 1000);
         assert_eq!(expand.expand_amount(10), 990);

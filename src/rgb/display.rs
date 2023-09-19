@@ -1,5 +1,5 @@
-use std::fmt;
 use super::Rgb;
+use std::fmt;
 
 impl fmt::Display for Rgb {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -13,7 +13,11 @@ mod tests {
 
     #[test]
     fn display_6_chars() {
-        let rgb = Rgb { r: 255, g: 0, b: 17 };
+        let rgb = Rgb {
+            r: 255,
+            g: 0,
+            b: 17,
+        };
 
         assert_eq!(rgb.to_string(), "#FF0011")
     }

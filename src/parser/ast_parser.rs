@@ -15,11 +15,11 @@
 //
 // * Handle line numbers
 //
-use std::collections;
-use crate::{Error, InnerResult, Result, SourceCode};
-use crate::ast::{Ast, Node, Variables};
-use super::token_library::{Token, TokenMatch};
 use super::ast_lexer::*;
+use super::token_library::{Token, TokenMatch};
+use crate::ast::{Ast, Node, Variables};
+use crate::{Error, InnerResult, Result, SourceCode};
+use std::collections;
 
 pub struct AstParser<'a> {
     lexer: &'a AstLexer<'a>,
@@ -39,8 +39,8 @@ impl<'a> AstParser<'a> {
     ) -> Result<Ast> {
         let lexer = AstLexer::new(input).map_err(|e| {
             if let Some(source) = source_code {
-                Error::CodeSyntaxError { 
-                    message: e.to_string(), 
+                Error::CodeSyntaxError {
+                    message: e.to_string(),
                     line_number: e.line_number,
                     position: e.position,
                     highlighted_lines: source.highlight_line(e.line_number, e.position),
@@ -63,15 +63,15 @@ impl<'a> AstParser<'a> {
 
         for kv in key_values.iter() {
             if let Some((key, value)) = kv.split_once('=') {
-                variables.insert(
-                    key.to_string(),
-                    Self::parse(value, false, None)?);
+                variables.insert(key.to_string(), Self::parse(value, false, None)?);
             } else {
-                return Err(Error::InitError(
-                        format!("Invalid key/value variables: {}", kv)))
+                return Err(Error::InitError(format!(
+                    "Invalid key/value variables: {}",
+                    kv
+                )));
             }
         }
-        
+
         Ok(variables)
     }
 
@@ -81,50 +81,78 @@ impl<'a> AstParser<'a> {
 
         let mut lhs = match lhs_token {
             // a starting parenthesis means we just need to recurse and consume (expect)
-            // the close paren 
-            TokenMatch { token: Token::OpenParen,  .. } => {
+            // the close paren
+            TokenMatch {
+                token: Token::OpenParen,
+                ..
+            } => {
                 let expr = self.expr_bp(single_expr, 0)?;
                 match self.lexer.next() {
-                    TokenMatch { token: Token::CloseParen, .. } => expr,
-                    token => 
+                    TokenMatch {
+                        token: Token::CloseParen,
+                        ..
+                    } => expr,
+                    token => {
                         return self.syntax_error(
                             &token,
-                            &format!("Expected close parenthesis, received ({:?})", token)),
+                            &format!("Expected close parenthesis, received ({:?})", token),
+                        )
+                    }
                 }
             }
 
             // terminals
-            TokenMatch { token: Token::Boolean, .. } => 
-                self.ast_from_str(&lhs_token, Node::boolean_from_str)?,
+            TokenMatch {
+                token: Token::Boolean,
+                ..
+            } => self.ast_from_str(&lhs_token, Node::boolean_from_str)?,
 
-            TokenMatch { token: Token::DateTime, .. } => 
-                self.ast_from_str(&lhs_token, Node::datetime_from_str)?,
+            TokenMatch {
+                token: Token::DateTime,
+                ..
+            } => self.ast_from_str(&lhs_token, Node::datetime_from_str)?,
 
-            TokenMatch { token: Token::DoubleQuotedString, .. } => 
-                self.ast_from_str(&lhs_token, Node::text_from_str)?,
+            TokenMatch {
+                token: Token::DoubleQuotedString,
+                ..
+            } => self.ast_from_str(&lhs_token, Node::text_from_str)?,
 
-            TokenMatch { token: Token::Float, .. } => 
-                self.ast_from_str(&lhs_token, Node::float_from_str)?,
+            TokenMatch {
+                token: Token::Float,
+                ..
+            } => self.ast_from_str(&lhs_token, Node::float_from_str)?,
 
-            TokenMatch { token: Token::Integer, .. } => 
-                self.ast_from_str(&lhs_token, Node::integer_from_str)?,
+            TokenMatch {
+                token: Token::Integer,
+                ..
+            } => self.ast_from_str(&lhs_token, Node::integer_from_str)?,
 
-            TokenMatch { token: Token::Reference, .. } => 
-                self.ast_from_str(&lhs_token, Node::reference_from_str)?,
+            TokenMatch {
+                token: Token::Reference,
+                ..
+            } => self.ast_from_str(&lhs_token, Node::reference_from_str)?,
 
-            _ =>
+            _ => {
                 return self.syntax_error(
                     &lhs_token,
-                    &format!("Invalid left-hand side expression ({:?})", lhs_token)),
+                    &format!("Invalid left-hand side expression ({:?})", lhs_token),
+                )
+            }
         };
 
         loop {
             if single_expr {
                 // in the case where we're just looking for a single expr, we can terminate
-                // iteration when we see a reference (beginning of `foo := ...`) or `fn`. 
+                // iteration when we see a reference (beginning of `foo := ...`) or `fn`.
                 match self.lexer.peek() {
-                    TokenMatch { token: Token::Reference, .. } 
-                        | TokenMatch { token: Token::FunctionDefinition, .. } => break,
+                    TokenMatch {
+                        token: Token::Reference,
+                        ..
+                    }
+                    | TokenMatch {
+                        token: Token::FunctionDefinition,
+                        ..
+                    } => break,
                     // otherwise do nothing and the next match statement will do it's thing
                     // (regardless of the `single_expr` context)
                     _ => (),
@@ -134,28 +162,44 @@ impl<'a> AstParser<'a> {
             let op_token = self.lexer.peek();
             let op = match op_token {
                 // end of an expression, stop looping
-                TokenMatch { token: Token::Comma, .. } 
-                    | TokenMatch { token: Token::CloseParen, .. }
-                    | TokenMatch { token: Token::Eof, .. } 
-                    => break,
+                TokenMatch {
+                    token: Token::Comma,
+                    ..
+                }
+                | TokenMatch {
+                    token: Token::CloseParen,
+                    ..
+                }
+                | TokenMatch {
+                    token: Token::Eof, ..
+                } => break,
 
                 // an infix expression or a function definition
-                TokenMatch { token: Token::InfixOperator, str_match: op, .. }
-                    | TokenMatch { token: Token::OpenParen, str_match: op, .. } 
-                    => op,
+                TokenMatch {
+                    token: Token::InfixOperator,
+                    str_match: op,
+                    ..
+                }
+                | TokenMatch {
+                    token: Token::OpenParen,
+                    str_match: op,
+                    ..
+                } => op,
 
                 // otherwise undefined
-                _ =>
+                _ => {
                     return self.syntax_error(
                         &op_token,
-                        &format!("Unexpected token ({:?})", &op_token.token)),
+                        &format!("Unexpected token ({:?})", &op_token.token),
+                    )
+                }
             };
 
             if let Some((l_bp, ())) = self.postfix_binding_power(op) {
                 if l_bp < min_bp {
                     break;
                 }
-                
+
                 // consume the token we peeked
                 self.lexer.next();
 
@@ -171,21 +215,26 @@ impl<'a> AstParser<'a> {
                     // consume arguments (expressions) until we see a close paren
                     loop {
                         match self.lexer.peek() {
-                            TokenMatch { token: Token::CloseParen, .. } => {
+                            TokenMatch {
+                                token: Token::CloseParen,
+                                ..
+                            } => {
                                 self.lexer.next();
-                                break
-                            },
-                            TokenMatch { token: Token::Comma, .. } => {
+                                break;
+                            }
+                            TokenMatch {
+                                token: Token::Comma,
+                                ..
+                            } => {
                                 self.lexer.next();
-                            },
-                            _ => 
-                                args.push(self.expr_bp(single_expr, 0)?)
+                            }
+                            _ => args.push(self.expr_bp(single_expr, 0)?),
                         }
                     }
 
                     Box::new(Node::FunctionCall { name: id, args })
                 } else {
-                    return self.syntax_error(&op_token, "Unexpected infix operator")
+                    return self.syntax_error(&op_token, "Unexpected infix operator");
                 };
 
                 continue;
@@ -201,8 +250,8 @@ impl<'a> AstParser<'a> {
 
                 let rhs = self.expr_bp(single_expr, r_bp)?;
                 lhs = Box::new(Node::InfixFunctionCall {
-                    left: lhs, 
-                    operator: op.to_owned(), 
+                    left: lhs,
+                    operator: op.to_owned(),
                     right: rhs,
                 });
 
@@ -224,38 +273,41 @@ impl<'a> AstParser<'a> {
 
     fn infix_binding_power(&self, op: &str) -> Option<(u8, u8)> {
         Some(match op {
-            "=" | "<"  | ">"  | 
-                  "<=" | ">=" | "<>"    => (5, 6),
-            "&"                         => (7, 8),
-            "+" | "-"                   => (9, 10),
-            "*" | "/"                   => (11, 12),
-            "^"                         => (13, 14),
-            _                           => return None,
-
+            "=" | "<" | ">" | "<=" | ">=" | "<>" => (5, 6),
+            "&" => (7, 8),
+            "+" | "-" => (9, 10),
+            "*" | "/" => (11, 12),
+            "^" => (13, 14),
+            _ => return None,
         })
     }
 
     fn syntax_error(&self, token: &TokenMatch, message: &str) -> Result<Ast> {
         if let Some(source_code) = self.source_code {
-            Err(Error::CodeSyntaxError { 
+            Err(Error::CodeSyntaxError {
                 line_number: token.line_number,
                 message: message.to_string(),
                 position: token.position,
-                highlighted_lines: source_code.highlight_line(token.line_number, token.position)
+                highlighted_lines: source_code.highlight_line(token.line_number, token.position),
             })
         } else {
             Err(Error::InitError(message.to_string()))
         }
     }
 
-    fn ast_from_str(&self, token: &TokenMatch, from_str_fn: fn(&str) -> InnerResult<Ast>) -> Result<Ast> {
+    fn ast_from_str(
+        &self,
+        token: &TokenMatch,
+        from_str_fn: fn(&str) -> InnerResult<Ast>,
+    ) -> Result<Ast> {
         from_str_fn(token.str_match).map_err(|e| {
             if let Some(source_code) = self.source_code {
                 Error::CodeSyntaxError {
-                    highlighted_lines: source_code.highlight_line(token.line_number, token.position),
+                    highlighted_lines: source_code
+                        .highlight_line(token.line_number, token.position),
                     line_number: token.line_number,
                     position: token.position,
-                    message: e.to_string()
+                    message: e.to_string(),
                 }
             } else {
                 // we haven't even loaded the source code yet - this happens when we're trying to
@@ -289,7 +341,8 @@ mod tests {
     fn parse_infix_function() {
         assert_eq!(
             test_parse("1 * 2"),
-            Box::new(Node::infix_fn_call(1.into(), "*", 2.into())));
+            Box::new(Node::infix_fn_call(1.into(), "*", 2.into()))
+        );
     }
 
     #[test]
@@ -299,7 +352,8 @@ mod tests {
             Box::new(Node::fn_call(
                 "foo",
                 &[Node::reference("bar"), 1.into(), 2.into()],
-            )));
+            ))
+        );
     }
 
     #[test]
@@ -308,28 +362,29 @@ mod tests {
             test_parse("foo(1, 2 * 3)"),
             Box::new(Node::fn_call(
                 "foo",
-                &[
-                    1.into(),
-                    Node::infix_fn_call(2.into(), "*", 3.into()),
-                ],
-            )));
+                &[1.into(), Node::infix_fn_call(2.into(), "*", 3.into()),],
+            ))
+        );
     }
 
     #[test]
     fn parse_explicit_precedence() {
         assert_eq!(
             test_parse("1 * ((2 + 3) - 4) / 5"),
-            Box::new(
+            Box::new(Node::infix_fn_call(
                 Node::infix_fn_call(
+                    1.into(),
+                    "*",
                     Node::infix_fn_call(
-                        1.into(),
-                        "*",
-                        Node::infix_fn_call(
-                            Node::infix_fn_call(2.into(), "+", 3.into()),
-                            "-",
-                            4.into())),
+                        Node::infix_fn_call(2.into(), "+", 3.into()),
+                        "-",
+                        4.into()
+                    )
+                ),
                 "/",
-                5.into())));
+                5.into()
+            ))
+        );
     }
 
     #[test]
@@ -337,18 +392,11 @@ mod tests {
         assert_eq!(
             test_parse("1 * 2 + 3 - 4 / 5"),
             Box::new(Node::infix_fn_call(
-                Node::infix_fn_call(
-                    Node::infix_fn_call(1.into(), "*", 2.into()),
-                    "+",
-                    3.into(),
-                ),
+                Node::infix_fn_call(Node::infix_fn_call(1.into(), "*", 2.into()), "+", 3.into(),),
                 "-",
-                Node::infix_fn_call(
-                    4.into(),
-                    "/",
-                    5.into(),
-                ),
-            )));
+                Node::infix_fn_call(4.into(), "/", 5.into(),),
+            ))
+        );
     }
 
     #[test]

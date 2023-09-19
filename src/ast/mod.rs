@@ -1,9 +1,9 @@
 //! # AST (abstract syntaX tree) Functions
 //!
-//! `Node` represents a building block of the parsed language, with a 
+//! `Node` represents a building block of the parsed language, with a
 //!
-use std::collections;
 use crate::InnerResult;
+use std::collections;
 
 mod node;
 pub use node::{Node, VariableValue};
@@ -30,10 +30,10 @@ type FunctionName = String;
 type VariableName = String;
 
 pub type Functions = collections::HashMap<FunctionName, Ast>;
-pub type Variables =  collections::HashMap<VariableName, Ast>;
+pub type Variables = collections::HashMap<VariableName, Ast>;
 
 pub type BuiltinFunctions = collections::HashMap<FunctionName, BuiltinFunction>;
-pub type BuiltinVariables =  collections::HashMap<VariableName, BuiltinVariable>;
+pub type BuiltinVariables = collections::HashMap<VariableName, BuiltinVariable>;
 
 pub type FunctionEval = Box<dyn Fn(a1_notation::Address, &[Ast]) -> InnerResult<Node>>;
 pub type VariableEval = Box<dyn Fn(a1_notation::Address) -> InnerResult<Node>>;

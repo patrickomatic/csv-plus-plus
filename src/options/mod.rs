@@ -2,9 +2,9 @@
 //!
 //! The options that a user can supply to the compiler.
 //!
-use std::collections;
-use crate::{CliArgs, Error, Result};
 use crate::ast::Ast;
+use crate::{CliArgs, Error, Result};
+use std::collections;
 
 mod default;
 mod display;
@@ -23,7 +23,7 @@ pub struct Options {
 
 impl Options {
     pub fn redacted_google_account_credentials(&self) -> String {
-        if self.google_account_credentials.is_some() { 
+        if self.google_account_credentials.is_some() {
             "...redacted...".to_owned()
         } else {
             "none".to_string()
@@ -36,10 +36,10 @@ impl Options {
         } else {
             match cli_args.input_filename.file_stem() {
                 Some(fs) => Ok(fs.to_string_lossy().to_string()),
-                None => Err(Error::InitError(
-                    format!(
-                        "Could not determine base filename from input filename: {}",
-                        cli_args.input_filename.display()))),
+                None => Err(Error::InitError(format!(
+                    "Could not determine base filename from input filename: {}",
+                    cli_args.input_filename.display()
+                ))),
             }
         }
     }
@@ -47,9 +47,9 @@ impl Options {
 
 #[cfg(test)]
 mod tests {
-    use std::path;
-    use crate::CliArgs;
     use super::*;
+    use crate::CliArgs;
+    use std::path;
 
     #[test]
     fn from_cli_args_no_sheet_name() {

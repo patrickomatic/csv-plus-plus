@@ -5,9 +5,9 @@
 //! not be sending a bunch of default values and prefer to return None instead.  In other words the
 //! API payloads should reflect only the things the user specified in the modifier.
 //!
-use google_sheets4::api;
-use crate::{Modifier, Rgb};
 use crate::modifier;
+use crate::{Modifier, Rgb};
+use google_sheets4::api;
 
 pub struct GoogleSheetsModifier<'a>(pub &'a Modifier);
 
@@ -20,10 +20,14 @@ impl<'a> GoogleSheetsModifier<'a> {
         let text_format = self.text_format();
         let vertical_alignment = self.vertical_alignment();
 
-        
-        if borders.is_none() && background_color_style.is_none() && horizontal_alignment.is_none()
-                && number_format.is_none() && text_format.is_none() && vertical_alignment.is_none() {
-            return None
+        if borders.is_none()
+            && background_color_style.is_none()
+            && horizontal_alignment.is_none()
+            && number_format.is_none()
+            && text_format.is_none()
+            && vertical_alignment.is_none()
+        {
+            return None;
         }
 
         Some(api::CellFormat {
@@ -55,13 +59,14 @@ impl<'a> GoogleSheetsModifier<'a> {
                 modifier::BorderStyle::Solid => "SOLID",
                 modifier::BorderStyle::SolidMedium => "SOLID_MEDIUM",
                 modifier::BorderStyle::SolidThick => "SOLID_THICK",
-            }.to_string()
+            }
+            .to_string()
         })
     }
 
     fn borders(&self) -> Option<api::Borders> {
         if self.0.borders.is_empty() {
-            return None
+            return None;
         }
 
         Some(api::Borders {
@@ -113,7 +118,8 @@ impl<'a> GoogleSheetsModifier<'a> {
                 modifier::HorizontalAlign::Left => "LEFT",
                 modifier::HorizontalAlign::Center => "MIDDLE",
                 modifier::HorizontalAlign::Right => "RIGHT",
-            }.to_string()
+            }
+            .to_string()
         })
     }
 
@@ -130,8 +136,9 @@ impl<'a> GoogleSheetsModifier<'a> {
                 modifier::NumberFormat::Text => "TEXT",
                 modifier::NumberFormat::Time => "TIME",
                 modifier::NumberFormat::Scientific => "SCIENTIFIC",
-            }.to_string();
-            
+            }
+            .to_string();
+
             api::NumberFormat {
                 type_: Some(nf_type),
                 pattern: None,
@@ -148,15 +155,21 @@ impl<'a> GoogleSheetsModifier<'a> {
         let strikethrough = self.format_as_option(&modifier::TextFormat::Strikethrough);
         let underline = self.format_as_option(&modifier::TextFormat::Underline);
 
-        if font_family.is_none() && font_size.is_none() && foreground_color_style.is_none()
-                && bold.is_none() && italic.is_none() && strikethrough.is_none() && underline.is_none() {
-            return None
+        if font_family.is_none()
+            && font_size.is_none()
+            && foreground_color_style.is_none()
+            && bold.is_none()
+            && italic.is_none()
+            && strikethrough.is_none()
+            && underline.is_none()
+        {
+            return None;
         }
 
         Some(api::TextFormat {
             bold,
             font_family,
-            font_size, 
+            font_size,
             foreground_color: None,
             foreground_color_style,
             italic,
@@ -172,15 +185,16 @@ impl<'a> GoogleSheetsModifier<'a> {
                 modifier::VerticalAlign::Top => "TOP",
                 modifier::VerticalAlign::Center => "MIDDLE",
                 modifier::VerticalAlign::Bottom => "BOTTOM",
-            }.to_string()
+            }
+            .to_string()
         })
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::modifier;
     use super::*;
+    use crate::modifier;
 
     #[test]
     fn cell_format_none() {

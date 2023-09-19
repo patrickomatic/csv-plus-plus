@@ -1,7 +1,7 @@
+use csvpp::{CliArgs, Runtime};
 use rand::Rng;
 use std::fs;
 use std::path;
-use csvpp::{CliArgs, Runtime};
 
 pub struct Setup {
     pub input_path: path::PathBuf,
@@ -24,7 +24,8 @@ impl Setup {
             input_filename: input_path.to_path_buf(),
             output_filename: Some(output_path.to_path_buf()),
             ..Default::default()
-        }).unwrap();
+        })
+        .unwrap();
 
         Setup {
             input_path: input_path.to_path_buf(),
@@ -49,4 +50,3 @@ impl Drop for Setup {
         fs::remove_file(&self.output_path);
     }
 }
-

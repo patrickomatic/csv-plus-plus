@@ -1,8 +1,8 @@
 //! # BorderStyle
 //!
-use serde::{Serialize, Deserialize};
-use std::str::FromStr;
 use crate::InnerError;
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum BorderStyle {
@@ -46,22 +46,40 @@ mod tests {
     #[test]
     fn from_str_dashed() {
         assert_eq!(BorderStyle::Dashed, BorderStyle::from_str("dash").unwrap());
-        assert_eq!(BorderStyle::Dashed, BorderStyle::from_str("dashed").unwrap());
-        assert_eq!(BorderStyle::Dashed, BorderStyle::from_str("DASHED").unwrap());
+        assert_eq!(
+            BorderStyle::Dashed,
+            BorderStyle::from_str("dashed").unwrap()
+        );
+        assert_eq!(
+            BorderStyle::Dashed,
+            BorderStyle::from_str("DASHED").unwrap()
+        );
     }
 
     #[test]
     fn from_str_dotted() {
         assert_eq!(BorderStyle::Dotted, BorderStyle::from_str("dot").unwrap());
-        assert_eq!(BorderStyle::Dotted, BorderStyle::from_str("dotted").unwrap());
-        assert_eq!(BorderStyle::Dotted, BorderStyle::from_str("DOTTED").unwrap());
+        assert_eq!(
+            BorderStyle::Dotted,
+            BorderStyle::from_str("dotted").unwrap()
+        );
+        assert_eq!(
+            BorderStyle::Dotted,
+            BorderStyle::from_str("DOTTED").unwrap()
+        );
     }
 
     #[test]
     fn from_str_double() {
         assert_eq!(BorderStyle::Double, BorderStyle::from_str("dbl").unwrap());
-        assert_eq!(BorderStyle::Double, BorderStyle::from_str("double").unwrap());
-        assert_eq!(BorderStyle::Double, BorderStyle::from_str("DOUBLE").unwrap());
+        assert_eq!(
+            BorderStyle::Double,
+            BorderStyle::from_str("double").unwrap()
+        );
+        assert_eq!(
+            BorderStyle::Double,
+            BorderStyle::from_str("DOUBLE").unwrap()
+        );
     }
 
     #[test]
@@ -73,16 +91,31 @@ mod tests {
 
     #[test]
     fn from_str_solid_medium() {
-        assert_eq!(BorderStyle::SolidMedium, BorderStyle::from_str("2").unwrap());
-        assert_eq!(BorderStyle::SolidMedium, BorderStyle::from_str("solid_medium").unwrap());
-        assert_eq!(BorderStyle::SolidMedium, BorderStyle::from_str("SOLID_MEDIUM").unwrap());
+        assert_eq!(
+            BorderStyle::SolidMedium,
+            BorderStyle::from_str("2").unwrap()
+        );
+        assert_eq!(
+            BorderStyle::SolidMedium,
+            BorderStyle::from_str("solid_medium").unwrap()
+        );
+        assert_eq!(
+            BorderStyle::SolidMedium,
+            BorderStyle::from_str("SOLID_MEDIUM").unwrap()
+        );
     }
 
     #[test]
     fn from_str_solid_thick() {
         assert_eq!(BorderStyle::SolidThick, BorderStyle::from_str("3").unwrap());
-        assert_eq!(BorderStyle::SolidThick, BorderStyle::from_str("solid_thick").unwrap());
-        assert_eq!(BorderStyle::SolidThick, BorderStyle::from_str("SOLID_THICK").unwrap());
+        assert_eq!(
+            BorderStyle::SolidThick,
+            BorderStyle::from_str("solid_thick").unwrap()
+        );
+        assert_eq!(
+            BorderStyle::SolidThick,
+            BorderStyle::from_str("SOLID_THICK").unwrap()
+        );
     }
 
     #[test]

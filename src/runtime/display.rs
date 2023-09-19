@@ -1,5 +1,5 @@
-use std::fmt;
 use super::Runtime;
+use std::fmt;
 
 impl fmt::Display for Runtime {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -32,4 +32,3 @@ mod tests {
         assert!(runtime_str.contains("Output Target"));
     }
 }
-

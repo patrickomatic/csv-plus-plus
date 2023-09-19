@@ -1,5 +1,5 @@
-use crate::{CliArgs, Options, Output, Runtime, SourceCode};
 use crate::ast::{BuiltinFunction, BuiltinVariable};
+use crate::{CliArgs, Options, Output, Runtime, SourceCode};
 
 impl TryFrom<&CliArgs> for Runtime {
     type Error = crate::Error;
@@ -17,8 +17,8 @@ impl TryFrom<&CliArgs> for Runtime {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::TestFile;
     use super::*;
+    use crate::test_utils::TestFile;
 
     #[test]
     fn try_from() {
@@ -33,4 +33,3 @@ mod tests {
         assert!(runtime.is_ok());
     }
 }
-

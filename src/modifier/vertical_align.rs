@@ -1,8 +1,8 @@
 //! # VerticalAlign
 //!
-use serde::{Serialize, Deserialize};
-use std::str::FromStr;
 use crate::InnerError;
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 /// The possible values for aligning a cell vertically.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -17,11 +17,11 @@ impl FromStr for VerticalAlign {
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input.to_lowercase().as_str() {
-            "b" | "bottom"    => Ok(Self::Bottom),
-            "c" | "center"    => Ok(Self::Center),
-            "t" | "top"       => Ok(Self::Top),
+            "b" | "bottom" => Ok(Self::Bottom),
+            "c" | "center" => Ok(Self::Center),
+            "t" | "top" => Ok(Self::Top),
             _ => Err(InnerError::bad_input_with_possibilities(
-                input, 
+                input,
                 "Invalid valign= value",
                 "bottom (b) | center (c) | top (t)",
             )),
@@ -43,14 +43,26 @@ mod tests {
     #[test]
     fn from_str_center() {
         assert_eq!(VerticalAlign::Center, VerticalAlign::from_str("c").unwrap());
-        assert_eq!(VerticalAlign::Center, VerticalAlign::from_str("center").unwrap());
-        assert_eq!(VerticalAlign::Center, VerticalAlign::from_str("CENTER").unwrap());
+        assert_eq!(
+            VerticalAlign::Center,
+            VerticalAlign::from_str("center").unwrap()
+        );
+        assert_eq!(
+            VerticalAlign::Center,
+            VerticalAlign::from_str("CENTER").unwrap()
+        );
     }
 
     #[test]
     fn from_str_bottom() {
         assert_eq!(VerticalAlign::Bottom, VerticalAlign::from_str("b").unwrap());
-        assert_eq!(VerticalAlign::Bottom, VerticalAlign::from_str("bottom").unwrap());
-        assert_eq!(VerticalAlign::Bottom, VerticalAlign::from_str("BOTTOM").unwrap());
+        assert_eq!(
+            VerticalAlign::Bottom,
+            VerticalAlign::from_str("bottom").unwrap()
+        );
+        assert_eq!(
+            VerticalAlign::Bottom,
+            VerticalAlign::from_str("BOTTOM").unwrap()
+        );
     }
 }

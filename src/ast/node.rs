@@ -1,7 +1,7 @@
-use a1_notation::{Address, Column, Row};
-use crate::Expand;
-use serde::{Deserialize, Serialize};
 use super::{Ast, FunctionArgs, FunctionName};
+use crate::Expand;
+use a1_notation::{Address, Column, Row};
+use serde::{Deserialize, Serialize};
 
 /// The most basic building block of our language AST.  The AST is made recursive by the fact that
 /// function calls and infix function calls can be composed.
@@ -29,19 +29,16 @@ pub enum Node {
     Function {
         args: FunctionArgs,
         body: Ast,
-        name: FunctionName, 
+        name: FunctionName,
     },
 
     /// The calling of a function.  When calling a function each of the given args will be
     /// evaluated in turn, then interpolated into the `body` of the `Node::Function`.
-    FunctionCall {
-        args: Vec<Ast>,
-        name: FunctionName,
-    },
+    FunctionCall { args: Vec<Ast>, name: FunctionName },
 
-    /// Like a `Node::FunctionCall` but it has two and only two params.  Think of `1 + 1`, `2 * 2`, 
+    /// Like a `Node::FunctionCall` but it has two and only two params.  Think of `1 + 1`, `2 * 2`,
     /// etc.
-    InfixFunctionCall { 
+    InfixFunctionCall {
         left: Ast,
         operator: FunctionName,
         right: Ast,
@@ -58,14 +55,14 @@ pub enum Node {
     /// A string.
     Text(String),
 
-    /// A variable definition. 
+    /// A variable definition.
     Variable {
-        name: FunctionName, 
+        name: FunctionName,
         value: VariableValue,
     },
 }
 
-/// Variables can occur in 
+/// Variables can occur in
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum VariableValue {
     /// It's scoped to point at an absolute cell
@@ -75,19 +72,13 @@ pub enum VariableValue {
     Ast(Ast),
 
     /// It's scoped as a column relative to an expand
-    ColumnRelative {
-        column: Column,
-        scope: Expand,
-    },
+    ColumnRelative { column: Column, scope: Expand },
 
     /// It's scoped as a row
     Row(Row),
 
     /// It's scoped as a row relative to an expand
-    RowRelative {
-        row: Row,
-        scope: Expand,
-    },
+    RowRelative { row: Row, scope: Expand },
 }
 
 /// Most of these just make testing easier to not have to call .to_string() constantly, but they're
@@ -133,4 +124,3 @@ impl Node {
         }
     }
 }
-

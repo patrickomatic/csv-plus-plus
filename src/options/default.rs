@@ -1,5 +1,5 @@
-use std::collections;
 use super::Options;
+use std::collections;
 
 impl Default for Options {
     fn default() -> Self {

@@ -1,11 +1,11 @@
 //! # BatchUpdateBuilder
 //!
+use super::{google_sheets_modifier, SheetsValue};
+use crate::ast::Node;
+use crate::target::{merge_rows, ExistingValues, MergeResult};
+use crate::{Cell, Runtime, Template};
 use google_sheets4::api;
 use std::str::FromStr;
-use crate::{Runtime, Cell, Template};
-use crate::ast::Node;
-use crate::target::{merge_rows, MergeResult, ExistingValues};
-use super::{google_sheets_modifier, SheetsValue};
 
 pub(crate) struct BatchUpdateBuilder<'a> {
     existing_values: &'a ExistingValues<SheetsValue>,
@@ -19,13 +19,17 @@ impl<'a> BatchUpdateBuilder<'a> {
         template: &'a Template,
         existing_values: &'a ExistingValues<SheetsValue>,
     ) -> Self {
-        Self { existing_values, runtime, template }
+        Self {
+            existing_values,
+            runtime,
+            template,
+        }
     }
 
     /// Loops over each row of the spreadsheet, building up `UpdateCellsRequest`s.  
     pub(crate) fn build(&self) -> api::BatchUpdateSpreadsheetRequest {
         api::BatchUpdateSpreadsheetRequest {
-            requests: Some(self.batch_update_cells_requests()), 
+            requests: Some(self.batch_update_cells_requests()),
             ..Default::default()
         }
     }
@@ -44,8 +48,7 @@ impl<'a> BatchUpdateBuilder<'a> {
     }
 
     fn cell_data(&self, row: &[MergeResult<SheetsValue>]) -> Vec<api::CellData> {
-        row
-            .iter()
+        row.iter()
             .map(|cell| {
                 match cell {
                     // just give back the data as we got it
@@ -63,7 +66,7 @@ impl<'a> BatchUpdateBuilder<'a> {
                             note: cell.modifier.note.clone(),
                             ..Default::default()
                         }
-                    },
+                    }
                 }
             })
             .collect()
@@ -81,8 +84,8 @@ impl<'a> BatchUpdateBuilder<'a> {
                 let existing_row = self.existing_values.cells.get(i).unwrap_or(&empty_row);
                 let merged_row = merge_rows(existing_row, &row.cells, &self.runtime.options);
 
-                api::RowData { 
-                    values: Some(self.cell_data(&merged_row)) 
+                api::RowData {
+                    values: Some(self.cell_data(&merged_row)),
                 }
             })
             .collect()
@@ -104,31 +107,26 @@ impl<'a> BatchUpdateBuilder<'a> {
     fn user_entered_value(&self, cell: &Cell) -> Option<api::ExtendedValue> {
         if let Some(ast) = &cell.ast {
             Some(match *ast.clone() {
-                Node::Boolean(b) =>
-                    api::ExtendedValue {
-                        bool_value: Some(b),
-                        ..Default::default()
-                    },
-                Node::Text(t) =>
-                    api::ExtendedValue {
-                        string_value: Some(t),
-                        ..Default::default()
-                    },
-                Node::Float(f) => 
-                    api::ExtendedValue {
-                        number_value: Some(f),
-                        ..Default::default()
-                    },
-                Node::Integer(i) => 
-                    api::ExtendedValue {
-                        number_value: Some(i as f64),
-                        ..Default::default()
-                    },
-                _ => 
-                    api::ExtendedValue {
-                        formula_value: Some(ast.to_string()),
-                        ..Default::default()
-                    },
+                Node::Boolean(b) => api::ExtendedValue {
+                    bool_value: Some(b),
+                    ..Default::default()
+                },
+                Node::Text(t) => api::ExtendedValue {
+                    string_value: Some(t),
+                    ..Default::default()
+                },
+                Node::Float(f) => api::ExtendedValue {
+                    number_value: Some(f),
+                    ..Default::default()
+                },
+                Node::Integer(i) => api::ExtendedValue {
+                    number_value: Some(i as f64),
+                    ..Default::default()
+                },
+                _ => api::ExtendedValue {
+                    formula_value: Some(ast.to_string()),
+                    ..Default::default()
+                },
             })
         } else if cell.value.is_empty() {
             None
@@ -143,9 +141,9 @@ impl<'a> BatchUpdateBuilder<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
-    use crate::test_utils::TestFile;
     use super::*;
+    use crate::test_utils::TestFile;
+    use crate::*;
 
     #[test]
     fn build() {
@@ -156,14 +154,13 @@ mod tests {
         spreadsheet.rows.push(Row {
             row: 1.into(),
             modifier: RowModifier::default(),
-            cells: vec![
-                Cell {
-                    ast: None,
-                    position: a1_notation::Address::new(0, 1),
-                    value: "Test".to_string(),
-                    modifier: Modifier::default(),
-                }
-            ]});
+            cells: vec![Cell {
+                ast: None,
+                position: a1_notation::Address::new(0, 1),
+                value: "Test".to_string(),
+                modifier: Modifier::default(),
+            }],
+        });
 
         let template = Template::new(spreadsheet, None, &runtime);
         let existing_values = ExistingValues { cells: vec![] };

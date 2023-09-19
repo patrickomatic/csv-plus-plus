@@ -1,9 +1,9 @@
+use super::Template;
+use crate::ast::{Functions, Variables};
 use crate::{Result, SourceCode, Spreadsheet};
 use serde::{Deserialize, Serialize};
 use std::convert;
 use std::path;
-use super::Template;
-use crate::ast::{Functions, Variables};
 
 /// A template stripped down to just it's serializable fields.  This is internal to this module and
 /// should be converted as we read from or write to the object files.
@@ -17,10 +17,10 @@ struct TemplateAtRest {
 
 impl convert::From<&Template<'_>> for TemplateAtRest {
     fn from(template: &Template) -> Self {
-        TemplateAtRest { 
+        TemplateAtRest {
             functions: template.functions.clone(),
             spreadsheet: template.spreadsheet.borrow().clone(),
-            variables: template.variables.clone(), 
+            variables: template.variables.clone(),
             csv_line_number: template.csv_line_number,
         }
     }
@@ -43,7 +43,7 @@ impl Template<'_> {
         let file = fs::File::create(&object_code_filename).unwrap();
         let writer = ciborium::into_writer(&template_at_rest, &file).unwrap();
         fs::write(&object_code_filename, writer).map_err(|e| {
-            Error::ObjectWriteError { 
+            Error::ObjectWriteError {
                 filename: object_code_filename.clone(),
                 message: format!("Error writing object file: {}", e),
             }

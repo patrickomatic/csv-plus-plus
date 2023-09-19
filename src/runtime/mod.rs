@@ -1,8 +1,8 @@
 //! # Runtime
 //!
-use clap::Parser;
-use crate::{CliArgs, CompilationTarget, Options, Output, Result, SourceCode};
 use crate::ast::{BuiltinFunctions, BuiltinVariables};
+use crate::{CliArgs, CompilationTarget, Options, Output, Result, SourceCode};
+use clap::Parser;
 
 mod display;
 mod try_from;

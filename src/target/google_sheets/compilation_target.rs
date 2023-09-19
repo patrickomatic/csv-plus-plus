@@ -1,6 +1,6 @@
-use crate::{Result, Template};
-use super::GoogleSheets;
 use super::super::CompilationTarget;
+use super::GoogleSheets;
+use crate::{Result, Template};
 
 impl CompilationTarget for GoogleSheets<'_> {
     fn write_backup(&self) -> Result<()> {
@@ -9,9 +9,7 @@ impl CompilationTarget for GoogleSheets<'_> {
     }
 
     fn write(&self, template: &Template) -> Result<()> {
-        self.async_runtime.block_on(async {
-            self.write_sheet(template).await
-        })
+        self.async_runtime
+            .block_on(async { self.write_sheet(template).await })
     }
 }
-

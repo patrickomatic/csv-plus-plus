@@ -23,14 +23,18 @@ pub enum InnerError {
 
 impl InnerError {
     pub fn bad_input(bad_input: &str, message: &str) -> Self {
-        Self::BadInput { 
+        Self::BadInput {
             bad_input: bad_input.to_owned(),
             message: message.to_owned(),
         }
     }
 
-    pub fn bad_input_with_possibilities(bad_input: &str, message: &str, possible_values: &str) -> Self {
-        Self::BadInputWithPossibilities { 
+    pub fn bad_input_with_possibilities(
+        bad_input: &str,
+        message: &str,
+        possible_values: &str,
+    ) -> Self {
+        Self::BadInputWithPossibilities {
             bad_input: bad_input.to_owned(),
             message: message.to_owned(),
             possible_values: possible_values.to_owned(),
@@ -51,16 +55,20 @@ impl fmt::Display for InnerError {
             Self::BadInput { bad_input, message } => {
                 writeln!(f, "{}", message)?;
                 write!(f, "bad input: {}", bad_input)
-            },
-            Self::BadInputWithPossibilities { message, bad_input, possible_values } => {
+            }
+            Self::BadInputWithPossibilities {
+                message,
+                bad_input,
+                possible_values,
+            } => {
                 writeln!(f, "{}", message)?;
                 writeln!(f, "bad input: {}", bad_input)?;
                 write!(f, "possible values: {}", possible_values)
-            },
+            }
             Self::RgbSyntaxError { bad_input, message } => {
                 writeln!(f, "Error parsing RGB value: {}", message)?;
                 write!(f, "bad input: {}", bad_input)
-            },
+            }
         }
     }
 }
@@ -68,8 +76,9 @@ impl fmt::Display for InnerError {
 impl From<a1_notation::Error> for InnerError {
     fn from(err: a1_notation::Error) -> Self {
         match err {
-            a1_notation::Error::A1ParseError { bad_input, message } =>
-                InnerError::bad_input(&bad_input, &message),
+            a1_notation::Error::A1ParseError { bad_input, message } => {
+                InnerError::bad_input(&bad_input, &message)
+            }
         }
     }
 }
@@ -87,8 +96,11 @@ mod tests {
             message: "it should be foo".to_string(),
         };
 
-        assert_eq!("it should be foo
-bad input: bar", message.to_string());
+        assert_eq!(
+            "it should be foo
+bad input: bar",
+            message.to_string()
+        );
     }
 
     #[test]
@@ -99,9 +111,12 @@ bad input: bar", message.to_string());
             possible_values: "foo | baz".to_string(),
         };
 
-        assert_eq!("it should be foo
+        assert_eq!(
+            "it should be foo
 bad input: bar
-possible values: foo | baz", message.to_string());
+possible values: foo | baz",
+            message.to_string()
+        );
     }
 
     #[test]
@@ -111,7 +126,10 @@ possible values: foo | baz", message.to_string());
             message: "it should be foo".to_string(),
         };
 
-        assert_eq!("Error parsing RGB value: it should be foo
-bad input: bar", message.to_string());
+        assert_eq!(
+            "Error parsing RGB value: it should be foo
+bad input: bar",
+            message.to_string()
+        );
     }
 }

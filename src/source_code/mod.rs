@@ -7,11 +7,11 @@
 //! After this both the code section and CSV section will be lexed and parsed using separate
 //! algorithms.
 //!
+use crate::parser::token_library::CODE_SECTION_SEPARATOR;
+use crate::{Error, Result};
 use std::cmp;
 use std::fs;
 use std::path;
-use crate::{Error, Result};
-use crate::parser::token_library::CODE_SECTION_SEPARATOR;
 
 mod display;
 
@@ -34,12 +34,10 @@ pub struct SourceCode {
 impl SourceCode {
     /// Open the source code and do a rough first pass where we split the code section from the CSV
     /// section by looking for `---`.
-    pub fn open(filename: &path::PathBuf) -> Result<SourceCode>  {
-        let input = fs::read_to_string(filename).map_err(|e| {
-            Error::SourceCodeError {
-                filename: filename.clone(),
-                message: format!("Error reading source code {}: {e}", filename.display()),
-            }
+    pub fn open(filename: &path::PathBuf) -> Result<SourceCode> {
+        let input = fs::read_to_string(filename).map_err(|e| Error::SourceCodeError {
+            filename: filename.clone(),
+            message: format!("Error reading source code {}: {e}", filename.display()),
         })?;
 
         Self::new(input.as_str(), filename.clone())
@@ -56,7 +54,7 @@ impl SourceCode {
                 length_of_code_section: code_lines,
                 length_of_csv_section: csv_lines,
                 csv_section: csv_section.to_string(),
-                code_section: Some(code_section.to_string()), 
+                code_section: Some(code_section.to_string()),
                 original: input.to_owned(),
             })
         } else {
@@ -67,7 +65,7 @@ impl SourceCode {
                 length_of_code_section: 0,
                 length_of_csv_section: csv_lines,
                 csv_section: input.to_owned(),
-                code_section: None, 
+                code_section: None,
                 original: input.to_owned(),
             })
         }
@@ -82,12 +80,9 @@ impl SourceCode {
             .map(|s| s.to_string())
     }
 
-    pub fn highlight_line(
-        &self,
-        line_number: usize,
-        position: usize
-    ) -> Vec<String> {
-        let lines = self.original
+    pub fn highlight_line(&self, line_number: usize, position: usize) -> Vec<String> {
+        let lines = self
+            .original
             .lines()
             .map(|l| l.to_string())
             .collect::<Vec<String>>();
@@ -121,7 +116,9 @@ impl SourceCode {
 
         // now format each line with line numbers
         let longest_line_number = (line_number + LINES_IN_ERROR_CONTEXT).to_string().len();
-        let mut line_count = line_number.saturating_sub(LINES_IN_ERROR_CONTEXT).saturating_sub(1);
+        let mut line_count = line_number
+            .saturating_sub(LINES_IN_ERROR_CONTEXT)
+            .saturating_sub(1);
 
         // now iterate over it and apply lines numbers like `XX: some_code( ...` where XX is the
         // line number
@@ -129,14 +126,19 @@ impl SourceCode {
             .iter()
             .enumerate()
             .map(|(i, line)| {
-                // don't increment the line *after* the line we're highlighting.  because it's the 
+                // don't increment the line *after* the line we're highlighting.  because it's the
                 // ----^ thing and it doesn't correspond to a source code row, it's highlighting the
                 // text above it
                 if i == skip_numbering_on {
                     format!(" {: <width$}: {}", " ", line, width = longest_line_number)
                 } else {
                     line_count += 1;
-                    format!(" {: <width$}: {}", line_count, line, width = longest_line_number)
+                    format!(
+                        " {: <width$}: {}",
+                        line_count,
+                        line,
+                        width = longest_line_number
+                    )
                 }
             })
             .collect()
@@ -156,9 +158,9 @@ impl SourceCode {
 
 #[cfg(test)]
 mod tests {
-    use std::path;
-    use crate::test_utils::TestFile;
     use super::*;
+    use crate::test_utils::TestFile;
+    use std::path;
 
     fn build_source_code() -> SourceCode {
         SourceCode {
@@ -200,10 +202,11 @@ something {
 foo,bar,baz
             ",
             path::PathBuf::from("test.csvpp"),
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_eq!(
-            source_code.highlight_line(8, 6), 
+            source_code.highlight_line(8, 6),
             vec![
                 " 5 : other_var := 42",
                 " 6 : ",
@@ -213,7 +216,8 @@ foo,bar,baz
                 " 9 : }",
                 " 10: ---",
                 " 11: foo,bar,baz",
-            ]);
+            ]
+        );
     }
 
     #[test]
@@ -231,31 +235,33 @@ something {
 foo,bar,baz
             ",
             path::PathBuf::from("test.csvpp"),
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_eq!(
-            source_code.highlight_line(1, 6), 
+            source_code.highlight_line(1, 6),
             vec![
                 " 1: # A comment",
                 "  : -----^",
                 " 2: ",
                 " 3: var := 1",
                 " 4: other_var := 42",
-            ]);
+            ]
+        );
     }
 
     #[test]
     fn object_code_filename() {
         assert_eq!(
-            path::PathBuf::from("test.csvpo"), 
-            build_source_code().object_code_filename());
+            path::PathBuf::from("test.csvpo"),
+            build_source_code().object_code_filename()
+        );
     }
 
     #[test]
     fn open_no_code_section() {
-        let source_code = SourceCode::new(
-            "foo,bar,baz", 
-            std::path::PathBuf::from("foo.csvpp")).unwrap();
+        let source_code =
+            SourceCode::new("foo,bar,baz", std::path::PathBuf::from("foo.csvpp")).unwrap();
 
         assert_eq!(source_code.lines, 1);
         assert_eq!(source_code.length_of_csv_section, 1);
@@ -266,12 +272,15 @@ foo,bar,baz
 
     #[test]
     fn open_code_section() {
-        let s = TestFile::new("csv", "
+        let s = TestFile::new(
+            "csv",
+            "
 foo := 1
 
 ---
 foo,bar,baz,=foo
-");
+",
+        );
         let source_code = SourceCode::open(&s.input_file).unwrap();
 
         assert_eq!(source_code.lines, 5);
@@ -294,8 +303,12 @@ foo,bar,baz
 foo1,bar1,baz1
             ",
             path::PathBuf::from("test.csvpp"),
-        ).unwrap();
+        )
+        .unwrap();
 
-        assert_eq!(8, source_code.csv_line_number(a1_notation::Address::new(1, 1)));
+        assert_eq!(
+            8,
+            source_code.csv_line_number(a1_notation::Address::new(1, 1))
+        );
     }
 }

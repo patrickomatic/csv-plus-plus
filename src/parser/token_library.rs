@@ -1,12 +1,12 @@
-//! # Lexer Token Library 
+//! # Lexer Token Library
 //!
 //! A set of shared tokens that the lexer can use to break the input into a stream of tokens.
 //! There are more simplistic approaches such as going character-by-character or splitting on word
 //! boundaries/spacing but neither of those will work very well for us when handling complex types
 //! like double-quotes strings.
+use crate::Error;
 use regex::Regex;
 use std::fmt;
-use crate::Error;
 
 pub const CODE_SECTION_SEPARATOR: &str = "---";
 
@@ -37,17 +37,18 @@ impl TokenMatcher {
     fn new(regex_str: &str, token: Token) -> Result<Self, Error> {
         // this regex is tricky but it's for "all spaces but not newlines"
         match Regex::new(format!(r"^[^\S\r\n]*{}", regex_str).as_str()) {
-            Ok(r) =>
-                Ok(TokenMatcher(token, r)),
-            Err(m) =>
-                Err(Error::InitError(format!("Error compiling regex /{}/: {}", regex_str, m))),
+            Ok(r) => Ok(TokenMatcher(token, r)),
+            Err(m) => Err(Error::InitError(format!(
+                "Error compiling regex /{}/: {}",
+                regex_str, m
+            ))),
         }
     }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TokenMatch<'a> {
-    pub token: Token, 
+    pub token: Token,
     pub str_match: &'a str,
     pub line_number: usize,
     pub position: usize,
@@ -88,7 +89,8 @@ impl TokenLibrary {
             comment: TokenMatcher::new(r"(?m)#.*", Token::Comment)?,
             code_section_eof: TokenMatcher::new(r"---", Token::CodeSectionEof)?,
             close_paren: TokenMatcher::new(r"\)", Token::CloseParen)?,
-            date_time: TokenMatcher::new(r"(?x)
+            date_time: TokenMatcher::new(
+                r"(?x)
                                          # just a date (and optional TZ)
                                          (?<date0>\d{2,4}-\d{1,2}-\d{1,2})\s*(?<tz0>\w+)?
                                          | 
@@ -97,10 +99,17 @@ impl TokenLibrary {
                                          |
                                          # a time and date
                                          (?<date2>\d{2,4}-\d{1,2}-\d{1,2})\s+(?<time2>\d+:\d{1,2}(\d+)?)\s*(?<tz2>\w+)?
-                                        ", Token::DateTime)?,
-            double_quoted_string: 
-                TokenMatcher::new(r#""(?:[^"\\]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*""#, Token::DoubleQuotedString)?,
-            infix_operator: TokenMatcher::new(r"(\^|\+|-|\*|/|&|<|>|<=|>=|<>)", Token::InfixOperator)?,
+                                        ",
+                Token::DateTime,
+            )?,
+            double_quoted_string: TokenMatcher::new(
+                r#""(?:[^"\\]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*""#,
+                Token::DoubleQuotedString,
+            )?,
+            infix_operator: TokenMatcher::new(
+                r"(\^|\+|-|\*|/|&|<|>|<=|>=|<>)",
+                Token::InfixOperator,
+            )?,
             integer: TokenMatcher::new(r"-?\d+", Token::Integer)?,
             float: TokenMatcher::new(r"-?\d+\.\d*", Token::Float)?,
             fn_def: TokenMatcher::new(r"fn", Token::FunctionDefinition)?,
@@ -149,10 +158,19 @@ mod tests {
 
     #[test]
     fn build_double_quoted_string() {
-        assert!(token_library().double_quoted_string.1.is_match("\"this is a string\""));
-        assert!(token_library().double_quoted_string.1.is_match("\"with an \\\" escaped quote\""));
+        assert!(token_library()
+            .double_quoted_string
+            .1
+            .is_match("\"this is a string\""));
+        assert!(token_library()
+            .double_quoted_string
+            .1
+            .is_match("\"with an \\\" escaped quote\""));
 
-        assert!(!token_library().double_quoted_string.1.is_match("\"missing end quote"));
+        assert!(!token_library()
+            .double_quoted_string
+            .1
+            .is_match("\"missing end quote"));
         assert!(!token_library().double_quoted_string.1.is_match("foo"));
     }
 

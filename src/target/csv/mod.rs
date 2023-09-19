@@ -2,12 +2,12 @@
 //!
 //! Functions for writing to CSV files
 //!
+use super::{ExistingCell, ExistingValues};
 use crate::{Error, Output, Result, Runtime};
-use std::path;
 use std::ffi;
 use std::fs;
 use std::io;
-use super::{ExistingCell, ExistingValues};
+use std::path;
 
 mod compilation_target;
 
@@ -28,15 +28,15 @@ impl<'a> Csv<'a> {
     fn read(path: &path::PathBuf, output: &Output) -> Result<ExistingValues<String>> {
         let file = match fs::File::open(path) {
             Ok(f) => f,
-            Err(e) => return match e.kind() {
-                io::ErrorKind::NotFound => 
-                    Ok(ExistingValues { cells: vec![] }),
-                error => 
-                    Err(Error::TargetWriteError {
+            Err(e) => {
+                return match e.kind() {
+                    io::ErrorKind::NotFound => Ok(ExistingValues { cells: vec![] }),
+                    error => Err(Error::TargetWriteError {
                         message: format!("Error reading output: {}", error),
                         output: output.clone(),
                     }),
-            },
+                }
+            }
         };
         let mut reader = csv::ReaderBuilder::new()
             .flexible(true)

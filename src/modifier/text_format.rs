@@ -1,7 +1,7 @@
 //! # TextFormat
-use serde::{Serialize, Deserialize};
-use std::str::FromStr;
 use crate::InnerError;
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, PartialEq, Serialize)]
 pub enum TextFormat {
@@ -16,12 +16,12 @@ impl FromStr for TextFormat {
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input.to_lowercase().as_str() {
-            "b" | "bold"          => Ok(Self::Bold),
-            "i" | "italic"        => Ok(Self::Italic),
+            "b" | "bold" => Ok(Self::Bold),
+            "i" | "italic" => Ok(Self::Italic),
             "s" | "strikethrough" => Ok(Self::Strikethrough),
-            "u" | "underline"     => Ok(Self::Underline),
+            "u" | "underline" => Ok(Self::Underline),
             _ => Err(InnerError::bad_input_with_possibilities(
-                input, 
+                input,
                 "Invalid format= value",
                 "bold (b) | italic (i) | strikethrough (s) | underline (u)",
             )),
@@ -50,14 +50,29 @@ mod tests {
     #[test]
     fn from_str_underline() {
         assert_eq!(TextFormat::Underline, TextFormat::from_str("u").unwrap());
-        assert_eq!(TextFormat::Underline, TextFormat::from_str("underline").unwrap());
-        assert_eq!(TextFormat::Underline, TextFormat::from_str("UNDERLINE").unwrap());
+        assert_eq!(
+            TextFormat::Underline,
+            TextFormat::from_str("underline").unwrap()
+        );
+        assert_eq!(
+            TextFormat::Underline,
+            TextFormat::from_str("UNDERLINE").unwrap()
+        );
     }
 
     #[test]
     fn from_str_strikethrough() {
-        assert_eq!(TextFormat::Strikethrough, TextFormat::from_str("s").unwrap());
-        assert_eq!(TextFormat::Strikethrough, TextFormat::from_str("strikethrough").unwrap());
-        assert_eq!(TextFormat::Strikethrough, TextFormat::from_str("STRIKETHROUGH").unwrap());
+        assert_eq!(
+            TextFormat::Strikethrough,
+            TextFormat::from_str("s").unwrap()
+        );
+        assert_eq!(
+            TextFormat::Strikethrough,
+            TextFormat::from_str("strikethrough").unwrap()
+        );
+        assert_eq!(
+            TextFormat::Strikethrough,
+            TextFormat::from_str("STRIKETHROUGH").unwrap()
+        );
     }
 }

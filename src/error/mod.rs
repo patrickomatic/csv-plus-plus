@@ -1,7 +1,7 @@
 //! Error handling functions
+use crate::Output;
 use std::error;
 use std::path::PathBuf;
-use crate::Output;
 
 mod display;
 mod inner_error;
@@ -27,7 +27,7 @@ pub enum Error {
         message: String,
         position: usize,
     },
-    
+
     /// An error encountered when evaluating the formulas in a cell.  For example if a builtin
     /// funciton is called with the wrong number of arguments.
     EvalError {
@@ -48,22 +48,13 @@ pub enum Error {
     },
 
     /// An error encountered while serializing the compiled template to an object file.
-    ObjectWriteError {
-        filename: PathBuf,
-        message: String,
-    },
+    ObjectWriteError { filename: PathBuf, message: String },
 
     /// An error ecountered reaading or doing an initial parse of the source code.
-    SourceCodeError {
-        filename: PathBuf,
-        message: String,
-    },
+    SourceCodeError { filename: PathBuf, message: String },
 
     /// An error encountered while writing to the target.
-    TargetWriteError {
-        message: String,
-        output: Output,
-    },
+    TargetWriteError { message: String, output: Output },
 }
 
 impl error::Error for Error {}

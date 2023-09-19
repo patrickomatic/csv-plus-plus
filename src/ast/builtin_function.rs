@@ -1,14 +1,14 @@
 //! # BuiltinFunction
 //!
+use super::{Ast, FunctionEval, FunctionName, Node};
 use crate::{InnerError, InnerResult};
 use std::collections;
 use std::fmt;
 use std::str::FromStr;
-use super::{Ast, FunctionEval, FunctionName, Node};
 
 pub struct BuiltinFunction {
     pub eval: FunctionEval,
-    pub name: FunctionName, 
+    pub name: FunctionName,
 }
 
 impl BuiltinFunction {
@@ -47,15 +47,20 @@ impl fmt::Debug for BuiltinFunction {
 }
 
 fn def_fn<F>(
-    mut fns: collections::HashMap<String, BuiltinFunction>, 
-    name: &'static str, 
+    mut fns: collections::HashMap<String, BuiltinFunction>,
+    name: &'static str,
     eval_fn: F,
 ) -> collections::HashMap<FunctionName, BuiltinFunction>
-where F: Fn(a1_notation::Address, &[Ast]) -> InnerResult<Node> + 'static {
-    fns.insert(name.to_string(), BuiltinFunction {
-        name: name.to_string(),
-        eval: Box::new(move |current, args| eval_fn(current, args))
-    });
+where
+    F: Fn(a1_notation::Address, &[Ast]) -> InnerResult<Node> + 'static,
+{
+    fns.insert(
+        name.to_string(),
+        BuiltinFunction {
+            name: name.to_string(),
+            eval: Box::new(move |current, args| eval_fn(current, args)),
+        },
+    );
 
     fns
 }
@@ -64,20 +69,22 @@ fn verify_one_column(fn_name: &str, args: &[Ast]) -> InnerResult<a1_notation::Co
     if args.len() != 1 {
         Err(InnerError::bad_input(
             &args.len().to_string(), // TODO figure out a way to format this
-            &format!("Expected a single argument to `{fn_name}`")))
+            &format!("Expected a single argument to `{fn_name}`"),
+        ))
     } else if let Node::Reference(r) = &*args[0] {
         Ok(a1_notation::Column::from_str(r)?)
     } else {
         Err(InnerError::bad_input(
-                args[0].to_string().as_str(),
-                &format!("Expected a cell reference as the only argumnent to `{fn_name}`")))
+            args[0].to_string().as_str(),
+            &format!("Expected a cell reference as the only argumnent to `{fn_name}`"),
+        ))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use a1_notation::Address;
     use super::*;
+    use a1_notation::Address;
 
     #[test]
     fn all_cellabove() {
@@ -87,7 +94,8 @@ mod tests {
 
         assert_eq!(
             (cellabove.eval)(current, &[Box::new(Node::reference("C"))]).unwrap(),
-            Node::reference("C1"));
+            Node::reference("C1")
+        );
     }
 
     #[test]
@@ -98,7 +106,8 @@ mod tests {
 
         assert_eq!(
             (celladjacent.eval)(current, &[Box::new(Node::reference("C"))]).unwrap(),
-            Node::reference("C2"));
+            Node::reference("C2")
+        );
     }
 
     #[test]
@@ -109,6 +118,7 @@ mod tests {
 
         assert_eq!(
             (cellbelow.eval)(current, &[Box::new(Node::reference("C"))]).unwrap(),
-            Node::reference("C3"));
+            Node::reference("C3")
+        );
     }
 }

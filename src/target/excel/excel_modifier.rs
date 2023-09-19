@@ -2,8 +2,10 @@
 //!
 //! Converts between a Modifier and an umya_spreadsheet::Style (which feature-wise actually happen
 //! to map pretty nicely)
+use crate::modifier::{
+    BorderSide, BorderStyle, HorizontalAlign, NumberFormat, TextFormat, VerticalAlign,
+};
 use crate::{Modifier, Rgb};
-use crate::modifier::{BorderSide, BorderStyle, HorizontalAlign, NumberFormat, TextFormat, VerticalAlign};
 
 // A Newtype around `Modifier` which allows us to have umya/excel-specific functionality
 pub(super) struct ExcelModifier(pub Modifier);
@@ -12,18 +14,12 @@ impl From<BorderStyle> for umya_spreadsheet::Border {
     fn from(value: BorderStyle) -> Self {
         let mut b = umya_spreadsheet::Border::default();
         b.set_border_style(match value {
-            BorderStyle::Dashed =>
-                umya_spreadsheet::Border::BORDER_DASHED,
-            BorderStyle::Dotted =>
-                umya_spreadsheet::Border::BORDER_DOTTED,
-            BorderStyle::Double =>
-                umya_spreadsheet::Border::BORDER_DOUBLE,
-            BorderStyle::Solid =>
-                umya_spreadsheet::Border::BORDER_THIN,
-            BorderStyle::SolidMedium =>
-                umya_spreadsheet::Border::BORDER_MEDIUM,
-            BorderStyle::SolidThick =>
-                umya_spreadsheet::Border::BORDER_THICK,
+            BorderStyle::Dashed => umya_spreadsheet::Border::BORDER_DASHED,
+            BorderStyle::Dotted => umya_spreadsheet::Border::BORDER_DOTTED,
+            BorderStyle::Double => umya_spreadsheet::Border::BORDER_DOUBLE,
+            BorderStyle::Solid => umya_spreadsheet::Border::BORDER_THIN,
+            BorderStyle::SolidMedium => umya_spreadsheet::Border::BORDER_MEDIUM,
+            BorderStyle::SolidThick => umya_spreadsheet::Border::BORDER_THICK,
         });
         b
     }
@@ -46,12 +42,9 @@ impl From<ExcelModifier> for umya_spreadsheet::Style {
 impl From<HorizontalAlign> for umya_spreadsheet::HorizontalAlignmentValues {
     fn from(value: HorizontalAlign) -> Self {
         match value {
-            HorizontalAlign::Center =>
-                umya_spreadsheet::HorizontalAlignmentValues::Center,
-            HorizontalAlign::Left =>
-                umya_spreadsheet::HorizontalAlignmentValues::Left,
-            HorizontalAlign::Right =>
-                umya_spreadsheet::HorizontalAlignmentValues::Right,
+            HorizontalAlign::Center => umya_spreadsheet::HorizontalAlignmentValues::Center,
+            HorizontalAlign::Left => umya_spreadsheet::HorizontalAlignmentValues::Left,
+            HorizontalAlign::Right => umya_spreadsheet::HorizontalAlignmentValues::Right,
         }
     }
 }
@@ -60,23 +53,18 @@ impl From<NumberFormat> for umya_spreadsheet::NumberingFormat {
     fn from(value: NumberFormat) -> Self {
         let mut nf = umya_spreadsheet::NumberingFormat::default();
         nf.set_format_code(match value {
-            NumberFormat::Currency =>
-                umya_spreadsheet::NumberingFormat::FORMAT_CURRENCY_USD,
-            NumberFormat::Date =>
-                umya_spreadsheet::NumberingFormat::FORMAT_DATE_YYYYMMDD,
-            NumberFormat::DateTime =>
-                umya_spreadsheet::NumberingFormat::FORMAT_DATE_DATETIME,
-            NumberFormat::Number =>
-                umya_spreadsheet::NumberingFormat::FORMAT_NUMBER,
-            NumberFormat::Percent =>
-                umya_spreadsheet::NumberingFormat::FORMAT_PERCENTAGE,
-            NumberFormat::Text =>
-                umya_spreadsheet::NumberingFormat::FORMAT_TEXT,
-            NumberFormat::Time =>
-                umya_spreadsheet::NumberingFormat::FORMAT_DATE_TIME1,
+            NumberFormat::Currency => umya_spreadsheet::NumberingFormat::FORMAT_CURRENCY_USD,
+            NumberFormat::Date => umya_spreadsheet::NumberingFormat::FORMAT_DATE_YYYYMMDD,
+            NumberFormat::DateTime => umya_spreadsheet::NumberingFormat::FORMAT_DATE_DATETIME,
+            NumberFormat::Number => umya_spreadsheet::NumberingFormat::FORMAT_NUMBER,
+            NumberFormat::Percent => umya_spreadsheet::NumberingFormat::FORMAT_PERCENTAGE,
+            NumberFormat::Text => umya_spreadsheet::NumberingFormat::FORMAT_TEXT,
+            NumberFormat::Time => umya_spreadsheet::NumberingFormat::FORMAT_DATE_TIME1,
             NumberFormat::Scientific =>
-                // TODO: I dunno if excel has a "scientific" formatting?
-                umya_spreadsheet::NumberingFormat::FORMAT_NUMBER,
+            // TODO: I dunno if excel has a "scientific" formatting?
+            {
+                umya_spreadsheet::NumberingFormat::FORMAT_NUMBER
+            }
         });
         nf
     }
@@ -93,12 +81,9 @@ impl From<Rgb> for umya_spreadsheet::Color {
 impl From<VerticalAlign> for umya_spreadsheet::VerticalAlignmentValues {
     fn from(value: VerticalAlign) -> Self {
         match value {
-            VerticalAlign::Center =>
-                umya_spreadsheet::VerticalAlignmentValues::Center,
-            VerticalAlign::Top =>
-                umya_spreadsheet::VerticalAlignmentValues::Top,
-            VerticalAlign::Bottom =>
-                umya_spreadsheet::VerticalAlignmentValues::Bottom,
+            VerticalAlign::Center => umya_spreadsheet::VerticalAlignmentValues::Center,
+            VerticalAlign::Top => umya_spreadsheet::VerticalAlignmentValues::Top,
+            VerticalAlign::Bottom => umya_spreadsheet::VerticalAlignmentValues::Bottom,
         }
     }
 }
@@ -132,19 +117,16 @@ impl ExcelModifier {
             return;
         }
 
-        let border: umya_spreadsheet::Border = self
-            .0
-            .clone()
-            .border_style
-            .unwrap_or_default()
-            .into();
+        let border: umya_spreadsheet::Border =
+            self.0.clone().border_style.unwrap_or_default().into();
 
         let b = s.get_borders_mut();
         if self.0.borders.contains(&BorderSide::All) || self.0.borders.contains(&BorderSide::Left) {
             b.set_left_border(border.clone());
         }
 
-        if self.0.borders.contains(&BorderSide::All) || self.0.borders.contains(&BorderSide::Right) {
+        if self.0.borders.contains(&BorderSide::All) || self.0.borders.contains(&BorderSide::Right)
+        {
             b.set_right_border(border.clone());
         }
 
@@ -152,14 +134,18 @@ impl ExcelModifier {
             b.set_top_border(border.clone());
         }
 
-        if self.0.borders.contains(&BorderSide::All) || self.0.borders.contains(&BorderSide::Bottom) {
+        if self.0.borders.contains(&BorderSide::All) || self.0.borders.contains(&BorderSide::Bottom)
+        {
             b.set_bottom_border(border);
         }
     }
 
     fn set_font(&self, s: &mut umya_spreadsheet::Style) {
-        if self.0.font_size.is_none() && self.0.font_color.is_none() 
-                && self.0.font_family.is_none() && self.0.formats.is_empty() {
+        if self.0.font_size.is_none()
+            && self.0.font_color.is_none()
+            && self.0.font_family.is_none()
+            && self.0.formats.is_empty()
+        {
             return;
         }
 
@@ -193,7 +179,7 @@ impl ExcelModifier {
             font.set_underline("single");
         }
 
-        s.set_font(font); 
+        s.set_font(font);
     }
 
     fn set_number_format(&self, s: &mut umya_spreadsheet::Style) {
@@ -205,8 +191,8 @@ impl ExcelModifier {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
     use super::*;
+    use std::str::FromStr;
 
     #[test]
     fn into_border_borderstyle() {

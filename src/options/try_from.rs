@@ -1,16 +1,12 @@
-use crate::CliArgs;
-use crate::parser::ast_parser::AstParser;
 use super::Options;
+use crate::parser::ast_parser::AstParser;
+use crate::CliArgs;
 
 impl TryFrom<&CliArgs> for Options {
     type Error = crate::Error;
 
     fn try_from(cli_args: &CliArgs) -> std::result::Result<Self, Self::Error> {
-        let key_values_as_str = cli_args
-            .key_values
-            .iter()
-            .map(|s| s.as_str())
-            .collect();
+        let key_values_as_str = cli_args.key_values.iter().map(|s| s.as_str()).collect();
 
         Ok(Options {
             backup: cli_args.backup,
@@ -26,9 +22,9 @@ impl TryFrom<&CliArgs> for Options {
 
 #[cfg(test)]
 mod tests {
-    use std::path;
-    use crate::CliArgs;
     use super::*;
+    use crate::CliArgs;
+    use std::path;
 
     #[test]
     fn try_from_no_sheet_name() {

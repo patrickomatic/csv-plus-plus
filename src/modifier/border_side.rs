@@ -2,9 +2,9 @@
 //!
 //! Represents a side (or all) of a spreadsheet cell.
 //!
-use serde::{Serialize, Deserialize};
-use std::str::FromStr;
 use crate::InnerError;
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum BorderSide {
@@ -20,11 +20,11 @@ impl FromStr for BorderSide {
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input.to_lowercase().as_str() {
-            "a" | "all"       => Ok(Self::All),
-            "t" | "top"       => Ok(Self::Top),
-            "b" | "bottom"    => Ok(Self::Bottom),
-            "l" | "left"      => Ok(Self::Left),
-            "r" | "right"     => Ok(Self::Right),
+            "a" | "all" => Ok(Self::All),
+            "t" | "top" => Ok(Self::Top),
+            "b" | "bottom" => Ok(Self::Bottom),
+            "l" | "left" => Ok(Self::Left),
+            "r" | "right" => Ok(Self::Right),
             _ => Err(InnerError::bad_input_with_possibilities(
                 input,
                 "Invalid border= value",

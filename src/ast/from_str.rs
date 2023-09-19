@@ -1,5 +1,5 @@
-use crate::{InnerError, InnerResult};
 use super::{Ast, Node};
+use crate::{InnerError, InnerResult};
 
 // TODO: make the acceptable formats more flexible
 const DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S %Z";
@@ -18,28 +18,34 @@ impl Node {
 
     pub fn datetime_from_str(input: &str) -> InnerResult<Ast> {
         match chrono::NaiveDateTime::parse_from_str(input, DATE_FORMAT) {
-            Ok(d) => 
-                Ok(Box::new(Node::DateTime(chrono::DateTime::from_utc(d, chrono::Utc)))),
-            Err(e) => 
-                Err(InnerError::bad_input(input, &format!("Unable to parse date: {e}"))),
+            Ok(d) => Ok(Box::new(Node::DateTime(chrono::DateTime::from_utc(
+                d,
+                chrono::Utc,
+            )))),
+            Err(e) => Err(InnerError::bad_input(
+                input,
+                &format!("Unable to parse date: {e}"),
+            )),
         }
     }
 
     pub fn float_from_str(input: &str) -> InnerResult<Ast> {
         match input.parse::<f64>() {
-            Ok(f) => 
-                Ok(Box::new(f.into())),
-            Err(e) => 
-                Err(InnerError::bad_input(input, &format!("Error parsing float value: {e}"))),
+            Ok(f) => Ok(Box::new(f.into())),
+            Err(e) => Err(InnerError::bad_input(
+                input,
+                &format!("Error parsing float value: {e}"),
+            )),
         }
     }
 
     pub fn integer_from_str(input: &str) -> InnerResult<Ast> {
         match input.parse::<i64>() {
-            Ok(i) => 
-                Ok(Box::new(i.into())),
-            Err(e) => 
-                Err(InnerError::bad_input(input, &format!("Error parsing integer value: {e}"))),
+            Ok(i) => Ok(Box::new(i.into())),
+            Err(e) => Err(InnerError::bad_input(
+                input,
+                &format!("Error parsing integer value: {e}"),
+            )),
         }
     }
 
@@ -58,14 +64,26 @@ mod tests {
 
     #[test]
     fn boolean_from_str_false() {
-        assert_eq!(Node::Boolean(false), *Node::boolean_from_str("false").unwrap());
-        assert_eq!(Node::Boolean(false), *Node::boolean_from_str("FALSE").unwrap());
+        assert_eq!(
+            Node::Boolean(false),
+            *Node::boolean_from_str("false").unwrap()
+        );
+        assert_eq!(
+            Node::Boolean(false),
+            *Node::boolean_from_str("FALSE").unwrap()
+        );
     }
 
     #[test]
     fn boolean_from_str_true() {
-        assert_eq!(Node::Boolean(true), *Node::boolean_from_str("true").unwrap());
-        assert_eq!(Node::Boolean(true), *Node::boolean_from_str("TRUE").unwrap());
+        assert_eq!(
+            Node::Boolean(true),
+            *Node::boolean_from_str("true").unwrap()
+        );
+        assert_eq!(
+            Node::Boolean(true),
+            *Node::boolean_from_str("TRUE").unwrap()
+        );
     }
 
     #[test]
@@ -76,11 +94,17 @@ mod tests {
     #[test]
     fn datetime_from_str() {
         let date_time = chrono::DateTime::from_utc(
-            chrono::NaiveDate::from_ymd_opt(2022, 10, 12).unwrap().and_hms_opt(0, 0, 0).unwrap(),
+            chrono::NaiveDate::from_ymd_opt(2022, 10, 12)
+                .unwrap()
+                .and_hms_opt(0, 0, 0)
+                .unwrap(),
             chrono::Utc,
         );
 
-        assert_eq!(Node::DateTime(date_time), *Node::datetime_from_str("2022-10-12 00:00:00 UTC").unwrap());
+        assert_eq!(
+            Node::DateTime(date_time),
+            *Node::datetime_from_str("2022-10-12 00:00:00 UTC").unwrap()
+        );
     }
 
     #[test]
@@ -90,7 +114,10 @@ mod tests {
 
     #[test]
     fn float_from_str() {
-        assert_eq!(Node::Float(123.45), *Node::float_from_str("123.45").unwrap());
+        assert_eq!(
+            Node::Float(123.45),
+            *Node::float_from_str("123.45").unwrap()
+        );
     }
 
     #[test]
@@ -105,7 +132,10 @@ mod tests {
 
     #[test]
     fn reference_from_str() {
-        assert_eq!(Node::reference("bar"), *Node::reference_from_str("bar").unwrap());
+        assert_eq!(
+            Node::reference("bar"),
+            *Node::reference_from_str("bar").unwrap()
+        );
     }
 
     #[test]

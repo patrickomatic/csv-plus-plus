@@ -1,6 +1,6 @@
+use super::Rgb;
 use crate::{InnerError, InnerResult};
 use std::str::FromStr;
-use super::Rgb;
 
 fn string_to_hex(hex_code: &str, double_it: bool) -> InnerResult<u8> {
     let hex_string = if double_it {
@@ -9,9 +9,8 @@ fn string_to_hex(hex_code: &str, double_it: bool) -> InnerResult<u8> {
         hex_code.to_string()
     };
 
-    u8::from_str_radix(&hex_string, 16).map_err(|e| {
-        InnerError::rgb_syntax_error(hex_code, &format!("Invalid hex: {}", e))
-    })
+    u8::from_str_radix(&hex_string, 16)
+        .map_err(|e| InnerError::rgb_syntax_error(hex_code, &format!("Invalid hex: {}", e)))
 }
 
 impl FromStr for Rgb {
@@ -23,20 +22,18 @@ impl FromStr for Rgb {
 
         let rgb = if input_len == 6 {
             Rgb {
-                r: string_to_hex(&input[start_at   .. start_at+2], false)?,
-                g: string_to_hex(&input[start_at+2 .. start_at+4], false)?,
-                b: string_to_hex(&input[start_at+4 .. start_at+6], false)?,
+                r: string_to_hex(&input[start_at..start_at + 2], false)?,
+                g: string_to_hex(&input[start_at + 2..start_at + 4], false)?,
+                b: string_to_hex(&input[start_at + 4..start_at + 6], false)?,
             }
         } else if input_len == 3 {
             Rgb {
-                r: string_to_hex(&input[start_at   .. start_at+1], true)?,
-                g: string_to_hex(&input[start_at+1 .. start_at+2], true)?,
-                b: string_to_hex(&input[start_at+2 .. start_at+3], true)?,
+                r: string_to_hex(&input[start_at..start_at + 1], true)?,
+                g: string_to_hex(&input[start_at + 1..start_at + 2], true)?,
+                b: string_to_hex(&input[start_at + 2..start_at + 3], true)?,
             }
         } else {
-            return Err(InnerError::rgb_syntax_error(
-                    input, 
-                    &format!("\"{input}\" must be a 3 or 6-character RGB string, optionally prefixed with '#'")))
+            return Err(InnerError::rgb_syntax_error(input, &format!("\"{input}\" must be a 3 or 6-character RGB string, optionally prefixed with '#'")));
         };
 
         Ok(rgb)
@@ -73,5 +70,4 @@ mod tests {
         assert_eq!(255, rgb.g);
         assert_eq!(255, rgb.b);
     }
-
 }

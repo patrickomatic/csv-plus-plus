@@ -19,7 +19,7 @@ mod template;
 
 pub use cell::Cell;
 pub use cli_args::CliArgs;
-pub use error::{Error, InnerError, Result, InnerResult};
+pub use error::{Error, InnerError, InnerResult, Result};
 pub use expand::Expand;
 pub use modifier::{Modifier, RowModifier};
 pub use options::Options;
@@ -35,10 +35,10 @@ pub use template::Template;
 /// Some shared test utility functions.  
 #[cfg(test)]
 pub(crate) mod test_utils {
+    use crate::{CliArgs, Runtime, SourceCode};
     use rand::Rng;
     use std::fs;
     use std::path;
-    use crate::{CliArgs, Runtime, SourceCode};
 
     /// Only to be used as a helper in tests, this provides two important properties:
     ///
@@ -61,15 +61,14 @@ pub(crate) mod test_utils {
                 input_filename: test_file.input_file.clone(),
                 output_filename: Some(test_file.output_file.clone()),
                 ..Default::default()
-            }).unwrap()
+            })
+            .unwrap()
         }
     }
 
     impl From<TestFile> for SourceCode {
         fn from(test_file: TestFile) -> Self {
-            Self::new(
-                &test_file.read_input(),
-                test_file.input_file.clone()).unwrap()
+            Self::new(&test_file.read_input(), test_file.input_file.clone()).unwrap()
         }
     }
 
@@ -81,7 +80,8 @@ pub(crate) mod test_utils {
             let source_path = path::Path::new(&input_filename);
             fs::write(source_path, input).unwrap();
 
-            let output_filename = format!("unit_test_output{}.{output_extension}", rng.gen::<u64>());
+            let output_filename =
+                format!("unit_test_output{}.{output_extension}", rng.gen::<u64>());
             let output_path = path::Path::new(&output_filename);
 
             Self {

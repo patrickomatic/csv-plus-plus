@@ -1,5 +1,5 @@
-use std::fmt;
 use super::Template;
+use std::fmt;
 
 impl fmt::Display for Template<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -20,8 +20,8 @@ impl fmt::Display for Template<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Template, Runtime, Spreadsheet};
     use crate::test_utils::TestFile;
+    use crate::{Runtime, Spreadsheet, Template};
     use std::cell;
     use std::collections;
 
@@ -35,7 +35,6 @@ mod tests {
         }
     }
 
-
     #[test]
     fn display() {
         let test_file = TestFile::new("csv", "");
@@ -45,5 +44,5 @@ mod tests {
         assert!(template_str.contains("# Variables"));
         assert!(template_str.contains("# Functions"));
         assert!(template_str.contains("# Spreadsheet"));
-   }
+    }
 }

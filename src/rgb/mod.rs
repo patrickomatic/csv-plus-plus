@@ -1,7 +1,7 @@
 //! # Rgb
 //!
 //! RGB-parsing and formatting functionality
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 mod display;
 mod from;

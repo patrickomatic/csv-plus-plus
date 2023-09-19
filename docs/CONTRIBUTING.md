@@ -30,3 +30,10 @@ dependency versions unless necessary.
 
 * Target as few features as possible from the dependency.  If the dependency splits it's 
 functionality into multiple features than only include what you need.
+
+## Development Tools
+
+All code should conform to the guidelines set by:
+
+* [Clippy](https://github.com/rust-lang/rust-clippy)
+* [rustfmt](https://github.com/rust-lang/rustfmt)

@@ -1,7 +1,6 @@
 use csvpp::Template;
 mod common;
 
-
 const ALL_FEATURES: &str = "
 ## Welcome to the all_features.csvpp test. this is a comment
 ##
@@ -155,7 +154,7 @@ fn all_features_csv() {
 #[test]
 fn all_features_shorthand_csv_no_code_section() {
     let s = common::Setup::new("csv", ALL_FEATURES_SHORTHAND);
-                               let template = Template::compile(&s.runtime).unwrap();
+    let template = Template::compile(&s.runtime).unwrap();
     let target = s.runtime.target().unwrap();
 
     assert!(target.write(&template).is_ok());

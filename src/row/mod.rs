@@ -1,5 +1,5 @@
-use crate::{Result, RowModifier, SourceCode, Cell};
-use serde::{Serialize, Deserialize};
+use crate::{Cell, Result, RowModifier, SourceCode};
+use serde::{Deserialize, Serialize};
 
 type CsvRowResult = std::result::Result<csv::StringRecord, csv::Error>;
 

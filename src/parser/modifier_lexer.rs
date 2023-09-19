@@ -31,10 +31,11 @@ pub struct ModifierLexer {
     input: String,
 }
 
-
 impl ModifierLexer {
     pub fn new(input: &str) -> Self {
-        Self { input: input.to_owned() }
+        Self {
+            input: input.to_owned(),
+        }
     }
 
     pub fn rest(&self) -> String {
@@ -43,7 +44,7 @@ impl ModifierLexer {
 
     pub fn maybe_take_start_modifier(&mut self) -> Option<Token> {
         let input = self.input.trim();
-        
+
         if let Some(without_match) = input.strip_prefix("[[") {
             self.input = without_match.to_string();
             Some(Token::StartCellModifier)
@@ -62,25 +63,24 @@ impl ModifierLexer {
 
     pub fn maybe_take_token(&mut self, token: Token) -> Option<String> {
         match token {
-            Token::Equals =>    self.maybe_take("="),
-            Token::Slash =>     self.maybe_take("/"),
-            _ =>
-                panic!("Cannot maybe take: {:?}", token),
+            Token::Equals => self.maybe_take("="),
+            Token::Slash => self.maybe_take("/"),
+            _ => panic!("Cannot maybe take: {:?}", token),
         }
     }
 
     pub fn take_token(&mut self, token: Token) -> InnerResult<String> {
         match token {
-            Token::Color =>             self.take_color(),
-            Token::EndModifier =>       self.take("]]"),
-            Token::Equals =>            self.take("="),
-            Token::ModifierName =>      self.take_while(|ch| ch.is_alphanumeric()),
+            Token::Color => self.take_color(),
+            Token::EndModifier => self.take("]]"),
+            Token::Equals => self.take("="),
+            Token::ModifierName => self.take_while(|ch| ch.is_alphanumeric()),
             Token::ModifierRightSide => self.take_while(|ch| ch.is_alphanumeric() || ch == '_'),
-            Token::PositiveNumber =>    self.take_while(|ch| ch.is_ascii_digit()),
-            Token::String =>            self.take_string(),
-            Token::Slash =>             self.take("/"),
+            Token::PositiveNumber => self.take_while(|ch| ch.is_ascii_digit()),
+            Token::String => self.take_string(),
+            Token::Slash => self.take("/"),
             Token::StartCellModifier => self.take("[["),
-            Token::StartRowModifier =>  self.take("![["),
+            Token::StartRowModifier => self.take("![["),
         }
     }
 
@@ -102,7 +102,10 @@ impl ModifierLexer {
             self.input = without_match.to_string();
             Ok(substring.to_string())
         } else {
-            Err(InnerError::bad_input(input, &format!("Error parsing input, expected '{}'", substring)))
+            Err(InnerError::bad_input(
+                input,
+                &format!("Error parsing input, expected '{}'", substring),
+            ))
         }
     }
 
@@ -118,7 +121,9 @@ impl ModifierLexer {
             } else if c.is_alphanumeric() {
                 if matched_alphas > 6 {
                     return Err(InnerError::bad_input(
-                            &self.input, &format!("Unexpected RGB color character: '{}'", c)));
+                        &self.input,
+                        &format!("Unexpected RGB color character: '{}'", c),
+                    ));
                 }
 
                 matched.push(c);
@@ -130,7 +135,9 @@ impl ModifierLexer {
                 }
 
                 return Err(InnerError::bad_input(
-                        &self.input, &format!("Invalid character when parsing RGB color: '{}'", c)))
+                    &self.input,
+                    &format!("Invalid character when parsing RGB color: '{}'", c),
+                ));
             }
         }
 
@@ -155,7 +162,7 @@ impl ModifierLexer {
         let mut start_quote = false;
         let mut end_quote = false;
         let mut consumed = 0;
-        
+
         for c in self.input.trim().chars() {
             // due to escaping rules, we don't always put what we consume on `matched`.  so we need
             // to keep track of it separately
@@ -176,7 +183,10 @@ impl ModifierLexer {
             } else if c == '\'' {
                 start_quote = true;
             } else {
-                return Err(InnerError::bad_input(&self.input, "Expected a starting single quote"))
+                return Err(InnerError::bad_input(
+                    &self.input,
+                    "Expected a starting single quote",
+                ));
             }
         }
 
@@ -184,15 +194,17 @@ impl ModifierLexer {
             self.input = self.input[consumed..].to_string();
             Ok(matched)
         } else {
-            Err(InnerError::bad_input(&self.input, "Expected a start and ending quote"))
+            Err(InnerError::bad_input(
+                &self.input,
+                "Expected a start and ending quote",
+            ))
         }
     }
 
-    fn take_while<F>(
-        &mut self, 
-        while_fn: F,
-    ) -> InnerResult<String>
-    where F: Fn(char) -> bool {
+    fn take_while<F>(&mut self, while_fn: F) -> InnerResult<String>
+    where
+        F: Fn(char) -> bool,
+    {
         let input = self.input.trim();
         let mut matched = "".to_string();
 
@@ -206,7 +218,10 @@ impl ModifierLexer {
 
         if matched.is_empty() {
             // TODO this message is misleading I think
-            Err(InnerError::bad_input(input, "Expected a modifier definition (i.e. format/halign/etc)"))
+            Err(InnerError::bad_input(
+                input,
+                "Expected a modifier definition (i.e. format/halign/etc)",
+            ))
         } else {
             self.input = input[matched.len()..].to_string();
             Ok(matched)
@@ -221,13 +236,19 @@ mod tests {
     #[test]
     fn maybe_take_start_modifier_modifier() {
         let mut lexer = ModifierLexer::new("[[");
-        assert_eq!(Some(Token::StartCellModifier), lexer.maybe_take_start_modifier());
+        assert_eq!(
+            Some(Token::StartCellModifier),
+            lexer.maybe_take_start_modifier()
+        );
     }
 
     #[test]
     fn maybe_take_start_modifier_row_modifier() {
         let mut lexer = ModifierLexer::new("![[");
-        assert_eq!(Some(Token::StartRowModifier), lexer.maybe_take_start_modifier());
+        assert_eq!(
+            Some(Token::StartRowModifier),
+            lexer.maybe_take_start_modifier()
+        );
     }
 
     #[test]
@@ -317,7 +338,10 @@ mod tests {
     #[test]
     fn take_token_string_double_quoted() {
         let mut lexer = ModifierLexer::new("'this is \\' a quoted string\\''");
-        assert_eq!("this is ' a quoted string'", lexer.take_token(Token::String).unwrap());
+        assert_eq!(
+            "this is ' a quoted string'",
+            lexer.take_token(Token::String).unwrap()
+        );
         // make sure it consumed `input` given the quoting rules
         assert_eq!("", lexer.input);
     }
