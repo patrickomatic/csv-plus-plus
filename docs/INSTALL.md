@@ -9,7 +9,7 @@ To install from source check out the [csv++ repository](https://github.com/patri
 and run:
 
 ```bash
-cargo install
+cargo install --path .
 ```
 
 This assumes you've [installed Rust](https://www.rust-lang.org/tools/install)
