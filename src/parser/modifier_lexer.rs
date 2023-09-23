@@ -39,7 +39,7 @@ impl ModifierLexer {
     }
 
     pub fn rest(&self) -> String {
-        self.input.clone()
+        self.input.as_str().trim().to_owned()
     }
 
     pub fn maybe_take_start_modifier(&mut self) -> Option<Token> {
@@ -364,6 +364,6 @@ mod tests {
         lexer.take_token(Token::Slash).unwrap();
         lexer.take_token(Token::Equals).unwrap();
 
-        assert_eq!(" rest", lexer.rest());
+        assert_eq!("rest", lexer.rest());
     }
 }

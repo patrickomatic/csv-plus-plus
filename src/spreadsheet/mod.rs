@@ -86,6 +86,7 @@ impl Spreadsheet {
         csv::ReaderBuilder::new()
             .has_headers(false)
             .flexible(true)
+            .trim(csv::Trim::All)
             .from_reader(source_code.csv_section.as_bytes())
     }
 
@@ -155,6 +156,15 @@ mod tests {
         assert!(spreadsheet.rows[0].cells[0].ast.is_some());
         assert!(spreadsheet.rows[0].cells[1].ast.is_some());
         assert!(spreadsheet.rows[0].cells[2].ast.is_some());
+    }
+
+    #[test]
+    fn parse_trim_spaces() {
+        let source_code = build_source_code("   foo   , bar\n");
+        let spreadsheet = Spreadsheet::parse(&source_code).unwrap();
+
+        assert_eq!(spreadsheet.rows[0].cells[0].value, "foo");
+        assert_eq!(spreadsheet.rows[0].cells[1].value, "bar");
     }
 
     #[test]

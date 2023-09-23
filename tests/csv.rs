@@ -51,7 +51,7 @@ fees := commission_charge * celladjacent(D)
 profit := (celladjacent(B) * celladjacent(C)) - fees
 
 ---
-![[format=bold/halign=center]]Date ,Purchase         ,Price  ,Quantity ,Profit     ,Fees
+![[format=bold/halign=center]]Date ,[[f=b]] Purchase ,Price  ,Quantity ,Profit     ,Fees
 ![[expand=2]]                      ,[[format=bold]]  ,       ,         ,"=profit"  ,"=fees"
 "#,
     );
@@ -62,9 +62,9 @@ profit := (celladjacent(B) * celladjacent(C)) - fees
 
     assert_eq!(
         s.read_output(),
-        "Date,Purchase         ,Price  ,Quantity ,Profit     ,Fees
-,,       ,         ,=((B2 * C2) - (0.65 * D2)),=(0.65 * D2)
-,,       ,         ,=((B3 * C3) - (0.65 * D3)),=(0.65 * D3)
+        "Date,Purchase,Price,Quantity,Profit,Fees
+,,,,=((B2 * C2) - (0.65 * D2)),=(0.65 * D2)
+,,,,=((B3 * C3) - (0.65 * D3)),=(0.65 * D3)
 "
     );
 }
