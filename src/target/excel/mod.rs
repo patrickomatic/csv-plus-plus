@@ -133,7 +133,7 @@ impl<'a> Excel<'a> {
                 }
             })
         } else {
-            Ok(umya_spreadsheet::new_file())
+            Ok(umya_spreadsheet::new_file_empty_worksheet())
         }
     }
 

@@ -12,6 +12,7 @@
 * Fix cellabove/cellbelow/celladjacent to all take columns (A/B/C/etc)
 * Reading and writing CSV with inconsistent column lengths would fail
 * Trim leading and trailing spaces on input CSV
+* Fix excel workbooks being created with an empty first sheet
 
 ## v0.3.0
 
