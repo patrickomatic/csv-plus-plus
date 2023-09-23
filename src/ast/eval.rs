@@ -13,7 +13,7 @@ impl Node {
     pub fn eval_functions(
         &self,
         functions: &[String],
-        resolve_fn: impl Fn(&str, Vec<Ast>) -> InnerResult<Ast>,
+        resolve_fn: impl Fn(&str, &[Ast]) -> InnerResult<Ast>,
     ) -> InnerResult<Node> {
         let mut evaled_ast = self.clone();
         for fn_name in functions {
@@ -52,7 +52,7 @@ impl Node {
     fn call_function(
         &self,
         fn_id: &str,
-        resolve_fn: &impl Fn(&str, Vec<Ast>) -> InnerResult<Ast>,
+        resolve_fn: &impl Fn(&str, &[Ast]) -> InnerResult<Ast>,
     ) -> InnerResult<Self> {
         match self {
             // handle a function that we're calling
@@ -61,7 +61,7 @@ impl Node {
             // (typically a terminal node) or a user-defined function (always a
             // `Node::Function`)
             {
-                match *resolve_fn(fn_id, args.to_vec())? {
+                match *resolve_fn(fn_id, args)? {
                     // when we get a `Node::Function`, take the body and replace each of it's
                     // arguments in the body.  For example:
                     //

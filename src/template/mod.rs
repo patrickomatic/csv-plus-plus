@@ -174,7 +174,7 @@ impl<'a> Template<'a> {
                     } else if let Some(BuiltinFunction { eval, .. }) =
                         self.runtime.builtin_functions.get(fn_id)
                     {
-                        Ok(Box::new(eval(position, &args)?))
+                        Ok(Box::new(eval(position, args)?))
                     } else {
                         Err(InnerError::bad_input(fn_id, "Could not find function"))
                     }
