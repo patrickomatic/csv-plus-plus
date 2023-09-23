@@ -19,6 +19,6 @@ mod tests {
             b: 17,
         };
 
-        assert_eq!(rgb.to_string(), "#FF0011")
+        assert_eq!(rgb.to_string(), "#FF0011");
     }
 }

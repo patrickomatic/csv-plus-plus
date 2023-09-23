@@ -4,7 +4,7 @@
 
 * Ability to reference variables defined in an expand, outside of an expand.  If they're referenced inside an expand they'll resolve to their exact location, otherwise they resolve to the range represented by that column in the range.
 * Support for `![[var=...]]` both in and outside expands.  They'll reference either a row (if defined outside an expand), a row relative to the expand (if defined and referenced in an expand) or the entire row range of the expand (if defined in an expand and referenced outside it).
-* `note` support for Excel
+* Excel: `note` support
 * More useful `-v/--verbose` output
 
 ### Bugfixes
@@ -12,7 +12,8 @@
 * Fix cellabove/cellbelow/celladjacent to all take columns (A/B/C/etc)
 * Reading and writing CSV with inconsistent column lengths would fail
 * Trim leading and trailing spaces on input CSV
-* Fix excel workbooks being created with an empty first sheet
+* Excel: Fix workbooks being created with an empty first sheet
+* Excel: Fix background/foreground coloring
 
 ## v0.3.0
 

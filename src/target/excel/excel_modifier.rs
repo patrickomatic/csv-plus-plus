@@ -70,7 +70,7 @@ impl From<NumberFormat> for umya_spreadsheet::NumberingFormat {
 impl From<Rgb> for umya_spreadsheet::Color {
     fn from(value: Rgb) -> Self {
         let mut color = umya_spreadsheet::Color::default();
-        color.set_argb(value.to_string());
+        color.set_argb(value.to_rgba());
         color
     }
 }
@@ -105,7 +105,7 @@ impl ExcelModifier {
 
     fn set_background_color(&self, s: &mut umya_spreadsheet::Style) {
         if let Some(c) = self.0.color.clone() {
-            s.set_background_color(c.to_string());
+            s.set_background_color(c.to_rgba());
         }
     }
 
@@ -250,7 +250,7 @@ mod tests {
         let rgb = Rgb::from_str("FFAA00").unwrap();
         let color: umya_spreadsheet::Color = rgb.into();
 
-        assert_eq!(color.get_argb(), "#FFAA00");
+        assert_eq!(color.get_argb(), "FFAA00FF");
     }
 
     #[test]
