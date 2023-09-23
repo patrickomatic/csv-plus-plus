@@ -60,11 +60,8 @@ impl From<NumberFormat> for umya_spreadsheet::NumberingFormat {
             NumberFormat::Percent => umya_spreadsheet::NumberingFormat::FORMAT_PERCENTAGE,
             NumberFormat::Text => umya_spreadsheet::NumberingFormat::FORMAT_TEXT,
             NumberFormat::Time => umya_spreadsheet::NumberingFormat::FORMAT_DATE_TIME1,
-            NumberFormat::Scientific =>
             // TODO: I dunno if excel has a "scientific" formatting?
-            {
-                umya_spreadsheet::NumberingFormat::FORMAT_NUMBER
-            }
+            NumberFormat::Scientific => umya_spreadsheet::NumberingFormat::FORMAT_NUMBER,
         });
         nf
     }

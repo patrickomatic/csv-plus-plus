@@ -63,12 +63,28 @@ impl<'a> Excel<'a> {
                         if let Some(style) = self.build_style(&cell) {
                             e.set_style(style);
                         }
+
+                        if let Some(n) = &cell.modifier.note {
+                            self.set_comment(worksheet, &cell, n);
+                        }
                     }
                 }
             }
         }
 
         Ok(())
+    }
+
+    fn set_comment(&self, worksheet: &mut umya_spreadsheet::Worksheet, cell: &Cell, note: &str) {
+        let mut comment = umya_spreadsheet::Comment::default();
+        let rt = comment.get_text_mut();
+        rt.set_text(note);
+
+        let coord = comment.get_coordinate_mut();
+        coord.set_col_num(cell.position.column.x as u32);
+        coord.set_row_num(cell.position.row.y as u32);
+
+        worksheet.add_comments(comment);
     }
 
     // TODO: turn into an impl (from/into)? the problem is we're mutating existing_cell...
