@@ -19,7 +19,7 @@ use super::ast_lexer::AstLexer;
 use super::ast_parser::AstParser;
 use super::token_library::{Token, TokenMatch};
 use crate::ast::{Ast, Functions, Node, VariableValue, Variables};
-use crate::{Error, Result, SourceCode};
+use crate::{Error, Result, Runtime};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -30,22 +30,24 @@ pub struct CodeSection {
 
 pub struct CodeSectionParser<'a> {
     lexer: AstLexer<'a>,
-    source_code: &'a SourceCode,
+    runtime: &'a Runtime,
 }
 
 /// A recursive descent parser which relies on `AstParser` for individual expressions.  As
 /// mentioned above, the contract here is that this parser handles parsing a series of
 /// function and variable references and delegates to `AstParser` for handling expressions
 impl<'a> CodeSectionParser<'a> {
-    pub fn parse(input: &'a str, source_code: &'a SourceCode) -> Result<CodeSection> {
-        let lexer = AstLexer::new(input).map_err(|e| Error::CodeSyntaxError {
+    pub fn parse(input: &'a str, runtime: &'a Runtime) -> Result<CodeSection> {
+        let lexer = AstLexer::new(input, runtime).map_err(|e| Error::CodeSyntaxError {
             message: e.to_string(),
             line_number: e.line_number,
             position: e.position,
-            highlighted_lines: source_code.highlight_line(e.line_number, e.position),
+            highlighted_lines: runtime
+                .source_code
+                .highlight_line(e.line_number, e.position),
         })?;
 
-        let parser = CodeSectionParser { lexer, source_code };
+        let parser = CodeSectionParser { lexer, runtime };
 
         parser.parse_code_section()
     }
@@ -189,12 +191,13 @@ impl<'a> CodeSectionParser<'a> {
     fn parse_expr(&'a self) -> Result<Ast> {
         // create an `AstParser` with a reference to our lexer so it can continue consuming our
         // stream of tokens
-        AstParser::new(&self.lexer, Some(self.source_code)).expr_bp(true, 0)
+        AstParser::new(&self.lexer, self.runtime).expr_bp(true, 0)
     }
 
     fn token_match_to_error(&'a self, token: &TokenMatch, message: String) -> Error {
         Error::CodeSyntaxError {
             highlighted_lines: self
+                .runtime
                 .source_code
                 .highlight_line(token.line_number, token.position),
             line_number: token.line_number,
@@ -208,11 +211,11 @@ impl<'a> CodeSectionParser<'a> {
 mod tests {
     use super::*;
     use crate::ast::Ast;
-    use std::path;
+    use crate::test_utils::*;
 
     fn test(input: &str) -> CodeSection {
-        let source_code = SourceCode::new(input, path::PathBuf::from("foo.csvpp")).unwrap();
-        CodeSectionParser::parse(input, &source_code).unwrap()
+        let runtime: Runtime = TestFile::new("csv", input).into();
+        CodeSectionParser::parse(input, &runtime).unwrap()
     }
 
     #[test]

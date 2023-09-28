@@ -6,7 +6,7 @@
 //!
 use super::modifier_lexer::{ModifierLexer, Token};
 use crate::modifier::*;
-use crate::{Error, Expand, InnerError, InnerResult, Result, Rgb, SourceCode};
+use crate::{Error, Expand, InnerError, InnerResult, Result, Rgb, Runtime};
 use a1_notation::{Address, Row};
 use std::str::FromStr;
 
@@ -30,14 +30,14 @@ pub struct ParsedCell {
 impl<'a> ModifierParser<'a> {
     pub fn parse(
         input: &str,
-        source_code: &SourceCode,
         position: Address,
         row_modifier: &RowModifier,
+        runtime: &Runtime,
     ) -> Result<ParsedCell> {
         let lexer = &mut ModifierLexer::new(input);
         let (modifier, row_modifier) = Self::parse_all_modifiers(lexer, position, row_modifier)
             .map_err(|e| Error::ModifierSyntaxError {
-                line_number: source_code.csv_line_number(position),
+                line_number: runtime.source_code.csv_line_number(position),
                 position,
                 inner_error: Box::new(e),
             })?;
@@ -265,18 +265,11 @@ impl<'a> ModifierParser<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path;
+    use crate::test_utils::*;
 
     fn test_parse(input: &str) -> ParsedCell {
-        let source_code = SourceCode::new(input, path::PathBuf::from("foo.csvpp")).unwrap();
-
-        ModifierParser::parse(
-            input,
-            &source_code,
-            Address::new(0, 0),
-            &RowModifier::default(),
-        )
-        .unwrap()
+        let runtime: Runtime = TestFile::new("xlsx", input).into();
+        ModifierParser::parse(input, Address::new(0, 0), &RowModifier::default(), &runtime).unwrap()
     }
 
     #[test]

@@ -1,6 +1,7 @@
 //! # Runtime
 //!
 use crate::ast::{BuiltinFunctions, BuiltinVariables};
+use crate::parser::token_library::TokenLibrary;
 use crate::{CliArgs, CompilationTarget, Options, Output, Result, SourceCode};
 use clap::Parser;
 
@@ -14,6 +15,7 @@ pub struct Runtime {
     pub options: Options,
     pub output: Output,
     pub source_code: SourceCode,
+    pub token_library: TokenLibrary,
 }
 
 impl Runtime {

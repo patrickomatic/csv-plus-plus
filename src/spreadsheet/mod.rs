@@ -2,7 +2,7 @@
 //!
 //!
 use crate::ast::{Node, VariableValue, Variables};
-use crate::{Result, Row, SourceCode};
+use crate::{Result, Row, Runtime};
 use serde::{Deserialize, Serialize};
 use std::collections;
 
@@ -15,12 +15,12 @@ pub struct Spreadsheet {
 
 impl Spreadsheet {
     /// Parse the spreadsheet section of a csv++ source file.
-    pub fn parse(source_code: &SourceCode) -> Result<Spreadsheet> {
-        let mut csv_reader = Self::csv_reader(source_code);
+    pub fn parse(runtime: &Runtime) -> Result<Spreadsheet> {
+        let mut csv_reader = Self::csv_reader(runtime);
         let mut rows: Vec<Row> = vec![];
 
         for (row_index, result) in csv_reader.records().enumerate() {
-            let row = Row::parse(result, row_index, source_code)?;
+            let row = Row::parse(result, row_index, runtime)?;
             rows.push(row);
         }
 
@@ -82,12 +82,12 @@ impl Spreadsheet {
         vars
     }
 
-    fn csv_reader(source_code: &SourceCode) -> csv::Reader<&[u8]> {
+    fn csv_reader(runtime: &Runtime) -> csv::Reader<&[u8]> {
         csv::ReaderBuilder::new()
             .has_headers(false)
             .flexible(true)
             .trim(csv::Trim::All)
-            .from_reader(source_code.csv_section.as_bytes())
+            .from_reader(runtime.source_code.csv_section.as_bytes())
     }
 
     pub fn widest_row(&self) -> usize {
@@ -103,18 +103,18 @@ impl Spreadsheet {
 mod tests {
     use super::*;
     use crate::modifier::TextFormat;
+    use crate::test_utils::*;
     use crate::*;
     use a1_notation::Address;
-    use std::path;
 
-    fn build_source_code(input: &str) -> SourceCode {
-        SourceCode::new(input, path::PathBuf::from("foo.csvpp")).unwrap()
+    fn build_runtime(input: &str) -> Runtime {
+        TestFile::new("csv", input).into()
     }
 
     #[test]
     fn parse_simple() {
-        let source_code = build_source_code("foo,bar,baz\n1,2,3\n");
-        let spreadsheet = Spreadsheet::parse(&source_code).unwrap();
+        let runtime = build_runtime("foo,bar,baz\n1,2,3\n");
+        let spreadsheet = Spreadsheet::parse(&runtime).unwrap();
 
         // 2 rows
         assert_eq!(spreadsheet.rows.len(), 2);
@@ -150,8 +150,8 @@ mod tests {
 
     #[test]
     fn parse_with_asts() {
-        let source_code = build_source_code("=1,=2 * 3,=foo\n");
-        let spreadsheet = Spreadsheet::parse(&source_code).unwrap();
+        let runtime = build_runtime("=1,=2 * 3,=foo\n");
+        let spreadsheet = Spreadsheet::parse(&runtime).unwrap();
 
         assert!(spreadsheet.rows[0].cells[0].ast.is_some());
         assert!(spreadsheet.rows[0].cells[1].ast.is_some());
@@ -160,8 +160,8 @@ mod tests {
 
     #[test]
     fn parse_trim_spaces() {
-        let source_code = build_source_code("   foo   , bar\n");
-        let spreadsheet = Spreadsheet::parse(&source_code).unwrap();
+        let runtime = build_runtime("   foo   , bar\n");
+        let spreadsheet = Spreadsheet::parse(&runtime).unwrap();
 
         assert_eq!(spreadsheet.rows[0].cells[0].value, "foo");
         assert_eq!(spreadsheet.rows[0].cells[1].value, "bar");
@@ -169,8 +169,8 @@ mod tests {
 
     #[test]
     fn parse_with_modifiers() {
-        let source_code = build_source_code("[[f=b / fs=20]]foo");
-        let spreadsheet = Spreadsheet::parse(&source_code).unwrap();
+        let runtime = build_runtime("[[f=b / fs=20]]foo");
+        let spreadsheet = Spreadsheet::parse(&runtime).unwrap();
 
         assert!(spreadsheet.rows[0].cells[0]
             .modifier
@@ -181,8 +181,8 @@ mod tests {
 
     #[test]
     fn parse_with_row_modifier() {
-        let source_code = build_source_code("![[f=b]]foo,bar,baz");
-        let spreadsheet = Spreadsheet::parse(&source_code).unwrap();
+        let runtime = build_runtime("![[f=b]]foo,bar,baz");
+        let spreadsheet = Spreadsheet::parse(&runtime).unwrap();
 
         assert!(spreadsheet.rows[0].cells[0]
             .modifier

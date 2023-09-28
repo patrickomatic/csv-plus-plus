@@ -18,38 +18,30 @@
 use super::ast_lexer::*;
 use super::token_library::{Token, TokenMatch};
 use crate::ast::{Ast, Node, Variables};
-use crate::{Error, InnerResult, Result, SourceCode};
+use crate::{Error, InnerResult, Result, Runtime};
 use std::collections;
 
 pub struct AstParser<'a> {
     lexer: &'a AstLexer<'a>,
-    source_code: Option<&'a SourceCode>,
+    runtime: &'a Runtime,
 }
 
 impl<'a> AstParser<'a> {
-    pub fn new(lexer: &'a AstLexer<'a>, source_code: Option<&'a SourceCode>) -> Self {
-        AstParser { lexer, source_code }
+    pub fn new(lexer: &'a AstLexer<'a>, runtime: &'a Runtime) -> Self {
+        AstParser { lexer, runtime }
     }
 
     /// Parse `input` from a `SourceCode`.
-    pub fn parse(
-        input: &'a str,
-        single_expr: bool,
-        source_code: Option<&'a SourceCode>,
-    ) -> Result<Ast> {
-        let lexer = AstLexer::new(input).map_err(|e| {
-            if let Some(source) = source_code {
-                Error::CodeSyntaxError {
-                    message: e.to_string(),
-                    line_number: e.line_number,
-                    position: e.position,
-                    highlighted_lines: source.highlight_line(e.line_number, e.position),
-                }
-            } else {
-                Error::InitError(e.to_string())
-            }
+    pub fn parse(input: &'a str, single_expr: bool, runtime: &'a Runtime) -> Result<Ast> {
+        let lexer = AstLexer::new(input, runtime).map_err(|e| Error::CodeSyntaxError {
+            message: e.to_string(),
+            line_number: e.line_number,
+            position: e.position,
+            highlighted_lines: runtime
+                .source_code
+                .highlight_line(e.line_number, e.position),
         })?;
-        let parser = AstParser::new(&lexer, source_code);
+        let parser = AstParser::new(&lexer, runtime);
 
         parser.expr_bp(single_expr, 0)
     }
@@ -58,12 +50,15 @@ impl<'a> AstParser<'a> {
     /// "foo=1,bar=baz"
     ///
     // TODO: take multiple key values via the same flag.  similar to awk -v foo1=bar -v foo2=bar
-    pub fn parse_key_value_str(key_values: Vec<&'a str>) -> Result<Variables> {
+    pub fn parse_key_value_str(
+        key_values: &'a [String],
+        runtime: &'a Runtime,
+    ) -> Result<Variables> {
         let mut variables = collections::HashMap::new();
 
         for kv in key_values.iter() {
             if let Some((key, value)) = kv.split_once('=') {
-                variables.insert(key.to_string(), Self::parse(value, false, None)?);
+                variables.insert(key.to_string(), Self::parse(value, false, runtime)?);
             } else {
                 return Err(Error::InitError(format!(
                     "Invalid key/value variables: {}",
@@ -283,16 +278,15 @@ impl<'a> AstParser<'a> {
     }
 
     fn syntax_error(&self, token: &TokenMatch, message: &str) -> Result<Ast> {
-        if let Some(source_code) = self.source_code {
-            Err(Error::CodeSyntaxError {
-                line_number: token.line_number,
-                message: message.to_string(),
-                position: token.position,
-                highlighted_lines: source_code.highlight_line(token.line_number, token.position),
-            })
-        } else {
-            Err(Error::InitError(message.to_string()))
-        }
+        Err(Error::CodeSyntaxError {
+            line_number: token.line_number,
+            message: message.to_string(),
+            position: token.position,
+            highlighted_lines: self
+                .runtime
+                .source_code
+                .highlight_line(token.line_number, token.position),
+        })
     }
 
     fn ast_from_str(
@@ -300,20 +294,14 @@ impl<'a> AstParser<'a> {
         token: &TokenMatch,
         from_str_fn: fn(&str) -> InnerResult<Ast>,
     ) -> Result<Ast> {
-        from_str_fn(token.str_match).map_err(|e| {
-            if let Some(source_code) = self.source_code {
-                Error::CodeSyntaxError {
-                    highlighted_lines: source_code
-                        .highlight_line(token.line_number, token.position),
-                    line_number: token.line_number,
-                    position: token.position,
-                    message: e.to_string(),
-                }
-            } else {
-                // we haven't even loaded the source code yet - this happens when we're trying to
-                // parse the CLI-supplied key/values
-                Error::InitError(e.to_string())
-            }
+        from_str_fn(token.str_match).map_err(|e| Error::CodeSyntaxError {
+            highlighted_lines: self
+                .runtime
+                .source_code
+                .highlight_line(token.line_number, token.position),
+            line_number: token.line_number,
+            position: token.position,
+            message: e.to_string(),
         })
     }
 }
@@ -321,9 +309,11 @@ impl<'a> AstParser<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::*;
 
     fn test_parse(input: &str) -> Ast {
-        AstParser::parse(input, false, None).unwrap()
+        let runtime: Runtime = TestFile::new("xlsx", input).into();
+        AstParser::parse(input, false, &runtime).unwrap()
     }
 
     #[test]
@@ -401,14 +391,18 @@ mod tests {
 
     #[test]
     fn parse_key_value_str() {
-        let parsed_vars = AstParser::parse_key_value_str(vec!["foo=bar", "baz=1"]).unwrap();
+        let runtime: Runtime = TestFile::new("csv", "foo,bar").into();
+        let parsed_vars =
+            AstParser::parse_key_value_str(&["foo=bar".to_string(), "baz=1".to_string()], &runtime)
+                .unwrap();
 
         assert_eq!(parsed_vars.len(), 2);
     }
 
     #[test]
     fn parse_key_value_str_empty() {
-        let parsed_vars = AstParser::parse_key_value_str(vec![]).unwrap();
+        let runtime: Runtime = TestFile::new("csv", "foo,bar").into();
+        let parsed_vars = AstParser::parse_key_value_str(&[], &runtime).unwrap();
 
         assert_eq!(parsed_vars.len(), 0);
     }

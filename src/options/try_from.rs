@@ -1,21 +1,18 @@
 use super::Options;
-use crate::parser::ast_parser::AstParser;
 use crate::CliArgs;
 
 impl TryFrom<&CliArgs> for Options {
     type Error = crate::Error;
 
     fn try_from(cli_args: &CliArgs) -> std::result::Result<Self, Self::Error> {
-        let key_values_as_str = cli_args.key_values.iter().map(|s| s.as_str()).collect();
-
         Ok(Options {
             backup: cli_args.backup,
             google_account_credentials: cli_args.google_account_credentials.clone(),
-            key_values: AstParser::parse_key_value_str(key_values_as_str)?,
             offset: (cli_args.x_offset, cli_args.y_offset),
             overwrite_values: !cli_args.safe,
             sheet_name: Self::sheet_name(cli_args)?,
             verbose: cli_args.verbose,
+            ..Default::default()
         })
     }
 }

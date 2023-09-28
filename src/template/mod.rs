@@ -26,13 +26,10 @@ pub struct Template<'a> {
 
 impl<'a> Template<'a> {
     pub fn compile(runtime: &'a Runtime) -> Result<Self> {
-        let spreadsheet = Spreadsheet::parse(&runtime.source_code)?;
+        let spreadsheet = Spreadsheet::parse(runtime)?;
 
         let code_section = if let Some(code_section_source) = &runtime.source_code.code_section {
-            Some(CodeSectionParser::parse(
-                code_section_source,
-                &runtime.source_code,
-            )?)
+            Some(CodeSectionParser::parse(code_section_source, runtime)?)
         } else {
             None
         };
@@ -166,7 +163,7 @@ impl<'a> Template<'a> {
             last_round_refs = refs.clone();
 
             evaled_ast = evaled_ast
-                .eval_variables(self.resolve_variables(refs.variables, position)?)
+                .eval_variables(self.resolve_variables(&refs.variables, position)?)
                 .map_err(|e| self.inner_error_to_error(e, position))?
                 .eval_functions(&refs.functions, |fn_id, args| {
                     if let Some(function) = self.functions.get(fn_id) {
@@ -232,13 +229,13 @@ impl<'a> Template<'a> {
     /// that we can and leave the rest alone.
     fn resolve_variables(
         &self,
-        var_names: Vec<String>,
+        var_names: &[String],
         position: Address,
     ) -> Result<collections::HashMap<String, Ast>> {
         let mut resolved_vars = collections::HashMap::new();
         for var_name in var_names {
-            if let Some(val) = self.resolve_variable(&var_name, position)? {
-                resolved_vars.insert(var_name, val);
+            if let Some(val) = self.resolve_variable(var_name, position)? {
+                resolved_vars.insert(var_name.to_string(), val);
             }
         }
 

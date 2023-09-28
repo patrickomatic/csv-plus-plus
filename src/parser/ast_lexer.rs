@@ -1,6 +1,7 @@
 //! # AstLexer
 //!
 use super::token_library::{Token, TokenLibrary, TokenMatch, TokenMatcher};
+use crate::Runtime;
 use std::cell::RefCell;
 use std::error;
 use std::fmt;
@@ -69,9 +70,7 @@ impl fmt::Display for AstLexerError {
 impl error::Error for AstLexerError {}
 
 impl<'a> AstLexer<'a> {
-    pub fn new(input: &'a str) -> Result<AstLexer<'a>, AstLexerError> {
-        // TODO: ick: fix this unwrap
-        let token_library = TokenLibrary::build().unwrap();
+    pub fn new(input: &'a str, runtime: &'a Runtime) -> Result<AstLexer<'a>, AstLexerError> {
         let mut line_number = 1;
         let mut position = 1;
 
@@ -81,7 +80,7 @@ impl<'a> AstLexer<'a> {
         loop {
             let mut matched = false;
 
-            for TokenMatcher(token, regex) in matchers_ordered(&token_library).iter() {
+            for TokenMatcher(token, regex) in matchers_ordered(&runtime.token_library).iter() {
                 if let Some(m) = regex.find(p) {
                     if *token == Token::Newline {
                         // just count the newline but don't store it on `tokens`
@@ -162,6 +161,11 @@ impl<'a> AstLexer<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::*;
+
+    fn build_runtime() -> Runtime {
+        TestFile::new("csv", "foo,bar").into()
+    }
 
     fn build_token_match(
         token: Token,
@@ -179,7 +183,8 @@ mod tests {
 
     #[test]
     fn lexer_new() {
-        let lexer = AstLexer::new("foo bar,\"a\",123 \n(d, b) + * 0.25").unwrap();
+        let runtime = build_runtime();
+        let lexer = AstLexer::new("foo bar,\"a\",123 \n(d, b) + * 0.25", &runtime).unwrap();
 
         assert_eq!(
             lexer.next(),
@@ -222,7 +227,8 @@ mod tests {
 
     #[test]
     fn lexer_new_comment() {
-        let lexer = AstLexer::new("# this is a comment\na_ref\n").unwrap();
+        let runtime = build_runtime();
+        let lexer = AstLexer::new("# this is a comment\na_ref\n", &runtime).unwrap();
 
         assert_eq!(
             lexer.next(),
@@ -233,7 +239,8 @@ mod tests {
 
     #[test]
     fn lexer_new_newlines() {
-        let lexer = AstLexer::new("\n foo \n bar").unwrap();
+        let runtime = build_runtime();
+        let lexer = AstLexer::new("\n foo \n bar", &runtime).unwrap();
 
         assert_eq!(
             lexer.next(),
@@ -247,7 +254,8 @@ mod tests {
 
     #[test]
     fn lexer_peek() {
-        let lexer = AstLexer::new("foo (bar) + baz").unwrap();
+        let runtime = build_runtime();
+        let lexer = AstLexer::new("foo (bar) + baz", &runtime).unwrap();
 
         assert_eq!(
             lexer.peek(),

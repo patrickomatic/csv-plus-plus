@@ -1,4 +1,4 @@
-use crate::{Cell, Result, RowModifier, SourceCode};
+use crate::{Cell, Result, RowModifier, Runtime};
 use serde::{Deserialize, Serialize};
 
 type CsvRowResult = std::result::Result<csv::StringRecord, csv::Error>;
@@ -15,7 +15,7 @@ impl Row {
         record_result: CsvRowResult,
         // TODO: maybe make this be a Row... but the naming gets weird
         row_index: usize,
-        source_code: &SourceCode,
+        runtime: &Runtime,
     ) -> Result<Self> {
         let mut cells: Vec<Cell> = vec![];
         let mut row_modifier = RowModifier::default();
@@ -25,7 +25,7 @@ impl Row {
 
         for (cell_index, unparsed_value) in csv_parsed_row.into_iter().enumerate() {
             let a1 = a1_notation::Address::new(cell_index, row_index);
-            let (cell, rm) = Cell::parse(unparsed_value, a1, &row_modifier, source_code)?;
+            let (cell, rm) = Cell::parse(unparsed_value, a1, &row_modifier, runtime)?;
 
             // a row modifier was defined, so make sure it applies to cells going forward
             if let Some(r) = rm {

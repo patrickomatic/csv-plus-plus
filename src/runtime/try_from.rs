@@ -1,17 +1,26 @@
 use crate::ast::{BuiltinFunction, BuiltinVariable};
+use crate::parser::ast_parser::AstParser;
+use crate::parser::token_library::TokenLibrary;
 use crate::{CliArgs, Options, Output, Runtime, SourceCode};
 
 impl TryFrom<&CliArgs> for Runtime {
     type Error = crate::Error;
 
     fn try_from(cli_args: &CliArgs) -> std::result::Result<Self, Self::Error> {
-        Ok(Self {
+        let mut runtime = Self {
             builtin_functions: BuiltinFunction::all(),
             builtin_variables: BuiltinVariable::all(),
             options: Options::try_from(cli_args)?,
             output: Output::try_from(cli_args)?,
             source_code: SourceCode::open(&cli_args.input_filename)?,
-        })
+            token_library: TokenLibrary::build()?,
+        };
+
+        // we have to parse key/values afterwards, because we need an initialized `Runtime` to do so
+        runtime.options.key_values =
+            AstParser::parse_key_value_str(&cli_args.key_values, &runtime)?;
+
+        Ok(runtime)
     }
 }
 

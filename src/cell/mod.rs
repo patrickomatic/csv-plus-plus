@@ -3,7 +3,7 @@
 use crate::ast::Ast;
 use crate::parser::ast_parser::AstParser;
 use crate::parser::modifier_parser::ModifierParser;
-use crate::{Modifier, Result, RowModifier, SourceCode};
+use crate::{Modifier, Result, RowModifier, Runtime};
 use a1_notation::{Address, Row};
 use serde::{Deserialize, Serialize};
 
@@ -22,11 +22,11 @@ impl Cell {
         input: &str,
         position: Address,
         row_modifier: &RowModifier,
-        source_code: &SourceCode,
+        runtime: &Runtime,
     ) -> Result<(Self, Option<RowModifier>)> {
-        let parsed_modifiers = ModifierParser::parse(input, source_code, position, row_modifier)?;
+        let parsed_modifiers = ModifierParser::parse(input, position, row_modifier, runtime)?;
         let cell = Self {
-            ast: Self::parse_ast(&parsed_modifiers.value, source_code)?,
+            ast: Self::parse_ast(&parsed_modifiers.value, runtime)?,
             position,
             modifier: parsed_modifiers.modifier.unwrap_or_else(|| {
                 parsed_modifiers
@@ -50,13 +50,9 @@ impl Cell {
         }
     }
 
-    fn parse_ast(input: &str, source_code: &SourceCode) -> Result<Option<Ast>> {
+    fn parse_ast(input: &str, runtime: &Runtime) -> Result<Option<Ast>> {
         if let Some(without_equals) = input.strip_prefix('=') {
-            Ok(Some(AstParser::parse(
-                without_equals,
-                false,
-                Some(source_code),
-            )?))
+            Ok(Some(AstParser::parse(without_equals, false, runtime)?))
         } else {
             Ok(None)
         }

@@ -56,6 +56,7 @@ impl TestFile {
         }
     }
 
+    #[allow(dead_code)]
     fn read_output(&self) -> String {
         fs::read_to_string(&self.output_file).unwrap()
     }
