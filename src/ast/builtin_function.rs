@@ -1,7 +1,7 @@
 //! # BuiltinFunction
 //!
 use super::{Ast, FunctionEval, FunctionName, Node};
-use crate::{InnerError, InnerResult};
+use crate::{ParseError, ParseResult};
 use std::collections;
 use std::fmt;
 use std::str::FromStr;
@@ -52,7 +52,7 @@ fn def_fn<F>(
     eval_fn: F,
 ) -> collections::HashMap<FunctionName, BuiltinFunction>
 where
-    F: Fn(a1_notation::Address, &[Ast]) -> InnerResult<Node> + 'static,
+    F: Fn(a1_notation::Address, &[Ast]) -> ParseResult<Node> + 'static,
 {
     fns.insert(
         name.to_string(),
@@ -65,16 +65,16 @@ where
     fns
 }
 
-fn verify_one_column(fn_name: &str, args: &[Ast]) -> InnerResult<a1_notation::Column> {
+fn verify_one_column(fn_name: &str, args: &[Ast]) -> ParseResult<a1_notation::Column> {
     if args.len() != 1 {
-        Err(InnerError::bad_input(
+        Err(ParseError::bad_input(
             &args.len().to_string(), // TODO figure out a way to format this
             &format!("Expected a single argument to `{fn_name}`"),
         ))
     } else if let Node::Reference(r) = &*args[0] {
         Ok(a1_notation::Column::from_str(r)?)
     } else {
-        Err(InnerError::bad_input(
+        Err(ParseError::bad_input(
             args[0].to_string().as_str(),
             &format!("Expected a cell reference as the only argumnent to `{fn_name}`"),
         ))

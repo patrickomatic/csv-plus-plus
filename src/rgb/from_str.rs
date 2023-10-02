@@ -1,8 +1,8 @@
 use super::Rgb;
-use crate::{InnerError, InnerResult};
+use crate::{ParseError, ParseResult};
 use std::str::FromStr;
 
-fn string_to_hex(hex_code: &str, double_it: bool) -> InnerResult<u8> {
+fn string_to_hex(hex_code: &str, double_it: bool) -> ParseResult<u8> {
     let hex_string = if double_it {
         hex_code.repeat(2)
     } else {
@@ -10,13 +10,13 @@ fn string_to_hex(hex_code: &str, double_it: bool) -> InnerResult<u8> {
     };
 
     u8::from_str_radix(&hex_string, 16)
-        .map_err(|e| InnerError::rgb_syntax_error(hex_code, &format!("Invalid hex: {}", e)))
+        .map_err(|e| ParseError::rgb_syntax_error(hex_code, &format!("Invalid hex: {}", e)))
 }
 
 impl FromStr for Rgb {
-    type Err = InnerError;
+    type Err = ParseError;
 
-    fn from_str(input: &str) -> InnerResult<Self> {
+    fn from_str(input: &str) -> ParseResult<Self> {
         let start_at = if input.starts_with('#') { 1 } else { 0 };
         let input_len = input.len() - start_at;
 
@@ -33,7 +33,7 @@ impl FromStr for Rgb {
                 b: string_to_hex(&input[start_at + 2..start_at + 3], true)?,
             }
         } else {
-            return Err(InnerError::rgb_syntax_error(input, &format!("\"{input}\" must be a 3 or 6-character RGB string, optionally prefixed with '#'")));
+            return Err(ParseError::rgb_syntax_error(input, &format!("\"{input}\" must be a 3 or 6-character RGB string, optionally prefixed with '#'")));
         };
 
         Ok(rgb)

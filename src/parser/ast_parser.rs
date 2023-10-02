@@ -18,7 +18,7 @@
 use super::ast_lexer::*;
 use super::token_library::{Token, TokenMatch};
 use crate::ast::{Ast, Node, Variables};
-use crate::{Error, InnerResult, Result, Runtime};
+use crate::{Error, ParseResult, Result, Runtime};
 use std::collections;
 
 pub struct AstParser<'a> {
@@ -61,8 +61,7 @@ impl<'a> AstParser<'a> {
                 variables.insert(key.to_string(), Self::parse(value, false, runtime)?);
             } else {
                 return Err(Error::InitError(format!(
-                    "Invalid key/value variables: {}",
-                    kv
+                    "Invalid key/value variables: {kv}",
                 )));
             }
         }
@@ -292,7 +291,7 @@ impl<'a> AstParser<'a> {
     fn ast_from_str(
         &self,
         token: &TokenMatch,
-        from_str_fn: fn(&str) -> InnerResult<Ast>,
+        from_str_fn: fn(&str) -> ParseResult<Ast>,
     ) -> Result<Ast> {
         from_str_fn(token.str_match).map_err(|e| Error::CodeSyntaxError {
             highlighted_lines: self

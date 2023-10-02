@@ -4,12 +4,12 @@ use std::error;
 use std::path::PathBuf;
 
 mod display;
-mod inner_error;
+mod parse_error;
 
-pub use inner_error::InnerError;
+pub use parse_error::ParseError;
 
 pub type Result<T> = std::result::Result<T, Error>;
-pub type InnerResult<T> = std::result::Result<T, InnerError>;
+pub type ParseResult<T> = std::result::Result<T, ParseError>;
 
 #[derive(Clone, Debug)]
 pub enum Error {
@@ -17,7 +17,7 @@ pub enum Error {
     CellSyntaxError {
         line_number: usize,
         position: a1_notation::Address,
-        inner_error: Box<InnerError>,
+        parse_error: Box<ParseError>,
     },
 
     /// A syntax error in the code section.
@@ -42,7 +42,7 @@ pub enum Error {
 
     /// A syntax error encountered while parsing the modifiers of a cell.
     ModifierSyntaxError {
-        inner_error: Box<InnerError>,
+        parse_error: Box<ParseError>,
         position: a1_notation::Address,
         line_number: usize,
     },

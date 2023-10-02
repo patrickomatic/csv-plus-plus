@@ -10,7 +10,7 @@
 // TODO:
 // * need to lowercase the input but we can't do it on the entire value because we don't want to
 //     lowercase the stuff outside the modifier definition
-use crate::{InnerError, InnerResult};
+use crate::{ParseError, ParseResult};
 
 #[derive(Debug, PartialEq)]
 pub enum Token {
@@ -56,7 +56,7 @@ impl ModifierLexer {
         }
     }
 
-    pub fn take_modifier_right_side(&mut self) -> InnerResult<String> {
+    pub fn take_modifier_right_side(&mut self) -> ParseResult<String> {
         self.take_token(Token::Equals)?;
         self.take_token(Token::ModifierRightSide)
     }
@@ -69,7 +69,7 @@ impl ModifierLexer {
         }
     }
 
-    pub fn take_token(&mut self, token: Token) -> InnerResult<String> {
+    pub fn take_token(&mut self, token: Token) -> ParseResult<String> {
         match token {
             Token::Color => self.take_color(),
             Token::EndModifier => self.take("]]"),
@@ -95,21 +95,21 @@ impl ModifierLexer {
         }
     }
 
-    fn take(&mut self, substring: &str) -> InnerResult<String> {
+    fn take(&mut self, substring: &str) -> ParseResult<String> {
         let input = self.input.trim();
 
         if let Some(without_match) = input.strip_prefix(substring) {
             self.input = without_match.to_string();
             Ok(substring.to_string())
         } else {
-            Err(InnerError::bad_input(
+            Err(ParseError::bad_input(
                 input,
                 &format!("Error parsing input, expected '{}'", substring),
             ))
         }
     }
 
-    fn take_color(&mut self) -> InnerResult<String> {
+    fn take_color(&mut self) -> ParseResult<String> {
         let mut matched_alphas = 0;
         let mut saw_hash = false;
         let mut matched = "".to_string();
@@ -120,7 +120,7 @@ impl ModifierLexer {
                 matched.push(c);
             } else if c.is_alphanumeric() {
                 if matched_alphas > 6 {
-                    return Err(InnerError::bad_input(
+                    return Err(ParseError::bad_input(
                         &self.input,
                         &format!("Unexpected RGB color character: '{}'", c),
                     ));
@@ -134,7 +134,7 @@ impl ModifierLexer {
                     break;
                 }
 
-                return Err(InnerError::bad_input(
+                return Err(ParseError::bad_input(
                     &self.input,
                     &format!("Invalid character when parsing RGB color: '{}'", c),
                 ));
@@ -145,7 +145,7 @@ impl ModifierLexer {
         Ok(matched)
     }
 
-    fn take_string(&mut self) -> InnerResult<String> {
+    fn take_string(&mut self) -> ParseResult<String> {
         let input = self.input.trim();
 
         if input.starts_with('\'') {
@@ -156,7 +156,7 @@ impl ModifierLexer {
     }
 
     #[allow(clippy::explicit_counter_loop)]
-    fn take_single_quoted_string(&mut self) -> InnerResult<String> {
+    fn take_single_quoted_string(&mut self) -> ParseResult<String> {
         let mut escape_mode = false;
         let mut matched = "".to_string();
         let mut start_quote = false;
@@ -183,7 +183,7 @@ impl ModifierLexer {
             } else if c == '\'' {
                 start_quote = true;
             } else {
-                return Err(InnerError::bad_input(
+                return Err(ParseError::bad_input(
                     &self.input,
                     "Expected a starting single quote",
                 ));
@@ -194,14 +194,14 @@ impl ModifierLexer {
             self.input = self.input[consumed..].to_string();
             Ok(matched)
         } else {
-            Err(InnerError::bad_input(
+            Err(ParseError::bad_input(
                 &self.input,
                 "Expected a start and ending quote",
             ))
         }
     }
 
-    fn take_while<F>(&mut self, while_fn: F) -> InnerResult<String>
+    fn take_while<F>(&mut self, while_fn: F) -> ParseResult<String>
     where
         F: Fn(char) -> bool,
     {
@@ -218,7 +218,7 @@ impl ModifierLexer {
 
         if matched.is_empty() {
             // TODO this message is misleading I think
-            Err(InnerError::bad_input(
+            Err(ParseError::bad_input(
                 input,
                 "Expected a modifier definition (i.e. format/halign/etc)",
             ))

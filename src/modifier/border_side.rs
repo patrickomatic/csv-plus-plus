@@ -2,7 +2,7 @@
 //!
 //! Represents a side (or all) of a spreadsheet cell.
 //!
-use crate::InnerError;
+use crate::ParseError;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -16,7 +16,7 @@ pub enum BorderSide {
 }
 
 impl FromStr for BorderSide {
-    type Err = InnerError;
+    type Err = ParseError;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input.to_lowercase().as_str() {
@@ -25,7 +25,7 @@ impl FromStr for BorderSide {
             "b" | "bottom" => Ok(Self::Bottom),
             "l" | "left" => Ok(Self::Left),
             "r" | "right" => Ok(Self::Right),
-            _ => Err(InnerError::bad_input_with_possibilities(
+            _ => Err(ParseError::bad_input_with_possibilities(
                 input,
                 "Invalid border= value",
                 "all (a) | top (t) | bottom (b) | left (l) | right (r)",

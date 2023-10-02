@@ -6,12 +6,12 @@ impl fmt::Display for Error {
         let highlighted_lines = match self {
             Self::CellSyntaxError {
                 line_number,
-                inner_error,
+                parse_error,
                 position,
             } => {
                 writeln!(f, "Syntax error in cell {position} on line {line_number}")?;
                 // TODO: show the actual line too
-                writeln!(f, "{inner_error}")?;
+                writeln!(f, "{parse_error}")?;
                 None
             }
             Self::CodeSyntaxError {
@@ -40,13 +40,13 @@ impl fmt::Display for Error {
             Self::ModifierSyntaxError {
                 line_number,
                 position,
-                inner_error,
+                parse_error,
             } => {
                 writeln!(
                     f,
                     "Invalid modifier definition in cell {position} on line {line_number}"
                 )?;
-                writeln!(f, "{inner_error}")?;
+                writeln!(f, "{parse_error}")?;
                 // TODO: show the actual line too
                 /*
                 if let Some(full_line) = source_code.get_line(line_number) {
@@ -89,7 +89,7 @@ impl fmt::Display for Error {
 
 #[cfg(test)]
 mod tests {
-    use super::super::{InnerError, Output};
+    use super::super::{Output, ParseError};
     use super::*;
     use std::path;
 
@@ -98,7 +98,7 @@ mod tests {
         let message = Error::CellSyntaxError {
             line_number: 8,
             position: a1_notation::Address::new(1, 5),
-            inner_error: Box::new(InnerError::BadInput {
+            parse_error: Box::new(ParseError::BadInput {
                 bad_input: "foo".to_string(),
                 message: "You did a foo".to_string(),
             }),
@@ -150,7 +150,7 @@ bar
         let message = Error::ModifierSyntaxError {
             line_number: 5,
             position: a1_notation::Address::new(0, 1),
-            inner_error: Box::new(InnerError::BadInputWithPossibilities {
+            parse_error: Box::new(ParseError::BadInputWithPossibilities {
                 bad_input: "foo".to_string(),
                 message: "You did a foo".to_string(),
                 possible_values: "bar | baz".to_string(),

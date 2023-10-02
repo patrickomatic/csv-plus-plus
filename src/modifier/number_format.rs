@@ -1,5 +1,5 @@
 //! # NumberFormat
-use crate::InnerError;
+use crate::ParseError;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -16,7 +16,7 @@ pub enum NumberFormat {
 }
 
 impl FromStr for NumberFormat {
-    type Err = InnerError;
+    type Err = ParseError;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input.to_lowercase().as_str() {
@@ -28,7 +28,7 @@ impl FromStr for NumberFormat {
             "text" => Ok(Self::Text), // TODO: think of a shortcut!!!
             "t" | "time" => Ok(Self::Time),
             "s" | "scientific" => Ok(Self::Scientific),
-            _ => Err(InnerError::bad_input_with_possibilities(
+            _ => Err(ParseError::bad_input_with_possibilities(
                 input,
                 "Invalid numberformat= value",
                 "currency (c) | date (d) | datetime (dt) | number (n) | percent (p) \

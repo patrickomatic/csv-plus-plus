@@ -1,6 +1,6 @@
 //! # VerticalAlign
 //!
-use crate::InnerError;
+use crate::ParseError;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -13,14 +13,14 @@ pub enum VerticalAlign {
 }
 
 impl FromStr for VerticalAlign {
-    type Err = InnerError;
+    type Err = ParseError;
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         match input.to_lowercase().as_str() {
             "b" | "bottom" => Ok(Self::Bottom),
             "c" | "center" => Ok(Self::Center),
             "t" | "top" => Ok(Self::Top),
-            _ => Err(InnerError::bad_input_with_possibilities(
+            _ => Err(ParseError::bad_input_with_possibilities(
                 input,
                 "Invalid valign= value",
                 "bottom (b) | center (c) | top (t)",

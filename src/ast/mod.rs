@@ -2,7 +2,7 @@
 //!
 //! `Node` represents a building block of the parsed language, with a
 //!
-use crate::InnerResult;
+use crate::ParseResult;
 use std::collections;
 
 mod node;
@@ -35,5 +35,5 @@ pub type Variables = collections::HashMap<VariableName, Ast>;
 pub type BuiltinFunctions = collections::HashMap<FunctionName, BuiltinFunction>;
 pub type BuiltinVariables = collections::HashMap<VariableName, BuiltinVariable>;
 
-pub type FunctionEval = Box<dyn Fn(a1_notation::Address, &[Ast]) -> InnerResult<Node>>;
-pub type VariableEval = Box<dyn Fn(a1_notation::Address) -> InnerResult<Node>>;
+pub type FunctionEval = Box<dyn Fn(a1_notation::Address, &[Ast]) -> ParseResult<Node>>;
+pub type VariableEval = Box<dyn Fn(a1_notation::Address) -> ParseResult<Node>>;

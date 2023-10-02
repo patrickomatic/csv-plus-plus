@@ -7,7 +7,7 @@ use crate::ast::{
     Ast, AstReferences, BuiltinFunction, BuiltinVariable, Functions, Node, VariableValue, Variables,
 };
 use crate::parser::code_section_parser::{CodeSection, CodeSectionParser};
-use crate::{Cell, Error, InnerError, Result, Row, RowModifier, Runtime, Spreadsheet};
+use crate::{Cell, Error, ParseError, Result, Row, RowModifier, Runtime, Spreadsheet};
 use a1_notation::{Address, A1};
 use std::cell;
 use std::collections;
@@ -164,7 +164,7 @@ impl<'a> Template<'a> {
 
             evaled_ast = evaled_ast
                 .eval_variables(self.resolve_variables(&refs.variables, position)?)
-                .map_err(|e| self.inner_error_to_error(e, position))?
+                .map_err(|e| self.parse_error_to_error(e, position))?
                 .eval_functions(&refs.functions, |fn_id, args| {
                     if let Some(function) = self.functions.get(fn_id) {
                         Ok(function.clone())
@@ -173,10 +173,10 @@ impl<'a> Template<'a> {
                     {
                         Ok(Box::new(eval(position, args)?))
                     } else {
-                        Err(InnerError::bad_input(fn_id, "Could not find function"))
+                        Err(ParseError::bad_input(fn_id, "Could not find function"))
                     }
                 })
-                .map_err(|e| self.inner_error_to_error(e, position))?;
+                .map_err(|e| self.parse_error_to_error(e, position))?;
         }
 
         Ok(Box::new(evaled_ast))
@@ -207,10 +207,10 @@ impl<'a> Template<'a> {
         })
     }
 
-    fn inner_error_to_error(&self, inner_error: InnerError, position: Address) -> Error {
+    fn parse_error_to_error(&self, parse_error: ParseError, position: Address) -> Error {
         let line_number = self.csv_line_number + position.row.y;
         Error::EvalError {
-            message: inner_error.to_string(),
+            message: parse_error.to_string(),
             position,
             line_number,
         }
@@ -291,7 +291,7 @@ impl<'a> Template<'a> {
             self.runtime.builtin_variables.get(var_name)
         {
             Some(Box::new(
-                eval(position).map_err(|e| self.inner_error_to_error(e, position))?,
+                eval(position).map_err(|e| self.parse_error_to_error(e, position))?,
             ))
         } else {
             None

@@ -1,11 +1,11 @@
-//! # InnerError
-//! `InnerError`s are errors that lack an outer context such as `line_number` or `index: A1`.
+//! # ParseError
+//! `ParseError`s are errors that lack an outer context such as `line_number` or `index: A1`.
 //! They should be caught and wrapped into an `Error`.
 use std::error;
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum InnerError {
+pub enum ParseError {
     BadInput {
         bad_input: String,
         message: String,
@@ -21,7 +21,7 @@ pub enum InnerError {
     },
 }
 
-impl InnerError {
+impl ParseError {
     pub fn bad_input(bad_input: &str, message: &str) -> Self {
         Self::BadInput {
             bad_input: bad_input.to_owned(),
@@ -49,7 +49,7 @@ impl InnerError {
     }
 }
 
-impl fmt::Display for InnerError {
+impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::BadInput { bad_input, message } => {
@@ -73,17 +73,17 @@ impl fmt::Display for InnerError {
     }
 }
 
-impl From<a1_notation::Error> for InnerError {
+impl From<a1_notation::Error> for ParseError {
     fn from(err: a1_notation::Error) -> Self {
         match err {
             a1_notation::Error::A1ParseError { bad_input, message } => {
-                InnerError::bad_input(&bad_input, &message)
+                ParseError::bad_input(&bad_input, &message)
             }
         }
     }
 }
 
-impl error::Error for InnerError {}
+impl error::Error for ParseError {}
 
 #[cfg(test)]
 mod tests {
@@ -91,7 +91,7 @@ mod tests {
 
     #[test]
     fn display_bad_input() {
-        let message = InnerError::BadInput {
+        let message = ParseError::BadInput {
             bad_input: "bar".to_string(),
             message: "it should be foo".to_string(),
         };
@@ -105,7 +105,7 @@ bad input: bar",
 
     #[test]
     fn display_bad_input_with_possibilities() {
-        let message = InnerError::BadInputWithPossibilities {
+        let message = ParseError::BadInputWithPossibilities {
             bad_input: "bar".to_string(),
             message: "it should be foo".to_string(),
             possible_values: "foo | baz".to_string(),
@@ -121,7 +121,7 @@ possible values: foo | baz",
 
     #[test]
     fn display_rgb_syntax_error() {
-        let message = InnerError::RgbSyntaxError {
+        let message = ParseError::RgbSyntaxError {
             bad_input: "bar".to_string(),
             message: "it should be foo".to_string(),
         };

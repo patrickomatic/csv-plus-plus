@@ -24,7 +24,7 @@ mod test_utils;
 
 pub use cell::Cell;
 pub use cli_args::CliArgs;
-pub use error::{Error, InnerError, InnerResult, Result};
+pub use error::{Error, ParseError, ParseResult, Result};
 pub use expand::Expand;
 pub use modifier::{Modifier, RowModifier};
 pub use options::Options;

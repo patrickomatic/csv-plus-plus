@@ -1,59 +1,59 @@
 use super::{Ast, Node};
-use crate::{InnerError, InnerResult};
+use crate::{ParseError, ParseResult};
 
 // TODO: make the acceptable formats more flexible
 const DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S %Z";
 
 impl Node {
-    pub fn boolean_from_str(input: &str) -> InnerResult<Ast> {
+    pub fn boolean_from_str(input: &str) -> ParseResult<Ast> {
         let input_lower = input.to_lowercase();
         if input_lower == "true" {
             Ok(Box::new(true.into()))
         } else if input_lower == "false" {
             Ok(Box::new(false.into()))
         } else {
-            Err(InnerError::bad_input(input, "Error parsing boolean value"))
+            Err(ParseError::bad_input(input, "Error parsing boolean value"))
         }
     }
 
-    pub fn datetime_from_str(input: &str) -> InnerResult<Ast> {
+    pub fn datetime_from_str(input: &str) -> ParseResult<Ast> {
         match chrono::NaiveDateTime::parse_from_str(input, DATE_FORMAT) {
             Ok(d) => Ok(Box::new(Node::DateTime(chrono::DateTime::from_utc(
                 d,
                 chrono::Utc,
             )))),
-            Err(e) => Err(InnerError::bad_input(
+            Err(e) => Err(ParseError::bad_input(
                 input,
                 &format!("Unable to parse date: {e}"),
             )),
         }
     }
 
-    pub fn float_from_str(input: &str) -> InnerResult<Ast> {
+    pub fn float_from_str(input: &str) -> ParseResult<Ast> {
         match input.parse::<f64>() {
             Ok(f) => Ok(Box::new(f.into())),
-            Err(e) => Err(InnerError::bad_input(
+            Err(e) => Err(ParseError::bad_input(
                 input,
                 &format!("Error parsing float value: {e}"),
             )),
         }
     }
 
-    pub fn integer_from_str(input: &str) -> InnerResult<Ast> {
+    pub fn integer_from_str(input: &str) -> ParseResult<Ast> {
         match input.parse::<i64>() {
             Ok(i) => Ok(Box::new(i.into())),
-            Err(e) => Err(InnerError::bad_input(
+            Err(e) => Err(ParseError::bad_input(
                 input,
                 &format!("Error parsing integer value: {e}"),
             )),
         }
     }
 
-    pub fn reference_from_str(input: &str) -> InnerResult<Ast> {
+    pub fn reference_from_str(input: &str) -> ParseResult<Ast> {
         Ok(Box::new(Self::reference(input)))
     }
 
-    pub fn text_from_str(input: &str) -> InnerResult<Ast> {
+    pub fn text_from_str(input: &str) -> ParseResult<Ast> {
         Ok(Box::new(Self::text(input)))
     }
 }
