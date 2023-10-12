@@ -6,7 +6,7 @@ keywords = ["csv++", "csvpp", "csv", "spreadsheet"]
 license = "MIT"
 name = "csvpp"
 repository = "https://github.com/patrickomatic/csv-plus-plus"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 
 [dependencies]
