@@ -49,7 +49,7 @@ $(RELEASE_DIR)/csvpp-$(VERSION)-%/csvpp: $(TARGET_DIR)/%/release/csvpp
 
 $(RELEASE_DIR)/%.tar.gz: $(RELEASE_DIR)/%/csvpp.exe
 $(RELEASE_DIR)/%.tar.gz: $(RELEASE_DIR)/%/csvpp
-	cd $(RELEASE_DIR) && tar -czf $*.tar.gz $*
+	cd $(RELEASE_DIR)/.. && tar -czf $*.tar.gz $*
 
 $(RELEASE_DIR)/csvpp-$(VERSION)-%.deb: $(TARGET_DIR)/%/release/csvpp
 # --no-build because we already built it with cross. and --no-strip because Cargo.toml is already
