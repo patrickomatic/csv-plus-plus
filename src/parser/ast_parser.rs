@@ -11,46 +11,37 @@
 //! * [Simple but Powerful Pratt Parsing](https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html)
 //! * [Which Parsing Approach?](https://news.ycombinator.com/item?id=24480504)
 //!
-// TODO:
-//
-// * Handle line numbers
-//
 use super::ast_lexer::*;
 use super::token_library::{Token, TokenMatch};
 use crate::ast::{Ast, Node, Variables};
 use crate::{Error, ParseResult, Result, Runtime};
 use std::collections;
 
-pub struct AstParser<'a> {
+pub(crate) struct AstParser<'a> {
     lexer: &'a AstLexer<'a>,
     runtime: &'a Runtime,
 }
 
 impl<'a> AstParser<'a> {
-    pub fn new(lexer: &'a AstLexer<'a>, runtime: &'a Runtime) -> Self {
+    pub(crate) fn new(lexer: &'a AstLexer<'a>, runtime: &'a Runtime) -> Self {
         AstParser { lexer, runtime }
     }
 
     /// Parse `input` from a `SourceCode`.
-    pub fn parse(input: &'a str, single_expr: bool, runtime: &'a Runtime) -> Result<Ast> {
-        let lexer = AstLexer::new(input, runtime).map_err(|e| Error::CodeSyntaxError {
-            message: e.to_string(),
-            line_number: e.line_number,
-            position: e.position,
-            highlighted_lines: runtime
-                .source_code
-                .highlight_line(e.line_number, e.position),
-        })?;
-        let parser = AstParser::new(&lexer, runtime);
+    pub(crate) fn parse(input: &'a str, single_expr: bool, runtime: &'a Runtime) -> Result<Ast> {
+        let lexer =
+            AstLexer::new(input, runtime).map_err(|e| runtime.source_code.code_syntax_error(e))?;
 
-        parser.expr_bp(single_expr, 0)
+        AstParser::new(&lexer, runtime)
+            .expr_bp(single_expr, 0)
+            .map_err(|e| runtime.source_code.code_syntax_error(e))
     }
 
     /// Parse `input` from the command line, specified as a simple key/value string like
     /// "foo=1,bar=baz"
     ///
     // TODO: take multiple key values via the same flag.  similar to awk -v foo1=bar -v foo2=bar
-    pub fn parse_key_value_str(
+    pub(crate) fn parse_key_value_str(
         key_values: &'a [String],
         runtime: &'a Runtime,
     ) -> Result<Variables> {
@@ -60,9 +51,9 @@ impl<'a> AstParser<'a> {
             if let Some((key, value)) = kv.split_once('=') {
                 variables.insert(key.to_string(), Self::parse(value, false, runtime)?);
             } else {
-                return Err(Error::InitError(format!(
-                    "Invalid key/value variables: {kv}",
-                )));
+                return Err(Error::InitError(
+                    "Invalid key/value variables: {kv}".to_string(),
+                ));
             }
         }
 
@@ -70,16 +61,14 @@ impl<'a> AstParser<'a> {
     }
 
     /// The core pratt parser logic for parsing an expression of our AST.  
-    pub fn expr_bp(&self, single_expr: bool, min_bp: u8) -> Result<Ast> {
+    pub(super) fn expr_bp(&self, single_expr: bool, min_bp: u8) -> ParseResult<Ast> {
+        let sc = &self.runtime.source_code;
         let lhs_token = self.lexer.next();
 
-        let mut lhs = match lhs_token {
+        let mut lhs = match lhs_token.token {
             // a starting parenthesis means we just need to recurse and consume (expect)
             // the close paren
-            TokenMatch {
-                token: Token::OpenParen,
-                ..
-            } => {
+            Token::OpenParen => {
                 let expr = self.expr_bp(single_expr, 0)?;
                 match self.lexer.next() {
                     TokenMatch {
@@ -87,49 +76,24 @@ impl<'a> AstParser<'a> {
                         ..
                     } => expr,
                     token => {
-                        return self.syntax_error(
-                            &token,
-                            &format!("Expected close parenthesis, received ({:?})", token),
-                        )
+                        return Err(sc.parse_error(
+                            token,
+                            "Expected close parenthesis (`)`), received ({token})",
+                        ))
                     }
                 }
             }
 
             // terminals
-            TokenMatch {
-                token: Token::Boolean,
-                ..
-            } => self.ast_from_str(&lhs_token, Node::boolean_from_str)?,
-
-            TokenMatch {
-                token: Token::DateTime,
-                ..
-            } => self.ast_from_str(&lhs_token, Node::datetime_from_str)?,
-
-            TokenMatch {
-                token: Token::DoubleQuotedString,
-                ..
-            } => self.ast_from_str(&lhs_token, Node::text_from_str)?,
-
-            TokenMatch {
-                token: Token::Float,
-                ..
-            } => self.ast_from_str(&lhs_token, Node::float_from_str)?,
-
-            TokenMatch {
-                token: Token::Integer,
-                ..
-            } => self.ast_from_str(&lhs_token, Node::integer_from_str)?,
-
-            TokenMatch {
-                token: Token::Reference,
-                ..
-            } => self.ast_from_str(&lhs_token, Node::reference_from_str)?,
-
+            Token::Boolean => Node::boolean_from_token_match(lhs_token, sc)?,
+            Token::DateTime => Node::datetime_from_token_match(lhs_token, sc)?,
+            Token::DoubleQuotedString => Node::text_from_token_match(lhs_token, sc)?,
+            Token::Float => Node::float_from_token_match(lhs_token, sc)?,
+            Token::Integer => Node::integer_from_token_match(lhs_token, sc)?,
+            Token::Reference => Node::reference_from_token_match(lhs_token, sc)?,
             _ => {
-                return self.syntax_error(
-                    &lhs_token,
-                    &format!("Invalid left-hand side expression ({:?})", lhs_token),
+                return Err(
+                    sc.parse_error(lhs_token, "Invalid left-hand side expression ({lhs_token})")
                 )
             }
         };
@@ -138,15 +102,8 @@ impl<'a> AstParser<'a> {
             if single_expr {
                 // in the case where we're just looking for a single expr, we can terminate
                 // iteration when we see a reference (beginning of `foo := ...`) or `fn`.
-                match self.lexer.peek() {
-                    TokenMatch {
-                        token: Token::Reference,
-                        ..
-                    }
-                    | TokenMatch {
-                        token: Token::FunctionDefinition,
-                        ..
-                    } => break,
+                match self.lexer.peek().token {
+                    Token::Reference | Token::FunctionDefinition => break,
                     // otherwise do nothing and the next match statement will do it's thing
                     // (regardless of the `single_expr` context)
                     _ => (),
@@ -154,39 +111,15 @@ impl<'a> AstParser<'a> {
             }
 
             let op_token = self.lexer.peek();
-            let op = match op_token {
+            let op = match op_token.token {
                 // end of an expression, stop looping
-                TokenMatch {
-                    token: Token::Comma,
-                    ..
-                }
-                | TokenMatch {
-                    token: Token::CloseParen,
-                    ..
-                }
-                | TokenMatch {
-                    token: Token::Eof, ..
-                } => break,
+                Token::Comma | Token::CloseParen | Token::Eof => break,
 
                 // an infix expression or a function definition
-                TokenMatch {
-                    token: Token::InfixOperator,
-                    str_match: op,
-                    ..
-                }
-                | TokenMatch {
-                    token: Token::OpenParen,
-                    str_match: op,
-                    ..
-                } => op,
+                Token::InfixOperator | Token::OpenParen => op_token.str_match,
 
                 // otherwise undefined
-                _ => {
-                    return self.syntax_error(
-                        &op_token,
-                        &format!("Unexpected token ({:?})", &op_token.token),
-                    )
-                }
+                t => return Err(sc.parse_error(op_token, &format!("Unexpected token ({:?})", &t))),
             };
 
             if let Some((l_bp, ())) = self.postfix_binding_power(op) {
@@ -201,25 +134,19 @@ impl<'a> AstParser<'a> {
                     // function call
                     let id = match *lhs {
                         Node::Reference(id) => id,
-                        _ => return self.syntax_error(&op_token, "Unable to get id for fn"),
+                        _ => return Err(sc.parse_error(op_token, "Unable to get id for fn")),
                     };
 
                     let mut args = vec![];
 
                     // consume arguments (expressions) until we see a close paren
                     loop {
-                        match self.lexer.peek() {
-                            TokenMatch {
-                                token: Token::CloseParen,
-                                ..
-                            } => {
+                        match self.lexer.peek().token {
+                            Token::CloseParen => {
                                 self.lexer.next();
                                 break;
                             }
-                            TokenMatch {
-                                token: Token::Comma,
-                                ..
-                            } => {
+                            Token::Comma => {
                                 self.lexer.next();
                             }
                             _ => args.push(self.expr_bp(single_expr, 0)?),
@@ -228,7 +155,7 @@ impl<'a> AstParser<'a> {
 
                     Box::new(Node::FunctionCall { name: id, args })
                 } else {
-                    return self.syntax_error(&op_token, "Unexpected infix operator");
+                    return Err(sc.parse_error(op_token, "Unexpected infix operator"));
                 };
 
                 continue;
@@ -273,34 +200,6 @@ impl<'a> AstParser<'a> {
             "*" | "/" => (11, 12),
             "^" => (13, 14),
             _ => return None,
-        })
-    }
-
-    fn syntax_error(&self, token: &TokenMatch, message: &str) -> Result<Ast> {
-        Err(Error::CodeSyntaxError {
-            line_number: token.line_number,
-            message: message.to_string(),
-            position: token.position,
-            highlighted_lines: self
-                .runtime
-                .source_code
-                .highlight_line(token.line_number, token.position),
-        })
-    }
-
-    fn ast_from_str(
-        &self,
-        token: &TokenMatch,
-        from_str_fn: fn(&str) -> ParseResult<Ast>,
-    ) -> Result<Ast> {
-        from_str_fn(token.str_match).map_err(|e| Error::CodeSyntaxError {
-            highlighted_lines: self
-                .runtime
-                .source_code
-                .highlight_line(token.line_number, token.position),
-            line_number: token.line_number,
-            position: token.position,
-            message: e.to_string(),
         })
     }
 }

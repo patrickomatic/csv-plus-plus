@@ -1,85 +1,67 @@
 //! # ParseError
 //! `ParseError`s are errors that lack an outer context such as `line_number` or `index: A1`.
 //! They should be caught and wrapped into an `Error`.
+use crate::{CharOffset, LineNumber};
 use std::error;
 use std::fmt;
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum ParseError {
-    BadInput {
-        bad_input: String,
-        message: String,
-    },
-    BadInputWithPossibilities {
-        message: String,
-        bad_input: String,
-        possible_values: String,
-    },
-    RgbSyntaxError {
-        bad_input: String,
-        message: String,
-    },
-}
+#[derive(Debug, PartialEq)]
+pub struct ParseError {
+    /// The offending text
+    pub bad_input: String,
 
-impl ParseError {
-    pub fn bad_input(bad_input: &str, message: &str) -> Self {
-        Self::BadInput {
-            bad_input: bad_input.to_owned(),
-            message: message.to_owned(),
-        }
-    }
+    /// A set of lines that can be rendered to the user for helpful debugging.
+    // TODO: it's kinda odd to me the way I did this, I would prefer to instead just store the line
+    // number and offset and do all the calculations in the `fmt::Display` trait when it's rendered.
+    // However it was a real struggle to do that because since the error must contain everything it
+    // needs to render itself, that means it would need a reference to the `SourceCode` or
+    // `Runtime`.  Both of which were really tough to do from a lifetime-perspective, but maybe
+    // it's possible by someone smarter.
+    pub highlighted_lines: Vec<String>,
 
-    pub fn bad_input_with_possibilities(
-        bad_input: &str,
-        message: &str,
-        possible_values: &str,
-    ) -> Self {
-        Self::BadInputWithPossibilities {
-            bad_input: bad_input.to_owned(),
-            message: message.to_owned(),
-            possible_values: possible_values.to_owned(),
-        }
-    }
+    /// A message to the user why the input is unacceptable.  The `message` does not belong to the
+    /// `BadInput` trait because conceptually, the bad input is the token and the message is the
+    /// reason it's bad.  The token doesn't necessarily own the reason it was used in the wrong
+    /// place.
+    pub message: String,
 
-    pub fn rgb_syntax_error(bad_input: &str, message: &str) -> Self {
-        Self::RgbSyntaxError {
-            bad_input: bad_input.to_owned(),
-            message: message.to_owned(),
-        }
-    }
+    pub line_number: LineNumber,
+
+    pub line_offset: CharOffset,
+
+    pub possible_values: Option<Vec<String>>,
 }
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::BadInput { bad_input, message } => {
-                writeln!(f, "{}", message)?;
-                write!(f, "bad input: {}", bad_input)
-            }
-            Self::BadInputWithPossibilities {
-                message,
-                bad_input,
-                possible_values,
-            } => {
-                writeln!(f, "{}", message)?;
-                writeln!(f, "bad input: {}", bad_input)?;
-                write!(f, "possible values: {}", possible_values)
-            }
-            Self::RgbSyntaxError { bad_input, message } => {
-                writeln!(f, "Error parsing RGB value: {}", message)?;
-                write!(f, "bad input: {}", bad_input)
-            }
-        }
-    }
-}
+        let ParseError {
+            bad_input,
+            highlighted_lines,
+            line_number,
+            line_offset,
+            message,
+            possible_values,
+        } = self;
 
-impl From<a1_notation::Error> for ParseError {
-    fn from(err: a1_notation::Error) -> Self {
-        match err {
-            a1_notation::Error::A1ParseError { bad_input, message } => {
-                ParseError::bad_input(&bad_input, &message)
-            }
+        writeln!(
+            f,
+            "On line {line_number}:{line_offset}, {message} but saw {bad_input}"
+        )?;
+
+        if let Some(pv) = possible_values {
+            writeln!(f, "Possible values: {}", pv.join(" | "))?;
         }
+
+        if !highlighted_lines.is_empty() {
+            writeln!(f)?;
+        }
+
+        // `highlighted_lines` is already formatted for output
+        for line in highlighted_lines {
+            writeln!(f, "{line}")?;
+        }
+
+        Ok(())
     }
 }
 
@@ -90,45 +72,50 @@ mod tests {
     use super::*;
 
     #[test]
-    fn display_bad_input() {
-        let message = ParseError::BadInput {
+    fn display_parse_error() {
+        let message = ParseError {
             bad_input: "bar".to_string(),
             message: "it should be foo".to_string(),
+            line_number: 3,
+            line_offset: 5,
+            possible_values: None,
+            highlighted_lines: vec!["foo".to_string(), "bar".to_string(), "baz".to_string()],
         };
 
         assert_eq!(
-            "it should be foo
-bad input: bar",
+            "On line 3:5, it should be foo but saw bar
+
+foo
+bar
+baz
+",
             message.to_string()
         );
     }
 
     #[test]
     fn display_bad_input_with_possibilities() {
-        let message = ParseError::BadInputWithPossibilities {
+        let message = ParseError {
             bad_input: "bar".to_string(),
             message: "it should be foo".to_string(),
-            possible_values: "foo | baz".to_string(),
+            line_number: 3,
+            line_offset: 5,
+            possible_values: Some(vec![
+                "one".to_string(),
+                "two".to_string(),
+                "three".to_string(),
+            ]),
+            highlighted_lines: vec!["foo".to_string(), "bar".to_string(), "baz".to_string()],
         };
 
         assert_eq!(
-            "it should be foo
-bad input: bar
-possible values: foo | baz",
-            message.to_string()
-        );
-    }
+            "On line 3:5, it should be foo but saw bar
+Possible values: one | two | three
 
-    #[test]
-    fn display_rgb_syntax_error() {
-        let message = ParseError::RgbSyntaxError {
-            bad_input: "bar".to_string(),
-            message: "it should be foo".to_string(),
-        };
-
-        assert_eq!(
-            "Error parsing RGB value: it should be foo
-bad input: bar",
+foo
+bar
+baz
+",
             message.to_string()
         );
     }

@@ -4,7 +4,8 @@
 //! There are more simplistic approaches such as going character-by-character or splitting on word
 //! boundaries/spacing but neither of those will work very well for us when handling complex types
 //! like double-quotes strings.
-use crate::Error;
+use crate::error::BadInput;
+use crate::{CharOffset, Error, LineNumber};
 use regex::Regex;
 use std::fmt;
 
@@ -36,27 +37,36 @@ pub struct TokenMatcher(pub Token, pub Regex);
 impl TokenMatcher {
     fn new(regex_str: &str, token: Token) -> Result<Self, Error> {
         // this regex is tricky but it's for "all spaces but not newlines"
-        match Regex::new(format!(r"^[^\S\r\n]*{}", regex_str).as_str()) {
+        match Regex::new(format!(r"^[^\S\r\n]*{regex_str}").as_str()) {
             Ok(r) => Ok(TokenMatcher(token, r)),
             Err(m) => Err(Error::InitError(format!(
-                "Error compiling regex /{}/: {}",
-                regex_str, m
+                "Error compiling regex /{regex_str}/: {m}",
             ))),
         }
     }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct TokenMatch<'a> {
-    pub token: Token,
-    pub str_match: &'a str,
-    pub line_number: usize,
-    pub position: usize,
+pub(crate) struct TokenMatch<'a> {
+    pub(crate) token: Token,
+    pub(crate) str_match: &'a str,
+    pub(crate) line_number: LineNumber,
+    pub(crate) line_offset: CharOffset,
+}
+
+impl BadInput for TokenMatch<'_> {
+    fn line_number(&self) -> LineNumber {
+        self.line_number
+    }
+
+    fn line_offset(&self) -> CharOffset {
+        self.line_offset
+    }
 }
 
 impl fmt::Display for TokenMatch<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.str_match)
+        write!(f, "`{}`", self.str_match)
     }
 }
 
@@ -205,9 +215,9 @@ mod tests {
             token: Token::Comma,
             str_match: ",",
             line_number: 22,
-            position: 3,
+            line_offset: 3,
         };
 
-        assert_eq!(",", token_match.to_string());
+        assert_eq!("`,`", token_match.to_string());
     }
 }

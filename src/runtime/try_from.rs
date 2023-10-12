@@ -7,12 +7,14 @@ impl TryFrom<&CliArgs> for Runtime {
     type Error = crate::Error;
 
     fn try_from(cli_args: &CliArgs) -> std::result::Result<Self, Self::Error> {
+        let source_code = SourceCode::open(&cli_args.input_filename)?;
+
         let mut runtime = Self {
             builtin_functions: BuiltinFunction::all(),
             builtin_variables: BuiltinVariable::all(),
             options: Options::try_from(cli_args)?,
             output: Output::try_from(cli_args)?,
-            source_code: SourceCode::open(&cli_args.input_filename)?,
+            source_code,
             token_library: TokenLibrary::build()?,
         };
 

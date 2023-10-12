@@ -1,8 +1,8 @@
 //! # BorderStyle
 //!
-use crate::ParseError;
+use crate::error::ModifierParseError;
+use crate::parser::modifier_lexer::TokenMatch;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum BorderStyle {
@@ -14,21 +14,29 @@ pub enum BorderStyle {
     SolidThick,
 }
 
-impl FromStr for BorderStyle {
-    type Err = ParseError;
+impl TryFrom<TokenMatch> for BorderStyle {
+    type Error = ModifierParseError;
 
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
-        match input.to_lowercase().as_str() {
-            "dash" | "dashed"        => Ok(Self::Dashed),
-            "dot"  | "dotted"        => Ok(Self::Dotted),
-            "dbl"  | "double"        => Ok(Self::Double),
-            "1"    | "solid"         => Ok(Self::Solid),
-            "2"    | "solid_medium"  => Ok(Self::SolidMedium),
-            "3"    | "solid_thick"   => Ok(Self::SolidThick),
-            _ => Err(ParseError::bad_input_with_possibilities(
+    fn try_from(input: TokenMatch) -> Result<Self, Self::Error> {
+        match input.str_match.to_lowercase().as_str() {
+            "dash" | "dashed" => Ok(Self::Dashed),
+            "dot" | "dotted" => Ok(Self::Dotted),
+            "dbl" | "double" => Ok(Self::Double),
+            "1" | "solid" => Ok(Self::Solid),
+            "2" | "solid_medium" => Ok(Self::SolidMedium),
+            "3" | "solid_thick" => Ok(Self::SolidThick),
+            _ => Err(ModifierParseError::new(
+                "borderstyle",
                 input,
-                "Invalid borderstyle= value",
-                "dashed (dash) | dotted (dot) | double (dbl) | solid (1) | solid_medium (2) | solid_thick (3)")),
+                Some(&[
+                    "dashed (dash)",
+                    "dotted (dot)",
+                    "double (dbl)",
+                    "solid (1)",
+                    "solid_medium (2)",
+                    "solid_thick (3)",
+                ]),
+            )),
         }
     }
 }
@@ -42,84 +50,106 @@ impl Default for BorderStyle {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::*;
 
     #[test]
-    fn from_str_dashed() {
-        assert_eq!(BorderStyle::Dashed, BorderStyle::from_str("dash").unwrap());
+    fn try_from_dashed() {
         assert_eq!(
             BorderStyle::Dashed,
-            BorderStyle::from_str("dashed").unwrap()
+            BorderStyle::try_from(build_modifier_token_match("dash")).unwrap()
         );
         assert_eq!(
             BorderStyle::Dashed,
-            BorderStyle::from_str("DASHED").unwrap()
+            BorderStyle::try_from(build_modifier_token_match("dashed")).unwrap()
+        );
+        assert_eq!(
+            BorderStyle::Dashed,
+            BorderStyle::try_from(build_modifier_token_match("DASHED")).unwrap()
         );
     }
 
     #[test]
-    fn from_str_dotted() {
-        assert_eq!(BorderStyle::Dotted, BorderStyle::from_str("dot").unwrap());
+    fn try_from_dotted() {
         assert_eq!(
             BorderStyle::Dotted,
-            BorderStyle::from_str("dotted").unwrap()
+            BorderStyle::try_from(build_modifier_token_match("dot")).unwrap()
         );
         assert_eq!(
             BorderStyle::Dotted,
-            BorderStyle::from_str("DOTTED").unwrap()
+            BorderStyle::try_from(build_modifier_token_match("dotted")).unwrap()
+        );
+        assert_eq!(
+            BorderStyle::Dotted,
+            BorderStyle::try_from(build_modifier_token_match("DOTTED")).unwrap()
         );
     }
 
     #[test]
-    fn from_str_double() {
-        assert_eq!(BorderStyle::Double, BorderStyle::from_str("dbl").unwrap());
+    fn try_from_double() {
         assert_eq!(
             BorderStyle::Double,
-            BorderStyle::from_str("double").unwrap()
+            BorderStyle::try_from(build_modifier_token_match("dbl")).unwrap()
         );
         assert_eq!(
             BorderStyle::Double,
-            BorderStyle::from_str("DOUBLE").unwrap()
+            BorderStyle::try_from(build_modifier_token_match("double")).unwrap()
+        );
+        assert_eq!(
+            BorderStyle::Double,
+            BorderStyle::try_from(build_modifier_token_match("DOUBLE")).unwrap()
         );
     }
 
     #[test]
-    fn from_str_solid() {
-        assert_eq!(BorderStyle::Solid, BorderStyle::from_str("1").unwrap());
-        assert_eq!(BorderStyle::Solid, BorderStyle::from_str("solid").unwrap());
-        assert_eq!(BorderStyle::Solid, BorderStyle::from_str("SOLID").unwrap());
-    }
-
-    #[test]
-    fn from_str_solid_medium() {
+    fn try_from_solid() {
         assert_eq!(
-            BorderStyle::SolidMedium,
-            BorderStyle::from_str("2").unwrap()
+            BorderStyle::Solid,
+            BorderStyle::try_from(build_modifier_token_match("1")).unwrap()
         );
         assert_eq!(
-            BorderStyle::SolidMedium,
-            BorderStyle::from_str("solid_medium").unwrap()
+            BorderStyle::Solid,
+            BorderStyle::try_from(build_modifier_token_match("solid")).unwrap()
         );
         assert_eq!(
-            BorderStyle::SolidMedium,
-            BorderStyle::from_str("SOLID_MEDIUM").unwrap()
+            BorderStyle::Solid,
+            BorderStyle::try_from(build_modifier_token_match("SOLID")).unwrap()
         );
     }
 
     #[test]
-    fn from_str_solid_thick() {
-        assert_eq!(BorderStyle::SolidThick, BorderStyle::from_str("3").unwrap());
+    fn try_from_solid_medium() {
+        assert_eq!(
+            BorderStyle::SolidMedium,
+            BorderStyle::try_from(build_modifier_token_match("2")).unwrap()
+        );
+        assert_eq!(
+            BorderStyle::SolidMedium,
+            BorderStyle::try_from(build_modifier_token_match("solid_medium")).unwrap()
+        );
+        assert_eq!(
+            BorderStyle::SolidMedium,
+            BorderStyle::try_from(build_modifier_token_match("SOLID_MEDIUM")).unwrap()
+        );
+    }
+
+    #[test]
+    fn try_from_solid_thick() {
         assert_eq!(
             BorderStyle::SolidThick,
-            BorderStyle::from_str("solid_thick").unwrap()
+            BorderStyle::try_from(build_modifier_token_match("3")).unwrap()
         );
         assert_eq!(
             BorderStyle::SolidThick,
-            BorderStyle::from_str("SOLID_THICK").unwrap()
+            BorderStyle::try_from(build_modifier_token_match("solid_thick")).unwrap()
+        );
+        assert_eq!(
+            BorderStyle::SolidThick,
+            BorderStyle::try_from(build_modifier_token_match("SOLID_THICK")).unwrap()
         );
     }
 
     #[test]
-    fn from_str_invalid() {
-        assert!(BorderStyle::from_str("foo").is_err());
+    fn try_from_invalid() {
+        assert!(BorderStyle::try_from(build_modifier_token_match("foo")).is_err());
     }
 }

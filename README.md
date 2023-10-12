@@ -92,7 +92,8 @@ Breaking this down:
 
 ## Builtin Functions & Variables
 
-csv++ comes with several built-in functions and variables that you can use. 
+csv++ comes with several built-in functions and variables that are mostly helpful when working with
+the `expand` modifier.
 
 ### Variables
 

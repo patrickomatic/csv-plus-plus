@@ -2,9 +2,9 @@
 //!
 //! Represents a side (or all) of a spreadsheet cell.
 //!
-use crate::ParseError;
+use crate::error::ModifierParseError;
+use crate::parser::modifier_lexer::TokenMatch;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum BorderSide {
@@ -15,20 +15,20 @@ pub enum BorderSide {
     Right,
 }
 
-impl FromStr for BorderSide {
-    type Err = ParseError;
+impl TryFrom<TokenMatch> for BorderSide {
+    type Error = ModifierParseError;
 
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
-        match input.to_lowercase().as_str() {
+    fn try_from(input: TokenMatch) -> Result<Self, Self::Error> {
+        match input.str_match.to_lowercase().as_str() {
             "a" | "all" => Ok(Self::All),
             "t" | "top" => Ok(Self::Top),
             "b" | "bottom" => Ok(Self::Bottom),
             "l" | "left" => Ok(Self::Left),
             "r" | "right" => Ok(Self::Right),
-            _ => Err(ParseError::bad_input_with_possibilities(
+            _ => Err(ModifierParseError::new(
+                "border",
                 input,
-                "Invalid border= value",
-                "all (a) | top (t) | bottom (b) | left (l) | right (r)",
+                Some(&["all (a)", "top (t)", "bottom (b)", "left (l)", "right (r)"]),
             )),
         }
     }
@@ -37,45 +37,91 @@ impl FromStr for BorderSide {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::*;
 
     #[test]
-    fn from_str_all() {
-        assert_eq!(BorderSide::All, BorderSide::from_str("a").unwrap());
-        assert_eq!(BorderSide::All, BorderSide::from_str("all").unwrap());
-        assert_eq!(BorderSide::All, BorderSide::from_str("ALL").unwrap());
+    fn try_from_all() {
+        assert_eq!(
+            BorderSide::All,
+            BorderSide::try_from(build_modifier_token_match("a")).unwrap()
+        );
+        assert_eq!(
+            BorderSide::All,
+            BorderSide::try_from(build_modifier_token_match("all")).unwrap()
+        );
+        assert_eq!(
+            BorderSide::All,
+            BorderSide::try_from(build_modifier_token_match("ALL")).unwrap()
+        );
     }
 
     #[test]
-    fn from_str_top() {
-        assert_eq!(BorderSide::Top, BorderSide::from_str("t").unwrap());
-        assert_eq!(BorderSide::Top, BorderSide::from_str("top").unwrap());
-        assert_eq!(BorderSide::Top, BorderSide::from_str("TOP").unwrap());
+    fn try_from_top() {
+        assert_eq!(
+            BorderSide::Top,
+            BorderSide::try_from(build_modifier_token_match("t")).unwrap()
+        );
+        assert_eq!(
+            BorderSide::Top,
+            BorderSide::try_from(build_modifier_token_match("top")).unwrap()
+        );
+        assert_eq!(
+            BorderSide::Top,
+            BorderSide::try_from(build_modifier_token_match("TOP")).unwrap()
+        );
     }
 
     #[test]
-    fn from_str_right() {
-        assert_eq!(BorderSide::Right, BorderSide::from_str("r").unwrap());
-        assert_eq!(BorderSide::Right, BorderSide::from_str("right").unwrap());
-        assert_eq!(BorderSide::Right, BorderSide::from_str("RIGHT").unwrap());
+    fn try_from_right() {
+        assert_eq!(
+            BorderSide::Right,
+            BorderSide::try_from(build_modifier_token_match("r")).unwrap()
+        );
+        assert_eq!(
+            BorderSide::Right,
+            BorderSide::try_from(build_modifier_token_match("right")).unwrap()
+        );
+        assert_eq!(
+            BorderSide::Right,
+            BorderSide::try_from(build_modifier_token_match("RIGHT")).unwrap()
+        );
     }
 
     #[test]
-    fn from_str_bottom() {
-        assert_eq!(BorderSide::Bottom, BorderSide::from_str("b").unwrap());
-        assert_eq!(BorderSide::Bottom, BorderSide::from_str("bottom").unwrap());
-        assert_eq!(BorderSide::Bottom, BorderSide::from_str("BOTTOM").unwrap());
+    fn try_from_bottom() {
+        assert_eq!(
+            BorderSide::Bottom,
+            BorderSide::try_from(build_modifier_token_match("b")).unwrap()
+        );
+        assert_eq!(
+            BorderSide::Bottom,
+            BorderSide::try_from(build_modifier_token_match("bottom")).unwrap()
+        );
+        assert_eq!(
+            BorderSide::Bottom,
+            BorderSide::try_from(build_modifier_token_match("BOTTOM")).unwrap()
+        );
     }
 
     #[test]
-    fn from_str_left() {
-        assert_eq!(BorderSide::Left, BorderSide::from_str("l").unwrap());
-        assert_eq!(BorderSide::Left, BorderSide::from_str("left").unwrap());
-        assert_eq!(BorderSide::Left, BorderSide::from_str("LEFT").unwrap());
+    fn try_from_left() {
+        assert_eq!(
+            BorderSide::Left,
+            BorderSide::try_from(build_modifier_token_match("l")).unwrap()
+        );
+        assert_eq!(
+            BorderSide::Left,
+            BorderSide::try_from(build_modifier_token_match("left")).unwrap()
+        );
+        assert_eq!(
+            BorderSide::Left,
+            BorderSide::try_from(build_modifier_token_match("LEFT")).unwrap()
+        );
     }
 
     #[test]
-    fn from_str_invalid() {
-        assert!(BorderSide::from_str("middle").is_err());
-        assert!(BorderSide::from_str("123").is_err());
+    fn try_from_invalid() {
+        assert!(BorderSide::try_from(build_modifier_token_match("middle")).is_err());
+        assert!(BorderSide::try_from(build_modifier_token_match("123")).is_err());
     }
 }

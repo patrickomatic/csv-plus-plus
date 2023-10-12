@@ -10,8 +10,8 @@ mod try_from;
 
 #[derive(Debug)]
 pub struct Runtime {
-    pub builtin_functions: BuiltinFunctions,
-    pub builtin_variables: BuiltinVariables,
+    pub(crate) builtin_functions: BuiltinFunctions,
+    pub(crate) builtin_variables: BuiltinVariables,
     pub options: Options,
     pub output: Output,
     pub source_code: SourceCode,

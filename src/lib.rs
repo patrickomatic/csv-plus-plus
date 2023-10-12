@@ -24,7 +24,8 @@ mod test_utils;
 
 pub use cell::Cell;
 pub use cli_args::CliArgs;
-pub use error::{Error, ParseError, ParseResult, Result};
+pub(crate) use error::ParseResult;
+pub use error::{Error, ParseError, Result};
 pub use expand::Expand;
 pub use modifier::{Modifier, RowModifier};
 pub use options::Options;
@@ -32,7 +33,7 @@ pub use output::Output;
 pub use rgb::Rgb;
 pub use row::Row;
 pub use runtime::Runtime;
-pub use source_code::SourceCode;
+pub use source_code::{CharOffset, LineNumber, SourceCode};
 pub use spreadsheet::Spreadsheet;
 pub use target::CompilationTarget;
 pub use template::Template;

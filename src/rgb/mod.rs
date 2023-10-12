@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 mod display;
 mod from;
-mod from_str;
+mod try_from;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Rgb {

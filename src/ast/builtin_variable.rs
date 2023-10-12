@@ -1,21 +1,18 @@
 //! # BuiltinVariable
 //!
 use super::{Node, VariableEval, VariableName};
-use crate::ParseResult;
+use crate::error::EvalResult;
 use a1_notation::{Address, RangeOrCell};
 use std::collections;
 use std::fmt;
 
-pub struct BuiltinVariable {
-    pub eval: VariableEval,
-    pub name: VariableName,
+pub(crate) struct BuiltinVariable {
+    pub(crate) eval: VariableEval,
+    pub(crate) name: VariableName,
 }
 
 impl BuiltinVariable {
-    fn new<F: Fn(a1_notation::Address) -> ParseResult<Node> + 'static>(
-        name: &str,
-        eval: F,
-    ) -> Self {
+    fn new<F: Fn(a1_notation::Address) -> EvalResult<Node> + 'static>(name: &str, eval: F) -> Self {
         Self {
             name: name.to_string(),
             eval: Box::new(eval),
@@ -82,7 +79,7 @@ fn def_var<F>(
     eval: F,
 ) -> collections::HashMap<String, BuiltinVariable>
 where
-    F: Fn(Address) -> ParseResult<Node> + 'static,
+    F: Fn(Address) -> EvalResult<Node> + 'static,
 {
     vars.insert(name.to_string(), BuiltinVariable::new(name, eval));
     vars

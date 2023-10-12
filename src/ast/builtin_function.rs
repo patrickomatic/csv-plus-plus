@@ -1,14 +1,14 @@
 //! # BuiltinFunction
 //!
 use super::{Ast, FunctionEval, FunctionName, Node};
-use crate::{ParseError, ParseResult};
+use crate::error::{EvalError, EvalResult};
 use std::collections;
 use std::fmt;
 use std::str::FromStr;
 
-pub struct BuiltinFunction {
-    pub eval: FunctionEval,
-    pub name: FunctionName,
+pub(crate) struct BuiltinFunction {
+    pub(crate) eval: FunctionEval,
+    pub(crate) name: FunctionName,
 }
 
 impl BuiltinFunction {
@@ -17,19 +17,19 @@ impl BuiltinFunction {
 
         // A reference to a cell above this row
         fns = def_fn(fns, "cellabove", |current, args| {
-            let column = verify_one_column("cellabove", args)?;
+            let column = verify_one_column("cellabove", args, current)?;
             Ok(current.shift_up(1).with_x(column.x).into())
         });
 
         // A reference to a cell below this row
         fns = def_fn(fns, "cellbelow", |current, args| {
-            let column = verify_one_column("cellbelow", args)?;
+            let column = verify_one_column("cellbelow", args, current)?;
             Ok(current.shift_down(1).with_x(column.x).into())
         });
 
         // A reference to a cell in the current row
         fns = def_fn(fns, "celladjacent", |current, args| {
-            let column = verify_one_column("celladjacent", args)?;
+            let column = verify_one_column("celladjacent", args, current)?;
             Ok(current.with_x(column.x).into())
         });
 
@@ -37,7 +37,7 @@ impl BuiltinFunction {
     }
 }
 
-/// NOTE: Debug is manually implemented because we can't derive it for `eval`.
+// NOTE: Debug is manually implemented because we can't derive it for `eval`.
 impl fmt::Debug for BuiltinFunction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("BuiltinFunction")
@@ -52,7 +52,7 @@ fn def_fn<F>(
     eval_fn: F,
 ) -> collections::HashMap<FunctionName, BuiltinFunction>
 where
-    F: Fn(a1_notation::Address, &[Ast]) -> ParseResult<Node> + 'static,
+    F: Fn(a1_notation::Address, &[Ast]) -> EvalResult<Node> + 'static,
 {
     fns.insert(
         name.to_string(),
@@ -65,17 +65,26 @@ where
     fns
 }
 
-fn verify_one_column(fn_name: &str, args: &[Ast]) -> ParseResult<a1_notation::Column> {
+fn verify_one_column(
+    fn_name: &str,
+    args: &[Ast],
+    position: a1_notation::Address,
+) -> EvalResult<a1_notation::Column> {
     if args.len() != 1 {
-        Err(ParseError::bad_input(
-            &args.len().to_string(), // TODO figure out a way to format this
+        Err(EvalError::new(
+            position,
             &format!("Expected a single argument to `{fn_name}`"),
         ))
     } else if let Node::Reference(r) = &*args[0] {
-        Ok(a1_notation::Column::from_str(r)?)
+        Ok(a1_notation::Column::from_str(r).map_err(|e| {
+            EvalError::new(
+                position,
+                &format!("Expected an A1 reference as the first argument: {e}"),
+            )
+        })?)
     } else {
-        Err(ParseError::bad_input(
-            args[0].to_string().as_str(),
+        Err(EvalError::new(
+            position,
             &format!("Expected a cell reference as the only argumnent to `{fn_name}`"),
         ))
     }

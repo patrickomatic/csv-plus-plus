@@ -1,8 +1,8 @@
 //! # VerticalAlign
 //!
-use crate::ParseError;
+use crate::error::ModifierParseError;
+use crate::parser::modifier_lexer::TokenMatch;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 /// The possible values for aligning a cell vertically.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -12,18 +12,18 @@ pub enum VerticalAlign {
     Top,
 }
 
-impl FromStr for VerticalAlign {
-    type Err = ParseError;
+impl TryFrom<TokenMatch> for VerticalAlign {
+    type Error = ModifierParseError;
 
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
-        match input.to_lowercase().as_str() {
+    fn try_from(input: TokenMatch) -> Result<Self, Self::Error> {
+        match input.str_match.to_lowercase().as_str() {
             "b" | "bottom" => Ok(Self::Bottom),
             "c" | "center" => Ok(Self::Center),
             "t" | "top" => Ok(Self::Top),
-            _ => Err(ParseError::bad_input_with_possibilities(
+            _ => Err(ModifierParseError::new(
+                "valign",
                 input,
-                "Invalid valign= value",
-                "bottom (b) | center (c) | top (t)",
+                Some(&["bottom (b)", "center (c)", "top (t)"]),
             )),
         }
     }
@@ -32,37 +32,53 @@ impl FromStr for VerticalAlign {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::*;
 
     #[test]
-    fn from_str_top() {
-        assert_eq!(VerticalAlign::Top, VerticalAlign::from_str("t").unwrap());
-        assert_eq!(VerticalAlign::Top, VerticalAlign::from_str("top").unwrap());
-        assert_eq!(VerticalAlign::Top, VerticalAlign::from_str("TOP").unwrap());
-    }
-
-    #[test]
-    fn from_str_center() {
-        assert_eq!(VerticalAlign::Center, VerticalAlign::from_str("c").unwrap());
+    fn try_from_top() {
         assert_eq!(
-            VerticalAlign::Center,
-            VerticalAlign::from_str("center").unwrap()
+            VerticalAlign::Top,
+            VerticalAlign::try_from(build_modifier_token_match("t")).unwrap()
         );
         assert_eq!(
-            VerticalAlign::Center,
-            VerticalAlign::from_str("CENTER").unwrap()
+            VerticalAlign::Top,
+            VerticalAlign::try_from(build_modifier_token_match("top")).unwrap()
+        );
+        assert_eq!(
+            VerticalAlign::Top,
+            VerticalAlign::try_from(build_modifier_token_match("TOP")).unwrap()
         );
     }
 
     #[test]
-    fn from_str_bottom() {
-        assert_eq!(VerticalAlign::Bottom, VerticalAlign::from_str("b").unwrap());
+    fn try_from_center() {
+        assert_eq!(
+            VerticalAlign::Center,
+            VerticalAlign::try_from(build_modifier_token_match("c")).unwrap()
+        );
+        assert_eq!(
+            VerticalAlign::Center,
+            VerticalAlign::try_from(build_modifier_token_match("center")).unwrap()
+        );
+        assert_eq!(
+            VerticalAlign::Center,
+            VerticalAlign::try_from(build_modifier_token_match("CENTER")).unwrap()
+        );
+    }
+
+    #[test]
+    fn try_from_bottom() {
         assert_eq!(
             VerticalAlign::Bottom,
-            VerticalAlign::from_str("bottom").unwrap()
+            VerticalAlign::try_from(build_modifier_token_match("b")).unwrap()
         );
         assert_eq!(
             VerticalAlign::Bottom,
-            VerticalAlign::from_str("BOTTOM").unwrap()
+            VerticalAlign::try_from(build_modifier_token_match("bottom")).unwrap()
+        );
+        assert_eq!(
+            VerticalAlign::Bottom,
+            VerticalAlign::try_from(build_modifier_token_match("BOTTOM")).unwrap()
         );
     }
 }

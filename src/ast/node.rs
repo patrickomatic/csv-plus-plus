@@ -1,4 +1,4 @@
-use super::{Ast, FunctionArgs, FunctionName};
+use super::{Ast, FunctionArgs, FunctionName, VariableName};
 use crate::Expand;
 use a1_notation::{Address, Column, Row};
 use serde::{Deserialize, Serialize};
@@ -57,27 +57,27 @@ pub enum Node {
 
     /// A variable definition.
     Variable {
-        name: FunctionName,
+        name: VariableName,
         value: VariableValue,
     },
 }
 
-/// Variables can occur in
+/// Variables can be bound to a variety of different contexts.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum VariableValue {
-    /// It's scoped to point at an absolute cell
+    /// It's scoped to point at an absolute cell.
     Absolute(Address),
 
-    /// If a variable is defined in the code section it will have an AST as a value
+    /// If a variable is defined in the code section it will have an AST as a value.
     Ast(Ast),
 
-    /// It's scoped as a column relative to an expand
+    /// It's scoped as a column relative to an expand.
     ColumnRelative { column: Column, scope: Expand },
 
-    /// It's scoped as a row
+    /// It's scoped as a row.
     Row(Row),
 
-    /// It's scoped as a row relative to an expand
+    /// It's scoped as a row relative to an expand.
     RowRelative { row: Row, scope: Expand },
 }
 

@@ -9,23 +9,24 @@
 //!
 use crate::parser::token_library::CODE_SECTION_SEPARATOR;
 use crate::{Error, Result};
-use std::cmp;
 use std::fs;
 use std::path;
 
 mod display;
+mod errors;
 
-// how many lines above (and below) we'll show as context when highlighting error messages
-const LINES_IN_ERROR_CONTEXT: usize = 3;
+/// the line number - counts from `0` but renders the first line as `"1"`
+pub type LineNumber = usize;
 
-type LineCount = usize;
+/// the amount of characters offset from the beginning of the line
+pub type CharOffset = usize;
 
 #[derive(Debug)]
 pub struct SourceCode {
     pub filename: path::PathBuf,
-    pub lines: LineCount,
-    pub length_of_code_section: LineCount,
-    pub length_of_csv_section: LineCount,
+    pub lines: LineNumber,
+    pub length_of_code_section: LineNumber,
+    pub length_of_csv_section: LineNumber,
     pub code_section: Option<String>,
     pub csv_section: String,
     pub original: String,
@@ -71,88 +72,56 @@ impl SourceCode {
         }
     }
 
-    pub fn get_line(&self, line_number: usize) -> Option<String> {
+    // TODO: store the lines split so I don't have to do this more than once?
+    pub(crate) fn get_line(&self, line_number: LineNumber) -> Option<String> {
         self.original
             .lines()
             .map(|l| l.to_string())
             .collect::<Vec<String>>()
-            .get(line_number - 1)
+            .get(line_number)
             .map(|s| s.to_string())
     }
 
-    pub fn highlight_line(&self, line_number: usize, position: usize) -> Vec<String> {
-        let lines = self
-            .original
-            .lines()
-            .map(|l| l.to_string())
-            .collect::<Vec<String>>();
-
-        // we present the line number as 1-based to the user, but index the array starting at 0
-        let i = line_number - 1;
-
-        // are they requesting a line totally outside of the range?
-        if i > lines.len() {
-            return vec![];
-        }
-
-        let start_index = i.saturating_sub(LINES_IN_ERROR_CONTEXT);
-        let end_index = cmp::min(lines.len(), i + LINES_IN_ERROR_CONTEXT + 1);
-
-        // start with 3 lines before, and also include our highlight line
-        let mut lines_out = lines[start_index..(i + 1)].to_vec();
-
-        // save the number of this line because we want to skip line-numbering it below
-        let skip_numbering_on = lines_out.len();
-
-        // draw something like this to highlight it:
-        // ```
-        //      foo!
-        // --------^
-        // ```
-        lines_out.push(format!("{}^", "-".repeat(position - 1)));
-
-        // and 3 lines after
-        lines_out.append(&mut lines[(i + 1)..end_index].to_vec());
-
-        // now format each line with line numbers
-        let longest_line_number = (line_number + LINES_IN_ERROR_CONTEXT).to_string().len();
-        let mut line_count = line_number
-            .saturating_sub(LINES_IN_ERROR_CONTEXT)
-            .saturating_sub(1);
-
-        // now iterate over it and apply lines numbers like `XX: some_code( ...` where XX is the
-        // line number
-        lines_out
-            .iter()
-            .enumerate()
-            .map(|(i, line)| {
-                // don't increment the line *after* the line we're highlighting.  because it's the
-                // ----^ thing and it doesn't correspond to a source code row, it's highlighting the
-                // text above it
-                if i == skip_numbering_on {
-                    format!(" {: <width$}: {}", " ", line, width = longest_line_number)
-                } else {
-                    line_count += 1;
-                    format!(
-                        " {: <width$}: {}",
-                        line_count,
-                        line,
-                        width = longest_line_number
-                    )
-                }
-            })
-            .collect()
-    }
-
-    pub fn object_code_filename(&self) -> path::PathBuf {
+    pub(crate) fn object_code_filename(&self) -> path::PathBuf {
         let mut f = self.filename.clone();
         f.set_extension("csvpo");
         f
     }
 
-    pub fn csv_line_number(&self, position: a1_notation::Address) -> usize {
+    pub(crate) fn csv_line_number(&self, position: a1_notation::Address) -> LineNumber {
         let row = position.row.y;
-        self.length_of_code_section + 2 + row
+        self.length_of_code_section + 1 + row
+    }
+
+    pub(crate) fn line_offset_for_cell(&self, position: a1_notation::Address) -> CharOffset {
+        let line_number = self.csv_line_number(position);
+        let Some(line) = self.get_line(line_number) else {
+            // TODO: Err
+            return 0;
+        };
+
+        let mut reader = csv::ReaderBuilder::new()
+            .has_headers(false)
+            .from_reader(line.as_bytes());
+
+        if let Some(result) = reader.records().next() {
+            let record = result.unwrap();
+            let x = position.column.x;
+
+            if x > record.len() || x == 0 {
+                // TODO: err
+                return 0;
+            }
+
+            // TODO: this doesn't work if the input takes advantage of CSV's weird double-quote
+            // escaping rules. but tbh I dunno if it matters much
+            //
+            // the length of all the cells (since spaces is preserved), plus how many commas would have joined them
+            (0..x).fold(0, |acc, i| acc + record[i].len()) + x
+        } else {
+            // TODO: Err instead?
+            0
+        }
     }
 }
 
@@ -175,79 +144,84 @@ mod tests {
     }
 
     #[test]
+    fn csv_line_number() {
+        let source_code = SourceCode::new(
+            "# A comment
+var := 1
+
+other_var := 42
+
+---
+foo,bar,baz
+foo1,bar1,baz1
+            ",
+            path::PathBuf::from("test.csvpp"),
+        )
+        .unwrap();
+
+        assert_eq!(
+            7,
+            source_code.csv_line_number(a1_notation::Address::new(1, 1))
+        );
+    }
+
+    #[test]
     fn get_line_none() {
         let source_code = build_source_code();
-        assert_eq!(source_code.get_line(100), None);
+        assert_eq!(source_code.get_line(99), None);
     }
 
     #[test]
     fn get_line_some() {
         let source_code = build_source_code();
-        assert_eq!(source_code.get_line(11), Some("---".to_string()));
+        assert_eq!(source_code.get_line(10), Some("---".to_string()));
     }
 
     #[test]
-    fn highlight_line() {
-        let source_code = SourceCode::new(
-            "
-# A comment
-
-var := 1
-other_var := 42
-
-something {
-    foo: bar
-}
----
-foo,bar,baz
-            ",
-            path::PathBuf::from("test.csvpp"),
-        )
-        .unwrap();
-
-        assert_eq!(
-            source_code.highlight_line(8, 6),
-            vec![
-                " 5 : other_var := 42",
-                " 6 : ",
-                " 7 : something {",
-                " 8 :     foo: bar",
-                "   : -----^",
-                " 9 : }",
-                " 10: ---",
-                " 11: foo,bar,baz",
-            ]
-        );
-    }
-
-    #[test]
-    fn highlight_line_at_top() {
+    fn line_offset_for_cell() {
         let source_code = SourceCode::new(
             "# A comment
-
-var := 1
-other_var := 42
-
-something {
-    foo: bar
-}
 ---
 foo,bar,baz
+foo1,bar1,baz1
             ",
             path::PathBuf::from("test.csvpp"),
         )
         .unwrap();
 
-        assert_eq!(
-            source_code.highlight_line(1, 6),
-            vec![
-                " 1: # A comment",
-                "  : -----^",
-                " 2: ",
-                " 3: var := 1",
-                " 4: other_var := 42",
-            ]
-        );
+        assert_eq!(source_code.line_offset_for_cell((0, 0).into()), 0);
+        assert_eq!(source_code.line_offset_for_cell((1, 0).into()), 4);
+        assert_eq!(source_code.line_offset_for_cell((2, 0).into()), 8);
+        assert_eq!(source_code.line_offset_for_cell((1, 1).into()), 5);
+    }
+
+    #[test]
+    fn line_offset_for_cell_with_spaces() {
+        let source_code = SourceCode::new(
+            "# A comment
+---
+  foo,  bar,baz
+            ",
+            path::PathBuf::from("test.csvpp"),
+        )
+        .unwrap();
+
+        assert_eq!(source_code.line_offset_for_cell((1, 0).into()), 6);
+    }
+
+    #[ignore]
+    #[test]
+    fn line_offset_for_cell_with_quotes() {
+        let source_code = SourceCode::new(
+            "# A comment
+---
+\" hmmm, this is all one cell\",baz
+            ",
+            path::PathBuf::from("test.csvpp"),
+        )
+        .unwrap();
+
+        assert_eq!(source_code.line_offset_for_cell((1, 0).into()), 34);
     }
 
     #[test]
@@ -288,27 +262,5 @@ foo,bar,baz,=foo
         assert_eq!(source_code.length_of_code_section, 3);
         assert_eq!(source_code.code_section, Some("\nfoo := 1\n\n".to_string()));
         assert_eq!(source_code.csv_section, "\nfoo,bar,baz,=foo\n".to_string());
-    }
-
-    #[test]
-    fn csv_line_number() {
-        let source_code = SourceCode::new(
-            "# A comment
-var := 1
-
-other_var := 42
-
----
-foo,bar,baz
-foo1,bar1,baz1
-            ",
-            path::PathBuf::from("test.csvpp"),
-        )
-        .unwrap();
-
-        assert_eq!(
-            8,
-            source_code.csv_line_number(a1_notation::Address::new(1, 1))
-        );
     }
 }

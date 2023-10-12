@@ -1,16 +1,16 @@
 //! # AstLexer
 //!
 use super::token_library::{Token, TokenLibrary, TokenMatch, TokenMatcher};
-use crate::Runtime;
+use crate::error::{BadInput, ParseResult};
+use crate::{CharOffset, LineNumber, Runtime};
 use std::cell::RefCell;
-use std::error;
 use std::fmt;
 use std::rc::Rc;
 
 pub struct AstLexer<'a> {
     tokens: Rc<RefCell<Vec<TokenMatch<'a>>>>,
-    lines: usize,
-    eof_position: usize,
+    lines: LineNumber,
+    eof_position: CharOffset,
 }
 
 /// For better or worse the tokens are not mutually exclusive - some of them are subsets of another
@@ -42,37 +42,39 @@ fn matchers_ordered(tl: &TokenLibrary) -> [&TokenMatcher; 15] {
 fn whitespace_start(input: &str) -> usize {
     input
         .chars()
-        .take_while(|ch| ch.is_whitespace() && *ch != '\n')
+        .take_while(|ch| ch.is_whitespace() && *ch != '\n' && *ch != '\r')
         .count()
 }
 
-/// Thrown for a token that we cannot match (we ran all the regexes provided by the token library
-/// and none matched)
-#[derive(Clone, Debug)]
-pub struct AstLexerError {
-    pub bad_input: String,
-    pub line_number: usize,
-    pub position: usize,
+#[derive(Debug)]
+pub(crate) struct UnknownToken {
+    pub(crate) bad_input: String,
+    pub(crate) line_number: LineNumber,
+    pub(crate) line_offset: CharOffset,
 }
 
-impl fmt::Display for AstLexerError {
+impl fmt::Display for UnknownToken {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut shortened_bad_input = self.bad_input.clone();
         shortened_bad_input.truncate(50);
-        write!(
-            f,
-            "Error parsing input.  Invalid token: {}",
-            shortened_bad_input
-        )
+        write!(f, "{shortened_bad_input}")
     }
 }
 
-impl error::Error for AstLexerError {}
+impl BadInput for UnknownToken {
+    fn line_number(&self) -> LineNumber {
+        self.line_number
+    }
+
+    fn line_offset(&self) -> CharOffset {
+        self.line_offset
+    }
+}
 
 impl<'a> AstLexer<'a> {
-    pub fn new(input: &'a str, runtime: &'a Runtime) -> Result<AstLexer<'a>, AstLexerError> {
-        let mut line_number = 1;
-        let mut position = 1;
+    pub(crate) fn new(input: &'a str, runtime: &'a Runtime) -> ParseResult<AstLexer<'a>> {
+        let mut line_number = 0;
+        let mut position = 0;
 
         let mut tokens: Vec<TokenMatch> = vec![];
         let mut p = input;
@@ -93,13 +95,13 @@ impl<'a> AstLexer<'a> {
                             token: *token,
                             str_match: str_match.trim(),
                             line_number,
-                            position: position + whitespace_start(str_match),
+                            line_offset: position + whitespace_start(str_match),
                         });
                     }
 
                     if *token == Token::Newline {
                         // move position back to the beginning
-                        position = 1;
+                        position = 0;
                     } else {
                         position += m.len();
                     }
@@ -118,11 +120,14 @@ impl<'a> AstLexer<'a> {
 
             if !matched {
                 // we did a round of all the tokens and didn't match any of them - invalid syntax
-                return Err(AstLexerError {
-                    bad_input: p.to_string(),
-                    line_number,
-                    position,
-                });
+                return Err(runtime.source_code.parse_error(
+                    UnknownToken {
+                        bad_input: p.to_string(),
+                        line_number,
+                        line_offset: position,
+                    },
+                    "Error parsing input - invalid token",
+                ));
             }
         }
 
@@ -136,12 +141,12 @@ impl<'a> AstLexer<'a> {
     }
 
     /// Consume and return the next `TokenMatch`
-    pub fn next(&self) -> TokenMatch {
+    pub(super) fn next(&self) -> TokenMatch {
         self.tokens.borrow_mut().pop().unwrap_or_else(|| self.eof())
     }
 
     /// Return but do not consume the next `TokenMatch`
-    pub fn peek(&self) -> TokenMatch {
+    pub(super) fn peek(&self) -> TokenMatch {
         match self.tokens.borrow().last() {
             Some(t) => *t,
             None => self.eof(),
@@ -153,7 +158,7 @@ impl<'a> AstLexer<'a> {
             token: Token::Eof,
             str_match: "",
             line_number: self.lines,
-            position: self.eof_position,
+            line_offset: self.eof_position,
         }
     }
 }
@@ -170,14 +175,14 @@ mod tests {
     fn build_token_match(
         token: Token,
         str_match: &str,
-        line_number: usize,
-        position: usize,
+        line_number: LineNumber,
+        line_offset: CharOffset,
     ) -> TokenMatch {
         TokenMatch {
             token,
             str_match,
             line_number,
-            position,
+            line_offset,
         }
     }
 
@@ -188,41 +193,41 @@ mod tests {
 
         assert_eq!(
             lexer.next(),
-            build_token_match(Token::Reference, "foo", 1, 1)
+            build_token_match(Token::Reference, "foo", 0, 0)
         );
         assert_eq!(
             lexer.next(),
-            build_token_match(Token::Reference, "bar", 1, 5)
+            build_token_match(Token::Reference, "bar", 0, 4)
         );
-        assert_eq!(lexer.next(), build_token_match(Token::Comma, ",", 1, 8));
+        assert_eq!(lexer.next(), build_token_match(Token::Comma, ",", 0, 7));
         assert_eq!(
             lexer.next(),
-            build_token_match(Token::DoubleQuotedString, "\"a\"", 1, 9)
+            build_token_match(Token::DoubleQuotedString, "\"a\"", 0, 8)
         );
-        assert_eq!(lexer.next(), build_token_match(Token::Comma, ",", 1, 12));
+        assert_eq!(lexer.next(), build_token_match(Token::Comma, ",", 0, 11));
         assert_eq!(
             lexer.next(),
-            build_token_match(Token::Integer, "123", 1, 13)
+            build_token_match(Token::Integer, "123", 0, 12)
         );
-        assert_eq!(lexer.next(), build_token_match(Token::OpenParen, "(", 2, 1));
-        assert_eq!(lexer.next(), build_token_match(Token::Reference, "d", 2, 2));
-        assert_eq!(lexer.next(), build_token_match(Token::Comma, ",", 2, 3));
-        assert_eq!(lexer.next(), build_token_match(Token::Reference, "b", 2, 5));
+        assert_eq!(lexer.next(), build_token_match(Token::OpenParen, "(", 1, 0));
+        assert_eq!(lexer.next(), build_token_match(Token::Reference, "d", 1, 1));
+        assert_eq!(lexer.next(), build_token_match(Token::Comma, ",", 1, 2));
+        assert_eq!(lexer.next(), build_token_match(Token::Reference, "b", 1, 4));
         assert_eq!(
             lexer.next(),
-            build_token_match(Token::CloseParen, ")", 2, 6)
-        );
-        assert_eq!(
-            lexer.next(),
-            build_token_match(Token::InfixOperator, "+", 2, 8)
+            build_token_match(Token::CloseParen, ")", 1, 5)
         );
         assert_eq!(
             lexer.next(),
-            build_token_match(Token::InfixOperator, "*", 2, 10)
+            build_token_match(Token::InfixOperator, "+", 1, 7)
         );
-        assert_eq!(lexer.next(), build_token_match(Token::Float, "0.25", 2, 12));
-        assert_eq!(lexer.next(), build_token_match(Token::Eof, "", 2, 16));
-        assert_eq!(lexer.next(), build_token_match(Token::Eof, "", 2, 16));
+        assert_eq!(
+            lexer.next(),
+            build_token_match(Token::InfixOperator, "*", 1, 9)
+        );
+        assert_eq!(lexer.next(), build_token_match(Token::Float, "0.25", 1, 11));
+        assert_eq!(lexer.next(), build_token_match(Token::Eof, "", 1, 15));
+        assert_eq!(lexer.next(), build_token_match(Token::Eof, "", 1, 15));
     }
 
     #[test]
@@ -232,9 +237,9 @@ mod tests {
 
         assert_eq!(
             lexer.next(),
-            build_token_match(Token::Reference, "a_ref", 2, 1)
+            build_token_match(Token::Reference, "a_ref", 1, 0)
         );
-        assert_eq!(lexer.next(), build_token_match(Token::Eof, "", 2, 6));
+        assert_eq!(lexer.next(), build_token_match(Token::Eof, "", 1, 5));
     }
 
     #[test]
@@ -244,11 +249,11 @@ mod tests {
 
         assert_eq!(
             lexer.next(),
-            build_token_match(Token::Reference, "foo", 2, 2)
+            build_token_match(Token::Reference, "foo", 1, 1)
         );
         assert_eq!(
             lexer.next(),
-            build_token_match(Token::Reference, "bar", 3, 2)
+            build_token_match(Token::Reference, "bar", 2, 1)
         );
     }
 
@@ -259,15 +264,15 @@ mod tests {
 
         assert_eq!(
             lexer.peek(),
-            build_token_match(Token::Reference, "foo", 1, 1)
+            build_token_match(Token::Reference, "foo", 0, 0)
         );
         assert_eq!(
             lexer.peek(),
-            build_token_match(Token::Reference, "foo", 1, 1)
+            build_token_match(Token::Reference, "foo", 0, 0)
         );
         assert_eq!(
             lexer.peek(),
-            build_token_match(Token::Reference, "foo", 1, 1)
+            build_token_match(Token::Reference, "foo", 0, 0)
         );
     }
 }

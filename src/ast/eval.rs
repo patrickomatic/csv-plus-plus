@@ -3,18 +3,18 @@
 //! The main functions for evaluating a function or variable.
 //!
 use super::{Ast, Node};
-use crate::ParseResult;
+use crate::error::EvalResult;
 use std::collections;
 
 impl Node {
     /// Evaluate the given `functions` calling `resolve_fn` upon each occurence to render a
     /// replacement.  Unlike variable resolution, we can't produce the values up front because the
     /// resolution function requires being called with the `arguments` at the call site.
-    pub fn eval_functions(
+    pub(crate) fn eval_functions(
         &self,
         functions: &[String],
-        resolve_fn: impl Fn(&str, &[Ast]) -> ParseResult<Ast>,
-    ) -> ParseResult<Node> {
+        resolve_fn: impl Fn(&str, &[Ast]) -> EvalResult<Ast>,
+    ) -> EvalResult<Node> {
         let mut evaled_ast = self.clone();
         for fn_name in functions {
             evaled_ast = evaled_ast.call_function(fn_name, &resolve_fn)?;
@@ -25,10 +25,10 @@ impl Node {
 
     /// Use the mapping in `variable_values` to replace each variable referenced in the AST with
     /// it's given replacement.
-    pub fn eval_variables(
+    pub(crate) fn eval_variables(
         &self,
         variable_values: collections::HashMap<String, Ast>,
-    ) -> ParseResult<Node> {
+    ) -> EvalResult<Node> {
         let mut evaled_ast = self.clone();
         for (var_id, replacement) in variable_values {
             evaled_ast = evaled_ast.replace_variable(&var_id, replacement);
@@ -52,8 +52,8 @@ impl Node {
     fn call_function(
         &self,
         fn_id: &str,
-        resolve_fn: &impl Fn(&str, &[Ast]) -> ParseResult<Ast>,
-    ) -> ParseResult<Self> {
+        resolve_fn: &impl Fn(&str, &[Ast]) -> EvalResult<Ast>,
+    ) -> EvalResult<Self> {
         match self {
             // handle a function that we're calling
             Self::FunctionCall { args, name } if name == fn_id =>

@@ -1,7 +1,7 @@
 //! # NumberFormat
-use crate::ParseError;
+use crate::error::ModifierParseError;
+use crate::parser::modifier_lexer::TokenMatch;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum NumberFormat {
@@ -15,11 +15,11 @@ pub enum NumberFormat {
     Scientific,
 }
 
-impl FromStr for NumberFormat {
-    type Err = ParseError;
+impl TryFrom<TokenMatch> for NumberFormat {
+    type Error = ModifierParseError;
 
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
-        match input.to_lowercase().as_str() {
+    fn try_from(input: TokenMatch) -> Result<Self, Self::Error> {
+        match input.str_match.to_lowercase().as_str() {
             "c" | "currency" => Ok(Self::Currency),
             "d" | "date" => Ok(Self::Date),
             "dt" | "datetime" => Ok(Self::DateTime),
@@ -28,11 +28,19 @@ impl FromStr for NumberFormat {
             "text" => Ok(Self::Text), // TODO: think of a shortcut!!!
             "t" | "time" => Ok(Self::Time),
             "s" | "scientific" => Ok(Self::Scientific),
-            _ => Err(ParseError::bad_input_with_possibilities(
+            _ => Err(ModifierParseError::new(
+                "numberformat",
                 input,
-                "Invalid numberformat= value",
-                "currency (c) | date (d) | datetime (dt) | number (n) | percent (p) \
-                                    | text | time (t) | scientific (s)",
+                Some(&[
+                    "currency (c)",
+                    "date (d)",
+                    "datetime (dt)",
+                    "number (n)",
+                    "percent (p)",
+                    "text",
+                    "time (t)",
+                    "scientific (s)",
+                ]),
             )),
         }
     }
@@ -41,100 +49,134 @@ impl FromStr for NumberFormat {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::*;
 
     #[test]
-    fn from_str_currency() {
-        assert_eq!(NumberFormat::Currency, NumberFormat::from_str("c").unwrap());
+    fn try_from_currency() {
         assert_eq!(
             NumberFormat::Currency,
-            NumberFormat::from_str("currency").unwrap()
+            NumberFormat::try_from(build_modifier_token_match("c")).unwrap()
         );
         assert_eq!(
             NumberFormat::Currency,
-            NumberFormat::from_str("CURRENCY").unwrap()
+            NumberFormat::try_from(build_modifier_token_match("currency")).unwrap()
+        );
+        assert_eq!(
+            NumberFormat::Currency,
+            NumberFormat::try_from(build_modifier_token_match("CURRENCY")).unwrap()
         );
     }
 
     #[test]
-    fn from_str_date() {
-        assert_eq!(NumberFormat::Date, NumberFormat::from_str("d").unwrap());
-        assert_eq!(NumberFormat::Date, NumberFormat::from_str("date").unwrap());
-        assert_eq!(NumberFormat::Date, NumberFormat::from_str("DATE").unwrap());
-    }
-
-    #[test]
-    fn from_str_datetime() {
+    fn try_from_date() {
         assert_eq!(
-            NumberFormat::DateTime,
-            NumberFormat::from_str("dt").unwrap()
+            NumberFormat::Date,
+            NumberFormat::try_from(build_modifier_token_match("d")).unwrap()
         );
         assert_eq!(
-            NumberFormat::DateTime,
-            NumberFormat::from_str("datetime").unwrap()
+            NumberFormat::Date,
+            NumberFormat::try_from(build_modifier_token_match("date")).unwrap()
         );
         assert_eq!(
-            NumberFormat::DateTime,
-            NumberFormat::from_str("DATETIME").unwrap()
+            NumberFormat::Date,
+            NumberFormat::try_from(build_modifier_token_match("DATE")).unwrap()
         );
     }
 
     #[test]
-    fn from_str_number() {
-        assert_eq!(NumberFormat::Number, NumberFormat::from_str("n").unwrap());
+    fn try_from_datetime() {
+        assert_eq!(
+            NumberFormat::DateTime,
+            NumberFormat::try_from(build_modifier_token_match("dt")).unwrap()
+        );
+        assert_eq!(
+            NumberFormat::DateTime,
+            NumberFormat::try_from(build_modifier_token_match("datetime")).unwrap()
+        );
+        assert_eq!(
+            NumberFormat::DateTime,
+            NumberFormat::try_from(build_modifier_token_match("DATETIME")).unwrap()
+        );
+    }
+
+    #[test]
+    fn try_from_number() {
         assert_eq!(
             NumberFormat::Number,
-            NumberFormat::from_str("number").unwrap()
+            NumberFormat::try_from(build_modifier_token_match("n")).unwrap()
         );
         assert_eq!(
             NumberFormat::Number,
-            NumberFormat::from_str("NUMBER").unwrap()
+            NumberFormat::try_from(build_modifier_token_match("number")).unwrap()
+        );
+        assert_eq!(
+            NumberFormat::Number,
+            NumberFormat::try_from(build_modifier_token_match("NUMBER")).unwrap()
         );
     }
 
     #[test]
-    fn from_str_percent() {
-        assert_eq!(NumberFormat::Percent, NumberFormat::from_str("p").unwrap());
+    fn try_from_percent() {
         assert_eq!(
             NumberFormat::Percent,
-            NumberFormat::from_str("percent").unwrap()
+            NumberFormat::try_from(build_modifier_token_match("p")).unwrap()
         );
         assert_eq!(
             NumberFormat::Percent,
-            NumberFormat::from_str("PERCENT").unwrap()
-        );
-    }
-
-    #[test]
-    fn from_str_text() {
-        assert_eq!(NumberFormat::Text, NumberFormat::from_str("text").unwrap());
-        assert_eq!(NumberFormat::Text, NumberFormat::from_str("TEXT").unwrap());
-    }
-
-    #[test]
-    fn from_str_time() {
-        assert_eq!(NumberFormat::Time, NumberFormat::from_str("t").unwrap());
-        assert_eq!(NumberFormat::Time, NumberFormat::from_str("time").unwrap());
-        assert_eq!(NumberFormat::Time, NumberFormat::from_str("TIME").unwrap());
-    }
-
-    #[test]
-    fn from_str_scientific() {
-        assert_eq!(
-            NumberFormat::Scientific,
-            NumberFormat::from_str("s").unwrap()
+            NumberFormat::try_from(build_modifier_token_match("percent")).unwrap()
         );
         assert_eq!(
-            NumberFormat::Scientific,
-            NumberFormat::from_str("scientific").unwrap()
-        );
-        assert_eq!(
-            NumberFormat::Scientific,
-            NumberFormat::from_str("SCIENTIFIC").unwrap()
+            NumberFormat::Percent,
+            NumberFormat::try_from(build_modifier_token_match("PERCENT")).unwrap()
         );
     }
 
     #[test]
-    fn from_str_invalid() {
-        assert!(NumberFormat::from_str("foo").is_err());
+    fn try_from_text() {
+        assert_eq!(
+            NumberFormat::Text,
+            NumberFormat::try_from(build_modifier_token_match("text")).unwrap()
+        );
+        assert_eq!(
+            NumberFormat::Text,
+            NumberFormat::try_from(build_modifier_token_match("TEXT")).unwrap()
+        );
+    }
+
+    #[test]
+    fn try_from_time() {
+        assert_eq!(
+            NumberFormat::Time,
+            NumberFormat::try_from(build_modifier_token_match("t")).unwrap()
+        );
+        assert_eq!(
+            NumberFormat::Time,
+            NumberFormat::try_from(build_modifier_token_match("time")).unwrap()
+        );
+        assert_eq!(
+            NumberFormat::Time,
+            NumberFormat::try_from(build_modifier_token_match("TIME")).unwrap()
+        );
+    }
+
+    #[test]
+    fn try_from_scientific() {
+        assert_eq!(
+            NumberFormat::Scientific,
+            NumberFormat::try_from(build_modifier_token_match("s")).unwrap()
+        );
+        assert_eq!(
+            NumberFormat::Scientific,
+            NumberFormat::try_from(build_modifier_token_match("scientific")).unwrap()
+        );
+        assert_eq!(
+            NumberFormat::Scientific,
+            NumberFormat::try_from(build_modifier_token_match("SCIENTIFIC")).unwrap()
+        );
+    }
+
+    #[test]
+    fn try_from_invalid() {
+        assert!(NumberFormat::try_from(build_modifier_token_match("foo")).is_err());
     }
 }

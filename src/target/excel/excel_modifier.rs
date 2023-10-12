@@ -188,7 +188,6 @@ impl ExcelModifier {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::str::FromStr;
 
     #[test]
     fn into_border_borderstyle() {
@@ -246,10 +245,10 @@ mod tests {
 
     #[test]
     fn into_rgb_color() {
-        let rgb = Rgb::from_str("FFAA00").unwrap();
+        let rgb = Rgb { r: 255, g: 0, b: 0 };
         let color: umya_spreadsheet::Color = rgb.into();
 
-        assert_eq!(color.get_argb(), "FFAA00FF");
+        assert_eq!(color.get_argb(), "FF0000FF");
     }
 
     #[test]

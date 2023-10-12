@@ -6,62 +6,60 @@
 //!
 use super::modifier_lexer::{ModifierLexer, Token};
 use crate::modifier::*;
-use crate::{Error, Expand, ParseError, ParseResult, Result, Rgb, Runtime};
+use crate::{Expand, ParseResult, Result, Rgb, Runtime};
 use a1_notation::{Address, Row};
-use std::str::FromStr;
 
-pub struct ModifierParser<'a> {
-    /// We re-use the lexer in some contexts so take a reference to an existing one
-    lexer: &'a mut ModifierLexer,
+pub struct ModifierParser<'a, 'b> {
+    /// We re-use the lexer in some contexts so take a reference to an existing one (with it's own
+    /// lifetime)
+    lexer: &'a mut ModifierLexer<'b>,
 
     /// While `Modifier` and `RowModifier` are two separate structs, parsing-wise the logic is
     /// the same. And since `RowModifier` is a superset of `Modifier`, we use the former for
     /// parsing into then cast it via `into()` if it's really a `Modifier`.
     modifier: &'a mut RowModifier,
+
+    runtime: &'a Runtime,
 }
 
 #[derive(Clone, Debug)]
-pub struct ParsedCell {
-    pub modifier: Option<Modifier>,
-    pub row_modifier: Option<RowModifier>,
-    pub value: String,
+pub(crate) struct ParsedCell {
+    pub(crate) modifier: Option<Modifier>,
+    pub(crate) row_modifier: Option<RowModifier>,
+    pub(crate) value: String,
 }
 
-impl<'a> ModifierParser<'a> {
-    pub fn parse(
-        input: &str,
+impl<'a, 'b> ModifierParser<'a, 'b>
+where
+    // we'll instantiate multiple parsers but the lexer will be re-used amongst them. so it's
+    // important that it has it's own lifetime which is explicitly longer
+    'b: 'a,
+{
+    pub(crate) fn parse(
+        input: &'b str,
         position: Address,
-        row_modifier: &RowModifier,
-        runtime: &Runtime,
+        row_modifier: &'b RowModifier,
+        runtime: &'b Runtime,
     ) -> Result<ParsedCell> {
-        let lexer = &mut ModifierLexer::new(input);
-        let (modifier, row_modifier) = Self::parse_all_modifiers(lexer, position, row_modifier)
-            .map_err(|e| Error::ModifierSyntaxError {
-                line_number: runtime.source_code.csv_line_number(position),
-                position,
-                parse_error: Box::new(e),
-            })?;
-
-        Ok(ParsedCell {
-            modifier,
-            row_modifier,
-            value: lexer.rest(),
-        })
+        Self::parse_all_modifiers(input, position, row_modifier, runtime)
+            .map_err(move |e| runtime.source_code.modifier_syntax_error(e, position))
     }
 
     fn parse_all_modifiers(
-        lexer: &mut ModifierLexer,
+        input: &'b str,
         position: Address,
-        row_modifier: &RowModifier,
-    ) -> ParseResult<(Option<Modifier>, Option<RowModifier>)> {
+        row_modifier: &'b RowModifier,
+        runtime: &'b Runtime,
+    ) -> ParseResult<ParsedCell> {
+        let mut lexer = ModifierLexer::new(input.to_owned(), position, runtime);
         let mut new_modifier: Option<Modifier> = None;
         let mut new_row_modifier: Option<RowModifier> = None;
 
         while let Some(start_token) = lexer.maybe_take_start_modifier() {
-            let is_row_modifier = start_token == Token::StartRowModifier;
+            let is_row_modifier = start_token.token == Token::StartRowModifier;
             if is_row_modifier && position.column.x != 0 {
-                return Err(ParseError::bad_input(
-                    "![[",
+                return Err(runtime.source_code.parse_error(
+                    start_token,
                     "You can only define a row modifier in the first cell",
                 ));
             }
@@ -70,13 +68,12 @@ impl<'a> ModifierParser<'a> {
                 .clone()
                 .unwrap_or_else(|| row_modifier.clone());
 
-            // we'll instantiate a new parser for each modifier, but share the lexer so we're using
-            // the same stream of tokens
-            let mut modifier_parser = ModifierParser {
-                lexer,
+            ModifierParser {
+                lexer: &mut lexer,
                 modifier: &mut row_modifier,
-            };
-            modifier_parser.modifiers(position.row)?;
+                runtime,
+            }
+            .parse_modifiers(position.row)?;
 
             if is_row_modifier {
                 new_row_modifier = Some(row_modifier)
@@ -85,13 +82,19 @@ impl<'a> ModifierParser<'a> {
             }
         }
 
-        Ok((new_modifier, new_row_modifier))
+        Ok(ParsedCell {
+            modifier: new_modifier,
+            row_modifier: new_row_modifier,
+            value: lexer.rest(),
+        })
     }
 
     fn border_modifier(&mut self) -> ParseResult<()> {
-        self.modifier.borders.insert(BorderSide::from_str(
-            &self.lexer.take_modifier_right_side()?,
-        )?);
+        self.modifier.borders.insert(
+            BorderSide::try_from(self.lexer.take_modifier_right_side()?)
+                .map_err(|e| e.into_parse_error(&self.runtime.source_code))?,
+        );
+
         Ok(())
     }
 
@@ -99,14 +102,19 @@ impl<'a> ModifierParser<'a> {
         self.lexer.take_token(Token::Equals)?;
 
         let color = self.lexer.take_token(Token::Color)?;
-        self.modifier.border_color = Some(Rgb::from_str(&color)?);
+        self.modifier.border_color = Some(
+            Rgb::try_from(color)
+                .map_err(|e| e.into_parse_error("bordercolor", &self.runtime.source_code))?,
+        );
+
         Ok(())
     }
 
     fn border_style_modifier(&mut self) -> ParseResult<()> {
-        self.modifier.border_style = Some(BorderStyle::from_str(
-            &self.lexer.take_modifier_right_side()?,
-        )?);
+        self.modifier.border_style = Some(
+            BorderStyle::try_from(self.lexer.take_modifier_right_side()?)
+                .map_err(|e| e.into_parse_error(&self.runtime.source_code))?,
+        );
         Ok(())
     }
 
@@ -114,21 +122,24 @@ impl<'a> ModifierParser<'a> {
         self.lexer.take_token(Token::Equals)?;
 
         let color = self.lexer.take_token(Token::Color)?;
-        self.modifier.color = Some(Rgb::from_str(&color)?);
+        self.modifier.color = Some(
+            Rgb::try_from(color)
+                .map_err(|e| e.into_parse_error("color", &self.runtime.source_code))?,
+        );
 
         Ok(())
     }
 
     fn expand_modifier(&mut self, row: a1_notation::Row) -> ParseResult<()> {
-        let amount = if self.lexer.maybe_take_token(Token::Equals).is_some() {
+        let amount = if self.lexer.maybe_take_equals().is_some() {
             let amount_string = self.lexer.take_token(Token::PositiveNumber)?;
 
-            match amount_string.parse::<usize>() {
+            match amount_string.str_match.parse::<usize>() {
                 Ok(n) => Some(n),
                 Err(e) => {
-                    return Err(ParseError::bad_input(
-                        &amount_string,
-                        &format!("Error parsing expand= repetitions: {}", e),
+                    return Err(self.runtime.source_code.parse_error(
+                        amount_string,
+                        &format!("Error parsing expand= repetitions: {e}"),
                     ))
                 }
             }
@@ -148,7 +159,10 @@ impl<'a> ModifierParser<'a> {
         self.lexer.take_token(Token::Equals)?;
 
         let color = self.lexer.take_token(Token::Color)?;
-        self.modifier.font_color = Some(Rgb::from_str(&color)?);
+        self.modifier.font_color = Some(
+            Rgb::try_from(color)
+                .map_err(|e| e.into_parse_error("fontcolor", &self.runtime.source_code))?,
+        );
         Ok(())
     }
 
@@ -156,7 +170,7 @@ impl<'a> ModifierParser<'a> {
         self.lexer.take_token(Token::Equals)?;
 
         let font_family = self.lexer.take_token(Token::String)?;
-        self.modifier.font_family = Some(font_family);
+        self.modifier.font_family = Some(font_family.str_match);
         Ok(())
     }
 
@@ -164,30 +178,31 @@ impl<'a> ModifierParser<'a> {
         self.lexer.take_token(Token::Equals)?;
 
         let font_size_string = self.lexer.take_token(Token::PositiveNumber)?;
-        match font_size_string.parse::<u8>() {
+        match font_size_string.str_match.parse::<u8>() {
             Ok(n) => self.modifier.font_size = Some(n),
             Err(e) => {
-                return Err(ParseError::bad_input(
-                    &font_size_string,
-                    &format!("Error parsing fontsize: {}", e),
-                ))
+                return Err(self
+                    .runtime
+                    .source_code
+                    .parse_error(font_size_string, &format!("Error parsing fontsize: {e}")))
             }
         }
-
         Ok(())
     }
 
     fn format_modifier(&mut self) -> ParseResult<()> {
-        self.modifier.formats.insert(TextFormat::from_str(
-            &self.lexer.take_modifier_right_side()?,
-        )?);
+        self.modifier.formats.insert(
+            TextFormat::try_from(self.lexer.take_modifier_right_side()?)
+                .map_err(|e| e.into_parse_error(&self.runtime.source_code))?,
+        );
         Ok(())
     }
 
     fn halign_modifier(&mut self) -> ParseResult<()> {
-        self.modifier.horizontal_align = Some(HorizontalAlign::from_str(
-            &self.lexer.take_modifier_right_side()?,
-        )?);
+        self.modifier.horizontal_align = Some(
+            HorizontalAlign::try_from(self.lexer.take_modifier_right_side()?)
+                .map_err(|e| e.into_parse_error(&self.runtime.source_code))?,
+        );
         Ok(())
     }
 
@@ -198,33 +213,35 @@ impl<'a> ModifierParser<'a> {
 
     fn note(&mut self) -> ParseResult<()> {
         self.lexer.take_token(Token::Equals)?;
-        self.modifier.note = Some(self.lexer.take_token(Token::String)?);
+        self.modifier.note = Some(self.lexer.take_token(Token::String)?.str_match);
         Ok(())
     }
 
     fn number_format(&mut self) -> ParseResult<()> {
-        self.modifier.number_format = Some(NumberFormat::from_str(
-            &self.lexer.take_modifier_right_side()?,
-        )?);
+        self.modifier.number_format = Some(
+            NumberFormat::try_from(self.lexer.take_modifier_right_side()?)
+                .map_err(|e| e.into_parse_error(&self.runtime.source_code))?,
+        );
         Ok(())
     }
 
     fn valign_modifier(&mut self) -> ParseResult<()> {
-        self.modifier.vertical_align = Some(VerticalAlign::from_str(
-            &self.lexer.take_modifier_right_side()?,
-        )?);
+        self.modifier.vertical_align = Some(
+            VerticalAlign::try_from(self.lexer.take_modifier_right_side()?)
+                .map_err(|e| e.into_parse_error(&self.runtime.source_code))?,
+        );
         Ok(())
     }
 
     fn var_modifier(&mut self) -> ParseResult<()> {
-        self.modifier.var = Some(self.lexer.take_modifier_right_side()?);
+        self.modifier.var = Some(self.lexer.take_modifier_right_side()?.str_match);
         Ok(())
     }
 
     fn modifier(&mut self, row: Row) -> ParseResult<()> {
         let modifier_name = self.lexer.take_token(Token::ModifierName)?;
 
-        match modifier_name.as_str() {
+        match modifier_name.str_match.as_str() {
             "b" | "border" => self.border_modifier(),
             "bc" | "bordercolor" => self.border_color_modifier(),
             "bs" | "borderstyle" => self.border_style_modifier(),
@@ -240,18 +257,18 @@ impl<'a> ModifierParser<'a> {
             "nf" | "numberformat" => self.number_format(),
             "v" | "var" => self.var_modifier(),
             "va" | "valign" => self.valign_modifier(),
-            _ => Err(ParseError::bad_input(
-                &modifier_name,
-                &format!("Unrecognized modifier: {}", &modifier_name),
-            )),
+            _ => Err(self
+                .runtime
+                .source_code
+                .parse_error(modifier_name, "Unrecognized modifier")),
         }
     }
 
-    fn modifiers(&mut self, row: Row) -> ParseResult<()> {
+    fn parse_modifiers(&mut self, row: Row) -> ParseResult<()> {
         loop {
             self.modifier(row)?;
 
-            if self.lexer.maybe_take_token(Token::Slash).is_none() {
+            if self.lexer.maybe_take_slash().is_none() {
                 break;
             }
         }

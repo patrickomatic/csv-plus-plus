@@ -1,9 +1,10 @@
-## v0.3.1
+## v0.4.0
 
 ### Features
 
 * Ability to reference variables defined in an expand, outside of an expand.  If they're referenced inside an expand they'll resolve to their exact location, otherwise they resolve to the range represented by that column in the range.
 * Support for `![[var=...]]` both in and outside expands.  They'll reference either a row (if defined outside an expand), a row relative to the expand (if defined and referenced in an expand) or the entire row range of the expand (if defined in an expand and referenced outside it).
+* Much better error reporting - pretty much everything now includes some contextual code highlighting
 * Excel: `note` support
 * More useful `-v/--verbose` output
 
@@ -14,6 +15,11 @@
 * Trim leading and trailing spaces on input CSV
 * Excel: Fix workbooks being created with an empty first sheet
 * Excel: Fix background/foreground coloring
+
+### **Breaking Changes**
+
+* A lot of functions and structs made `pub(crate)` privacy
+* Error classes significantly refactored
 
 ## v0.3.0
 
