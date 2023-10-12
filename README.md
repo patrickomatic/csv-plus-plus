@@ -116,11 +116,11 @@ the `expand` modifier.
 
 ## Formatting
 
-You can also specify basic cell formatting which will either apply for the entire row or just
-for individual cells.  To apply formatting to individual cells use the `[[`/`]]` syntax:
+You can apply basic cell formatting which will either apply for the entire row or just for 
+individual cells.  To apply formatting to individual cells use the `[[`/`]]` syntax:
 
 ```csvpp
-[[format=bold/format=underline]]foo,[[fontsize=20]]bar,baz
+[[format=bold/format=underline]]foo,[[fontsize=20]]bar,baz,
 ```
 
 and here is the same thing using short-hand:
@@ -129,7 +129,7 @@ and here is the same thing using short-hand:
 [[f=b/f=u]]foo,[[fs=20]]bar,baz,
 ```
 
-To apply formatting to the entire row you can use `![[`/`]]` at the beginning of the row
+To format the entire row you can use `![[`/`]]` at the beginning of the line
 
 ```csvpp
 ![[f=b/f=u]]foo,bar,baz,
