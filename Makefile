@@ -57,7 +57,7 @@ $(RELEASE_DIR)/csvpp-$(VERSION)-%.deb: $(TARGET_DIR)/%/release/csvpp
 	cross deb --no-build --no-strip --target $*
 
 %.asc:
-	cd $(RELEASE_DIR) && gpg --detach-sign --armor $*
+	cd $(RELEASE_DIR)/.. && gpg --detach-sign --armor $*
 
 .PHONY: clean
 clean:
