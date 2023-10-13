@@ -3,6 +3,13 @@
 //! A `template` holds the final compiled state for a single csv++ source file, as well as managing
 //! evaluation and scope resolution.
 //!
+// TODO:
+// * we need more unit tests around the various eval phases
+//      - expands
+//      - row vs cell variable definitions
+// * eval cells in parallel (rayon)
+// * make sure there is only one infinite expand in the docs (ones can follow it, but they have to
+//      be finite and subtract from it
 use crate::ast::{
     Ast, AstReferences, BuiltinFunction, BuiltinVariable, Functions, Node, VariableValue, Variables,
 };
@@ -266,12 +273,15 @@ impl<'a> Template<'a> {
                             a1.into()
                         }
 
-                        VariableValue::RowRelative { scope, row } => {
+                        VariableValue::RowRelative { scope, .. } => {
                             let scope_a1: A1 = (*scope).into();
                             if scope_a1.contains(&position.into()) {
-                                let row_a1: A1 = (*row).into();
+                                // we're within the scope (expand) so it's the row we're on
+                                let row_a1: A1 = position.row.into();
                                 row_a1.into()
                             } else {
+                                // we're outside the scope (expand), so it represents the entire
+                                // range contained by it (the scope)
                                 let row_range: A1 = (*scope).into();
                                 row_range.into()
                             }

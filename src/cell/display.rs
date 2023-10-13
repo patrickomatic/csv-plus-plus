@@ -1,4 +1,3 @@
-use crate::ast::Node;
 use crate::Cell;
 use std::fmt;
 
@@ -7,10 +6,7 @@ impl fmt::Display for Cell {
         let string_val = self
             .ast
             .clone()
-            .map(|a| match *a {
-                Node::FunctionCall { .. } | Node::InfixFunctionCall { .. } => format!("={}", a),
-                _ => a.to_string(),
-            })
+            .map(|a| format!("={}", a))
             .unwrap_or_else(|| self.value.clone());
 
         write!(f, "{string_val}")
@@ -19,8 +15,8 @@ impl fmt::Display for Cell {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::Modifier;
+    use crate::ast::*;
+    use crate::*;
     use a1_notation::Address;
 
     #[test]
@@ -56,6 +52,6 @@ mod tests {
             modifier: Modifier::default(),
         };
 
-        assert_eq!(cell.to_string(), "1");
+        assert_eq!(cell.to_string(), "=1");
     }
 }

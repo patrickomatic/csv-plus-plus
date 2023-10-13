@@ -31,7 +31,7 @@ impl Spreadsheet {
     //
     // NOTE: we could also store these in a HashMap on the Spreadsheet as we build it rather than
     // parsing them out at runtime
-    pub fn variables(&self) -> Variables {
+    pub(crate) fn variables(&self) -> Variables {
         let mut vars = collections::HashMap::new();
 
         for row in &self.rows {
@@ -90,7 +90,7 @@ impl Spreadsheet {
             .from_reader(runtime.source_code.csv_section.as_bytes())
     }
 
-    pub fn widest_row(&self) -> usize {
+    pub(crate) fn widest_row(&self) -> usize {
         self.rows
             .iter()
             .map(|row| row.cells.len())

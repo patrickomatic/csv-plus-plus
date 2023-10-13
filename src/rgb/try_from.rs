@@ -21,27 +21,25 @@ impl TryFrom<TokenMatch> for Rgb {
         let start_at = if str_match.starts_with('#') { 1 } else { 0 };
         let input_len = str_match.len() - start_at;
 
-        let rgb = if input_len == 6 {
-            Rgb {
-                r: string_to_hex(&input, &str_match[start_at..start_at + 2], false)?,
-                g: string_to_hex(&input, &str_match[start_at + 2..start_at + 4], false)?,
-                b: string_to_hex(&input, &str_match[start_at + 4..start_at + 6], false)?,
-            }
+        if input_len == 6 {
+            Ok(Rgb::new(
+                string_to_hex(&input, &str_match[start_at..start_at + 2], false)?,
+                string_to_hex(&input, &str_match[start_at + 2..start_at + 4], false)?,
+                string_to_hex(&input, &str_match[start_at + 4..start_at + 6], false)?,
+            ))
         } else if input_len == 3 {
-            Rgb {
-                r: string_to_hex(&input, &str_match[start_at..start_at + 1], true)?,
-                g: string_to_hex(&input, &str_match[start_at + 1..start_at + 2], true)?,
-                b: string_to_hex(&input, &str_match[start_at + 2..start_at + 3], true)?,
-            }
+            Ok(Rgb::new(
+                string_to_hex(&input, &str_match[start_at..start_at + 1], true)?,
+                string_to_hex(&input, &str_match[start_at + 1..start_at + 2], true)?,
+                string_to_hex(&input, &str_match[start_at + 2..start_at + 3], true)?,
+            ))
         } else {
             // return Err(ParseError::rgb_syntax_error(input, &format!("\"{input}\" must be a 3 or 6-character RGB string, optionally prefixed with '#'")));
-            return Err(RgbParseError::new(
+            Err(RgbParseError::new(
                 input,
                 "must be a 3 or 6-character RGB string, optionally prefixed with '#'",
-            ));
-        };
-
-        Ok(rgb)
+            ))
+        }
     }
 }
 

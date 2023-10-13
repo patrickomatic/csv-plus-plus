@@ -7,6 +7,7 @@
 mod border_side;
 mod border_style;
 mod horizontal_align;
+mod into;
 mod number_format;
 mod text_format;
 mod vertical_align;
@@ -58,28 +59,6 @@ pub struct RowModifier {
     pub number_format: Option<NumberFormat>,
     pub var: Option<String>,
     pub vertical_align: Option<VerticalAlign>,
-}
-
-#[allow(clippy::from_over_into)]
-impl Into<Modifier> for RowModifier {
-    fn into(self) -> Modifier {
-        Modifier {
-            border_color: self.border_color,
-            border_style: self.border_style,
-            borders: self.borders.clone(),
-            color: self.color,
-            font_color: self.font_color,
-            font_family: self.font_family,
-            font_size: self.font_size,
-            formats: self.formats.clone(),
-            horizontal_align: self.horizontal_align,
-            lock: self.lock,
-            note: self.note,
-            number_format: self.number_format,
-            var: self.var,
-            vertical_align: self.vertical_align,
-        }
-    }
 }
 
 impl Modifier {

@@ -33,7 +33,7 @@ impl Cell {
                     .row_modifier
                     .clone()
                     .unwrap_or(row_modifier.clone())
-                    .into()
+                    .into_without_var()
             }),
             value: parsed_modifiers.value,
         };
@@ -43,7 +43,7 @@ impl Cell {
 
     /// Clone the `Cell` keeping all of it's data the same, except it will reflect that it's been
     /// moved to `new_row`.  This involves updating `position` and `expand.start_row`
-    pub fn clone_to_row(&self, new_row: Row) -> Self {
+    pub(crate) fn clone_to_row(&self, new_row: Row) -> Self {
         Self {
             position: Address::new(self.position.column.x, new_row.y),
             ..self.clone()

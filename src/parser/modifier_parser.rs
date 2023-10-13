@@ -4,7 +4,7 @@
 //! * need to lowercase the input but we can't do it on the entire value because we don't want to
 //!     lowercase the stuff outside the modifier definition
 //!
-use super::modifier_lexer::{ModifierLexer, Token};
+use super::modifier_lexer::{ModifierLexer, Token, TokenMatch};
 use crate::modifier::*;
 use crate::{Expand, ParseResult, Result, Rgb, Runtime};
 use a1_notation::{Address, Row};
@@ -20,6 +20,8 @@ pub struct ModifierParser<'a, 'b> {
     modifier: &'a mut RowModifier,
 
     runtime: &'a Runtime,
+
+    is_row_modifier: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -32,7 +34,7 @@ pub(crate) struct ParsedCell {
 impl<'a, 'b> ModifierParser<'a, 'b>
 where
     // we'll instantiate multiple parsers but the lexer will be re-used amongst them. so it's
-    // important that it has it's own lifetime which is explicitly longer
+    // important that it has it's own lifetime which is longer
     'b: 'a,
 {
     pub(crate) fn parse(
@@ -72,6 +74,7 @@ where
                 lexer: &mut lexer,
                 modifier: &mut row_modifier,
                 runtime,
+                is_row_modifier,
             }
             .parse_modifiers(position.row)?;
 
@@ -130,7 +133,14 @@ where
         Ok(())
     }
 
-    fn expand_modifier(&mut self, row: a1_notation::Row) -> ParseResult<()> {
+    fn expand_modifier(&mut self, modifier: TokenMatch, row: a1_notation::Row) -> ParseResult<()> {
+        if !self.is_row_modifier {
+            return Err(self.runtime.source_code.parse_error(
+                modifier,
+                "`expand` modifiers can only be used in a `![[..]]`",
+            ));
+        }
+
         let amount = if self.lexer.maybe_take_equals().is_some() {
             let amount_string = self.lexer.take_token(Token::PositiveNumber)?;
 
@@ -246,7 +256,7 @@ where
             "bc" | "bordercolor" => self.border_color_modifier(),
             "bs" | "borderstyle" => self.border_style_modifier(),
             "c" | "color" => self.color_modifier(),
-            "e" | "expand" => self.expand_modifier(row),
+            "e" | "expand" => self.expand_modifier(modifier_name, row),
             "f" | "format" => self.format_modifier(),
             "fc" | "fontcolor" => self.font_color_modifier(),
             "ff" | "fontfamily" => self.font_family_modifier(),

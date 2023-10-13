@@ -35,7 +35,7 @@ foo,bar,baz,=foo
 
     assert_eq!(
         s.read_output(),
-        r"foo,bar,baz,1
+        r"foo,bar,baz,=1
 "
     );
 }

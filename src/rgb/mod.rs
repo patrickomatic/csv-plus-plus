@@ -16,6 +16,10 @@ pub struct Rgb {
 }
 
 impl Rgb {
+    pub(crate) fn new(r: u8, g: u8, b: u8) -> Self {
+        Self { r, g, b }
+    }
+
     pub(crate) fn to_rgba(&self) -> String {
         format!("{:02X}{:02X}{:02X}FF", self.r, self.g, self.b)
     }
