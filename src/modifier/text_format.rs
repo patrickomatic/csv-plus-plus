@@ -23,12 +23,12 @@ impl TryFrom<TokenMatch> for TextFormat {
             _ => Err(ModifierParseError::new(
                 "text_format",
                 input,
-                Some(&[
+                &[
                     "bold (b)",
                     "italic (i)",
                     "strikethrough (s)",
                     "underline (u)",
-                ]),
+                ],
             )),
         }
     }

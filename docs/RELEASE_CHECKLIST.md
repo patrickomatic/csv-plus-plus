@@ -1,6 +1,6 @@
 - [ ] Update Cargo.toml (and therefore `Cargo.lock`) and commit
-- [ ] `git tag -as vXXX`
 - [ ] `cargo publish`
+- [ ] `git tag -as vXXX`
 - [ ] `git push origin --tags`
 - [ ] `make` (to build release binaries
 - [ ] Upload the binaries to github and create a release

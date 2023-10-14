@@ -23,7 +23,7 @@ impl TryFrom<TokenMatch> for VerticalAlign {
             _ => Err(ModifierParseError::new(
                 "valign",
                 input,
-                Some(&["bottom (b)", "center (c)", "top (t)"]),
+                &["bottom (b)", "center (c)", "top (t)"],
             )),
         }
     }

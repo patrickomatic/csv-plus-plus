@@ -36,19 +36,7 @@ impl SourceCode {
         }
     }
 
-    // TODO: can this take an owned BadInput instead? I think most callers would be fine with it
-    // and there would be less cloning
     pub(crate) fn parse_error(&self, bad_input: impl BadInput, message: &str) -> ParseError {
-        self.parse_error_with_possible_values(bad_input, message, None)
-    }
-
-    pub(crate) fn parse_error_with_possible_values(
-        &self,
-        bad_input: impl BadInput,
-        message: &str,
-        // TODO: make this a slice
-        possible_values: Option<Vec<String>>,
-    ) -> ParseError {
         let line_number = bad_input.line_number();
         let line_offset = bad_input.line_offset();
         let highlighted_lines = self.highlight_line(line_number, line_offset);
@@ -59,10 +47,20 @@ impl SourceCode {
             message: message.to_string(),
             line_number,
             line_offset,
-            possible_values: possible_values
-                .clone()
-                .map(|pvs| pvs.iter().map(|pv| pv.to_string()).collect::<Vec<String>>()),
+            possible_values: None,
         }
+    }
+
+    pub(crate) fn parse_error_with_possible_values(
+        &self,
+        bad_input: impl BadInput,
+        message: &str,
+        // TODO: make this a slice
+        possible_values: Vec<String>,
+    ) -> ParseError {
+        let mut parse_error = self.parse_error(bad_input, message);
+        parse_error.possible_values = Some(possible_values);
+        parse_error
     }
 
     /// Given a line number and character offset, return an array of `String`s that can be rendered

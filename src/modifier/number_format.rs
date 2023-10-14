@@ -31,7 +31,7 @@ impl TryFrom<TokenMatch> for NumberFormat {
             _ => Err(ModifierParseError::new(
                 "numberformat",
                 input,
-                Some(&[
+                &[
                     "currency (c)",
                     "date (d)",
                     "datetime (dt)",
@@ -40,7 +40,7 @@ impl TryFrom<TokenMatch> for NumberFormat {
                     "text",
                     "time (t)",
                     "scientific (s)",
-                ]),
+                ],
             )),
         }
     }

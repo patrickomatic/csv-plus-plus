@@ -10,87 +10,30 @@
 // TODO:
 // * need to lowercase the input but we can't do it on the entire value because we don't want to
 //     lowercase the stuff outside the modifier definition
-use crate::error::BadInput;
-use crate::{CharOffset, LineNumber, ParseError, ParseResult, Runtime};
-use std::fmt;
+use crate::{CharOffset, ParseError, ParseResult, Runtime};
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum Token {
-    Color,
-    EndModifier,
-    Equals,
-    ModifierName,
-    ModifierRightSide,
-    PositiveNumber,
-    String,
-    Slash,
-    StartCellModifier,
-    StartRowModifier,
-}
+mod token;
+mod token_match;
+mod unknown_token;
 
-impl fmt::Display for Token {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "{:?}", self)
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub(crate) struct TokenMatch {
-    pub(crate) token: Token,
-    pub(crate) str_match: String,
-    pub(crate) line_offset: CharOffset,
-    pub(crate) line_number: LineNumber,
-}
-
-impl fmt::Display for TokenMatch {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "`{}`", self.str_match)
-    }
-}
-
-impl BadInput for TokenMatch {
-    fn line_number(&self) -> LineNumber {
-        self.line_number
-    }
-
-    fn line_offset(&self) -> CharOffset {
-        self.line_offset
-    }
-}
-
-#[derive(Debug)]
-pub(crate) struct UnknownToken {
-    pub(crate) bad_input: String,
-    pub(crate) line_number: LineNumber,
-    pub(crate) line_offset: CharOffset,
-}
-
-impl fmt::Display for UnknownToken {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "unrecognized token `{}`", self.bad_input)
-    }
-}
-
-impl BadInput for UnknownToken {
-    fn line_number(&self) -> LineNumber {
-        self.line_number
-    }
-
-    fn line_offset(&self) -> CharOffset {
-        self.line_offset
-    }
-}
+pub(crate) use token::Token;
+pub(crate) use token_match::TokenMatch;
+pub(crate) use unknown_token::UnknownToken;
 
 #[derive(Debug)]
 pub(crate) struct ModifierLexer<'a> {
     cell_offset: CharOffset,
-    input: String,
+    input: &'a str,
     position: a1_notation::Address,
     pub(super) runtime: &'a Runtime,
 }
 
 impl<'a> ModifierLexer<'a> {
-    pub(super) fn new(input: String, position: a1_notation::Address, runtime: &'a Runtime) -> Self {
+    pub(super) fn new(
+        input: &'a str,
+        position: a1_notation::Address,
+        runtime: &'a Runtime,
+    ) -> Self {
         Self {
             cell_offset: 0,
             input,
@@ -99,8 +42,9 @@ impl<'a> ModifierLexer<'a> {
         }
     }
 
+    /// The rest of the input that has not been consumed
     pub(super) fn rest(&self) -> String {
-        self.input.clone().as_str().trim().to_owned()
+        self.input.trim().to_owned()
     }
 
     pub(super) fn maybe_take_start_modifier(&mut self) -> Option<TokenMatch> {
@@ -108,13 +52,13 @@ impl<'a> ModifierLexer<'a> {
 
         if let Some(without_match) = self.input.strip_prefix("[[") {
             let token_match = self.match_token(Token::StartCellModifier, "[[");
-            self.input = without_match.to_string();
+            self.input = without_match;
             self.cell_offset += 2;
 
             Some(token_match)
         } else if let Some(without_match) = self.input.strip_prefix("![[") {
             let token_match = self.match_token(Token::StartRowModifier, "![[");
-            self.input = without_match.to_string();
+            self.input = without_match;
             self.cell_offset += 3;
 
             Some(token_match)
@@ -169,7 +113,7 @@ impl<'a> ModifierLexer<'a> {
     fn unknown_string(&self, message: &str) -> ParseError {
         self.runtime.source_code.parse_error(
             UnknownToken {
-                bad_input: self.input.clone(),
+                bad_input: self.input.to_string(),
                 line_number: self.runtime.source_code.csv_line_number(self.position),
                 line_offset: self.runtime.source_code.line_offset_for_cell(self.position)
                     + self.cell_offset,
@@ -183,7 +127,7 @@ impl<'a> ModifierLexer<'a> {
 
         if let Some(without_match) = self.input.strip_prefix(substring) {
             let token_match = self.match_token(token, substring);
-            self.input = without_match.to_string();
+            self.input = without_match;
             self.cell_offset += substring.len();
 
             Some(token_match)
@@ -197,7 +141,7 @@ impl<'a> ModifierLexer<'a> {
 
         if let Some(without_match) = self.input.strip_prefix(substring) {
             let token_match = self.match_token(token, substring);
-            self.input = without_match.to_string();
+            self.input = without_match;
             self.cell_offset += substring.len();
 
             Ok(token_match)
@@ -239,7 +183,7 @@ impl<'a> ModifierLexer<'a> {
 
         let token_match = self.match_token(Token::Color, &matched);
 
-        self.input = self.input[matched.len()..].to_string();
+        self.input = &self.input[matched.len()..];
         self.cell_offset += matched.len();
 
         Ok(token_match)
@@ -261,6 +205,8 @@ impl<'a> ModifierLexer<'a> {
         let mut matched = "".to_string();
         let mut start_quote = false;
         let mut end_quote = false;
+        // TODO: pretty sure we can just use .enumerate() and get rid of the clippy allow above...
+        // but I remember this code being tricky.  just make sure it's unit tested before removing
         let mut consumed = 0;
 
         self.take_whitespace();
@@ -292,7 +238,7 @@ impl<'a> ModifierLexer<'a> {
         if start_quote && end_quote {
             let token_match = self.match_token(Token::String, &matched);
 
-            self.input = self.input[consumed..].to_string();
+            self.input = &self.input[consumed..];
             self.cell_offset += consumed;
 
             Ok(token_match)
@@ -320,18 +266,17 @@ impl<'a> ModifierLexer<'a> {
         if matched.is_empty() {
             Err(self.unknown_string("Expected a {token}"))
         } else {
-            self.input = self.input[matched.len()..].to_string();
+            self.input = &self.input[matched.len()..];
             self.cell_offset += matched.len();
 
             Ok(self.match_token(token, &matched))
         }
     }
 
-    // TODO make input a &str so we don't have to call to_string() so much
     fn take_whitespace(&mut self) {
         let new_input = self.input.trim_start();
         self.cell_offset += self.input.len() - new_input.len();
-        self.input = new_input.to_string();
+        self.input = &new_input;
     }
 }
 
@@ -342,11 +287,7 @@ mod tests {
     use crate::*;
 
     fn test_lexer<'a>(lexer_input: &'a str, runtime: &'a Runtime) -> ModifierLexer<'a> {
-        ModifierLexer::new(
-            lexer_input.to_string(),
-            a1_notation::Address::new(0, 0),
-            runtime,
-        )
+        ModifierLexer::new(lexer_input, a1_notation::Address::new(0, 0), runtime)
     }
 
     #[test]

@@ -28,7 +28,7 @@ impl TryFrom<TokenMatch> for BorderSide {
             _ => Err(ModifierParseError::new(
                 "border",
                 input,
-                Some(&["all (a)", "top (t)", "bottom (b)", "left (l)", "right (r)"]),
+                &["all (a)", "top (t)", "bottom (b)", "left (l)", "right (r)"],
             )),
         }
     }

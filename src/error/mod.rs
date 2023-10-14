@@ -15,6 +15,7 @@ mod rgb_parse_error;
 pub use parse_error::ParseError;
 pub type Result<T> = std::result::Result<T, Error>;
 pub(crate) type ParseResult<T> = std::result::Result<T, ParseError>;
+pub(crate) type ModifierParseResult<T> = std::result::Result<T, ModifierParseError>;
 
 pub(crate) use bad_input::BadInput;
 

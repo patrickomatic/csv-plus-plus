@@ -6,6 +6,7 @@
 //!
 mod border_side;
 mod border_style;
+mod data_validation;
 mod horizontal_align;
 mod into;
 mod number_format;
@@ -15,6 +16,7 @@ mod vertical_align;
 use crate::{Expand, Rgb};
 pub use border_side::BorderSide;
 pub use border_style::BorderStyle;
+pub use data_validation::DataValidation;
 pub use horizontal_align::HorizontalAlign;
 pub use number_format::NumberFormat;
 use serde::{Deserialize, Serialize};
@@ -29,6 +31,7 @@ pub struct Modifier {
     pub border_style: Option<BorderStyle>,
     pub borders: HashSet<BorderSide>,
     pub color: Option<Rgb>,
+    pub data_validation: Option<DataValidation>,
     pub font_color: Option<Rgb>,
     pub font_family: Option<String>,
     pub font_size: Option<u8>,
@@ -48,6 +51,7 @@ pub struct RowModifier {
     pub border_style: Option<BorderStyle>,
     pub borders: HashSet<BorderSide>,
     pub color: Option<Rgb>,
+    pub data_validation: Option<DataValidation>,
     pub expand: Option<Expand>,
     pub font_color: Option<Rgb>,
     pub font_family: Option<String>,
@@ -69,6 +73,7 @@ impl Modifier {
             && self.border_style.is_none()
             && self.borders.is_empty()
             && self.color.is_none()
+            && self.data_validation.is_none()
             && self.font_color.is_none()
             && self.font_family.is_none()
             && self.font_size.is_none()

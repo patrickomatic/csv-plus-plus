@@ -11,20 +11,22 @@ use std::fmt;
 pub(crate) struct ModifierParseError {
     pub(crate) modifier_name: String,
     pub(crate) bad_input: TokenMatch,
-    pub(crate) possible_values: Option<Vec<String>>,
+    pub(crate) possible_values: Vec<String>,
 }
 
 impl ModifierParseError {
     pub(crate) fn new(
         modifier_name: &str,
         bad_input: TokenMatch,
-        possible_values: Option<&[&str]>,
+        possible_values: &[&str],
     ) -> ModifierParseError {
         ModifierParseError {
             bad_input,
             modifier_name: modifier_name.to_string(),
             possible_values: possible_values
-                .map(|pvs| pvs.iter().map(|pv| pv.to_string()).collect::<Vec<String>>()),
+                .iter()
+                .map(|pv| pv.to_string())
+                .collect::<Vec<String>>(),
         }
     }
 

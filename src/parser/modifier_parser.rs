@@ -9,7 +9,7 @@ use crate::modifier::*;
 use crate::{Expand, ParseResult, Result, Rgb, Runtime};
 use a1_notation::{Address, Row};
 
-pub struct ModifierParser<'a, 'b> {
+pub(crate) struct ModifierParser<'a, 'b> {
     /// We re-use the lexer in some contexts so take a reference to an existing one (with it's own
     /// lifetime)
     lexer: &'a mut ModifierLexer<'b>,
@@ -53,7 +53,7 @@ where
         row_modifier: &'b RowModifier,
         runtime: &'b Runtime,
     ) -> ParseResult<ParsedCell> {
-        let mut lexer = ModifierLexer::new(input.to_owned(), position, runtime);
+        let mut lexer = ModifierLexer::new(input, position, runtime);
         let mut new_modifier: Option<Modifier> = None;
         let mut new_row_modifier: Option<RowModifier> = None;
 
@@ -130,6 +130,16 @@ where
                 .map_err(|e| e.into_parse_error("color", &self.runtime.source_code))?,
         );
 
+        Ok(())
+    }
+
+    fn data_validate(&mut self) -> ParseResult<()> {
+        self.lexer.take_token(Token::Equals)?;
+
+        // self.modifier.data_validation = Some(
+        // DataValidation::try_from(self.lexer.take_modifier_right_side()?)
+        // .map_err(|e| e.into_parse_error(&self.runtime.source_code))?,
+        // );
         Ok(())
     }
 
@@ -250,12 +260,12 @@ where
 
     fn modifier(&mut self, row: Row) -> ParseResult<()> {
         let modifier_name = self.lexer.take_token(Token::ModifierName)?;
-
         match modifier_name.str_match.as_str() {
             "b" | "border" => self.border_modifier(),
             "bc" | "bordercolor" => self.border_color_modifier(),
             "bs" | "borderstyle" => self.border_style_modifier(),
             "c" | "color" => self.color_modifier(),
+            "dv" | "validate" => self.data_validate(),
             "e" | "expand" => self.expand_modifier(modifier_name, row),
             "f" | "format" => self.format_modifier(),
             "fc" | "fontcolor" => self.font_color_modifier(),

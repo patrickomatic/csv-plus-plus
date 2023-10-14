@@ -22,7 +22,7 @@ impl TryFrom<TokenMatch> for HorizontalAlign {
             _ => Err(ModifierParseError::new(
                 "halign",
                 input,
-                Some(&["center (c)", "left (l)", "right (r)"]),
+                &["center (c)", "left (l)", "right (r)"],
             )),
         }
     }

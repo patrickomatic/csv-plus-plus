@@ -8,6 +8,7 @@ impl Into<Modifier> for RowModifier {
             border_style: self.border_style,
             borders: self.borders.clone(),
             color: self.color,
+            data_validation: self.data_validation,
             font_color: self.font_color,
             font_family: self.font_family,
             font_size: self.font_size,

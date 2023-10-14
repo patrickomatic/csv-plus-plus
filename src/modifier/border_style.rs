@@ -28,14 +28,14 @@ impl TryFrom<TokenMatch> for BorderStyle {
             _ => Err(ModifierParseError::new(
                 "borderstyle",
                 input,
-                Some(&[
+                &[
                     "dashed (dash)",
                     "dotted (dot)",
                     "double (dbl)",
                     "solid (1)",
                     "solid_medium (2)",
                     "solid_thick (3)",
-                ]),
+                ],
             )),
         }
     }
