@@ -5,6 +5,7 @@
 //!     lowercase the stuff outside the modifier definition
 //!
 use super::modifier_lexer::{ModifierLexer, Token, TokenMatch};
+use crate::error::ModifierParseError;
 use crate::modifier::*;
 use crate::{Expand, ParseResult, Result, Rgb, Runtime};
 use a1_notation::{Address, Row};
@@ -102,7 +103,7 @@ where
     }
 
     fn border_color_modifier(&mut self) -> ParseResult<()> {
-        self.lexer.take_token(Token::Equals)?;
+        self.equals()?;
 
         let color = self.lexer.take_token(Token::Color)?;
         self.modifier.border_color = Some(
@@ -122,7 +123,7 @@ where
     }
 
     fn color_modifier(&mut self) -> ParseResult<()> {
-        self.lexer.take_token(Token::Equals)?;
+        self.equals()?;
 
         let color = self.lexer.take_token(Token::Color)?;
         self.modifier.color = Some(
@@ -134,12 +135,177 @@ where
     }
 
     fn data_validate(&mut self) -> ParseResult<()> {
-        self.lexer.take_token(Token::Equals)?;
+        self.equals()?;
 
-        // self.modifier.data_validation = Some(
-        // DataValidation::try_from(self.lexer.take_modifier_right_side()?)
-        // .map_err(|e| e.into_parse_error(&self.runtime.source_code))?,
-        // );
+        let dv_name = self.lexer.take_modifier_right_side()?;
+        match dv_name.str_match.to_lowercase().as_str() {
+            "custom" => self.data_validate_custom()?,
+            "date_after" => self.data_validate_date_after()?,
+            "date_before" => self.data_validate_date_before()?,
+            "date_between" => self.data_validate_date_between()?,
+            "date_equal_to" => self.data_validate_date_equal_to()?,
+            "date_is_valid" => self.data_validate_date_is_valid()?,
+            "date_not_between" => self.data_validate_date_not_between()?,
+            "date_on_or_after" => self.data_validate_date_on_or_after()?,
+            "date_on_or_before" => self.data_validate_date_on_or_before()?,
+            "number_between" => self.data_validate_number_between()?,
+            "number_equal_to" => self.data_validate_number_equal_to()?,
+            "number_greater_than_or_equal_to" => {
+                self.data_validate_number_greater_than_or_equal_to()?
+            }
+            "number_greater_than" => self.data_validate_number_greater_than()?,
+            "number_less_than_or_equal_to" => self.data_validate_number_less_than_or_equal_to()?,
+            "number_less_than" => self.data_validate_number_less_than()?,
+            "number_not_between" => self.data_validate_number_not_between()?,
+            "number_not_equal_to" => self.data_validate_number_not_equal_to()?,
+            "text_contains" => self.data_validate_text_contains()?,
+            "text_does_not_contain" => self.data_validate_text_does_not_contain()?,
+            "text_equal_to" => self.data_validate_text_equal_to()?,
+            "text_is_valid_email" => self.data_validate_text_is_valid_email()?,
+            "text_is_valid_url" => self.data_validate_text_is_valid_url()?,
+            "value_in_list" => self.data_validate_value_in_list()?,
+            "value_in_range" => self.data_validate_value_in_range()?,
+            _ => {
+                return Err(ModifierParseError::new(
+                    "validate",
+                    dv_name,
+                    &[
+                        "custom(FORMULA)",
+                        "date_after(DATE)",
+                        "date_before(DATE)",
+                        "date_between(DATE, DATE)",
+                        "date_equal_to(DATE)",
+                        "date_is_valid",
+                        "date_not_between(DATE, DATE)",
+                        "date_on_or_after(DATE)",
+                        "date_on_or_before(DATE)",
+                        "number_between(NUMBER, NUMBER)",
+                        "number_equal_to(NUMBER)",
+                        "number_greater_than_or_equal_to(NUMBER)",
+                        "number_greater_than(NUMBER)",
+                        "number_less_than_or_equal_to(NUMBER)",
+                        "number_less_than(NUMBER)",
+                        "number_not_between(NUMBER, NUMBER)",
+                        "number_not_equal_to(NUMBER)",
+                        "text_contains(TEXT)",
+                        "text_does_not_contain(TEXT)",
+                        "text_equal_to(TEXT)",
+                        "text_is_valid_email",
+                        "text_is_valid_url",
+                        "value_in_list(ANY, ...)",
+                        "value_in_range(A1)",
+                    ],
+                )
+                .into_parse_error(&self.runtime.source_code));
+            }
+        }
+
+        Ok(())
+    }
+
+    fn data_validate_custom(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_date_after(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_date_before(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_date_between(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_date_equal_to(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_date_is_valid(&mut self) -> ParseResult<()> {
+        self.modifier.data_validation = Some(DataValidation::DateIsValid);
+        Ok(())
+    }
+
+    fn data_validate_date_not_between(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_date_on_or_after(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_date_on_or_before(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_number_between(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_number_equal_to(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_number_greater_than(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_number_greater_than_or_equal_to(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_number_not_between(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_number_not_equal_to(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_number_less_than(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_number_less_than_or_equal_to(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_text_contains(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_text_does_not_contain(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_text_equal_to(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_text_is_valid_email(&mut self) -> ParseResult<()> {
+        self.modifier.data_validation = Some(DataValidation::TextIsValidEmail);
+        Ok(())
+    }
+
+    fn data_validate_text_is_valid_url(&mut self) -> ParseResult<()> {
+        self.modifier.data_validation = Some(DataValidation::TextIsValidUrl);
+        Ok(())
+    }
+
+    fn data_validate_value_in_list(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn data_validate_value_in_range(&mut self) -> ParseResult<()> {
+        todo!();
+    }
+
+    fn equals(&mut self) -> ParseResult<()> {
+        self.lexer.take_whitespace();
+        self.lexer.take_token(Token::Equals)?;
+        self.lexer.take_whitespace();
         Ok(())
     }
 
@@ -176,7 +342,7 @@ where
     }
 
     fn font_color_modifier(&mut self) -> ParseResult<()> {
-        self.lexer.take_token(Token::Equals)?;
+        self.equals()?;
 
         let color = self.lexer.take_token(Token::Color)?;
         self.modifier.font_color = Some(
@@ -187,7 +353,7 @@ where
     }
 
     fn font_family_modifier(&mut self) -> ParseResult<()> {
-        self.lexer.take_token(Token::Equals)?;
+        self.equals()?;
 
         let font_family = self.lexer.take_token(Token::String)?;
         self.modifier.font_family = Some(font_family.str_match);
@@ -195,7 +361,7 @@ where
     }
 
     fn font_size_modifier(&mut self) -> ParseResult<()> {
-        self.lexer.take_token(Token::Equals)?;
+        self.equals()?;
 
         let font_size_string = self.lexer.take_token(Token::PositiveNumber)?;
         match font_size_string.str_match.parse::<u8>() {
@@ -232,7 +398,7 @@ where
     }
 
     fn note(&mut self) -> ParseResult<()> {
-        self.lexer.take_token(Token::Equals)?;
+        self.equals()?;
         self.modifier.note = Some(self.lexer.take_token(Token::String)?.str_match);
         Ok(())
     }

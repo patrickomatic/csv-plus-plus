@@ -5,6 +5,10 @@
 * Variables defined on rows (i.e., `![[var=this_row]],=this_row`) weren't being evaluated to the 
   correct results
 
+### **Breaking Changes**
+
+* 
+
 ## v0.4.0
 
 ### Features

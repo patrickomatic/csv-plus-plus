@@ -100,6 +100,12 @@ impl<'a> ModifierLexer<'a> {
         }
     }
 
+    pub(super) fn take_whitespace(&mut self) {
+        let new_input = self.input.trim_start();
+        self.cell_offset += self.input.len() - new_input.len();
+        self.input = new_input;
+    }
+
     fn match_token(&self, token: Token, str_match: &str) -> TokenMatch {
         TokenMatch {
             token,
@@ -271,12 +277,6 @@ impl<'a> ModifierLexer<'a> {
 
             Ok(self.match_token(token, &matched))
         }
-    }
-
-    fn take_whitespace(&mut self) {
-        let new_input = self.input.trim_start();
-        self.cell_offset += self.input.len() - new_input.len();
-        self.input = &new_input;
     }
 }
 
