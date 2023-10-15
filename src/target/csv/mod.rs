@@ -3,7 +3,7 @@
 //! Functions for writing to CSV files
 //!
 use super::{ExistingCell, ExistingValues};
-use crate::{Error, Output, Result, Runtime};
+use crate::{csv_reader, Error, Output, Result, Runtime};
 use std::ffi;
 use std::fs;
 use std::io;
@@ -38,10 +38,8 @@ impl<'a> Csv<'a> {
                 }
             }
         };
-        let mut reader = csv::ReaderBuilder::new()
-            .flexible(true)
-            .has_headers(false)
-            .from_reader(io::BufReader::new(file));
+
+        let mut reader = csv_reader().from_reader(io::BufReader::new(file));
 
         let mut cells = vec![];
         for result in reader.records() {

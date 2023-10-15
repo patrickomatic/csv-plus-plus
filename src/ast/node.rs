@@ -11,7 +11,7 @@ pub enum Node {
     Boolean(bool),
 
     /// A date, time or both
-    DateTime(chrono::DateTime<chrono::Utc>),
+    DateTime(crate::DateAndTime),
 
     /// A float (with a decimal) value
     Float(f64),

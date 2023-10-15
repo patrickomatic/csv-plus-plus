@@ -10,6 +10,8 @@
 // TODO:
 // * need to lowercase the input but we can't do it on the entire value because we don't want to
 //     lowercase the stuff outside the modifier definition
+//
+// * make the `take_date` parser more strict
 use crate::{CharOffset, ParseError, ParseResult, Runtime};
 
 mod token;
@@ -25,7 +27,7 @@ pub(crate) struct ModifierLexer<'a> {
     cell_offset: CharOffset,
     input: &'a str,
     position: a1_notation::Address,
-    pub(super) runtime: &'a Runtime,
+    runtime: &'a Runtime,
 }
 
 impl<'a> ModifierLexer<'a> {
@@ -68,10 +70,7 @@ impl<'a> ModifierLexer<'a> {
     }
 
     pub(super) fn take_modifier_right_side(&mut self) -> ParseResult<TokenMatch> {
-        self.take_whitespace();
         self.take_token(Token::Equals)?;
-
-        self.take_whitespace();
         self.take_token(Token::ModifierRightSide)
     }
 
@@ -84,14 +83,21 @@ impl<'a> ModifierLexer<'a> {
     }
 
     pub(super) fn take_token(&mut self, token: Token) -> ParseResult<TokenMatch> {
+        // spaces can be anywhere, so take any leading space
+        self.take_whitespace();
+
         match token {
+            Token::CloseParenthesis => self.take(token, ")"),
             Token::Color => self.take_color(),
+            Token::Comma => self.take(token, ","),
+            Token::Date => self.take_date(),
             Token::EndModifier => self.take(token, "]]"),
             Token::Equals => self.take(token, "="),
             Token::ModifierName => self.take_while(token, |ch| ch.is_alphanumeric()),
             Token::ModifierRightSide => {
                 self.take_while(token, |ch| ch.is_alphanumeric() || ch == '_')
             }
+            Token::OpenParenthesis => self.take(token, "("),
             Token::PositiveNumber => self.take_while(token, |ch| ch.is_ascii_digit()),
             Token::String => self.take_string(),
             Token::Slash => self.take(token, "/"),
@@ -100,7 +106,13 @@ impl<'a> ModifierLexer<'a> {
         }
     }
 
-    pub(super) fn take_whitespace(&mut self) {
+    // TODO: can do a little better here, we just take numbers and slashes, but we could be more
+    // strict (only 2 slashes allowed)
+    pub(super) fn take_date(&mut self) -> ParseResult<TokenMatch> {
+        self.take_while(Token::Date, |ch| ch.is_ascii_digit() || ch == '/')
+    }
+
+    pub fn take_whitespace(&mut self) {
         let new_input = self.input.trim_start();
         self.cell_offset += self.input.len() - new_input.len();
         self.input = new_input;

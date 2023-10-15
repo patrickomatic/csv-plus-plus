@@ -2,7 +2,7 @@
 //!
 //!
 use crate::ast::{Node, VariableValue, Variables};
-use crate::{Result, Row, Runtime};
+use crate::{csv_reader, Result, Row, Runtime};
 use serde::{Deserialize, Serialize};
 use std::collections;
 
@@ -16,9 +16,11 @@ pub struct Spreadsheet {
 impl Spreadsheet {
     /// Parse the spreadsheet section of a csv++ source file.
     pub fn parse(runtime: &Runtime) -> Result<Spreadsheet> {
-        let mut csv_reader = Self::csv_reader(runtime);
-        let mut rows: Vec<Row> = vec![];
+        let mut csv_reader = csv_reader()
+            .trim(csv::Trim::All)
+            .from_reader(runtime.source_code.csv_section.as_bytes());
 
+        let mut rows: Vec<Row> = vec![];
         for (row_index, result) in csv_reader.records().enumerate() {
             let row = Row::parse(result, row_index, runtime)?;
             rows.push(row);
@@ -80,14 +82,6 @@ impl Spreadsheet {
         }
 
         vars
-    }
-
-    fn csv_reader(runtime: &Runtime) -> csv::Reader<&[u8]> {
-        csv::ReaderBuilder::new()
-            .has_headers(false)
-            .flexible(true)
-            .trim(csv::Trim::All)
-            .from_reader(runtime.source_code.csv_section.as_bytes())
     }
 
     pub(crate) fn widest_row(&self) -> usize {

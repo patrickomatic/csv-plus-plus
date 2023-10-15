@@ -8,7 +8,7 @@
 //! algorithms.
 //!
 use crate::parser::token_library::CODE_SECTION_SEPARATOR;
-use crate::{Error, Result};
+use crate::{csv_reader, Error, Result};
 use std::fs;
 use std::path;
 
@@ -60,6 +60,7 @@ impl SourceCode {
             })
         } else {
             let csv_lines = input.lines().count();
+
             Ok(SourceCode {
                 filename,
                 lines: csv_lines,
@@ -100,9 +101,7 @@ impl SourceCode {
             return 0;
         };
 
-        let mut reader = csv::ReaderBuilder::new()
-            .has_headers(false)
-            .from_reader(line.as_bytes());
+        let mut reader = csv_reader().from_reader(line.as_bytes());
 
         if let Some(result) = reader.records().next() {
             let record = result.unwrap();

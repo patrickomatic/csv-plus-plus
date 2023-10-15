@@ -1,5 +1,3 @@
-//! # csv++
-//!
 mod ast;
 mod cell;
 mod cli_args;
@@ -17,14 +15,8 @@ mod spreadsheet;
 mod target;
 mod template;
 
-// test_utils should only be included in tests, never referenced by release code (or built into the
-// release)
-#[cfg(test)]
-mod test_utils;
-
 pub use cell::Cell;
 pub use cli_args::CliArgs;
-pub(crate) use error::ParseResult;
 pub use error::{Error, ParseError, Result};
 pub use expand::Expand;
 pub use modifier::{Modifier, RowModifier};
@@ -37,3 +29,17 @@ pub use source_code::{CharOffset, LineNumber, SourceCode};
 pub use spreadsheet::Spreadsheet;
 pub use target::CompilationTarget;
 pub use template::Template;
+
+pub(crate) use error::ParseResult;
+pub(crate) type DateAndTime = chrono::DateTime<chrono::Utc>;
+
+// test_utils should only be included in tests, never referenced by release code (or built into the
+// release)
+#[cfg(test)]
+mod test_utils;
+
+pub(crate) fn csv_reader() -> csv::ReaderBuilder {
+    let mut csv_reader = csv::ReaderBuilder::new();
+    csv_reader.flexible(true).has_headers(false);
+    csv_reader
+}

@@ -3,12 +3,16 @@
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Token {
+pub(crate) enum Token {
+    CloseParenthesis,
     Color,
+    Comma,
+    Date,
     EndModifier,
     Equals,
     ModifierName,
     ModifierRightSide,
+    OpenParenthesis,
     PositiveNumber,
     String,
     Slash,
