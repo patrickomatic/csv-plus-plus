@@ -97,6 +97,10 @@ impl<'a> ModifierLexer<'a> {
             Token::ModifierRightSide => {
                 self.take_while(token, |ch| ch.is_alphanumeric() || ch == '_')
             }
+            Token::Number => {
+                // TODO: I could do a little better (enforce only one starting - and one .)
+                self.take_while(token, |ch| ch.is_ascii_digit() || ch == '-' || ch == '.')
+            }
             Token::OpenParenthesis => self.take(token, "("),
             Token::PositiveNumber => self.take_while(token, |ch| ch.is_ascii_digit()),
             Token::String => self.take_string(),

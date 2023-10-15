@@ -19,10 +19,18 @@ impl TokenMatch {
         date_pattern: &str,
         source_code: &SourceCode,
     ) -> ParseResult<DateAndTime> {
-        let parsed_date = chrono::NaiveDateTime::parse_from_str(&self.str_match, date_pattern)
-            .map_err(|e| source_code.parse_error(self, &format!("Unable to parse date: {e}")))?;
+        Ok(chrono::DateTime::from_utc(
+            chrono::NaiveDateTime::parse_from_str(&self.str_match, date_pattern).map_err(|e| {
+                source_code.parse_error(self, &format!("Unable to parse date: {e}"))
+            })?,
+            chrono::Utc,
+        ))
+    }
 
-        Ok(chrono::DateTime::from_utc(parsed_date, chrono::Utc))
+    pub(crate) fn into_number(self, source_code: &SourceCode) -> ParseResult<isize> {
+        self.str_match
+            .parse::<isize>()
+            .map_err(|e| source_code.parse_error(self, &format!("Unable to parse date: {e}")))
     }
 }
 

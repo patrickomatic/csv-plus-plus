@@ -123,35 +123,55 @@ impl ModifierParser<'_, '_> {
     }
 
     fn data_validate_number_between(&mut self) -> ParseResult<()> {
-        todo!();
+        let (a, b) = self.two_numbers_in_parens()?;
+        self.modifier.data_validation = Some(DataValidation::NumberBetween(a, b));
+        Ok(())
     }
 
     fn data_validate_number_equal_to(&mut self) -> ParseResult<()> {
-        todo!();
+        self.modifier.data_validation =
+            Some(DataValidation::NumberEqualTo(self.one_number_in_parens()?));
+        Ok(())
     }
 
     fn data_validate_number_greater_than(&mut self) -> ParseResult<()> {
-        todo!();
+        self.modifier.data_validation = Some(DataValidation::NumberGreaterThan(
+            self.one_number_in_parens()?,
+        ));
+        Ok(())
     }
 
     fn data_validate_number_greater_than_or_equal_to(&mut self) -> ParseResult<()> {
-        todo!();
+        self.modifier.data_validation = Some(DataValidation::NumberGreaterThanOrEqualTo(
+            self.one_number_in_parens()?,
+        ));
+        Ok(())
     }
 
     fn data_validate_number_not_between(&mut self) -> ParseResult<()> {
-        todo!();
+        let (a, b) = self.two_numbers_in_parens()?;
+        self.modifier.data_validation = Some(DataValidation::NumberNotBetween(a, b));
+        Ok(())
     }
 
     fn data_validate_number_not_equal_to(&mut self) -> ParseResult<()> {
-        todo!();
+        self.modifier.data_validation = Some(DataValidation::NumberNotEqualTo(
+            self.one_number_in_parens()?,
+        ));
+        Ok(())
     }
 
     fn data_validate_number_less_than(&mut self) -> ParseResult<()> {
-        todo!();
+        self.modifier.data_validation =
+            Some(DataValidation::NumberLessThan(self.one_number_in_parens()?));
+        Ok(())
     }
 
     fn data_validate_number_less_than_or_equal_to(&mut self) -> ParseResult<()> {
-        todo!();
+        self.modifier.data_validation = Some(DataValidation::NumberLessThanOrEqualTo(
+            self.one_number_in_parens()?,
+        ));
+        Ok(())
     }
 
     fn data_validate_text_contains(&mut self) -> ParseResult<()> {
@@ -186,15 +206,44 @@ impl ModifierParser<'_, '_> {
 
     fn one_date_in_parens(&mut self) -> ParseResult<DateAndTime> {
         self.lexer.take_token(Token::OpenParenthesis)?;
-
         let date_time = self
             .lexer
             .take_token(Token::Date)?
             .into_date_and_time("%M/%d/%Y", &self.runtime.source_code)?;
-
         self.lexer.take_token(Token::CloseParenthesis)?;
 
         Ok(date_time)
+    }
+
+    fn two_numbers_in_parens(&mut self) -> ParseResult<(isize, isize)> {
+        self.lexer.take_token(Token::OpenParenthesis)?;
+
+        let a = self
+            .lexer
+            .take_token(Token::Number)?
+            .into_number(&self.runtime.source_code)?;
+
+        self.lexer.take_token(Token::Comma)?;
+
+        let b = self
+            .lexer
+            .take_token(Token::Number)?
+            .into_number(&self.runtime.source_code)?;
+
+        self.lexer.take_token(Token::CloseParenthesis)?;
+
+        Ok((a, b))
+    }
+
+    fn one_number_in_parens(&mut self) -> ParseResult<isize> {
+        self.lexer.take_token(Token::OpenParenthesis)?;
+        let number = self
+            .lexer
+            .take_token(Token::Number)?
+            .into_number(&self.runtime.source_code)?;
+        self.lexer.take_token(Token::CloseParenthesis)?;
+
+        Ok(number)
     }
 
     fn two_dates_in_parens(&mut self) -> ParseResult<(DateAndTime, DateAndTime)> {

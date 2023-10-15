@@ -12,6 +12,7 @@ pub(crate) enum Token {
     Equals,
     ModifierName,
     ModifierRightSide,
+    Number,
     OpenParenthesis,
     PositiveNumber,
     String,
