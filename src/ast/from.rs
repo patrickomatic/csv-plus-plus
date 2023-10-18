@@ -1,4 +1,5 @@
 use super::Node;
+use crate::DateTime;
 use a1_notation::{Address, RangeOrCell, A1};
 
 impl From<bool> for Node {
@@ -7,8 +8,8 @@ impl From<bool> for Node {
     }
 }
 
-impl From<chrono::DateTime<chrono::Utc>> for Node {
-    fn from(value: chrono::DateTime<chrono::Utc>) -> Self {
+impl From<DateTime> for Node {
+    fn from(value: DateTime) -> Self {
         Self::DateTime(value)
     }
 }

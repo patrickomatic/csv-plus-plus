@@ -6,9 +6,8 @@
 //! Spreadsheet](https://docs.rs/umya-spreadsheet/latest/umya_spreadsheet/structs/enum.DataValidationValues.html)
 //!
 use crate::ast::Ast;
+use crate::DateTime;
 use serde::{Deserialize, Serialize};
-
-type DateTime = chrono::DateTime<chrono::Utc>;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum DataValidation {

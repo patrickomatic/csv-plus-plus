@@ -4,94 +4,33 @@
 //! There are more simplistic approaches such as going character-by-character or splitting on word
 //! boundaries/spacing but neither of those will work very well for us when handling complex types
 //! like double-quotes strings.
-use crate::error::BadInput;
-use crate::{CharOffset, Error, LineNumber};
-use regex::Regex;
-use std::fmt;
+use super::{Token, TokenMatcher};
+use crate::Error;
 
-pub const CODE_SECTION_SEPARATOR: &str = "---";
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Token {
-    Boolean,
-    CloseParen,
-    CodeSectionEof,
-    Comma,
-    Comment,
-    DateTime,
-    DoubleQuotedString,
-    Eof,
-    Float,
-    FunctionDefinition,
-    InfixOperator,
-    Integer,
-    Newline,
-    OpenParen,
-    Reference,
-    VarAssign,
-}
-
-#[derive(Clone, Debug)]
-pub struct TokenMatcher(pub Token, pub Regex);
-
-impl TokenMatcher {
-    fn new(regex_str: &str, token: Token) -> Result<Self, Error> {
-        // this regex is tricky but it's for "all spaces but not newlines"
-        match Regex::new(format!(r"^[^\S\r\n]*{regex_str}").as_str()) {
-            Ok(r) => Ok(TokenMatcher(token, r)),
-            Err(m) => Err(Error::InitError(format!(
-                "Error compiling regex /{regex_str}/: {m}",
-            ))),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) struct TokenMatch<'a> {
-    pub(crate) token: Token,
-    pub(crate) str_match: &'a str,
-    pub(crate) line_number: LineNumber,
-    pub(crate) line_offset: CharOffset,
-}
-
-impl BadInput for TokenMatch<'_> {
-    fn line_number(&self) -> LineNumber {
-        self.line_number
-    }
-
-    fn line_offset(&self) -> CharOffset {
-        self.line_offset
-    }
-}
-
-impl fmt::Display for TokenMatch<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "`{}`", self.str_match)
-    }
-}
+pub(crate) const CODE_SECTION_SEPARATOR: &str = "---";
 
 #[derive(Debug)]
-pub struct TokenLibrary {
-    pub boolean_true: TokenMatcher,
-    pub boolean_false: TokenMatcher,
-    pub code_section_eof: TokenMatcher,
-    pub comma: TokenMatcher,
-    pub comment: TokenMatcher,
-    pub close_paren: TokenMatcher,
-    pub date_time: TokenMatcher,
-    pub double_quoted_string: TokenMatcher,
-    pub infix_operator: TokenMatcher,
-    pub integer: TokenMatcher,
-    pub float: TokenMatcher,
-    pub fn_def: TokenMatcher,
-    pub newline: TokenMatcher,
-    pub open_paren: TokenMatcher,
-    pub reference: TokenMatcher,
-    pub var_assign: TokenMatcher,
+pub(crate) struct TokenLibrary {
+    pub(crate) boolean_true: TokenMatcher,
+    pub(crate) boolean_false: TokenMatcher,
+    pub(crate) code_section_eof: TokenMatcher,
+    pub(crate) comma: TokenMatcher,
+    pub(crate) comment: TokenMatcher,
+    pub(crate) close_paren: TokenMatcher,
+    pub(crate) date_time: TokenMatcher,
+    pub(crate) double_quoted_string: TokenMatcher,
+    pub(crate) infix_operator: TokenMatcher,
+    pub(crate) integer: TokenMatcher,
+    pub(crate) float: TokenMatcher,
+    pub(crate) fn_def: TokenMatcher,
+    pub(crate) newline: TokenMatcher,
+    pub(crate) open_paren: TokenMatcher,
+    pub(crate) reference: TokenMatcher,
+    pub(crate) var_assign: TokenMatcher,
 }
 
 impl TokenLibrary {
-    pub fn build() -> Result<Self, Error> {
+    pub(crate) fn build() -> Result<Self, Error> {
         Ok(Self {
             boolean_true: TokenMatcher::new(r"true", Token::Boolean)?,
             boolean_false: TokenMatcher::new(r"false", Token::Boolean)?,
@@ -133,6 +72,7 @@ impl TokenLibrary {
 
 #[cfg(test)]
 mod tests {
+    use super::super::*;
     use super::*;
 
     fn token_library() -> TokenLibrary {

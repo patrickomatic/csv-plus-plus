@@ -7,7 +7,7 @@
 //! After this both the code section and CSV section will be lexed and parsed using separate
 //! algorithms.
 //!
-use crate::parser::token_library::CODE_SECTION_SEPARATOR;
+use crate::parser::ast_lexer::CODE_SECTION_SEPARATOR;
 use crate::{csv_reader, Error, Result};
 use std::fs;
 use std::path;

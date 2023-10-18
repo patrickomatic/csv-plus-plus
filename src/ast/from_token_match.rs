@@ -1,9 +1,6 @@
 use super::{Ast, Node};
-use crate::parser::token_library::TokenMatch;
-use crate::{ParseResult, SourceCode};
-
-// TODO: make the acceptable formats more flexible
-const DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S %Z";
+use crate::parser::ast_lexer::TokenMatch;
+use crate::{DateTime, ParseResult, SourceCode};
 
 impl Node {
     pub(crate) fn boolean_from_token_match(
@@ -27,13 +24,10 @@ impl Node {
         input: TokenMatch,
         source_code: &SourceCode,
     ) -> ParseResult<Ast> {
-        let parsed_date = chrono::NaiveDateTime::parse_from_str(input.str_match, DATE_FORMAT)
-            .map_err(|e| source_code.parse_error(input, &format!("Unable to parse date: {e}")))?;
-
-        Ok(Box::new(Node::DateTime(chrono::DateTime::from_utc(
-            parsed_date,
-            chrono::Utc,
-        ))))
+        Ok(Box::new(Node::DateTime(DateTime::from_token_input(
+            input,
+            source_code,
+        )?)))
     }
 
     pub(crate) fn float_from_token_match(
@@ -124,18 +118,12 @@ mod tests {
 
     #[test]
     fn datetime_from_token_match() {
-        let date_time = chrono::DateTime::from_utc(
-            chrono::NaiveDate::from_ymd_opt(2022, 10, 12)
-                .unwrap()
-                .and_hms_opt(0, 0, 0)
-                .unwrap(),
-            chrono::Utc,
-        );
+        let date = build_date_time_ymd(2022, 10, 12);
 
         assert_eq!(
-            Node::DateTime(date_time),
+            Node::DateTime(date),
             *Node::datetime_from_token_match(
-                build_ast_token_match("2022-10-12 00:00:00 UTC"),
+                build_ast_token_match("2022-10-12"),
                 &build_source_code()
             )
             .unwrap()

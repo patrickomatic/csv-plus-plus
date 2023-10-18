@@ -66,6 +66,8 @@ impl fmt::Display for VariableValue {
 
 #[cfg(test)]
 mod tests {
+    use crate::test_utils::build_date_time_ymd;
+
     use super::*;
 
     #[test]
@@ -79,16 +81,9 @@ mod tests {
 
     #[test]
     fn display_datetime() {
-        let dt = chrono::DateTime::from_utc(
-            chrono::NaiveDate::from_ymd_opt(2022, 10, 12)
-                .unwrap()
-                .and_hms_opt(0, 0, 0)
-                .unwrap(),
-            chrono::Utc,
-        );
-        let date: Node = dt.into();
+        let d: Node = build_date_time_ymd(2022, 10, 12).into();
 
-        assert_eq!("2022-10-12 00:00:00 UTC", date.to_string());
+        assert_eq!("2022-10-12", d.to_string());
     }
 
     #[test]

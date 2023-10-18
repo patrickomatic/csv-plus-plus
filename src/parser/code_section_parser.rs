@@ -15,9 +15,8 @@
 //! fn <function_name>(<fn-arg-1>, <fn-arg-2>, ...) <expr>
 //! ```
 //!
-use super::ast_lexer::AstLexer;
+use super::ast_lexer::{AstLexer, Token, TokenMatch};
 use super::ast_parser::AstParser;
-use super::token_library::{Token, TokenMatch};
 use crate::ast::{Ast, Functions, Node, VariableValue, Variables};
 use crate::{Error, Result, Runtime};
 use std::collections::HashMap;

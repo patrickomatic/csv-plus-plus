@@ -1,6 +1,7 @@
 mod ast;
 mod cell;
 mod cli_args;
+mod date_time;
 mod error;
 mod expand;
 mod modifier;
@@ -17,6 +18,7 @@ mod template;
 
 pub use cell::Cell;
 pub use cli_args::CliArgs;
+pub use date_time::DateTime;
 pub use error::{Error, ParseError, Result};
 pub use expand::Expand;
 pub use modifier::{Modifier, RowModifier};
@@ -31,7 +33,6 @@ pub use target::CompilationTarget;
 pub use template::Template;
 
 pub(crate) use error::ParseResult;
-pub(crate) type DateAndTime = chrono::DateTime<chrono::Utc>;
 
 // test_utils should only be included in tests, never referenced by release code (or built into the
 // release)

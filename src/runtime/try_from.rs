@@ -1,6 +1,6 @@
 use crate::ast::{BuiltinFunction, BuiltinVariable};
+use crate::parser::ast_lexer::TokenLibrary;
 use crate::parser::ast_parser::AstParser;
-use crate::parser::token_library::TokenLibrary;
 use crate::{CliArgs, Options, Output, Runtime, SourceCode};
 
 impl TryFrom<&CliArgs> for Runtime {

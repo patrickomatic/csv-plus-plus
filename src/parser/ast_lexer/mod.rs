@@ -1,42 +1,26 @@
 //! # AstLexer
 //!
-use super::token_library::{Token, TokenLibrary, TokenMatch, TokenMatcher};
-use crate::error::{BadInput, ParseResult};
+use crate::error::ParseResult;
 use crate::{CharOffset, LineNumber, Runtime};
 use std::cell::RefCell;
-use std::fmt;
 use std::rc::Rc;
 
-pub struct AstLexer<'a> {
+mod token;
+mod token_library;
+mod token_match;
+mod token_matcher;
+mod unknown_token;
+
+pub(crate) use token::Token;
+pub(crate) use token_library::{TokenLibrary, CODE_SECTION_SEPARATOR};
+pub(crate) use token_match::TokenMatch;
+pub(crate) use token_matcher::TokenMatcher;
+pub(crate) use unknown_token::UnknownToken;
+
+pub(crate) struct AstLexer<'a> {
     tokens: Rc<RefCell<Vec<TokenMatch<'a>>>>,
     lines: LineNumber,
     eof_position: CharOffset,
-}
-
-/// For better or worse the tokens are not mutually exclusive - some of them are subsets of another
-/// (for example 555.55 could be matched by both float and integer (integer can just match the first
-/// part of it) so it's important float is first. Another example is comments - they have to be
-/// stripped out first
-fn matchers_ordered(tl: &TokenLibrary) -> [&TokenMatcher; 15] {
-    [
-        &tl.newline,
-        &tl.comment,
-        &tl.double_quoted_string,
-        &tl.fn_def,
-        &tl.var_assign,
-        &tl.comma,
-        &tl.close_paren,
-        &tl.open_paren,
-        &tl.infix_operator,
-        &tl.code_section_eof,
-        // float has to be happen before integer!  it needs to greedy match 1.5, where integer will
-        // also match the first part 1, but not the rest
-        &tl.float,
-        &tl.integer,
-        &tl.boolean_true,
-        &tl.boolean_false,
-        &tl.reference,
-    ]
 }
 
 fn whitespace_start(input: &str) -> usize {
@@ -44,31 +28,6 @@ fn whitespace_start(input: &str) -> usize {
         .chars()
         .take_while(|ch| ch.is_whitespace() && *ch != '\n' && *ch != '\r')
         .count()
-}
-
-#[derive(Debug)]
-pub(crate) struct UnknownToken {
-    pub(crate) bad_input: String,
-    pub(crate) line_number: LineNumber,
-    pub(crate) line_offset: CharOffset,
-}
-
-impl fmt::Display for UnknownToken {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut shortened_bad_input = self.bad_input.clone();
-        shortened_bad_input.truncate(50);
-        write!(f, "{shortened_bad_input}")
-    }
-}
-
-impl BadInput for UnknownToken {
-    fn line_number(&self) -> LineNumber {
-        self.line_number
-    }
-
-    fn line_offset(&self) -> CharOffset {
-        self.line_offset
-    }
 }
 
 impl<'a> AstLexer<'a> {
@@ -82,7 +41,9 @@ impl<'a> AstLexer<'a> {
         loop {
             let mut matched = false;
 
-            for TokenMatcher(token, regex) in matchers_ordered(&runtime.token_library).iter() {
+            for TokenMatcher(token, regex) in
+                TokenMatcher::matchers_ordered(&runtime.token_library).iter()
+            {
                 if let Some(m) = regex.find(p) {
                     if *token == Token::Newline {
                         // just count the newline but don't store it on `tokens`

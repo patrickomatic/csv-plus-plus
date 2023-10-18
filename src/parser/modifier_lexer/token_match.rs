@@ -2,7 +2,8 @@
 //!
 use super::Token;
 use crate::error::{BadInput, ParseResult};
-use crate::{CharOffset, DateAndTime, LineNumber, SourceCode};
+use crate::parser::TokenInput;
+use crate::{CharOffset, LineNumber, SourceCode};
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -14,19 +15,6 @@ pub(crate) struct TokenMatch {
 }
 
 impl TokenMatch {
-    pub(crate) fn into_date_and_time(
-        self,
-        date_pattern: &str,
-        source_code: &SourceCode,
-    ) -> ParseResult<DateAndTime> {
-        Ok(chrono::DateTime::from_utc(
-            chrono::NaiveDateTime::parse_from_str(&self.str_match, date_pattern).map_err(|e| {
-                source_code.parse_error(self, &format!("Unable to parse date: {e}"))
-            })?,
-            chrono::Utc,
-        ))
-    }
-
     pub(crate) fn into_number(self, source_code: &SourceCode) -> ParseResult<isize> {
         self.str_match
             .parse::<isize>()
@@ -47,5 +35,11 @@ impl BadInput for TokenMatch {
 
     fn line_offset(&self) -> CharOffset {
         self.line_offset
+    }
+}
+
+impl TokenInput for TokenMatch {
+    fn input(&self) -> &str {
+        self.str_match.as_str()
     }
 }

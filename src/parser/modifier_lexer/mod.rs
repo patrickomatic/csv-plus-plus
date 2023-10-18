@@ -69,6 +69,7 @@ impl<'a> ModifierLexer<'a> {
         }
     }
 
+    // TODO: this name is kinda misleading since it also takes an equal first
     pub(super) fn take_modifier_right_side(&mut self) -> ParseResult<TokenMatch> {
         self.take_token(Token::Equals)?;
         self.take_token(Token::ModifierRightSide)
