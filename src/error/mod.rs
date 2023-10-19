@@ -10,20 +10,16 @@ mod display;
 mod eval_error;
 mod modifier_parse_error;
 mod parse_error;
-mod rgb_parse_error;
 
 pub use parse_error::ParseError;
 pub type Result<T> = std::result::Result<T, Error>;
-pub(crate) type ParseResult<T> = std::result::Result<T, ParseError>;
 
 pub(crate) use bad_input::BadInput;
-
 pub(crate) use eval_error::EvalError;
 pub(crate) use modifier_parse_error::ModifierParseError;
-pub(crate) use rgb_parse_error::RgbParseError;
 
+pub(crate) type ParseResult<T> = std::result::Result<T, ParseError>;
 pub(crate) type EvalResult<T> = std::result::Result<T, EvalError>;
-pub(crate) type RgbParseResult<T> = std::result::Result<T, RgbParseError>;
 
 /// The various kinds of errors that can occur during compilation and evaluation of a csv++
 /// template.
@@ -53,6 +49,10 @@ pub enum Error {
     /// An error while building the runtime or reading the source code.  These are typically not
     /// due to user error.
     InitError(String),
+
+    /// An error that should never happen. If seen report it to the compiler developers
+    // TODO
+    // InternalError(String),
 
     /// A syntax error encountered while parsing the modifiers of a cell.
     ModifierSyntaxError {

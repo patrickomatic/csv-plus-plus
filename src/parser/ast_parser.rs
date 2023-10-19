@@ -13,17 +13,17 @@
 //!
 use super::ast_lexer::*;
 use crate::ast::{Ast, Node, Variables};
-use crate::{Error, ParseResult, Result, Runtime};
+use crate::error::{BadInput, Error, ParseResult, Result};
+use crate::Runtime;
 use std::collections;
 
 pub(crate) struct AstParser<'a> {
     lexer: &'a AstLexer<'a>,
-    runtime: &'a Runtime,
 }
 
 impl<'a> AstParser<'a> {
-    pub(crate) fn new(lexer: &'a AstLexer<'a>, runtime: &'a Runtime) -> Self {
-        AstParser { lexer, runtime }
+    pub(crate) fn new(lexer: &'a AstLexer<'a>) -> Self {
+        AstParser { lexer }
     }
 
     /// Parse `input` from a `SourceCode`.
@@ -31,7 +31,7 @@ impl<'a> AstParser<'a> {
         let lexer =
             AstLexer::new(input, runtime).map_err(|e| runtime.source_code.code_syntax_error(e))?;
 
-        AstParser::new(&lexer, runtime)
+        AstParser::new(&lexer)
             .expr_bp(single_expr, 0)
             .map_err(|e| runtime.source_code.code_syntax_error(e))
     }
@@ -61,7 +61,6 @@ impl<'a> AstParser<'a> {
 
     /// The core pratt parser logic for parsing an expression of our AST.  
     pub(super) fn expr_bp(&self, single_expr: bool, min_bp: u8) -> ParseResult<Ast> {
-        let sc = &self.runtime.source_code;
         let lhs_token = self.lexer.next();
 
         let mut lhs = match lhs_token.token {
@@ -75,24 +74,23 @@ impl<'a> AstParser<'a> {
                         ..
                     } => expr,
                     token => {
-                        return Err(sc.parse_error(
-                            token,
-                            "Expected close parenthesis (`)`), received ({token})",
-                        ))
+                        return Err(token.into_parse_error(&format!(
+                            "Expected close parenthesis (`)`), received ({token})"
+                        )))
                     }
                 }
             }
 
             // terminals
-            Token::Boolean => Node::boolean_from_token_match(lhs_token, sc)?,
-            Token::DateTime => Node::datetime_from_token_match(lhs_token, sc)?,
-            Token::DoubleQuotedString => Node::text_from_token_match(lhs_token, sc)?,
-            Token::Float => Node::float_from_token_match(lhs_token, sc)?,
-            Token::Integer => Node::integer_from_token_match(lhs_token, sc)?,
-            Token::Reference => Node::reference_from_token_match(lhs_token, sc)?,
+            Token::Boolean
+            | Token::DateTime
+            | Token::DoubleQuotedString
+            | Token::Float
+            | Token::Integer
+            | Token::Reference => Ast::try_from(lhs_token)?,
             _ => {
                 return Err(
-                    sc.parse_error(lhs_token, "Invalid left-hand side expression ({lhs_token})")
+                    lhs_token.into_parse_error("Invalid left-hand side expression ({lhs_token})")
                 )
             }
         };
@@ -118,7 +116,7 @@ impl<'a> AstParser<'a> {
                 Token::InfixOperator | Token::OpenParen => op_token.str_match,
 
                 // otherwise undefined
-                t => return Err(sc.parse_error(op_token, &format!("Unexpected token ({:?})", &t))),
+                t => return Err(op_token.into_parse_error(&format!("Unexpected token ({:?})", &t))),
             };
 
             if let Some((l_bp, ())) = self.postfix_binding_power(op) {
@@ -133,7 +131,7 @@ impl<'a> AstParser<'a> {
                     // function call
                     let id = match *lhs {
                         Node::Reference(id) => id,
-                        _ => return Err(sc.parse_error(op_token, "Unable to get id for fn")),
+                        _ => return Err(op_token.into_parse_error("Unable to get id for fn")),
                     };
 
                     let mut args = vec![];
@@ -154,7 +152,7 @@ impl<'a> AstParser<'a> {
 
                     Box::new(Node::FunctionCall { name: id, args })
                 } else {
-                    return Err(sc.parse_error(op_token, "Unexpected infix operator"));
+                    return Err(op_token.into_parse_error("Unexpected infix operator"));
                 };
 
                 continue;

@@ -3,7 +3,7 @@
 //! An error that can be thrown when parsing the value of a modifier.
 use super::BadInput;
 use crate::parser::modifier_lexer::TokenMatch;
-use crate::{CharOffset, LineNumber, ParseError, SourceCode};
+use crate::{CharOffset, LineNumber, ParseError};
 use std::error;
 use std::fmt;
 
@@ -29,16 +29,14 @@ impl ModifierParseError {
                 .collect::<Vec<String>>(),
         }
     }
+}
 
-    pub(crate) fn into_parse_error(self, source_code: &SourceCode) -> ParseError {
-        let modifier_name = self.modifier_name.clone();
-        let possible_values = self.possible_values.clone();
-
-        source_code.parse_error_with_possible_values(
-            self,
-            &format!("expected a valid value when parsing `{modifier_name}` modifier"),
-            possible_values,
-        )
+impl From<ModifierParseError> for ParseError {
+    fn from(e: ModifierParseError) -> Self {
+        let modifier_name = e.modifier_name.clone();
+        e.into_parse_error(&format!(
+            "received invalid value when parsing `{modifier_name}` modifier"
+        ))
     }
 }
 
@@ -50,11 +48,17 @@ impl fmt::Display for ModifierParseError {
 
 impl BadInput for ModifierParseError {
     fn line_number(&self) -> LineNumber {
-        self.bad_input.line_number
+        self.bad_input.line_number()
     }
 
     fn line_offset(&self) -> CharOffset {
-        self.bad_input.line_offset
+        self.bad_input.line_offset()
+    }
+
+    fn into_parse_error(self, message: &str) -> ParseError {
+        let possible_values = self.possible_values.clone();
+        let source_code = self.bad_input.source_code.clone();
+        source_code.parse_error_with_possible_values(self, message, possible_values)
     }
 }
 

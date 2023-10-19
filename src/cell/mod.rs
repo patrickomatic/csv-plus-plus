@@ -24,7 +24,8 @@ impl Cell {
         row_modifier: &RowModifier,
         runtime: &Runtime,
     ) -> Result<(Self, Option<RowModifier>)> {
-        let parsed_modifiers = ModifierParser::parse(input, position, row_modifier, runtime)?;
+        let parsed_modifiers =
+            ModifierParser::parse(input, position, row_modifier, runtime.source_code.clone())?;
         let cell = Self {
             ast: Self::parse_ast(&parsed_modifiers.value, runtime)?,
             position,
@@ -35,7 +36,7 @@ impl Cell {
                     .unwrap_or(row_modifier.clone())
                     .into_without_var()
             }),
-            value: parsed_modifiers.value,
+            value: parsed_modifiers.value.to_string(),
         };
 
         Ok((cell, parsed_modifiers.row_modifier))

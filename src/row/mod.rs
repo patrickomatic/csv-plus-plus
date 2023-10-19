@@ -21,7 +21,7 @@ impl Row {
         let mut row_modifier = RowModifier::default();
 
         // handle if the row is blank or an error or something. (maybe we should warn here?)
-        let csv_parsed_row = &record_result.unwrap_or(csv::StringRecord::new());
+        let csv_parsed_row = &record_result.unwrap_or_default();
 
         for (cell_index, unparsed_value) in csv_parsed_row.into_iter().enumerate() {
             let a1 = a1_notation::Address::new(cell_index, row_index);

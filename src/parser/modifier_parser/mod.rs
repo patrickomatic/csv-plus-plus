@@ -5,13 +5,15 @@
 //!     lowercase the stuff outside the modifier definition
 //!
 use super::modifier_lexer::{ModifierLexer, Token, TokenMatch};
+use crate::error::{BadInput, ParseResult, Result};
 use crate::modifier::*;
-use crate::{Expand, ParseResult, Result, Rgb, Runtime};
+use crate::{Expand, Rgb, SourceCode};
 use a1_notation::{Address, Row};
+use std::sync;
 
 mod data_validate;
 
-pub(crate) struct ModifierParser<'a, 'b> {
+pub(crate) struct ModifierParser<'a, 'b: 'a> {
     /// We re-use the lexer in some contexts so take a reference to an existing one (with it's own
     /// lifetime)
     lexer: &'a mut ModifierLexer<'b>,
@@ -20,8 +22,6 @@ pub(crate) struct ModifierParser<'a, 'b> {
     /// the same. And since `RowModifier` is a superset of `Modifier`, we use the former for
     /// parsing into then cast it via `into()` if it's really a `Modifier`.
     modifier: &'a mut RowModifier,
-
-    runtime: &'a Runtime,
 
     is_row_modifier: bool,
 }
@@ -43,29 +43,27 @@ where
         input: &'b str,
         position: Address,
         row_modifier: &'b RowModifier,
-        runtime: &'b Runtime,
+        source_code: sync::Arc<SourceCode>,
     ) -> Result<ParsedCell> {
-        Self::parse_all_modifiers(input, position, row_modifier, runtime)
-            .map_err(move |e| runtime.source_code.modifier_syntax_error(e, position))
+        Self::parse_all_modifiers(input, position, row_modifier, source_code.clone())
+            .map_err(move |e| source_code.modifier_syntax_error(e, position))
     }
 
     fn parse_all_modifiers(
         input: &'b str,
         position: Address,
         row_modifier: &'b RowModifier,
-        runtime: &'b Runtime,
+        source_code: sync::Arc<SourceCode>,
     ) -> ParseResult<ParsedCell> {
-        let mut lexer = ModifierLexer::new(input, position, runtime);
+        let mut lexer = ModifierLexer::new(input, position, source_code);
         let mut new_modifier: Option<Modifier> = None;
         let mut new_row_modifier: Option<RowModifier> = None;
 
         while let Some(start_token) = lexer.maybe_take_start_modifier() {
             let is_row_modifier = start_token.token == Token::StartRowModifier;
             if is_row_modifier && position.column.x != 0 {
-                return Err(runtime.source_code.parse_error(
-                    start_token,
-                    "You can only define a row modifier in the first cell",
-                ));
+                return Err(start_token
+                    .into_parse_error("You can only define a row modifier in the first cell"));
             }
 
             let mut row_modifier = new_row_modifier
@@ -75,7 +73,6 @@ where
             ModifierParser {
                 lexer: &mut lexer,
                 modifier: &mut row_modifier,
-                runtime,
                 is_row_modifier,
             }
             .parse_modifiers(position.row)?;
@@ -90,15 +87,14 @@ where
         Ok(ParsedCell {
             modifier: new_modifier,
             row_modifier: new_row_modifier,
-            value: lexer.rest(),
+            value: lexer.rest().to_string(),
         })
     }
 
     fn border_modifier(&mut self) -> ParseResult<()> {
-        self.modifier.borders.insert(
-            BorderSide::try_from(self.lexer.take_modifier_right_side()?)
-                .map_err(|e| e.into_parse_error(&self.runtime.source_code))?,
-        );
+        self.modifier.borders.insert(BorderSide::try_from(
+            self.lexer.take_modifier_right_side()?,
+        )?);
 
         Ok(())
     }
@@ -107,19 +103,15 @@ where
         self.lexer.take_token(Token::Equals)?;
 
         let color = self.lexer.take_token(Token::Color)?;
-        self.modifier.border_color = Some(
-            Rgb::try_from(color)
-                .map_err(|e| e.into_parse_error("bordercolor", &self.runtime.source_code))?,
-        );
+        self.modifier.border_color = Some(Rgb::try_from(color)?);
 
         Ok(())
     }
 
     fn border_style_modifier(&mut self) -> ParseResult<()> {
-        self.modifier.border_style = Some(
-            BorderStyle::try_from(self.lexer.take_modifier_right_side()?)
-                .map_err(|e| e.into_parse_error(&self.runtime.source_code))?,
-        );
+        self.modifier.border_style = Some(BorderStyle::try_from(
+            self.lexer.take_modifier_right_side()?,
+        )?);
         Ok(())
     }
 
@@ -127,30 +119,23 @@ where
         self.lexer.take_token(Token::Equals)?;
 
         let color = self.lexer.take_token(Token::Color)?;
-        self.modifier.color = Some(
-            Rgb::try_from(color)
-                .map_err(|e| e.into_parse_error("color", &self.runtime.source_code))?,
-        );
+        self.modifier.color = Some(Rgb::try_from(color)?);
 
         Ok(())
     }
 
     fn expand_modifier(&mut self, modifier: TokenMatch, row: a1_notation::Row) -> ParseResult<()> {
         if !self.is_row_modifier {
-            return Err(self.runtime.source_code.parse_error(
-                modifier,
-                "`expand` modifiers can only be used in a `![[..]]`",
-            ));
+            return Err(
+                modifier.into_parse_error("`expand` modifiers can only be used in a `![[..]]`")
+            );
         }
 
         let amount = if self.lexer.maybe_take_equals().is_some() {
             let amount_string = self.lexer.take_token(Token::PositiveNumber)?;
 
             Some(amount_string.str_match.parse::<usize>().map_err(|e| {
-                self.runtime.source_code.parse_error(
-                    amount_string,
-                    &format!("Error parsing expand= repetitions: {e}"),
-                )
+                amount_string.into_parse_error(&format!("Error parsing expand= repetitions: {e}"))
             })?)
         } else {
             None
@@ -168,10 +153,7 @@ where
         self.lexer.take_token(Token::Equals)?;
 
         let color = self.lexer.take_token(Token::Color)?;
-        self.modifier.font_color = Some(
-            Rgb::try_from(color)
-                .map_err(|e| e.into_parse_error("fontcolor", &self.runtime.source_code))?,
-        );
+        self.modifier.font_color = Some(Rgb::try_from(color)?);
         Ok(())
     }
 
@@ -186,32 +168,29 @@ where
     fn font_size_modifier(&mut self) -> ParseResult<()> {
         self.lexer.take_token(Token::Equals)?;
 
-        let font_size_string = self.lexer.take_token(Token::PositiveNumber)?;
-        match font_size_string.str_match.parse::<u8>() {
+        let font_size_match = self.lexer.take_token(Token::PositiveNumber)?;
+        match font_size_match.str_match.parse::<u8>() {
             Ok(n) => self.modifier.font_size = Some(n),
             Err(e) => {
-                return Err(self
-                    .runtime
-                    .source_code
-                    .parse_error(font_size_string, &format!("Error parsing fontsize: {e}")))
+                return Err(
+                    font_size_match.into_parse_error(&format!("Error parsing fontsize: {e}"))
+                )
             }
         }
         Ok(())
     }
 
     fn format_modifier(&mut self) -> ParseResult<()> {
-        self.modifier.formats.insert(
-            TextFormat::try_from(self.lexer.take_modifier_right_side()?)
-                .map_err(|e| e.into_parse_error(&self.runtime.source_code))?,
-        );
+        self.modifier.formats.insert(TextFormat::try_from(
+            self.lexer.take_modifier_right_side()?,
+        )?);
         Ok(())
     }
 
     fn halign_modifier(&mut self) -> ParseResult<()> {
-        self.modifier.horizontal_align = Some(
-            HorizontalAlign::try_from(self.lexer.take_modifier_right_side()?)
-                .map_err(|e| e.into_parse_error(&self.runtime.source_code))?,
-        );
+        self.modifier.horizontal_align = Some(HorizontalAlign::try_from(
+            self.lexer.take_modifier_right_side()?,
+        )?);
         Ok(())
     }
 
@@ -227,18 +206,16 @@ where
     }
 
     fn number_format(&mut self) -> ParseResult<()> {
-        self.modifier.number_format = Some(
-            NumberFormat::try_from(self.lexer.take_modifier_right_side()?)
-                .map_err(|e| e.into_parse_error(&self.runtime.source_code))?,
-        );
+        self.modifier.number_format = Some(NumberFormat::try_from(
+            self.lexer.take_modifier_right_side()?,
+        )?);
         Ok(())
     }
 
     fn valign_modifier(&mut self) -> ParseResult<()> {
-        self.modifier.vertical_align = Some(
-            VerticalAlign::try_from(self.lexer.take_modifier_right_side()?)
-                .map_err(|e| e.into_parse_error(&self.runtime.source_code))?,
-        );
+        self.modifier.vertical_align = Some(VerticalAlign::try_from(
+            self.lexer.take_modifier_right_side()?,
+        )?);
         Ok(())
     }
 
@@ -266,10 +243,7 @@ where
             "nf" | "numberformat" => self.number_format(),
             "v" | "var" => self.var_modifier(),
             "va" | "valign" => self.valign_modifier(),
-            _ => Err(self
-                .runtime
-                .source_code
-                .parse_error(modifier_name, "Unrecognized modifier")),
+            _ => Err(modifier_name.into_parse_error("Unrecognized modifier")),
         }
     }
 
@@ -294,8 +268,14 @@ mod tests {
     use crate::test_utils::*;
 
     fn test_parse(input: &str) -> ParsedCell {
-        let runtime: Runtime = TestFile::new("xlsx", input).into();
-        ModifierParser::parse(input, Address::new(0, 0), &RowModifier::default(), &runtime).unwrap()
+        let source_code = build_source_code();
+        ModifierParser::parse(
+            input,
+            Address::new(0, 0),
+            &RowModifier::default(),
+            std::sync::Arc::new(source_code),
+        )
+        .unwrap()
     }
 
     #[test]
@@ -357,60 +337,70 @@ mod tests {
     #[test]
     fn parse_row_modifier() {
         let ParsedCell { row_modifier, .. } = test_parse("![[format=bold]]abc123");
+
         assert!(row_modifier.unwrap().formats.contains(&TextFormat::Bold));
     }
 
     #[test]
     fn parse_border() {
         let ParsedCell { modifier, .. } = test_parse("[[border=top]]abc123");
+
         assert!(modifier.unwrap().borders.contains(&BorderSide::Top));
     }
 
     #[test]
     fn parse_borderstyle() {
         let ParsedCell { modifier, .. } = test_parse("[[b=t/bs=dotted]]abc123");
+
         assert_eq!(modifier.unwrap().border_style, Some(BorderStyle::Dotted));
     }
 
     #[test]
     fn parse_color() {
         let ParsedCell { modifier, .. } = test_parse("[[color=#ABC]]abc123");
+
         assert!(modifier.unwrap().color.is_some());
     }
 
     #[test]
     fn parse_expand() {
         let ParsedCell { row_modifier, .. } = test_parse("![[expand=20]]abc123");
+
         assert!(row_modifier.unwrap().expand.is_some());
     }
 
     #[test]
     fn parse_fontcolor() {
         let ParsedCell { modifier, .. } = test_parse("[[fontcolor=#ABC]]abc123");
+
         assert!(modifier.unwrap().font_color.is_some());
     }
 
     #[test]
     fn parse_fontfamily() {
         let ParsedCell { modifier, .. } = test_parse("[[fontfamily=Helvetica]]abc123");
+
         assert_eq!(modifier.unwrap().font_family, Some("Helvetica".to_string()));
     }
 
     #[test]
     fn parse_fontsize() {
         let ParsedCell { modifier, .. } = test_parse("[[fontsize=20]]abc123");
+
         assert_eq!(modifier.unwrap().font_size, Some(20));
     }
 
     #[test]
     fn parse_format() {
         let ParsedCell { modifier, .. } = test_parse("[[format=bold]]abc123");
+
         assert!(modifier.unwrap().formats.contains(&TextFormat::Bold));
     }
 
     #[test]
     fn parse_halign() {
         let ParsedCell { modifier, .. } = test_parse("[[halign=left]]abc123");
+
         assert_eq!(
             modifier.unwrap().horizontal_align,
             Some(HorizontalAlign::Left)
@@ -420,18 +410,21 @@ mod tests {
     #[test]
     fn parse_lock() {
         let ParsedCell { modifier, .. } = test_parse("[[lock]]abc123");
+
         assert!(modifier.unwrap().lock);
     }
 
     #[test]
     fn parse_note() {
         let ParsedCell { modifier, .. } = test_parse("[[note='foo']]abc123");
+
         assert_eq!(modifier.unwrap().note, Some("foo".to_string()));
     }
 
     #[test]
     fn parse_numberformat() {
         let ParsedCell { modifier, .. } = test_parse("[[numberformat=datetime]]abc123");
+
         assert_eq!(
             modifier.unwrap().number_format,
             Some(NumberFormat::DateTime)
@@ -441,12 +434,14 @@ mod tests {
     #[test]
     fn parse_valign() {
         let ParsedCell { modifier, .. } = test_parse("[[valign=top]]abc123");
+
         assert_eq!(modifier.unwrap().vertical_align, Some(VerticalAlign::Top));
     }
 
     #[test]
     fn parse_var_modifier() {
         let ParsedCell { modifier, .. } = test_parse("[[var=foo]]abc123");
+
         assert_eq!(modifier.unwrap().var, Some("foo".to_string()));
     }
 }

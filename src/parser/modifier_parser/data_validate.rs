@@ -7,8 +7,7 @@ macro_rules! data_validate_args {
     ($self:ident, $From:ident, $tok:path $(, $toks:path)*) => {{
         $self.lexer.take_token(Token::OpenParenthesis)?;
 
-        let _parsed =
-            $From::from_token_input($self.lexer.take_token($tok)?, &$self.runtime.source_code)?;
+        let _parsed = $From::from_token_input($self.lexer.take_token($tok)?)?;
 
         $self.lexer.take_token(Token::CloseParenthesis)?;
 
@@ -16,6 +15,7 @@ macro_rules! data_validate_args {
     }};
 }
 
+// XXX rename to just validate.rs and the function too
 impl ModifierParser<'_, '_> {
     pub(super) fn data_validate(&mut self) -> ParseResult<()> {
         let name = self.lexer.take_modifier_right_side()?;
@@ -77,7 +77,7 @@ impl ModifierParser<'_, '_> {
                     "value_in_range(A1)",
                 ],
             )
-            .into_parse_error(&self.runtime.source_code)),
+            .into()),
         }
     }
 
@@ -240,12 +240,12 @@ impl ModifierParser<'_, '_> {
         self.lexer.take_token(Token::OpenParenthesis)?;
 
         let match_one = self.lexer.take_token(Token::Date)?;
-        let date_one = DateTime::from_token_input(match_one, &self.runtime.source_code)?;
+        let date_one = DateTime::from_token_input(match_one)?;
 
         self.lexer.take_token(Token::Comma)?;
 
         let match_two = self.lexer.take_token(Token::Date)?;
-        let date_two = DateTime::from_token_input(match_two, &self.runtime.source_code)?;
+        let date_two = DateTime::from_token_input(match_two)?;
 
         self.lexer.take_token(Token::CloseParenthesis)?;
 
@@ -254,10 +254,7 @@ impl ModifierParser<'_, '_> {
 
     fn one_number_in_parens(&mut self) -> ParseResult<isize> {
         self.lexer.take_token(Token::OpenParenthesis)?;
-        let number = self
-            .lexer
-            .take_token(Token::Number)?
-            .into_number(&self.runtime.source_code)?;
+        let number = self.lexer.take_token(Token::Number)?.into_number()?;
         self.lexer.take_token(Token::CloseParenthesis)?;
 
         Ok(number)
@@ -266,17 +263,11 @@ impl ModifierParser<'_, '_> {
     fn two_numbers_in_parens(&mut self) -> ParseResult<(isize, isize)> {
         self.lexer.take_token(Token::OpenParenthesis)?;
 
-        let a = self
-            .lexer
-            .take_token(Token::Number)?
-            .into_number(&self.runtime.source_code)?;
+        let a = self.lexer.take_token(Token::Number)?.into_number()?;
 
         self.lexer.take_token(Token::Comma)?;
 
-        let b = self
-            .lexer
-            .take_token(Token::Number)?
-            .into_number(&self.runtime.source_code)?;
+        let b = self.lexer.take_token(Token::Number)?.into_number()?;
 
         self.lexer.take_token(Token::CloseParenthesis)?;
 
@@ -295,11 +286,15 @@ impl ModifierParser<'_, '_> {
 mod tests {
     use super::super::*;
     use crate::test_utils::*;
-    use crate::*;
 
     fn test_parse(input: &str) -> ParsedCell {
-        let runtime: Runtime = TestFile::new("xlsx", input).into();
-        ModifierParser::parse(input, Address::new(0, 0), &RowModifier::default(), &runtime).unwrap()
+        ModifierParser::parse(
+            input,
+            Address::new(0, 0),
+            &RowModifier::default(),
+            std::sync::Arc::new(build_source_code()),
+        )
+        .unwrap()
     }
 
     #[test]
@@ -391,21 +386,14 @@ mod tests {
 
     #[test]
     fn parse_data_validate_invalid() {
-        let runtime: Runtime = TestFile::new("xlsx", "foo").into();
         let res = ModifierParser::parse(
             "[[validate=foo_bar(12/1/23)]]abc123",
             Address::new(0, 0),
             &RowModifier::default(),
-            &runtime,
+            std::sync::Arc::new(build_source_code()),
         );
         assert!(res.is_err());
     }
-    /*
-            "number_less_than_or_equal_to" => self.data_validate_number_less_than_or_equal_to(),
-            "number_less_than" => self.data_validate_number_less_than(),
-            "number_not_between" => self.data_validate_number_not_between(),
-            "number_not_equal_to" => self.data_validate_number_not_equal_to(),
-    */
 
     #[test]
     fn parse_data_validate_number_between() {

@@ -18,7 +18,8 @@
 use super::ast_lexer::{AstLexer, Token, TokenMatch};
 use super::ast_parser::AstParser;
 use crate::ast::{Ast, Functions, Node, VariableValue, Variables};
-use crate::{Error, Result, Runtime};
+use crate::error::{BadInput, Error};
+use crate::{Result, Runtime};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -150,15 +151,15 @@ impl<'a> CodeSectionParser<'a> {
     fn parse_expr(&'a self) -> Result<Ast> {
         // create an `AstParser` with a reference to our lexer so it can continue consuming the
         // same stream of tokens
-        AstParser::new(&self.lexer, self.runtime)
+        AstParser::new(&self.lexer)
             .expr_bp(true, 0)
             .map_err(|e| self.runtime.source_code.code_syntax_error(e))
     }
 
-    fn token_match_to_error(&'a self, token: TokenMatch, message: &str) -> Error {
+    fn token_match_to_error(&'a self, token: TokenMatch<'a>, message: &'a str) -> Error {
         self.runtime
             .source_code
-            .code_syntax_error(self.runtime.source_code.parse_error(token, message))
+            .code_syntax_error(token.into_parse_error(message))
     }
 }
 

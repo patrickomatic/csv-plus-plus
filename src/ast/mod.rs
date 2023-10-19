@@ -12,7 +12,6 @@ pub use node::{Node, VariableValue};
 mod display;
 mod eval;
 mod from;
-mod from_token_match;
 
 /// functionality related to ASTs
 mod builtin_function;

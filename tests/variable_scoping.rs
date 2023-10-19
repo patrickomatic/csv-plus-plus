@@ -4,6 +4,7 @@ mod common;
 #[test]
 fn cell_variable_in_expand() {
     let s = common::Setup::new(
+        "cell_variable_in_expand",
         "csv",
         r#"
 bar := test + 1
@@ -29,6 +30,7 @@ Foo,Bar,Baz,=SUM(test)
 #[test]
 fn row_variable_in_expand() {
     let s = common::Setup::new(
+        "row_variable_in_expand",
         "csv",
         r#"
 ---

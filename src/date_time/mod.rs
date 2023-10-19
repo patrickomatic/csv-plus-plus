@@ -4,7 +4,6 @@
 //! it's important that we handle timezones and parsing uniformly across the app.
 use crate::error::{BadInput, ParseResult};
 use crate::parser::TokenInput;
-use crate::SourceCode;
 use serde::{Deserialize, Serialize};
 
 mod display;
@@ -43,10 +42,8 @@ const DATE: &[&str] = &["%y-%m-%d", "%m/%d/%y", "%Y-%m-%d", "%m/%d/%Y"];
 const TIME: &[&str] = &["%H:%M:%S.%Z", "%H:%M:%S", "%H:%M"];
 
 impl DateTime {
-    pub(crate) fn from_token_input(
-        input: impl BadInput + TokenInput,
-        source_code: &SourceCode,
-    ) -> ParseResult<Self> {
+    // TODO: use TryFrom impl instead
+    pub(crate) fn from_token_input(input: impl BadInput + TokenInput) -> ParseResult<Self> {
         for format in DATE_TIME_WITH_TZ {
             if let Ok(d) = chrono::DateTime::parse_from_str(input.input(), format) {
                 return Ok(Self::DateAndTime(d));
@@ -74,7 +71,7 @@ impl DateTime {
             }
         }
 
-        Err(source_code.parse_error(input, "Unable to parse date"))
+        Err(input.into_parse_error("Unable to parse date"))
     }
 }
 
@@ -83,29 +80,33 @@ mod tests {
     use super::*;
     use crate::parser::ast_lexer;
     use crate::test_utils::*;
+    use crate::*;
 
-    fn build_input(s: &str) -> ast_lexer::TokenMatch {
-        build_ast_token_match(s)
+    fn build_input<'a>(s: &'a str, source_code: &'a SourceCode) -> ast_lexer::TokenMatch<'a> {
+        build_ast_token_match(s, source_code)
     }
 
     #[test]
     fn date() {
+        let source_code = build_source_code();
+
         assert_eq!(
-            DateTime::from_token_input(build_input("10/22/2012"), &build_source_code()).unwrap(),
+            DateTime::from_token_input(build_input("10/22/2012", &source_code)).unwrap(),
             DateTime::Date(chrono::NaiveDate::from_ymd_opt(2012, 10, 22).unwrap()),
         );
 
         assert_eq!(
-            DateTime::from_token_input(build_input("2012-10-22"), &build_source_code()).unwrap(),
+            DateTime::from_token_input(build_input("2012-10-22", &source_code)).unwrap(),
             DateTime::Date(chrono::NaiveDate::from_ymd_opt(2012, 10, 22).unwrap()),
         );
     }
 
     #[test]
     fn date_and_time() {
+        let source_code = build_source_code();
+
         assert_eq!(
-            DateTime::from_token_input(build_input("10/22/2012 1:00"), &build_source_code())
-                .unwrap(),
+            DateTime::from_token_input(build_input("10/22/2012 1:00", &source_code)).unwrap(),
             DateTime::DateAndTime(
                 chrono::NaiveDate::from_ymd_opt(2012, 10, 22)
                     .unwrap()
@@ -121,9 +122,10 @@ mod tests {
     #[ignore]
     #[test]
     fn date_and_time_and_timezone() {
+        let source_code = build_source_code();
+
         assert_eq!(
-            DateTime::from_token_input(build_input("10/22/2012 1:00 0800"), &build_source_code())
-                .unwrap(),
+            DateTime::from_token_input(build_input("10/22/2012 1:00 0800", &source_code)).unwrap(),
             DateTime::DateAndTime(
                 chrono::NaiveDate::from_ymd_opt(2012, 10, 22)
                     .unwrap()
@@ -137,8 +139,10 @@ mod tests {
 
     #[test]
     fn time() {
+        let source_code = build_source_code();
+
         assert_eq!(
-            DateTime::from_token_input(build_input("1:00"), &build_source_code()).unwrap(),
+            DateTime::from_token_input(build_input("1:00", &source_code)).unwrap(),
             DateTime::Time(chrono::NaiveTime::from_hms_opt(1, 0, 0).unwrap()),
         );
     }

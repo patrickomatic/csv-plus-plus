@@ -74,6 +74,7 @@ impl TokenLibrary {
 mod tests {
     use super::super::*;
     use super::*;
+    use crate::test_utils::*;
 
     fn token_library() -> TokenLibrary {
         TokenLibrary::build().unwrap()
@@ -156,6 +157,7 @@ mod tests {
             str_match: ",",
             line_number: 22,
             line_offset: 3,
+            source_code: &build_source_code(),
         };
 
         assert_eq!("`,`", token_match.to_string());

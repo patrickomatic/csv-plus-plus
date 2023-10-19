@@ -32,8 +32,6 @@ pub use spreadsheet::Spreadsheet;
 pub use target::CompilationTarget;
 pub use template::Template;
 
-pub(crate) use error::ParseResult;
-
 // test_utils should only be included in tests, never referenced by release code (or built into the
 // release)
 #[cfg(test)]

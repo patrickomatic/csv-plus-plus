@@ -12,7 +12,9 @@
 //     lowercase the stuff outside the modifier definition
 //
 // * make the `take_date` parser more strict
-use crate::{CharOffset, ParseError, ParseResult, Runtime};
+use crate::error::{BadInput, ParseError, ParseResult};
+use crate::{CharOffset, SourceCode};
+use std::sync;
 
 mod token;
 mod token_match;
@@ -27,26 +29,26 @@ pub(crate) struct ModifierLexer<'a> {
     cell_offset: CharOffset,
     input: &'a str,
     position: a1_notation::Address,
-    runtime: &'a Runtime,
+    source_code: sync::Arc<SourceCode>,
 }
 
 impl<'a> ModifierLexer<'a> {
     pub(super) fn new(
         input: &'a str,
         position: a1_notation::Address,
-        runtime: &'a Runtime,
+        source_code: sync::Arc<SourceCode>,
     ) -> Self {
         Self {
             cell_offset: 0,
             input,
             position,
-            runtime,
+            source_code,
         }
     }
 
     /// The rest of the input that has not been consumed
     pub(super) fn rest(&self) -> String {
-        self.input.trim().to_owned()
+        self.input.trim().to_string()
     }
 
     pub(super) fn maybe_take_start_modifier(&mut self) -> Option<TokenMatch> {
@@ -127,22 +129,20 @@ impl<'a> ModifierLexer<'a> {
         TokenMatch {
             token,
             str_match: str_match.to_string(),
-            line_number: self.runtime.source_code.csv_line_number(self.position),
-            line_offset: self.runtime.source_code.line_offset_for_cell(self.position)
-                + self.cell_offset,
+            position: self.position,
+            cell_offset: self.cell_offset,
+            source_code: self.source_code.clone(),
         }
     }
 
     fn unknown_string(&self, message: &str) -> ParseError {
-        self.runtime.source_code.parse_error(
-            UnknownToken {
-                bad_input: self.input.to_string(),
-                line_number: self.runtime.source_code.csv_line_number(self.position),
-                line_offset: self.runtime.source_code.line_offset_for_cell(self.position)
-                    + self.cell_offset,
-            },
-            message,
-        )
+        UnknownToken {
+            bad_input: self.input.to_string(),
+            position: self.position,
+            cell_offset: self.cell_offset,
+            source_code: self.source_code.clone(),
+        }
+        .into_parse_error(message)
     }
 
     fn maybe_take(&mut self, token: Token, substring: &str) -> Option<TokenMatch> {
@@ -301,16 +301,19 @@ impl<'a> ModifierLexer<'a> {
 mod tests {
     use super::*;
     use crate::test_utils::*;
-    use crate::*;
 
-    fn test_lexer<'a>(lexer_input: &'a str, runtime: &'a Runtime) -> ModifierLexer<'a> {
-        ModifierLexer::new(lexer_input, a1_notation::Address::new(0, 0), runtime)
+    fn test_lexer(lexer_input: &str) -> ModifierLexer<'_> {
+        let source_code = build_source_code();
+        ModifierLexer::new(
+            lexer_input,
+            a1_notation::Address::new(0, 0),
+            std::sync::Arc::new(source_code),
+        )
     }
 
     #[test]
     fn maybe_take_start_modifier_modifier() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("[[", &runtime);
+        let mut lexer = test_lexer("[[");
 
         assert_eq!(
             Token::StartCellModifier,
@@ -320,8 +323,7 @@ mod tests {
 
     #[test]
     fn maybe_take_start_modifier_row_modifier() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("![[", &runtime);
+        let mut lexer = test_lexer("![[");
 
         assert_eq!(
             Token::StartRowModifier,
@@ -331,16 +333,14 @@ mod tests {
 
     #[test]
     fn maybe_take_start_modifier_none() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("foo", &runtime);
+        let mut lexer = test_lexer("foo");
 
-        assert_eq!(None, lexer.maybe_take_start_modifier());
+        assert!(lexer.maybe_take_start_modifier().is_none());
     }
 
     #[test]
     fn take_modifier_right_side() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("=foo_bar", &runtime);
+        let mut lexer = test_lexer("=foo_bar");
 
         assert_eq!(
             "foo_bar",
@@ -350,56 +350,49 @@ mod tests {
 
     #[test]
     fn take_modifier_right_side_invalid() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("foo", &runtime);
+        let mut lexer = test_lexer("foo");
 
         assert!(lexer.take_modifier_right_side().is_err());
     }
 
     #[test]
     fn maybe_take_equals() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("=", &runtime);
+        let mut lexer = test_lexer("=");
 
         assert!(lexer.maybe_take_equals().is_some());
     }
 
     #[test]
     fn maybe_take_slash() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("/", &runtime);
+        let mut lexer = test_lexer("/");
 
         assert!(lexer.maybe_take_slash().is_some());
     }
 
     #[test]
     fn take_token_color() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("#ABC123", &runtime);
+        let mut lexer = test_lexer("#ABC123");
 
         assert_eq!("#ABC123", lexer.take_token(Token::Color).unwrap().str_match);
     }
 
     #[test]
     fn take_token_color_shorthand() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("#ABC", &runtime);
+        let mut lexer = test_lexer("#ABC");
 
         assert_eq!("#ABC", lexer.take_token(Token::Color).unwrap().str_match);
     }
 
     #[test]
     fn take_token_color_no_hash() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("ABC123", &runtime);
+        let mut lexer = test_lexer("ABC123");
 
         assert_eq!("ABC123", lexer.take_token(Token::Color).unwrap().str_match);
     }
 
     #[test]
     fn take_token_end_modifier() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("]]", &runtime);
+        let mut lexer = test_lexer("]]");
 
         assert_eq!(
             "]]",
@@ -409,16 +402,14 @@ mod tests {
 
     #[test]
     fn take_token_equals() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer(" = ", &runtime);
+        let mut lexer = test_lexer(" = ");
 
         assert_eq!("=", lexer.take_token(Token::Equals).unwrap().str_match);
     }
 
     #[test]
     fn take_token_modifier_name() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("foo", &runtime);
+        let mut lexer = test_lexer("foo");
 
         assert_eq!(
             "foo",
@@ -428,8 +419,7 @@ mod tests {
 
     #[test]
     fn take_token_positive_number() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("15", &runtime);
+        let mut lexer = test_lexer("15");
 
         assert_eq!(
             "15",
@@ -439,16 +429,14 @@ mod tests {
 
     #[test]
     fn take_token_string() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("string", &runtime);
+        let mut lexer = test_lexer("string");
 
         assert_eq!("string", lexer.take_token(Token::String).unwrap().str_match);
     }
 
     #[test]
     fn take_token_string_double_quoted() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("'this is \\' a quoted string\\''", &runtime);
+        let mut lexer = test_lexer("'this is \\' a quoted string\\''");
 
         assert_eq!(
             "this is ' a quoted string'",
@@ -460,24 +448,21 @@ mod tests {
 
     #[test]
     fn take_token_slash() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer(" / ", &runtime);
+        let mut lexer = test_lexer(" / ");
 
         assert_eq!("/", lexer.take_token(Token::Slash).unwrap().str_match);
     }
 
     #[test]
     fn take_token_invalid() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("foo", &runtime);
+        let mut lexer = test_lexer("foo");
 
         assert!(lexer.take_token(Token::PositiveNumber).is_err());
     }
 
     #[test]
     fn rest() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer(" / = rest", &runtime);
+        let mut lexer = test_lexer(" / = rest");
 
         lexer.take_token(Token::Slash).unwrap();
         lexer.take_token(Token::Equals).unwrap();

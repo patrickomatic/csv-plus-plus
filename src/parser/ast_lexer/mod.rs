@@ -1,7 +1,7 @@
 //! # AstLexer
 //!
 use crate::error::ParseResult;
-use crate::{CharOffset, LineNumber, Runtime};
+use crate::{CharOffset, LineNumber, Runtime, SourceCode};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -21,6 +21,7 @@ pub(crate) struct AstLexer<'a> {
     tokens: Rc<RefCell<Vec<TokenMatch<'a>>>>,
     lines: LineNumber,
     eof_position: CharOffset,
+    source_code: &'a SourceCode,
 }
 
 fn whitespace_start(input: &str) -> usize {
@@ -57,6 +58,7 @@ impl<'a> AstLexer<'a> {
                             str_match: str_match.trim(),
                             line_number,
                             line_offset: position + whitespace_start(str_match),
+                            source_code: &runtime.source_code,
                         });
                     }
 
@@ -81,14 +83,13 @@ impl<'a> AstLexer<'a> {
 
             if !matched {
                 // we did a round of all the tokens and didn't match any of them - invalid syntax
-                return Err(runtime.source_code.parse_error(
-                    UnknownToken {
-                        bad_input: p.to_string(),
-                        line_number,
-                        line_offset: position,
-                    },
-                    "Error parsing input - invalid token",
-                ));
+                return Err(UnknownToken {
+                    bad_input: p.to_string(),
+                    line_number,
+                    line_offset: position,
+                    source_code: &runtime.source_code,
+                }
+                .into());
             }
         }
 
@@ -98,6 +99,7 @@ impl<'a> AstLexer<'a> {
             tokens: Rc::new(RefCell::new(tokens)),
             eof_position: position,
             lines: line_number,
+            source_code: &runtime.source_code,
         })
     }
 
@@ -120,6 +122,7 @@ impl<'a> AstLexer<'a> {
             str_match: "",
             line_number: self.lines,
             line_offset: self.eof_position,
+            source_code: self.source_code,
         }
     }
 }
@@ -129,22 +132,16 @@ mod tests {
     use super::*;
     use crate::test_utils::*;
 
-    fn build_runtime() -> Runtime {
-        TestFile::new("csv", "foo,bar").into()
-    }
-
-    fn build_token_match(
-        token: Token,
-        str_match: &str,
-        line_number: LineNumber,
-        line_offset: CharOffset,
-    ) -> TokenMatch {
-        TokenMatch {
-            token,
-            str_match,
-            line_number,
-            line_offset,
-        }
+    macro_rules! assert_token_match_eq {
+        ($lexer:ident, $token:path, $str_match:expr, $line_number:expr, $line_offset:expr) => {{
+            {
+                let _tok = $lexer.next();
+                assert_eq!(_tok.token, $token);
+                assert_eq!(_tok.str_match, $str_match);
+                assert_eq!(_tok.line_number, $line_number);
+                assert_eq!(_tok.line_offset, $line_offset);
+            }
+        }};
     }
 
     #[test]
@@ -152,43 +149,22 @@ mod tests {
         let runtime = build_runtime();
         let lexer = AstLexer::new("foo bar,\"a\",123 \n(d, b) + * 0.25", &runtime).unwrap();
 
-        assert_eq!(
-            lexer.next(),
-            build_token_match(Token::Reference, "foo", 0, 0)
-        );
-        assert_eq!(
-            lexer.next(),
-            build_token_match(Token::Reference, "bar", 0, 4)
-        );
-        assert_eq!(lexer.next(), build_token_match(Token::Comma, ",", 0, 7));
-        assert_eq!(
-            lexer.next(),
-            build_token_match(Token::DoubleQuotedString, "\"a\"", 0, 8)
-        );
-        assert_eq!(lexer.next(), build_token_match(Token::Comma, ",", 0, 11));
-        assert_eq!(
-            lexer.next(),
-            build_token_match(Token::Integer, "123", 0, 12)
-        );
-        assert_eq!(lexer.next(), build_token_match(Token::OpenParen, "(", 1, 0));
-        assert_eq!(lexer.next(), build_token_match(Token::Reference, "d", 1, 1));
-        assert_eq!(lexer.next(), build_token_match(Token::Comma, ",", 1, 2));
-        assert_eq!(lexer.next(), build_token_match(Token::Reference, "b", 1, 4));
-        assert_eq!(
-            lexer.next(),
-            build_token_match(Token::CloseParen, ")", 1, 5)
-        );
-        assert_eq!(
-            lexer.next(),
-            build_token_match(Token::InfixOperator, "+", 1, 7)
-        );
-        assert_eq!(
-            lexer.next(),
-            build_token_match(Token::InfixOperator, "*", 1, 9)
-        );
-        assert_eq!(lexer.next(), build_token_match(Token::Float, "0.25", 1, 11));
-        assert_eq!(lexer.next(), build_token_match(Token::Eof, "", 1, 15));
-        assert_eq!(lexer.next(), build_token_match(Token::Eof, "", 1, 15));
+        assert_token_match_eq!(lexer, Token::Reference, "foo", 0, 0);
+        assert_token_match_eq!(lexer, Token::Reference, "bar", 0, 4);
+        assert_token_match_eq!(lexer, Token::Comma, ",", 0, 7);
+        assert_token_match_eq!(lexer, Token::DoubleQuotedString, "\"a\"", 0, 8);
+        assert_token_match_eq!(lexer, Token::Comma, ",", 0, 11);
+        assert_token_match_eq!(lexer, Token::Integer, "123", 0, 12);
+        assert_token_match_eq!(lexer, Token::OpenParen, "(", 1, 0);
+        assert_token_match_eq!(lexer, Token::Reference, "d", 1, 1);
+        assert_token_match_eq!(lexer, Token::Comma, ",", 1, 2);
+        assert_token_match_eq!(lexer, Token::Reference, "b", 1, 4);
+        assert_token_match_eq!(lexer, Token::CloseParen, ")", 1, 5);
+        assert_token_match_eq!(lexer, Token::InfixOperator, "+", 1, 7);
+        assert_token_match_eq!(lexer, Token::InfixOperator, "*", 1, 9);
+        assert_token_match_eq!(lexer, Token::Float, "0.25", 1, 11);
+        assert_token_match_eq!(lexer, Token::Eof, "", 1, 15);
+        assert_token_match_eq!(lexer, Token::Eof, "", 1, 15);
     }
 
     #[test]
@@ -196,11 +172,8 @@ mod tests {
         let runtime = build_runtime();
         let lexer = AstLexer::new("# this is a comment\na_ref\n", &runtime).unwrap();
 
-        assert_eq!(
-            lexer.next(),
-            build_token_match(Token::Reference, "a_ref", 1, 0)
-        );
-        assert_eq!(lexer.next(), build_token_match(Token::Eof, "", 1, 5));
+        assert_token_match_eq!(lexer, Token::Reference, "a_ref", 1, 0);
+        assert_token_match_eq!(lexer, Token::Eof, "", 1, 5);
     }
 
     #[test]
@@ -208,14 +181,8 @@ mod tests {
         let runtime = build_runtime();
         let lexer = AstLexer::new("\n foo \n bar", &runtime).unwrap();
 
-        assert_eq!(
-            lexer.next(),
-            build_token_match(Token::Reference, "foo", 1, 1)
-        );
-        assert_eq!(
-            lexer.next(),
-            build_token_match(Token::Reference, "bar", 2, 1)
-        );
+        assert_token_match_eq!(lexer, Token::Reference, "foo", 1, 1);
+        assert_token_match_eq!(lexer, Token::Reference, "bar", 2, 1);
     }
 
     #[test]
@@ -223,17 +190,11 @@ mod tests {
         let runtime = build_runtime();
         let lexer = AstLexer::new("foo (bar) + baz", &runtime).unwrap();
 
-        assert_eq!(
-            lexer.peek(),
-            build_token_match(Token::Reference, "foo", 0, 0)
-        );
-        assert_eq!(
-            lexer.peek(),
-            build_token_match(Token::Reference, "foo", 0, 0)
-        );
-        assert_eq!(
-            lexer.peek(),
-            build_token_match(Token::Reference, "foo", 0, 0)
-        );
+        assert_eq!(lexer.peek().token, Token::Reference);
+        assert_eq!(lexer.peek().str_match, "foo");
+        assert_eq!(lexer.peek().token, Token::Reference);
+        assert_eq!(lexer.peek().str_match, "foo");
+        assert_eq!(lexer.peek().token, Token::Reference);
+        assert_eq!(lexer.peek().str_match, "foo");
     }
 }

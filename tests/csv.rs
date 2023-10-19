@@ -6,6 +6,7 @@ mod common;
 #[test]
 fn write_no_code_section() {
     let s = common::Setup::new(
+        "write_no_code_section",
         "csv",
         r#"
 ---
@@ -22,6 +23,7 @@ foo,bar,baz
 #[test]
 fn write_variable() {
     let s = common::Setup::new(
+        "write_variable",
         "csv",
         r#"
 foo := 1
@@ -43,6 +45,7 @@ foo,bar,baz,=foo
 #[test]
 fn write_expand() {
     let s = common::Setup::new(
+        "write_expand",
         "csv",
         r#"
 commission_charge := 0.65 # the broker charges $0.65 a contract/share
@@ -72,6 +75,7 @@ profit := (celladjacent(B) * celladjacent(C)) - fees
 #[test]
 fn odd_row_widths() {
     let s = common::Setup::new(
+        "odd_row_widths",
         "csv",
         r#"
 var1 := 42

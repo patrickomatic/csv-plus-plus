@@ -1,24 +1,28 @@
 //! # TokenMatch
 //!
 use super::Token;
-use crate::error::{BadInput, ParseResult};
+use crate::error::{BadInput, ParseError, ParseResult};
 use crate::parser::TokenInput;
 use crate::{CharOffset, LineNumber, SourceCode};
 use std::fmt;
+use std::sync;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub(crate) struct TokenMatch {
     pub(crate) token: Token,
+    // TODO: turn into a &'a str
     pub(crate) str_match: String,
-    pub(crate) line_offset: CharOffset,
-    pub(crate) line_number: LineNumber,
+    pub(crate) position: a1_notation::Address,
+    pub(crate) cell_offset: CharOffset,
+    pub(crate) source_code: sync::Arc<SourceCode>,
 }
 
 impl TokenMatch {
-    pub(crate) fn into_number(self, source_code: &SourceCode) -> ParseResult<isize> {
+    // TODO: make an actual Into impl
+    pub(crate) fn into_number(self) -> ParseResult<isize> {
         self.str_match
             .parse::<isize>()
-            .map_err(|e| source_code.parse_error(self, &format!("Unable to parse date: {e}")))
+            .map_err(|e| self.into_parse_error(&format!("Unable to parse date: {e}")))
     }
 }
 
@@ -29,12 +33,17 @@ impl fmt::Display for TokenMatch {
 }
 
 impl BadInput for TokenMatch {
+    fn into_parse_error(self, message: &str) -> ParseError {
+        let source_code = self.source_code.clone();
+        source_code.parse_error(self, message)
+    }
+
     fn line_number(&self) -> LineNumber {
-        self.line_number
+        self.source_code.csv_line_number(self.position)
     }
 
     fn line_offset(&self) -> CharOffset {
-        self.line_offset
+        self.source_code.line_offset_for_cell(self.position) + self.cell_offset
     }
 }
 

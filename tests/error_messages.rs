@@ -1,10 +1,10 @@
 use csvpp::Template;
-use std::path;
 mod common;
 
 #[test]
 fn syntax_error_in_code_section() {
-    let mut s = common::Setup::new(
+    let s = common::Setup::new(
+        "syntax_error_in_code_section",
         "csv",
         r#"
 ## Welcome to the all_features.csvpp test. this is a comment
@@ -14,8 +14,6 @@ fn foo_fn<a, b, c> a + b * c
 foo,bar
 "#,
     );
-    s.runtime.source_code.filename =
-        path::Path::new("integration_test_syntax_error_in_code_section.csvpp").to_path_buf();
     let template = Template::compile(&s.runtime);
 
     assert_eq!(
@@ -37,15 +35,14 @@ On line 3:9, Expected `(` but saw `<`
 
 #[test]
 fn syntax_error_in_modifier_definition() {
-    let mut s = common::Setup::new(
+    let s = common::Setup::new(
+        "syntax_error_in_modifier_definition",
         "csv",
         r#"
 ---
 foo,bar,[[format=bold ,foo
 "#,
     );
-    s.runtime.source_code.filename =
-        path::Path::new("integration_test_syntax_error_in_modifier_definition.csvpp").to_path_buf();
     let template = Template::compile(&s.runtime);
 
     assert_eq!(
@@ -64,22 +61,20 @@ On line 2:21, Error parsing input, expected ']]' but saw unrecognized token ``
 
 #[test]
 fn bad_choice_in_modifier_with_possibilities() {
-    let mut s = common::Setup::new(
+    let s = common::Setup::new(
+        "bad_choice_in_modifier_with_possibilities",
         "csv",
         r#"
 ---
 foo,bar,[[b=foo]],foo
 "#,
     );
-    s.runtime.source_code.filename =
-        path::Path::new("integration_test_bad_choice_in_modifier_with_possibilities.csvpp")
-            .to_path_buf();
     let template = Template::compile(&s.runtime);
 
     assert_eq!(
         template.unwrap_err().to_string(),
         "Invalid modifier definition in cell C1 (2, 0) of integration_test_bad_choice_in_modifier_with_possibilities.csvpp
-On line 2:15, expected a valid value when parsing `border` modifier but saw `foo`
+On line 2:15, received invalid value when parsing `border` modifier but saw `foo`
 Possible values: all (a) | top (t) | bottom (b) | left (l) | right (r)
 
  1: 

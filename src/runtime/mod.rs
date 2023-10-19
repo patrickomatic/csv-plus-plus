@@ -4,6 +4,7 @@ use crate::ast::{BuiltinFunctions, BuiltinVariables};
 use crate::parser::ast_lexer::TokenLibrary;
 use crate::{CliArgs, CompilationTarget, Options, Output, Result, SourceCode};
 use clap::Parser;
+use std::sync;
 
 mod display;
 mod try_from;
@@ -14,7 +15,7 @@ pub struct Runtime {
     pub(crate) builtin_variables: BuiltinVariables,
     pub options: Options,
     pub output: Output,
-    pub source_code: SourceCode,
+    pub source_code: sync::Arc<SourceCode>,
     pub(crate) token_library: TokenLibrary,
 }
 

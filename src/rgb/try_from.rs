@@ -1,8 +1,11 @@
 use super::Rgb;
-use crate::error::{RgbParseError, RgbParseResult};
+use crate::error::{BadInput, ParseError, ParseResult};
 use crate::parser::modifier_lexer::TokenMatch;
 
-fn string_to_hex(token_match: &TokenMatch, hex_code: &str, double_it: bool) -> RgbParseResult<u8> {
+fn string_to_hex(
+    hex_code: &str,
+    double_it: bool,
+) -> std::result::Result<u8, std::num::ParseIntError> {
     let hex_string = if double_it {
         hex_code.repeat(2)
     } else {
@@ -10,33 +13,38 @@ fn string_to_hex(token_match: &TokenMatch, hex_code: &str, double_it: bool) -> R
     };
 
     u8::from_str_radix(&hex_string, 16)
-        .map_err(|e| RgbParseError::new(token_match.clone(), &format!("Invalid hex: {e})")))
+}
+
+fn parse_str(str_match: &str) -> std::result::Result<(u8, u8, u8), std::num::ParseIntError> {
+    if str_match.len() == 6 {
+        Ok((
+            string_to_hex(&str_match[..2], false)?,
+            string_to_hex(&str_match[2..4], false)?,
+            string_to_hex(&str_match[4..6], false)?,
+        ))
+    } else {
+        Ok((
+            string_to_hex(&str_match[..1], true)?,
+            string_to_hex(&str_match[1..2], true)?,
+            string_to_hex(&str_match[2..3], true)?,
+        ))
+    }
 }
 
 impl TryFrom<TokenMatch> for Rgb {
-    type Error = RgbParseError;
+    type Error = ParseError;
 
-    fn try_from(input: TokenMatch) -> RgbParseResult<Self> {
+    fn try_from(input: TokenMatch) -> ParseResult<Self> {
         let str_match = input.str_match.clone();
         let start_at = if str_match.starts_with('#') { 1 } else { 0 };
         let input_len = str_match.len() - start_at;
 
-        if input_len == 6 {
-            Ok(Rgb::new(
-                string_to_hex(&input, &str_match[start_at..start_at + 2], false)?,
-                string_to_hex(&input, &str_match[start_at + 2..start_at + 4], false)?,
-                string_to_hex(&input, &str_match[start_at + 4..start_at + 6], false)?,
-            ))
-        } else if input_len == 3 {
-            Ok(Rgb::new(
-                string_to_hex(&input, &str_match[start_at..start_at + 1], true)?,
-                string_to_hex(&input, &str_match[start_at + 1..start_at + 2], true)?,
-                string_to_hex(&input, &str_match[start_at + 2..start_at + 3], true)?,
-            ))
+        if input_len == 3 || input_len == 6 {
+            let (r, g, b) = parse_str(&str_match[start_at..])
+                .map_err(|e| input.into_parse_error(&format!("Error parsing hex string: {e}")))?;
+            Ok(Rgb::new(r, g, b))
         } else {
-            // return Err(ParseError::rgb_syntax_error(input, &format!("\"{input}\" must be a 3 or 6-character RGB string, optionally prefixed with '#'")));
-            Err(RgbParseError::new(
-                input,
+            Err(input.into_parse_error(
                 "must be a 3 or 6-character RGB string, optionally prefixed with '#'",
             ))
         }

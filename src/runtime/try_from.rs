@@ -2,6 +2,7 @@ use crate::ast::{BuiltinFunction, BuiltinVariable};
 use crate::parser::ast_lexer::TokenLibrary;
 use crate::parser::ast_parser::AstParser;
 use crate::{CliArgs, Options, Output, Runtime, SourceCode};
+use std::sync;
 
 impl TryFrom<&CliArgs> for Runtime {
     type Error = crate::Error;
@@ -14,7 +15,7 @@ impl TryFrom<&CliArgs> for Runtime {
             builtin_variables: BuiltinVariable::all(),
             options: Options::try_from(cli_args)?,
             output: Output::try_from(cli_args)?,
-            source_code,
+            source_code: sync::Arc::new(source_code),
             token_library: TokenLibrary::build()?,
         };
 

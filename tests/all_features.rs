@@ -144,7 +144,7 @@ const ALL_FEATURES_SHORTHAND: &str = "
 
 #[test]
 fn all_features_csv() {
-    let s = common::Setup::new("csv", ALL_FEATURES);
+    let s = common::Setup::new("all_features_csv", "csv", ALL_FEATURES);
     let template = Template::compile(&s.runtime).unwrap();
     let target = s.runtime.target().unwrap();
 
@@ -153,7 +153,11 @@ fn all_features_csv() {
 
 #[test]
 fn all_features_shorthand_csv_no_code_section() {
-    let s = common::Setup::new("csv", ALL_FEATURES_SHORTHAND);
+    let s = common::Setup::new(
+        "all_features_shorthand_csv_no_code_section",
+        "csv",
+        ALL_FEATURES_SHORTHAND,
+    );
     let template = Template::compile(&s.runtime).unwrap();
     let target = s.runtime.target().unwrap();
 
@@ -162,7 +166,7 @@ fn all_features_shorthand_csv_no_code_section() {
 
 #[test]
 fn all_features_excel() {
-    let s = common::Setup::new("xlsx", ALL_FEATURES);
+    let s = common::Setup::new("all_features_excel", "xlsx", ALL_FEATURES);
     let template = Template::compile(&s.runtime).unwrap();
     let target = s.runtime.target().unwrap();
 
