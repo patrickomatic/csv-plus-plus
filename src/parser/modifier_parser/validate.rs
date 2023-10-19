@@ -15,9 +15,8 @@ macro_rules! data_validate_args {
     }};
 }
 
-// XXX rename to just validate.rs and the function too
 impl ModifierParser<'_, '_> {
-    pub(super) fn data_validate(&mut self) -> ParseResult<()> {
+    pub(super) fn validate(&mut self) -> ParseResult<()> {
         let name = self.lexer.take_modifier_right_side()?;
 
         match name.str_match.to_lowercase().as_str() {

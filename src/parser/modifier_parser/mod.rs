@@ -11,7 +11,7 @@ use crate::{Expand, Rgb, SourceCode};
 use a1_notation::{Address, Row};
 use std::sync;
 
-mod data_validate;
+mod validate;
 
 pub(crate) struct ModifierParser<'a, 'b: 'a> {
     /// We re-use the lexer in some contexts so take a reference to an existing one (with it's own
@@ -231,7 +231,7 @@ where
             "bc" | "bordercolor" => self.border_color_modifier(),
             "bs" | "borderstyle" => self.border_style_modifier(),
             "c" | "color" => self.color_modifier(),
-            "dv" | "validate" => self.data_validate(),
+            "dv" | "validate" => self.validate(),
             "e" | "expand" => self.expand_modifier(modifier_name, row),
             "f" | "format" => self.format_modifier(),
             "fc" | "fontcolor" => self.font_color_modifier(),
