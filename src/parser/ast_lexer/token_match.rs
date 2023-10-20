@@ -58,7 +58,7 @@ impl TryFrom<TokenMatch<'_>> for Ast {
                 }
             }
 
-            Token::DateTime => Ok(Box::new(Node::DateTime(DateTime::from_token_input(tm)?))),
+            Token::DateTime => Ok(Box::new(Node::DateTime(DateTime::try_from(tm)?))),
 
             Token::Float => Ok(Box::new(
                 tm.str_match

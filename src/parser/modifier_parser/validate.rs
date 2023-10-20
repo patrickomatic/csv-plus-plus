@@ -7,7 +7,7 @@ macro_rules! data_validate_args {
     ($self:ident, $From:ident, $tok:path $(, $toks:path)*) => {{
         $self.lexer.take_token(Token::OpenParenthesis)?;
 
-        let _parsed = $From::from_token_input($self.lexer.take_token($tok)?)?;
+        let _parsed = $From::try_from($self.lexer.take_token($tok)?)?;
 
         $self.lexer.take_token(Token::CloseParenthesis)?;
 
@@ -20,32 +20,34 @@ impl ModifierParser<'_, '_> {
         let name = self.lexer.take_modifier_right_side()?;
 
         match name.str_match.to_lowercase().as_str() {
-            "custom" => self.data_validate_custom(),
-            "date_after" => self.data_validate_date_after(),
-            "date_before" => self.data_validate_date_before(),
-            "date_between" => self.data_validate_date_between(),
-            "date_equal_to" => self.data_validate_date_equal_to(),
-            "date_is_valid" => self.data_validate_date_is_valid(),
-            "date_not_between" => self.data_validate_date_not_between(),
-            "date_on_or_after" => self.data_validate_date_on_or_after(),
-            "date_on_or_before" => self.data_validate_date_on_or_before(),
-            "number_between" => self.data_validate_number_between(),
-            "number_equal_to" => self.data_validate_number_equal_to(),
-            "number_greater_than" => self.data_validate_number_greater_than(),
-            "number_greater_than_or_equal_to" => {
+            "c" | "custom" => self.data_validate_custom(),
+            "date_gt" | "date_after" => self.data_validate_date_after(),
+            "date_lt" | "date_before" => self.data_validate_date_before(),
+            "date_btwn" | "date_between" => self.data_validate_date_between(),
+            "date_eq" | "date_equal_to" => self.data_validate_date_equal_to(),
+            "is_date" | "date_is_valid" => self.data_validate_date_is_valid(),
+            "date_nbtwn" | "date_not_between" => self.data_validate_date_not_between(),
+            "date_gte" | "date_on_or_after" => self.data_validate_date_on_or_after(),
+            "date_lte" | "date_on_or_before" => self.data_validate_date_on_or_before(),
+            "num_btwn" | "number_between" => self.data_validate_number_between(),
+            "num_eq" | "number_equal_to" => self.data_validate_number_equal_to(),
+            "num_gt" | "number_greater_than" => self.data_validate_number_greater_than(),
+            "num_gte" | "number_greater_than_or_equal_to" => {
                 self.data_validate_number_greater_than_or_equal_to()
             }
-            "number_less_than" => self.data_validate_number_less_than(),
-            "number_less_than_or_equal_to" => self.data_validate_number_less_than_or_equal_to(),
-            "number_not_between" => self.data_validate_number_not_between(),
-            "number_not_equal_to" => self.data_validate_number_not_equal_to(),
+            "num_lt" | "number_less_than" => self.data_validate_number_less_than(),
+            "num_lte" | "number_less_than_or_equal_to" => {
+                self.data_validate_number_less_than_or_equal_to()
+            }
+            "num_nbtwn" | "number_not_between" => self.data_validate_number_not_between(),
+            "num_neq" | "number_not_equal_to" => self.data_validate_number_not_equal_to(),
             "text_contains" => self.data_validate_text_contains(),
             "text_does_not_contain" => self.data_validate_text_does_not_contain(),
-            "text_equal_to" => self.data_validate_text_equal_to(),
-            "text_is_valid_email" => self.data_validate_text_is_valid_email(),
-            "text_is_valid_url" => self.data_validate_text_is_valid_url(),
-            "value_in_list" => self.data_validate_value_in_list(),
-            "value_in_range" => self.data_validate_value_in_range(),
+            "text_eq" | "text_equal_to" => self.data_validate_text_equal_to(),
+            "is_email" | "text_is_valid_email" => self.data_validate_text_is_valid_email(),
+            "is_url" | "text_is_valid_url" => self.data_validate_text_is_valid_url(),
+            "in_list" | "value_in_list" => self.data_validate_value_in_list(),
+            "in_range" | "value_in_range" => self.data_validate_value_in_range(),
             _ => Err(ModifierParseError::new(
                 "validate",
                 name,
@@ -239,12 +241,12 @@ impl ModifierParser<'_, '_> {
         self.lexer.take_token(Token::OpenParenthesis)?;
 
         let match_one = self.lexer.take_token(Token::Date)?;
-        let date_one = DateTime::from_token_input(match_one)?;
+        let date_one = DateTime::try_from(match_one)?;
 
         self.lexer.take_token(Token::Comma)?;
 
         let match_two = self.lexer.take_token(Token::Date)?;
-        let date_two = DateTime::from_token_input(match_two)?;
+        let date_two = DateTime::try_from(match_two)?;
 
         self.lexer.take_token(Token::CloseParenthesis)?;
 
