@@ -1,3 +1,7 @@
+//! # DateTime::TryFrom
+//!
+//! Uniform date-handling
+//!
 use super::DateTime;
 use crate::error::{BadInput, ParseError, ParseResult};
 use crate::parser::ast_lexer;

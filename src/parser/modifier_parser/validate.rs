@@ -15,39 +15,51 @@ macro_rules! data_validate_args {
     }};
 }
 
+macro_rules! validate {
+    ($self:ident, $variant:ident, $blk:block) => {
+        fn $variant(&mut $self) -> ParseResult<()> {
+            $self.modifier.data_validation = Some($blk);
+            Ok(())
+        }
+    };
+}
+
 impl ModifierParser<'_, '_> {
     pub(super) fn validate(&mut self) -> ParseResult<()> {
         let name = self.lexer.take_modifier_right_side()?;
 
         match name.str_match.to_lowercase().as_str() {
-            "c" | "custom" => self.data_validate_custom(),
-            "date_gt" | "date_after" => self.data_validate_date_after(),
-            "date_lt" | "date_before" => self.data_validate_date_before(),
-            "date_btwn" | "date_between" => self.data_validate_date_between(),
-            "date_eq" | "date_equal_to" => self.data_validate_date_equal_to(),
-            "is_date" | "date_is_valid" => self.data_validate_date_is_valid(),
-            "date_nbtwn" | "date_not_between" => self.data_validate_date_not_between(),
-            "date_gte" | "date_on_or_after" => self.data_validate_date_on_or_after(),
-            "date_lte" | "date_on_or_before" => self.data_validate_date_on_or_before(),
-            "num_btwn" | "number_between" => self.data_validate_number_between(),
-            "num_eq" | "number_equal_to" => self.data_validate_number_equal_to(),
-            "num_gt" | "number_greater_than" => self.data_validate_number_greater_than(),
+            "c" | "custom" => self.validate_custom(),
+            "date_gt" | "date_after" => self.validate_date_after(),
+            "date_lt" | "date_before" => self.validate_date_before(),
+            "date_btwn" | "date_between" => self.validate_date_between(),
+            "date_eq" | "date_equal_to" => self.validate_date_equal_to(),
+            "is_date" | "date_is_valid" => self.validate_date_is_valid(),
+            "date_nbtwn" | "date_not_between" => self.validate_date_not_between(),
+            "date_gte" | "date_on_or_after" => self.validate_date_on_or_after(),
+            "date_lte" | "date_on_or_before" => self.validate_date_on_or_before(),
+            "num_btwn" | "number_between" => self.validate_number_between(),
+            "num_eq" | "number_equal_to" => self.validate_number_equal_to(),
+            "num_gt" | "number_greater_than" => self.validate_number_greater_than(),
             "num_gte" | "number_greater_than_or_equal_to" => {
-                self.data_validate_number_greater_than_or_equal_to()
+                self.validate_number_greater_than_or_equal_to()
             }
-            "num_lt" | "number_less_than" => self.data_validate_number_less_than(),
+            "num_lt" | "number_less_than" => self.validate_number_less_than(),
             "num_lte" | "number_less_than_or_equal_to" => {
-                self.data_validate_number_less_than_or_equal_to()
+                self.validate_number_less_than_or_equal_to()
             }
-            "num_nbtwn" | "number_not_between" => self.data_validate_number_not_between(),
-            "num_neq" | "number_not_equal_to" => self.data_validate_number_not_equal_to(),
-            "text_contains" => self.data_validate_text_contains(),
-            "text_does_not_contain" => self.data_validate_text_does_not_contain(),
-            "text_eq" | "text_equal_to" => self.data_validate_text_equal_to(),
-            "is_email" | "text_is_valid_email" => self.data_validate_text_is_valid_email(),
-            "is_url" | "text_is_valid_url" => self.data_validate_text_is_valid_url(),
-            "in_list" | "value_in_list" => self.data_validate_value_in_list(),
-            "in_range" | "value_in_range" => self.data_validate_value_in_range(),
+            "num_nbtwn" | "number_not_between" => self.validate_number_not_between(),
+            "num_neq" | "number_not_equal_to" => self.validate_number_not_equal_to(),
+            "text_contains" => self.validate_text_contains(),
+            "text_does_not_contain" => self.validate_text_does_not_contain(),
+            "text_eq" | "text_equal_to" => self.validate_text_equal_to(),
+            "is_email" | "text_is_valid_email" => self.validate_text_is_valid_email(),
+            "is_url" | "text_is_valid_url" => self.validate_text_is_valid_url(),
+            "in_list" | "value_in_list" => todo!(),
+            "in_range" | "value_in_range" => todo!(),
+            // TODO:
+            // "in_list" | "value_in_list" => self.validate_value_in_list(),
+            // "in_range" | "value_in_range" => self.validate_value_in_range(),
             _ => Err(ModifierParseError::new(
                 "validate",
                 name,
@@ -82,158 +94,109 @@ impl ModifierParser<'_, '_> {
         }
     }
 
-    fn data_validate_custom(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation = Some(DataValidation::Custom(self.one_string_in_parens()?));
-        Ok(())
-    }
+    validate! {self, validate_custom, {
+        DataValidation::Custom(self.one_string_in_parens()?)
+    }}
 
-    fn data_validate_date_after(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation = Some(DataValidation::DateAfter(self.one_date_in_parens()?));
-        Ok(())
-    }
+    validate! {self, validate_date_after, {
+        DataValidation::DateAfter(self.one_date_in_parens()?)
+    }}
 
-    fn data_validate_date_before(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation =
-            Some(DataValidation::DateBefore(self.one_date_in_parens()?));
-        Ok(())
-    }
+    validate! {self, validate_date_before, {
+        DataValidation::DateBefore(self.one_date_in_parens()?)
+    }}
 
-    fn data_validate_date_between(&mut self) -> ParseResult<()> {
+    validate! {self, validate_date_between, {
         let (a, b) = self.two_dates_in_parens()?;
-        self.modifier.data_validation = Some(DataValidation::DateBetween(a, b));
-        Ok(())
-    }
+        DataValidation::DateBetween(a, b)
+    }}
 
-    fn data_validate_date_equal_to(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation =
-            Some(DataValidation::DateEqualTo(self.one_date_in_parens()?));
-        Ok(())
-    }
+    validate! {self, validate_date_equal_to, {
+        DataValidation::DateEqualTo(self.one_date_in_parens()?)
+    }}
 
-    fn data_validate_date_is_valid(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation = Some(DataValidation::DateIsValid);
-        Ok(())
-    }
+    validate! {self, validate_date_is_valid, {
+        DataValidation::DateIsValid
+    }}
 
-    fn data_validate_date_not_between(&mut self) -> ParseResult<()> {
+    validate! {self, validate_date_not_between, {
         let (a, b) = self.two_dates_in_parens()?;
-        self.modifier.data_validation = Some(DataValidation::DateNotBetween(a, b));
-        Ok(())
-    }
+        DataValidation::DateNotBetween(a, b)
+    }}
 
-    fn data_validate_date_on_or_after(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation =
-            Some(DataValidation::DateOnOrAfter(self.one_date_in_parens()?));
-        Ok(())
-    }
+    validate! {self, validate_date_on_or_after, {
+        DataValidation::DateOnOrAfter(self.one_date_in_parens()?)
+    }}
 
-    fn data_validate_date_on_or_before(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation =
-            Some(DataValidation::DateOnOrBefore(self.one_date_in_parens()?));
-        Ok(())
-    }
+    validate! {self, validate_date_on_or_before, {
+        DataValidation::DateOnOrBefore(self.one_date_in_parens()?)
+    }}
 
-    fn data_validate_number_between(&mut self) -> ParseResult<()> {
+    validate! {self, validate_number_between, {
         let (a, b) = self.two_numbers_in_parens()?;
-        self.modifier.data_validation = Some(DataValidation::NumberBetween(a, b));
-        Ok(())
-    }
+        DataValidation::NumberBetween(a, b)
+    }}
 
-    fn data_validate_number_equal_to(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation =
-            Some(DataValidation::NumberEqualTo(self.one_number_in_parens()?));
-        Ok(())
-    }
+    validate! {self, validate_number_equal_to, {
+        DataValidation::NumberEqualTo(self.one_number_in_parens()?)
+    }}
 
-    fn data_validate_number_greater_than(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation = Some(DataValidation::NumberGreaterThan(
-            self.one_number_in_parens()?,
-        ));
-        Ok(())
-    }
+    validate! {self, validate_number_greater_than, {
+        DataValidation::NumberGreaterThan(self.one_number_in_parens()?)
+    }}
 
-    fn data_validate_number_greater_than_or_equal_to(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation = Some(DataValidation::NumberGreaterThanOrEqualTo(
-            self.one_number_in_parens()?,
-        ));
-        Ok(())
-    }
+    validate! {self, validate_number_greater_than_or_equal_to, {
+        DataValidation::NumberGreaterThanOrEqualTo(self.one_number_in_parens()?)
+    }}
 
-    fn data_validate_number_not_between(&mut self) -> ParseResult<()> {
+    validate! {self, validate_number_not_between, {
         let (a, b) = self.two_numbers_in_parens()?;
-        self.modifier.data_validation = Some(DataValidation::NumberNotBetween(a, b));
-        Ok(())
-    }
+        DataValidation::NumberNotBetween(a, b)
+    }}
 
-    fn data_validate_number_not_equal_to(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation = Some(DataValidation::NumberNotEqualTo(
-            self.one_number_in_parens()?,
-        ));
-        Ok(())
-    }
+    validate! {self, validate_number_not_equal_to, {
+        DataValidation::NumberNotEqualTo(self.one_number_in_parens()?)
+    }}
 
-    fn data_validate_number_less_than(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation =
-            Some(DataValidation::NumberLessThan(self.one_number_in_parens()?));
-        Ok(())
-    }
+    validate! {self, validate_number_less_than, {
+        DataValidation::NumberLessThan(self.one_number_in_parens()?)
+    }}
 
-    fn data_validate_number_less_than_or_equal_to(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation = Some(DataValidation::NumberLessThanOrEqualTo(
-            self.one_number_in_parens()?,
-        ));
-        Ok(())
-    }
+    validate! {self, validate_number_less_than_or_equal_to, {
+        DataValidation::NumberLessThanOrEqualTo(self.one_number_in_parens()?)
+    }}
 
-    fn data_validate_text_contains(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation =
-            Some(DataValidation::TextContains(self.one_string_in_parens()?));
-        Ok(())
-    }
+    validate! {self, validate_text_contains, {
+        DataValidation::TextContains(self.one_string_in_parens()?)
+    }}
 
-    fn data_validate_text_does_not_contain(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation = Some(DataValidation::TextDoesNotContain(
-            self.one_string_in_parens()?,
-        ));
-        Ok(())
-    }
+    validate! {self, validate_text_does_not_contain, {
+        DataValidation::TextDoesNotContain(self.one_string_in_parens()?)
+    }}
 
-    fn data_validate_text_equal_to(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation =
-            Some(DataValidation::TextEqualTo(self.one_string_in_parens()?));
-        Ok(())
-    }
+    validate! {self, validate_text_equal_to, {
+        DataValidation::TextEqualTo(self.one_string_in_parens()?)
+    }}
 
-    fn data_validate_text_is_valid_email(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation = Some(DataValidation::TextIsValidEmail);
-        Ok(())
-    }
+    validate! {self, validate_text_is_valid_email, {
+        DataValidation::TextIsValidEmail
+    }}
 
-    fn data_validate_text_is_valid_url(&mut self) -> ParseResult<()> {
-        self.modifier.data_validation = Some(DataValidation::TextIsValidUrl);
-        Ok(())
-    }
+    validate! {self, validate_text_is_valid_url, {
+        DataValidation::TextIsValidUrl
+    }}
 
-    fn data_validate_value_in_list(&mut self) -> ParseResult<()> {
-        todo!();
-    }
+    /*
+    validate! {self, validate_value_in_list, {
+        todo!()
+    }}
 
-    fn data_validate_value_in_range(&mut self) -> ParseResult<()> {
-        todo!();
-    }
+    validate! {self, validate_value_in_range, {
+        todo!()
+    }}
+    */
 
     fn one_date_in_parens(&mut self) -> ParseResult<DateTime> {
-        /*
-        self.lexer.take_token(Token::OpenParenthesis)?;
-
-        let date_match = self.lexer.take_token(Token::Date)?;
-        let date_time = DateTime::from_token_input(date_match, &self.runtime.source_code)?;
-
-        self.lexer.take_token(Token::CloseParenthesis)?;
-
-        Ok(date_time)
-
-        */
         Ok(data_validate_args!(self, DateTime, Token::Date))
     }
 
