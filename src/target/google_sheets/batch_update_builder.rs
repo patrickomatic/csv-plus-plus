@@ -61,6 +61,7 @@ impl<'a> BatchUpdateBuilder<'a> {
                     MergeResult::New(cell) => {
                         let modifier = google_sheets_modifier::GoogleSheetsModifier(&cell.modifier);
                         api::CellData {
+                            data_validation: modifier.data_validation_rule(),
                             user_entered_format: modifier.cell_format(),
                             user_entered_value: self.user_entered_value(cell),
                             note: cell.modifier.note.clone(),

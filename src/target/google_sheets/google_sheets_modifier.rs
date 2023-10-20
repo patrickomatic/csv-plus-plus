@@ -11,8 +11,41 @@ use google_sheets4::api;
 
 pub struct GoogleSheetsModifier<'a>(pub &'a Modifier);
 
+macro_rules! validate_str {
+    ($gs_name:literal $(, $dv:ident)*) => {
+        api::BooleanCondition {
+            type_: Some($gs_name.to_string()),
+            values: Some(vec![
+                $(
+                    api::ConditionValue {
+                        user_entered_value: Some($dv.to_string()),
+                        ..Default::default()
+                    },
+                )*
+            ]),
+        }
+    };
+}
+
+// TODO: make the underlying macro work with the above?
+macro_rules! validate_date {
+    ($gs_name:literal $(, $dv:ident)*) => {
+        api::BooleanCondition {
+            type_: Some($gs_name.to_string()),
+            values: Some(vec![
+                $(
+                    api::ConditionValue {
+                        relative_date: Some($dv.to_string()),
+                        ..Default::default()
+                    },
+                )*
+            ]),
+        }
+    };
+}
+
 impl<'a> GoogleSheetsModifier<'a> {
-    pub fn cell_format(&self) -> Option<api::CellFormat> {
+    pub(super) fn cell_format(&self) -> Option<api::CellFormat> {
         let borders = self.borders();
         let background_color_style = self.color_style(&self.0.color);
         let horizontal_alignment = self.horizontal_alignment();
@@ -38,6 +71,66 @@ impl<'a> GoogleSheetsModifier<'a> {
             text_format,
             vertical_alignment,
             ..Default::default()
+        })
+    }
+
+    pub(super) fn data_validation_rule(&self) -> Option<api::DataValidationRule> {
+        Some(api::DataValidationRule {
+            condition: Some(match self.0.data_validation.as_ref()? {
+                modifier::DataValidation::Custom(c) => validate_str!("CUSTOM", c),
+                modifier::DataValidation::DateAfter(d) => validate_date!("DATE_AFTER", d),
+                modifier::DataValidation::DateBefore(d) => validate_date!("DATE_BEFORE", d),
+                modifier::DataValidation::DateBetween(da, db) => {
+                    validate_date!("DATE_BETWEEN", da, db)
+                }
+                modifier::DataValidation::DateEqualTo(d) => validate_date!("DATE_EQUAL_TO", d),
+                modifier::DataValidation::DateIsValid => validate_date!("DATE_IS_VALID_DATE"),
+                modifier::DataValidation::DateNotBetween(da, db) => {
+                    validate_date!("DATE_NOT_BETWEEN", da, db)
+                }
+                modifier::DataValidation::DateOnOrAfter(d) => validate_date!("DATE_ON_OR_AFTER", d),
+                modifier::DataValidation::DateOnOrBefore(d) => {
+                    validate_date!("DATE_ON_OR_BEFORE", d)
+                }
+                // TODO: these might need to be prefixed with `"="`
+                modifier::DataValidation::NumberBetween(na, nb) => {
+                    validate_str!("NUMBER_BETWEEN", na, nb)
+                }
+                modifier::DataValidation::NumberEqualTo(n) => validate_str!("NUMBER_EQUAL_TO", n),
+                modifier::DataValidation::NumberGreaterThan(n) => {
+                    validate_str!("NUMBER_GREATER_THAN", n)
+                }
+                modifier::DataValidation::NumberGreaterThanOrEqualTo(n) => {
+                    validate_str!("NUMBER_GREATER_THAN_OR_EQUAL_TO", n)
+                }
+                modifier::DataValidation::NumberLessThan(n) => {
+                    validate_str!("NUMBER_LESS_THAN", n)
+                }
+                modifier::DataValidation::NumberLessThanOrEqualTo(n) => {
+                    validate_str!("NUMBER_LESS_THAN_OR_EQUAL_TO", n)
+                }
+                modifier::DataValidation::NumberNotBetween(na, nb) => {
+                    validate_str!("NUMBER_NOT_BETWEEN", na, nb)
+                }
+                modifier::DataValidation::NumberNotEqualTo(n) => {
+                    validate_str!("NUMBER_NOT_EQUAL_TO", n)
+                }
+                modifier::DataValidation::TextContains(t) => validate_str!("TEXT_CONTAINS", t),
+                modifier::DataValidation::TextDoesNotContain(t) => {
+                    validate_str!("TEXT_DOES_NOT_CONTAIN", t)
+                }
+                modifier::DataValidation::TextEqualTo(t) => validate_str!("TEXT_EQUAL_TO", t),
+                modifier::DataValidation::TextIsValidEmail => validate_str!("TEXT_IS_VALID_EMAIL"),
+                modifier::DataValidation::TextIsValidUrl => validate_str!("TEXT_IS_VALID_URL"),
+                modifier::DataValidation::ValueInList(_) => todo!(),
+                modifier::DataValidation::ValueInRange => todo!(),
+            }),
+            // TODO: show a helpful message?
+            input_message: None,
+            // TODO: I dunno?
+            show_custom_ui: None,
+            // TODO: maybe make a CLI flag? if true, the spreadsheet will reject the data
+            strict: None,
         })
     }
 
