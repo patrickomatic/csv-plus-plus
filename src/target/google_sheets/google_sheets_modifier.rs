@@ -27,7 +27,7 @@ macro_rules! validate_str {
     };
 }
 
-// TODO: make the underlying macro work with the above?
+// TODO: make the underlying macro reusable with the above?
 macro_rules! validate_date {
     ($gs_name:literal $(, $dv:ident)*) => {
         api::BooleanCondition {
@@ -123,7 +123,7 @@ impl<'a> GoogleSheetsModifier<'a> {
                 modifier::DataValidation::TextIsValidEmail => validate_str!("TEXT_IS_VALID_EMAIL"),
                 modifier::DataValidation::TextIsValidUrl => validate_str!("TEXT_IS_VALID_URL"),
                 modifier::DataValidation::ValueInList(_) => todo!(),
-                modifier::DataValidation::ValueInRange => todo!(),
+                modifier::DataValidation::ValueInRange(a1) => validate_str!("VALUE_IN_RANGE", a1),
             }),
             // TODO: show a helpful message?
             input_message: None,

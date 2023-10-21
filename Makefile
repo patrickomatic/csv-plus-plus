@@ -17,11 +17,7 @@ DOC_FILES := $(wildcard docs/*.md) LICENSE.txt README.md
 DOC_FILES := $(filter-out docs/RELEASE_CHECKLIST.md, $(DOC_FILES))
 
 .PHONY: all
-all: tool-deps $(RELEASE_FILES) $(RELEASE_FILE_SIGS)
-
-.PHONY: tool-deps
-tool-deps:
-	cargo install cross
+all: $(RELEASE_FILES) $(RELEASE_FILE_SIGS)
 
 .PHONY: clean
 clean:

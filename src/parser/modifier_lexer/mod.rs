@@ -72,9 +72,10 @@ impl<'a> ModifierLexer<'a> {
     }
 
     // TODO: this name is kinda misleading since it also takes an equal first
+    // maybe just rename to take_identifier
     pub(super) fn take_modifier_right_side(&mut self) -> ParseResult<TokenMatch> {
         self.take_token(Token::Equals)?;
-        self.take_token(Token::ModifierRightSide)
+        self.take_token(Token::Identifier)
     }
 
     pub(super) fn maybe_take_equals(&mut self) -> Option<TokenMatch> {
@@ -90,6 +91,10 @@ impl<'a> ModifierLexer<'a> {
         self.take_whitespace();
 
         match token {
+            Token::A1 => self.take_while(token, |ch| {
+                // TODO: make a list of valid A1 characters somewhere
+                ch.is_alphanumeric() || ch == '!' || ch == '\'' || ch == ':' || ch == '$'
+            }),
             Token::CloseParenthesis => self.take(token, ")"),
             Token::Color => self.take_color(),
             Token::Comma => self.take(token, ","),
@@ -97,9 +102,7 @@ impl<'a> ModifierLexer<'a> {
             Token::EndModifier => self.take(token, "]]"),
             Token::Equals => self.take(token, "="),
             Token::ModifierName => self.take_while(token, |ch| ch.is_alphanumeric()),
-            Token::ModifierRightSide => {
-                self.take_while(token, |ch| ch.is_alphanumeric() || ch == '_')
-            }
+            Token::Identifier => self.take_while(token, |ch| ch.is_alphanumeric() || ch == '_'),
             Token::Number => {
                 // TODO: I could do a little better (enforce only one starting - and one .)
                 self.take_while(token, |ch| ch.is_ascii_digit() || ch == '-' || ch == '.')
@@ -287,7 +290,7 @@ impl<'a> ModifierLexer<'a> {
         }
 
         if matched.is_empty() {
-            Err(self.unknown_string("Expected a {token}"))
+            Err(self.unknown_string(&format!("Expected a {token}")))
         } else {
             self.input = &self.input[matched.len()..];
             self.cell_offset += matched.len();

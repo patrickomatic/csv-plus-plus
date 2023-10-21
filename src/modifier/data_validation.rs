@@ -34,5 +34,5 @@ pub enum DataValidation {
     TextIsValidEmail,
     TextIsValidUrl,
     ValueInList(Vec<Ast>),
-    ValueInRange,
+    ValueInRange(a1_notation::A1),
 }

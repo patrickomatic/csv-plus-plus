@@ -4,14 +4,15 @@ use std::fmt;
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Token {
+    A1,
     CloseParenthesis,
     Color,
     Comma,
     Date,
     EndModifier,
     Equals,
+    Identifier,
     ModifierName,
-    ModifierRightSide,
     Number,
     OpenParenthesis,
     PositiveNumber,

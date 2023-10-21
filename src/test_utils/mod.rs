@@ -25,7 +25,7 @@ pub(crate) fn build_ast_token_match<'a>(
 pub(crate) fn build_modifier_token_match<'a>(str_match: &'a str) -> modifier_lexer::TokenMatch {
     let source_code = build_source_code();
     modifier_lexer::TokenMatch {
-        token: modifier_lexer::Token::ModifierRightSide,
+        token: modifier_lexer::Token::Identifier,
         str_match: str_match.to_string(),
         position: a1_notation::Address::new(0, 0),
         cell_offset: 0,

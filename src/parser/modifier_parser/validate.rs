@@ -1,24 +1,27 @@
 use super::{DataValidation, ModifierParser, Token};
-use crate::error::{ModifierParseError, ParseResult};
+use crate::error::{BadInput, ModifierParseError, ParseError, ParseResult};
 use crate::DateTime;
 
-// TODO: keep making this more general
-macro_rules! data_validate_args {
-    ($self:ident, $From:ident, $tok:path $(, $toks:path)*) => {{
+macro_rules! take_parens {
+    ($self:ident, $tt:tt) => {{
         $self.lexer.take_token(Token::OpenParenthesis)?;
-
-        let _parsed = $From::try_from($self.lexer.take_token($tok)?)?;
-
+        let _res = $tt;
         $self.lexer.take_token(Token::CloseParenthesis)?;
+        _res
+    }};
+}
 
-        _parsed
+// TODO: keep making this more general, handle commas/multiple
+macro_rules! validate_args {
+    ($self:ident, $From:ident, $tok:path $(, $toks:path)*) => {{
+        $From::try_from($self.lexer.take_token($tok)?)?
     }};
 }
 
 macro_rules! validate {
-    ($self:ident, $variant:ident, $blk:block) => {
+    ($self:ident, $variant:ident, $tt:tt) => {
         fn $variant(&mut $self) -> ParseResult<()> {
-            $self.modifier.data_validation = Some($blk);
+            $self.modifier.data_validation = Some($tt);
             Ok(())
         }
     };
@@ -55,11 +58,10 @@ impl ModifierParser<'_, '_> {
             "text_eq" | "text_equal_to" => self.validate_text_equal_to(),
             "is_email" | "text_is_valid_email" => self.validate_text_is_valid_email(),
             "is_url" | "text_is_valid_url" => self.validate_text_is_valid_url(),
-            "in_list" | "value_in_list" => todo!(),
-            "in_range" | "value_in_range" => todo!(),
             // TODO:
             // "in_list" | "value_in_list" => self.validate_value_in_list(),
-            // "in_range" | "value_in_range" => self.validate_value_in_range(),
+            "in_list" | "value_in_list" => todo!(),
+            "in_range" | "value_in_range" => self.validate_value_in_range(),
             _ => Err(ModifierParseError::new(
                 "validate",
                 name,
@@ -188,54 +190,52 @@ impl ModifierParser<'_, '_> {
 
     /*
     validate! {self, validate_value_in_list, {
-        todo!()
-    }}
-
-    validate! {self, validate_value_in_range, {
-        todo!()
+        take_parens!(self, {
+            todo!()
+        })
     }}
     */
 
+    validate!(self, validate_value_in_range, {
+        take_parens!(self, {
+            let a1_match = self.lexer.take_token(Token::A1)?;
+            DataValidation::ValueInRange(a1_notation::new(&a1_match.str_match).map_err(|e| {
+                a1_match.into_parse_error(&format!("Expected an A1 reference: {e}"))
+            })?)
+        })
+    });
+
     fn one_date_in_parens(&mut self) -> ParseResult<DateTime> {
-        Ok(data_validate_args!(self, DateTime, Token::Date))
+        take_parens!(self, { Ok(validate_args!(self, DateTime, Token::Date)) })
     }
 
     fn two_dates_in_parens(&mut self) -> ParseResult<(DateTime, DateTime)> {
-        self.lexer.take_token(Token::OpenParenthesis)?;
+        take_parens!(self, {
+            let match_one = self.lexer.take_token(Token::Date)?;
+            let date_one = DateTime::try_from(match_one)?;
 
-        let match_one = self.lexer.take_token(Token::Date)?;
-        let date_one = DateTime::try_from(match_one)?;
+            self.lexer.take_token(Token::Comma)?;
 
-        self.lexer.take_token(Token::Comma)?;
+            let match_two = self.lexer.take_token(Token::Date)?;
+            let date_two = DateTime::try_from(match_two)?;
 
-        let match_two = self.lexer.take_token(Token::Date)?;
-        let date_two = DateTime::try_from(match_two)?;
-
-        self.lexer.take_token(Token::CloseParenthesis)?;
-
-        Ok((date_one, date_two))
+            Ok::<(DateTime, DateTime), ParseError>((date_one, date_two))
+        })
     }
 
     fn one_number_in_parens(&mut self) -> ParseResult<isize> {
-        self.lexer.take_token(Token::OpenParenthesis)?;
-        let number = self.lexer.take_token(Token::Number)?.into_number()?;
-        self.lexer.take_token(Token::CloseParenthesis)?;
-
-        Ok(number)
+        take_parens!(self, {
+            self.lexer.take_token(Token::Number)?.into_number()
+        })
     }
 
     fn two_numbers_in_parens(&mut self) -> ParseResult<(isize, isize)> {
-        self.lexer.take_token(Token::OpenParenthesis)?;
-
-        let a = self.lexer.take_token(Token::Number)?.into_number()?;
-
-        self.lexer.take_token(Token::Comma)?;
-
-        let b = self.lexer.take_token(Token::Number)?.into_number()?;
-
-        self.lexer.take_token(Token::CloseParenthesis)?;
-
-        Ok((a, b))
+        take_parens!(self, {
+            let a = self.lexer.take_token(Token::Number)?.into_number()?;
+            self.lexer.take_token(Token::Comma)?;
+            let b = self.lexer.take_token(Token::Number)?.into_number()?;
+            Ok::<(isize, isize), ParseError>((a, b))
+        })
     }
 
     fn one_string_in_parens(&mut self) -> ParseResult<String> {
