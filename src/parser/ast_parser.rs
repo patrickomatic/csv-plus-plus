@@ -50,9 +50,9 @@ impl<'a> AstParser<'a> {
             if let Some((key, value)) = kv.split_once('=') {
                 variables.insert(key.to_string(), Self::parse(value, false, runtime)?);
             } else {
-                return Err(Error::InitError(
-                    "Invalid key/value variables: {kv}".to_string(),
-                ));
+                return Err(Error::InitError(format!(
+                    "Invalid key/value variables: {kv}"
+                )));
             }
         }
 

@@ -11,13 +11,6 @@ macro_rules! take_parens {
     }};
 }
 
-// TODO: keep making this more general, handle commas/multiple
-macro_rules! validate_args {
-    ($self:ident, $From:ident, $tok:path $(, $toks:path)*) => {{
-        $From::try_from($self.lexer.take_token($tok)?)?
-    }};
-}
-
 macro_rules! validate {
     ($self:ident, $variant:ident, $tt:tt) => {
         fn $variant(&mut $self) -> ParseResult<()> {
@@ -206,7 +199,9 @@ impl ModifierParser<'_, '_> {
     });
 
     fn one_date_in_parens(&mut self) -> ParseResult<DateTime> {
-        take_parens!(self, { Ok(validate_args!(self, DateTime, Token::Date)) })
+        take_parens!(self, {
+            DateTime::try_from(self.lexer.take_token(Token::Date)?)
+        })
     }
 
     fn two_dates_in_parens(&mut self) -> ParseResult<(DateTime, DateTime)> {
@@ -234,15 +229,15 @@ impl ModifierParser<'_, '_> {
             let a = self.lexer.take_token(Token::Number)?.into_number()?;
             self.lexer.take_token(Token::Comma)?;
             let b = self.lexer.take_token(Token::Number)?.into_number()?;
+
             Ok::<(isize, isize), ParseError>((a, b))
         })
     }
 
     fn one_string_in_parens(&mut self) -> ParseResult<String> {
-        self.lexer.take_token(Token::OpenParenthesis)?;
-        let string = self.lexer.take_token(Token::String)?.str_match.to_string();
-        self.lexer.take_token(Token::CloseParenthesis)?;
-        Ok(string)
+        take_parens!(self, {
+            Ok(self.lexer.take_token(Token::String)?.str_match.to_string())
+        })
     }
 }
 

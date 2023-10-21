@@ -22,7 +22,7 @@ pub(crate) fn build_ast_token_match<'a>(
     }
 }
 
-pub(crate) fn build_modifier_token_match<'a>(str_match: &'a str) -> modifier_lexer::TokenMatch {
+pub(crate) fn build_modifier_token_match(str_match: &str) -> modifier_lexer::TokenMatch {
     let source_code = build_source_code();
     modifier_lexer::TokenMatch {
         token: modifier_lexer::Token::Identifier,
