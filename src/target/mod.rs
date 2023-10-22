@@ -7,10 +7,10 @@ mod file_backer_upper;
 mod google_sheets;
 mod open_document;
 
-pub use crate::target::csv::Csv;
-pub use excel::Excel;
-pub use google_sheets::GoogleSheets;
-pub use open_document::OpenDocument;
+pub(crate) use crate::target::csv::Csv;
+pub(crate) use excel::Excel;
+pub(crate) use google_sheets::GoogleSheets;
+pub(crate) use open_document::OpenDocument;
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum ExistingCell<V: Clone> {
