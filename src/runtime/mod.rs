@@ -1,7 +1,8 @@
 //! # Runtime
 //!
 use crate::ast::{BuiltinFunctions, BuiltinVariables};
-use crate::parser::ast_lexer::TokenLibrary;
+use crate::parser::ast_lexer;
+use crate::parser::modifier_lexer;
 use crate::{CliArgs, CompilationTarget, Options, Output, Result, SourceCode};
 use clap::Parser;
 use std::sync;
@@ -16,7 +17,8 @@ pub struct Runtime {
     pub options: Options,
     pub output: Output,
     pub source_code: sync::Arc<SourceCode>,
-    pub(crate) token_library: TokenLibrary,
+    pub(crate) ast_token_library: ast_lexer::TokenLibrary,
+    pub(crate) cell_token_library: modifier_lexer::TokenLibrary,
 }
 
 impl Runtime {

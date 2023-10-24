@@ -1,6 +1,7 @@
 use crate::ast::{BuiltinFunction, BuiltinVariable};
-use crate::parser::ast_lexer::TokenLibrary;
+use crate::parser::ast_lexer;
 use crate::parser::ast_parser::AstParser;
+use crate::parser::modifier_lexer;
 use crate::{CliArgs, Options, Output, Runtime, SourceCode};
 use std::sync;
 
@@ -16,7 +17,8 @@ impl TryFrom<&CliArgs> for Runtime {
             options: Options::try_from(cli_args)?,
             output: Output::try_from(cli_args)?,
             source_code: sync::Arc::new(source_code),
-            token_library: TokenLibrary::build()?,
+            ast_token_library: ast_lexer::TokenLibrary::build()?,
+            cell_token_library: modifier_lexer::TokenLibrary::build()?,
         };
 
         // we have to parse key/values afterwards, because we need an initialized `Runtime` to do so

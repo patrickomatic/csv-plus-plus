@@ -24,8 +24,7 @@ impl Cell {
         row_modifier: &RowModifier,
         runtime: &Runtime,
     ) -> Result<(Self, Option<RowModifier>)> {
-        let parsed_modifiers =
-            ModifierParser::parse(input, position, row_modifier, runtime.source_code.clone())?;
+        let parsed_modifiers = ModifierParser::parse(input, position, row_modifier, runtime)?;
         let cell = Self {
             ast: Self::parse_ast(&parsed_modifiers.value, runtime)?,
             position,

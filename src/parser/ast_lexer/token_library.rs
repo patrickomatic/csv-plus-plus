@@ -9,24 +9,26 @@ use crate::Error;
 
 pub(crate) const CODE_SECTION_SEPARATOR: &str = "---";
 
+type Matcher = TokenMatcher<Token>;
+
 #[derive(Debug)]
 pub(crate) struct TokenLibrary {
-    pub(crate) boolean_true: TokenMatcher,
-    pub(crate) boolean_false: TokenMatcher,
-    pub(crate) code_section_eof: TokenMatcher,
-    pub(crate) comma: TokenMatcher,
-    pub(crate) comment: TokenMatcher,
-    pub(crate) close_paren: TokenMatcher,
-    pub(crate) date_time: TokenMatcher,
-    pub(crate) double_quoted_string: TokenMatcher,
-    pub(crate) infix_operator: TokenMatcher,
-    pub(crate) integer: TokenMatcher,
-    pub(crate) float: TokenMatcher,
-    pub(crate) fn_def: TokenMatcher,
-    pub(crate) newline: TokenMatcher,
-    pub(crate) open_paren: TokenMatcher,
-    pub(crate) reference: TokenMatcher,
-    pub(crate) var_assign: TokenMatcher,
+    pub(crate) boolean_true: Matcher,
+    pub(crate) boolean_false: Matcher,
+    pub(crate) code_section_eof: Matcher,
+    pub(crate) comma: Matcher,
+    pub(crate) comment: Matcher,
+    pub(crate) close_paren: Matcher,
+    pub(crate) date_time: Matcher,
+    pub(crate) double_quoted_string: Matcher,
+    pub(crate) infix_operator: Matcher,
+    pub(crate) integer: Matcher,
+    pub(crate) float: Matcher,
+    pub(crate) fn_def: Matcher,
+    pub(crate) newline: Matcher,
+    pub(crate) open_paren: Matcher,
+    pub(crate) reference: Matcher,
+    pub(crate) var_assign: Matcher,
 }
 
 impl TokenLibrary {
@@ -40,15 +42,15 @@ impl TokenLibrary {
             close_paren: TokenMatcher::new(r"\)", Token::CloseParen)?,
             date_time: TokenMatcher::new(
                 r"(?x)
-                                         # just a date (and optional TZ)
-                                         (?<date0>\d{2,4}-\d{1,2}-\d{1,2})\s*(?<tz0>\w+)?
-                                         | 
-                                         # just a time (and an optional TZ)
-                                         (?<time1>\d+:\d{1,2}(\d+)?)\s*(?<tz1>\w+)?
-                                         |
-                                         # a time and date
-                                         (?<date2>\d{2,4}-\d{1,2}-\d{1,2})\s+(?<time2>\d+:\d{1,2}(\d+)?)\s*(?<tz2>\w+)?
-                                        ",
+                 # just a date (and optional TZ)
+                 (?<date0>\d{2,4}-\d{1,2}-\d{1,2})\s*(?<tz0>\w+)?
+                 | 
+                 # just a time (and an optional TZ)
+                 (?<time1>\d+:\d{1,2}(\d+)?)\s*(?<tz1>\w+)?
+                 |
+                 # a time and date
+                 (?<date2>\d{2,4}-\d{1,2}-\d{1,2})\s+(?<time2>\d+:\d{1,2}(\d+)?)\s*(?<tz2>\w+)?
+                ",
                 Token::DateTime,
             )?,
             double_quoted_string: TokenMatcher::new(

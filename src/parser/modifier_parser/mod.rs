@@ -3,9 +3,8 @@
 use super::modifier_lexer::{ModifierLexer, Token, TokenMatch};
 use crate::error::{BadInput, ParseResult, Result};
 use crate::modifier::*;
-use crate::{Expand, Rgb, SourceCode};
+use crate::{Expand, Rgb, Runtime};
 use a1_notation::{Address, Row};
-use std::sync;
 
 mod validate;
 
@@ -53,19 +52,19 @@ where
         input: &'b str,
         position: Address,
         row_modifier: &'b RowModifier,
-        source_code: sync::Arc<SourceCode>,
+        runtime: &'b Runtime,
     ) -> Result<ParsedCell> {
-        Self::parse_all_modifiers(input, position, row_modifier, source_code.clone())
-            .map_err(move |e| source_code.modifier_syntax_error(e, position))
+        Self::parse_all_modifiers(input, position, row_modifier, runtime)
+            .map_err(move |e| runtime.source_code.modifier_syntax_error(e, position))
     }
 
     fn parse_all_modifiers(
         input: &'b str,
         position: Address,
         row_modifier: &'b RowModifier,
-        source_code: sync::Arc<SourceCode>,
+        runtime: &'b Runtime,
     ) -> ParseResult<ParsedCell> {
-        let mut lexer = ModifierLexer::new(input, position, source_code);
+        let mut lexer = ModifierLexer::new(input, position, runtime);
         let mut new_modifier: Option<Modifier> = None;
         let mut new_row_modifier: Option<RowModifier> = None;
 
@@ -257,12 +256,11 @@ mod tests {
     use crate::test_utils::*;
 
     fn test_parse(input: &str) -> ParsedCell {
-        let source_code = build_source_code();
         ModifierParser::parse(
             input,
             Address::new(0, 0),
             &RowModifier::default(),
-            std::sync::Arc::new(source_code),
+            &build_runtime(),
         )
         .unwrap()
     }

@@ -1,5 +1,6 @@
 //! # AstLexer
 //!
+use super::TokenMatcher;
 use crate::error::ParseResult;
 use crate::{CharOffset, LineNumber, Runtime, SourceCode};
 use std::cell::RefCell;
@@ -8,13 +9,11 @@ use std::rc::Rc;
 mod token;
 mod token_library;
 mod token_match;
-mod token_matcher;
 mod unknown_token;
 
 pub(crate) use token::Token;
 pub(crate) use token_library::{TokenLibrary, CODE_SECTION_SEPARATOR};
 pub(crate) use token_match::TokenMatch;
-pub(crate) use token_matcher::TokenMatcher;
 pub(crate) use unknown_token::UnknownToken;
 
 pub(crate) struct AstLexer<'a> {
@@ -24,11 +23,31 @@ pub(crate) struct AstLexer<'a> {
     source_code: &'a SourceCode,
 }
 
-fn whitespace_start(input: &str) -> usize {
-    input
-        .chars()
-        .take_while(|ch| ch.is_whitespace() && *ch != '\n' && *ch != '\r')
-        .count()
+/// For better or worse the tokens are not mutually exclusive - some of them are subsets of another
+/// (for example 555.55 could be matched by both float and integer (integer can just match the first
+/// part of it)) so it's important float is first. Another example is comments - they have to be
+/// stripped out first
+fn matchers_ordered(tl: &TokenLibrary) -> [&TokenMatcher<Token>; 16] {
+    [
+        &tl.newline,
+        &tl.comment,
+        &tl.double_quoted_string,
+        &tl.fn_def,
+        &tl.var_assign,
+        &tl.comma,
+        &tl.close_paren,
+        &tl.open_paren,
+        &tl.infix_operator,
+        &tl.code_section_eof,
+        &tl.date_time,
+        // float has to be happen before integer!  it needs to greedy match 1.5, where integer will
+        // also match the first part 1, but not the rest
+        &tl.float,
+        &tl.integer,
+        &tl.boolean_true,
+        &tl.boolean_false,
+        &tl.reference,
+    ]
 }
 
 impl<'a> AstLexer<'a> {
@@ -42,35 +61,35 @@ impl<'a> AstLexer<'a> {
         loop {
             let mut matched = false;
 
-            for TokenMatcher(token, regex) in
-                TokenMatcher::matchers_ordered(&runtime.token_library).iter()
-            {
-                if let Some(m) = regex.find(p) {
-                    if *token == Token::Newline {
+            for token_matcher in matchers_ordered(&runtime.ast_token_library).iter() {
+                let token = token_matcher.0;
+
+                if let Some(m) = token_matcher.try_match(p) {
+                    if token == Token::Newline {
                         // just count the newline but don't store it on `tokens`
                         line_number += 1;
-                    } else if *token != Token::Comment {
-                        let str_match = m.as_str();
+                    } else if token != Token::Comment {
+                        // let str_match = m.as_str();
                         // we'll want to consume everything except for comments and newlines (no point
                         // in the parsing logic needing to consider them)
                         tokens.push(TokenMatch {
-                            token: *token,
-                            str_match: str_match.trim(),
+                            token,
+                            str_match: m.str_match,
                             line_number,
-                            line_offset: position + whitespace_start(str_match),
+                            line_offset: position + m.len_leading_whitespace,
                             source_code: &runtime.source_code,
                         });
                     }
 
-                    if *token == Token::Newline {
+                    if token == Token::Newline {
                         // move position back to the beginning
                         position = 0;
                     } else {
-                        position += m.len();
+                        position += m.len_full_match;
                     }
 
                     // move the input past the match
-                    p = &p[m.len()..];
+                    p = &p[m.len_full_match..];
                     matched = true;
 
                     break;

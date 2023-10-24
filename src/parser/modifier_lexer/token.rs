@@ -2,7 +2,7 @@
 //!
 use std::fmt;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub(crate) enum Token {
     A1,
     CloseParenthesis,
