@@ -180,19 +180,19 @@ impl ModifierParser<'_, '_> {
         DataValidation::TextIsValidUrl
     }}
 
-    // There are only a handful of tokens we accept here and the order we parse them matters:
-    //
-    // * Date
-    // * Number (whole & float)
-    // * Single-quoted string
-    // * Identifier (as a catch-all if single-quoted string doesn't match)
-    //
-    // If none of these are seen but it's not a closing-paren either then it's a syntax error
-    //
     validate! {self, validate_value_in_list, {
         take_parens!(self, {
             let mut values: Vec<Ast> = vec![];
             loop {
+                // There are only a handful of tokens we accept here and the order we parse them matters:
+                //
+                // * Date
+                // * Number (whole & float)
+                // * Single-quoted string
+                // * Identifier (as a catch-all if single-quoted string doesn't match)
+                //
+                // If none of these are seen but it's not a closing-paren either then it's a syntax error
+                //
                 let m = self.lexer.maybe_take_date()
                     .or_else(|| self.lexer.maybe_take_number())
                     .or_else(|| self.lexer.maybe_take_single_quoted_string().unwrap_or(None))

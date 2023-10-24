@@ -122,14 +122,24 @@ impl<'a> GoogleSheetsModifier<'a> {
                 modifier::DataValidation::TextEqualTo(t) => validate_str!("TEXT_EQUAL_TO", t),
                 modifier::DataValidation::TextIsValidEmail => validate_str!("TEXT_IS_VALID_EMAIL"),
                 modifier::DataValidation::TextIsValidUrl => validate_str!("TEXT_IS_VALID_URL"),
-                modifier::DataValidation::ValueInList(_) => todo!(),
+                modifier::DataValidation::ValueInList(list) => api::BooleanCondition {
+                    type_: Some("VALUE_IN_LIST".to_string()),
+                    values: Some(
+                        list.iter()
+                            .map(|l| api::ConditionValue {
+                                user_entered_value: Some(l.to_string()),
+                                ..Default::default()
+                            })
+                            .collect(),
+                    ),
+                },
                 modifier::DataValidation::ValueInRange(a1) => validate_str!("VALUE_IN_RANGE", a1),
             }),
             // TODO: show a helpful message?
             input_message: None,
             // TODO: I dunno?
             show_custom_ui: None,
-            // TODO: maybe make a CLI flag? if true, the spreadsheet will reject the data
+            // TODO: build this into the syntax
             strict: None,
         })
     }
