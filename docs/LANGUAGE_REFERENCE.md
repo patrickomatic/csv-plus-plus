@@ -128,13 +128,18 @@ which will apply that modifier to all cells in the row.
 
 ### All Modifiers
 
-#### border = all | top | bottom | left | right
-Sets a border on the given side (or all four sides if `all`). Can be repeated multiple times to set multiple borders.
+<details>
+  <summary><h4>border = all | top | bottom | left | right</h4></summary>
 
-> ##### Alias: `b = a | t | b | l | r`
+  <p>Sets a border on the given side (or all four sides if `all`). Can be repeated multiple times 
+  to set multiple borders.</p>
+
+  <h5>Alias:</h5>
+  <blockquote>b = a | t | b | l | r</blockquote>
+</details>
 
 
-#### bordercolor = HEX_COLOR
+#### bordercolor = HEX\_COLOR
 The color of the border, where `HEX_COLOR` is a 6-character hex color code.
 
 > ##### Alias `bc = HEX_COLOR`
@@ -208,7 +213,33 @@ The number format to apply to the cell.
 
 
 #### validate
-- TODO
+A variety of validations that can be applied to the data in the cell.
+
+* `validate=custom(FORMULA)` (alias: `validate=c(FORMULA)`)
+* `validate=date_after(DATE)` (alias: `validate=date_gt(DATE)`)
+* `validate=date_before(DATE)` (alias: `validate=date_lt(DATE)`)
+* `validate=date_between(DATE, DATE)` (alias: `validate=date_btwn(DATE, DATE)`)
+* `validate=date_equal_to(DATE)` (alias: `validate=date_eq(DATE)`)
+* `validate=in_list(..)`
+* `validate=in_range(A1)`
+* `validate=date_is_valid` (alias: `validate=is_date`)
+* `validate=is_valid_email` (alias: `validate=is_email`)
+* `validate=is_valid_url` (alias: `validate=is_url`)
+* `validate=date_not_between(DATE, DATE)` (alias: `validate=date_nbtwn(DATE, DATE)`)
+* `validate=date_on_or_after(DATE)` (alias: `validate=date_gte(DATE)`)
+* `validate=date_on_or_before(DATE)` (alias: `validate=date_lte(DATE)`)
+* `validate=number_between(NUMBER, NUMBER)` (alias: `validate=number_btwn(NUMBER, NUMBER)`)
+* `validate=number_equal_to(NUMBER)` (alias: `validate=number_eq(NUMBER)`)
+* `validate=number_greater_than(NUMBER)` (alias: `validate=number_gt(NUMBER)`)
+* `validate=number_greater_than_or_equal_to(NUMBER)` (alias: `validate=number_gte(NUMBER)`)
+* `validate=number_less_than(NUMBER)` (alias: `validate=number_lt(NUMBER)`)
+* `validate=number_less_than_or_equal_to(NUMBER)` (alias: `validate=number_lte(NUMBER)`)
+* `validate=number_not_between(NUMBER, NUMBER)` (alias: `validate=number_nbtwn(NUMBER, NUMBER)`)
+* `validate=number_not_equal_to(NUMBER)` (alias: `validate=number_neq(NUMBER)`)
+* `validate=text_contains(TEXT)`
+* `validate=text_does_not_contain(TEXT)`
+* `validate=text_equal_to(TEXT)` (alias: `text_eq`)
+
 
 #### valign = bottom | center | top
 The vertical alignment.
@@ -227,18 +258,18 @@ Bind a variable (specified by `VARIABLE_ID`) to reference this cell. TODO
 * Align the second cell left, align the last cell to the center and make it bold and italicized:
 
 ```csvpp
-Date,[[align=left]]Amount,Quantity,[[align=center/format=bold italic]]Price
+Date,[[ha=l]]Amount,Quantity,[[ha=c/f=b/f=i]]Price
 ```
 
 * Underline and center-align an entire row:
 
 ```csvpp
-![[align=center/format=underline]]Date,Amount,Quantity,Price
+![[ha=c/f=u]]Date,Amount,Quantity,Price
 ```
 
 * A header for the first row, then some formulas that repeat for each row for the rest of the spreadsheet:
 
 ```csvpp
-![[align=center/format=bold]]Date,Price,Quantity,Profit
-![[expand=1:]],,,"=MULTIPLY(cellref(B), cellref(C))"
+![[ha=c/f=b]]Date,Price,Quantity,Profit
+![[e]],,,"=MULTIPLY(cellref(B), cellref(C))"
 ```
