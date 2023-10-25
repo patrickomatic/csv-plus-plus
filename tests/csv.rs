@@ -5,7 +5,7 @@ mod common;
 
 #[test]
 fn write_no_code_section() {
-    let s = common::Setup::new(
+    let s = common::Setup::from_str(
         "write_no_code_section",
         "csv",
         r#"
@@ -22,7 +22,7 @@ foo,bar,baz
 
 #[test]
 fn write_variable() {
-    let s = common::Setup::new(
+    let s = common::Setup::from_str(
         "write_variable",
         "csv",
         r#"
@@ -44,7 +44,7 @@ foo,bar,baz,=foo
 
 #[test]
 fn write_expand() {
-    let s = common::Setup::new(
+    let s = common::Setup::from_str(
         "write_expand",
         "csv",
         r#"
@@ -74,7 +74,7 @@ profit := (celladjacent(B) * celladjacent(C)) - fees
 
 #[test]
 fn odd_row_widths() {
-    let s = common::Setup::new(
+    let s = common::Setup::from_str(
         "odd_row_widths",
         "csv",
         r#"

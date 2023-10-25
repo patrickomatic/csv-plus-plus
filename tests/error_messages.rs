@@ -3,7 +3,7 @@ mod common;
 
 #[test]
 fn syntax_error_in_code_section() {
-    let s = common::Setup::new(
+    let s = common::Setup::from_str(
         "syntax_error_in_code_section",
         "csv",
         r#"
@@ -35,7 +35,7 @@ On line 3:9, Expected `(` but saw `<`
 
 #[test]
 fn syntax_error_in_modifier_definition() {
-    let s = common::Setup::new(
+    let s = common::Setup::from_str(
         "syntax_error_in_modifier_definition",
         "csv",
         r#"
@@ -61,7 +61,7 @@ On line 2:21, Error parsing input, expected ']]' but saw unrecognized token ``
 
 #[test]
 fn bad_choice_in_modifier_with_possibilities() {
-    let s = common::Setup::new(
+    let s = common::Setup::from_str(
         "bad_choice_in_modifier_with_possibilities",
         "csv",
         r#"

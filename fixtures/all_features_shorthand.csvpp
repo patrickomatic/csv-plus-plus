@@ -1,0 +1,64 @@
+##
+# all_features_shorthand.csvpp
+#
+# All features supported by csv++, using short-hand notation where possible.
+#
+---
+border        ,                                            ,
+              ,[[b=t]]                 b=t                 ,
+              ,[[b=r]]                 b=r                 ,
+              ,[[b=b]]                 b=b                 ,
+              ,[[b=l]]                 b=l                 ,
+              ,[[b=a]]                 b=a                 ,
+              ,                                            ,
+borderstyle   ,                                            ,
+              ,[[b=all/bs=dashed]]     b=all/bs=dashed     ,
+              ,[[b=all/bs=solid]]      b=all/bs=solid      ,
+              ,                                            ,
+color         ,                                            ,
+              ,[[c=FF0000]]            c=FF0000            ,
+              ,[[c=ABC]]               c=ABC               ,
+              ,                                            ,
+expand        ,                                            ,
+![[e=3]]      ,                        e=3                 ,
+              ,                                            ,
+fontcolor     ,                                            ,
+              ,[[fc=FF0000]]           fc=FF0000           ,
+              ,[[fc=ABC]]              fc=ABC              ,
+              ,                                            ,
+fontfamily    ,                                            ,
+              ,[[ff='Comic Sans Ms']]  ff='Comic Sans MS'  ,
+              ,[[ff='Helvetica']]      ff='Helvetica'      ,
+              ,                                            ,
+fontsize      ,                                            ,
+              ,[[fs=20]]               fs=20               ,
+              ,[[fs=4]]                fs=4                ,
+              ,                                            ,
+format        ,                                            ,
+              ,[[f=b]]                 f=b                 ,
+              ,[[f=i]]                 f=i                 ,
+              ,[[f=u]]                 f=u                 ,
+              ,[[f=s]]                 f=s                 ,
+              ,                                            ,
+halign        ,                                            ,
+              ,[[ha=l]]                ha=l                ,
+              ,[[ha=c]]                ha=c                ,
+              ,[[ha=r]]                ha=r                ,
+              ,                                            ,
+note          ,                                            ,
+              ,[[n='this is a note']]  n='this is a note'  ,
+              ,                                            ,
+numberformat  ,                                            ,
+              ,[[nf=currency]]         nf=currency         ,[[nf=currency]]123456
+              ,[[nf=date]]             nf=date             ,[[nf=date]]123456
+              ,[[nf=datetime]]         nf=datetime         ,[[nf=datetime]]123456
+              ,[[nf=number]]           nf=number           ,[[nf=number]]123456
+              ,[[nf=percent]]          nf=percent          ,[[nf=percent]]123456
+              ,[[nf=text]]             nf=text             ,[[nf=text]]123456
+              ,[[nf=time]]             nf=time             ,[[nf=time]]123456
+              ,[[nf=scientific]]       nf=scientific       ,[[nf=scientific]]123456
+              ,                                            ,
+valign        ,                                            ,
+              ,[[va=top]]              va=top              ,
+              ,[[va=center]]           va=center           ,
+              ,[[va=bottom]]           va=bottom           ,
