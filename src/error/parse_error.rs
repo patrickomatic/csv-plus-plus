@@ -38,14 +38,14 @@ impl fmt::Display for ParseError {
             bad_input,
             highlighted_lines,
             line_number,
-            line_offset,
             message,
             possible_values,
+            ..
         } = self;
 
         writeln!(
             f,
-            "On line {}:{line_offset}, {message} but saw {bad_input}",
+            "On line {} {message} but saw {bad_input}",
             line_number + 1
         )?;
 
@@ -84,7 +84,7 @@ mod tests {
         };
 
         assert_eq!(
-            "On line 4:5, it should be foo but saw bar
+            "On line 4 it should be foo but saw bar
 
 foo
 bar
@@ -110,7 +110,7 @@ baz
         };
 
         assert_eq!(
-            "On line 4:5, it should be foo but saw bar
+            "On line 4 it should be foo but saw bar
 Possible values: one | two | three
 
 foo

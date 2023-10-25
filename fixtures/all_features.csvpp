@@ -1,4 +1,4 @@
-## Welcome to the all_features.csvpp test. this is a comment
+## Every. single. feature. (that csv++ supports)
 ##
 
 fn foo_fn(a, b, c) a + b * c
@@ -64,6 +64,32 @@ numberformat  ,                                                                 
               ,[[numberformat=text]]              numberformat=text             ,[[numberformat=text]]123456
               ,[[numberformat=time]]              numberformat=time             ,[[numberformat=time]]123456
               ,[[numberformat=scientific]]        numberformat=scientific       ,[[numberformat=scientific]]123456
+              ,                                                                 ,
+validate      ,
+validate=custom(TRUE)                           ,[[validate=custom(TRUE)]]TRUE
+validate=date_after(2025-09-08)                 ,[[validate=date_after(2025-09-08)]]                2026-09-07
+validate=date_before(2024-10-10)                ,[[validate=date_before(2024-10-10)]]               2021-01-01
+validate=date_between(2/4/2025  10/20/2026)     ,[[validate=date_between(2/4/2025 10/20/2026)]]     1/1/26
+validate=date_equal_to(1/2/23)                  ,[[validate=date_equal_to(1/2/23)]]                 1/2/23
+validate=in_list(1 2 3 foo)                     ,[[validate=in_list(1 2 3 foo)]]                    1
+validate=in_range(A1)                           ,[[validate=in_range(A1)]]                          border
+validate=date_is_valid                          ,[[validate=date_is_valid]]                         2026-01-01
+validate=is_valid_email                         ,[[validate=is_valid_email]]                        test@test.com
+validate=is_valid_url                           ,[[validate=is_valid_url]]                          http://test.com
+validate=date_not_between(4/5/2022 2022-05-04)  ,[[validate=date_not_between(4/5/2022 2022-05-04)]] 04/25/2022
+validate=date_on_or_after(1/2/23)               ,[[validate=date_on_or_after(1/2/23)]]              1/2/23
+validate=date_on_or_before(11/2/24)             ,[[validate=date_on_or_before(11/2/24)]]            11/2/22
+validate=number_between(5 10)                   ,[[validate=number_between(5 10)]]                  8
+validate=number_equal_to(5)                     ,[[validate=number_equal_to(5)]]                    5
+validate=number_greater_than(21)                ,[[validate=number_greater_than(21)]]               22
+validate=number_greater_than_or_equal_to(23)    ,[[validate=number_greater_than_or_equal_to(23)]]   24
+validate=number_less_than(23)                   ,[[validate=number_less_than(23)]]                  21
+validate=number_less_than_or_equal_to(42)       ,[[validate=number_less_than_or_equal_to(42)]]      23
+validate=number_not_between(1 20)               ,[[validate=number_not_between(1 20)]]              12
+validate=number_not_equal_to(42)                ,[[validate=number_not_equal_to(42)]]               123
+validate=text_contains('foo')                   ,[[validate=text_contains('foo')]]                  foo bar baz
+validate=text_does_not_contain('foo')           ,[[validate=text_does_not_contain('foo')]]          bar
+validate=text_equal_to('foo')                   ,[[validate=text_equal_to('foo')]]                  foo
               ,                                                                 ,
 valign        ,                                                                 ,
               ,[[valign=top]]                     valign=top                    ,

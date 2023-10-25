@@ -1,6 +1,6 @@
 use super::{DataValidation, ModifierParser, Token};
 use crate::ast::Ast;
-use crate::error::{BadInput, ModifierParseError, ParseError, ParseResult};
+use crate::error::{BadInput, ModifierParseError, ParseResult};
 use crate::DateTime;
 
 macro_rules! take_parens {
@@ -61,26 +61,26 @@ impl ModifierParser<'_, '_> {
                     "custom(FORMULA)",
                     "date_after(DATE)",
                     "date_before(DATE)",
-                    "date_between(DATE, DATE)",
+                    "date_between(DATE DATE)",
                     "date_equal_to(DATE)",
                     "date_is_valid",
-                    "date_not_between(DATE, DATE)",
+                    "date_not_between(DATE DATE)",
                     "date_on_or_after(DATE)",
                     "date_on_or_before(DATE)",
-                    "number_between(NUMBER, NUMBER)",
+                    "number_between(NUMBER NUMBER)",
                     "number_equal_to(NUMBER)",
                     "number_greater_than_or_equal_to(NUMBER)",
                     "number_greater_than(NUMBER)",
                     "number_less_than_or_equal_to(NUMBER)",
                     "number_less_than(NUMBER)",
-                    "number_not_between(NUMBER, NUMBER)",
+                    "number_not_between(NUMBER NUMBER)",
                     "number_not_equal_to(NUMBER)",
                     "text_contains(TEXT)",
                     "text_does_not_contain(TEXT)",
                     "text_equal_to(TEXT)",
                     "text_is_valid_email",
                     "text_is_valid_url",
-                    "value_in_list(ANY, ...)",
+                    "value_in_list(ANY ...)",
                     "value_in_range(A1)",
                 ],
             )
@@ -204,8 +204,7 @@ impl ModifierParser<'_, '_> {
                     return Err(self.lexer.unknown_string("Expected a date, number or string"));
                 }
 
-                // if we see a comma do the loop again, otherwise break out of it
-                if self.lexer.maybe_take_comma().is_none() {
+                if self.lexer.peek_close_parenthesis() {
                     break
                 }
             }
@@ -231,15 +230,10 @@ impl ModifierParser<'_, '_> {
 
     fn two_dates_in_parens(&mut self) -> ParseResult<(DateTime, DateTime)> {
         take_parens!(self, {
-            let match_one = self.lexer.take_token(Token::Date)?;
-            let date_one = DateTime::try_from(match_one)?;
-
-            self.lexer.take_token(Token::Comma)?;
-
-            let match_two = self.lexer.take_token(Token::Date)?;
-            let date_two = DateTime::try_from(match_two)?;
-
-            Ok::<(DateTime, DateTime), ParseError>((date_one, date_two))
+            Ok((
+                DateTime::try_from(self.lexer.take_token(Token::Date)?)?,
+                DateTime::try_from(self.lexer.take_token(Token::Date)?)?,
+            ))
         })
     }
 
@@ -251,11 +245,10 @@ impl ModifierParser<'_, '_> {
 
     fn two_numbers_in_parens(&mut self) -> ParseResult<(i64, i64)> {
         take_parens!(self, {
-            let a = self.lexer.take_token(Token::Number)?.into_number()?;
-            self.lexer.take_token(Token::Comma)?;
-            let b = self.lexer.take_token(Token::Number)?.into_number()?;
-
-            Ok::<(i64, i64), ParseError>((a, b))
+            Ok((
+                self.lexer.take_token(Token::Number)?.into_number()?,
+                self.lexer.take_token(Token::Number)?.into_number()?,
+            ))
         })
     }
 
@@ -312,19 +305,19 @@ mod tests {
 
     #[test]
     fn parse_validate_date_between() {
-        let parsed_modifiers = test_parse("[[validate=date_between(1/2/23, 4/5/26)]]abc123");
+        let parsed_modifiers = test_parse("[[validate=date_between(2/4/2025 10/20/2026)]]abc123");
         assert_eq!(
             parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
             DataValidation::DateBetween(
-                build_date_time_ymd(2023, 1, 2),
-                build_date_time_ymd(2026, 4, 5)
+                build_date_time_ymd(2025, 2, 4),
+                build_date_time_ymd(2026, 10, 20)
             )
         );
     }
 
     #[test]
     fn parse_validate_date_equal_to() {
-        let parsed_modifiers = test_parse("[[validate=date_equal_to(12/1/23)]]abc123");
+        let parsed_modifiers = test_parse("[[validate=date_equal_to(2023-12-01)]]abc123");
         assert_eq!(
             parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
             DataValidation::DateEqualTo(build_date_time_ymd(2023, 12, 1))
@@ -342,7 +335,7 @@ mod tests {
 
     #[test]
     fn parse_validate_date_not_between() {
-        let parsed_modifiers = test_parse("[[validate=date_not_between(1/2/23, 4/5/26)]]abc123");
+        let parsed_modifiers = test_parse("[[validate=date_not_between(1/2/23 4/5/26)]]abc123");
         assert_eq!(
             parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
             DataValidation::DateNotBetween(
@@ -393,8 +386,7 @@ mod tests {
 
     #[test]
     fn parse_validate_in_list() {
-        let parsed_modifiers =
-            test_parse("[[validate=in_list('foo', bar, 123, 11/22/2024)]]abc123");
+        let parsed_modifiers = test_parse("[[validate=in_list('foo' bar 123 11/22/2024)]]abc123");
 
         assert_eq!(
             parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
@@ -429,7 +421,7 @@ mod tests {
 
     #[test]
     fn parse_validate_number_between() {
-        let parsed_modifiers = test_parse("[[validate=number_between(123, 456)]]abc123");
+        let parsed_modifiers = test_parse("[[validate=number_between(123 456)]]abc123");
         assert_eq!(
             parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
             DataValidation::NumberBetween(123, 456)
@@ -484,7 +476,7 @@ mod tests {
 
     #[test]
     fn parse_validate_number_not_between() {
-        let parsed_modifiers = test_parse("[[validate=number_not_between(123, 456)]]abc123");
+        let parsed_modifiers = test_parse("[[validate=number_not_between(123 456)]]abc123");
         assert_eq!(
             parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
             DataValidation::NumberNotBetween(123, 456)

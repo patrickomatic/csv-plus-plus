@@ -13,6 +13,7 @@ type Matcher = TokenMatcher<Token>;
 #[derive(Debug)]
 pub(crate) struct TokenLibrary {
     // pub(crate) a1_reference: Matcher,
+    pub(crate) close_parenthesis: Matcher,
     pub(crate) date: Matcher,
     pub(crate) identifier: Matcher,
     pub(crate) number: Matcher,
@@ -24,8 +25,9 @@ impl TokenLibrary {
     pub(crate) fn build() -> Result<Self, Error> {
         Ok(Self {
             // a1_reference: TokenMatcher::new(r"[$!\w:]+", Token::A1)?,
+            close_parenthesis: TokenMatcher::new(r"\)", Token::CloseParenthesis)?,
             date: TokenMatcher::new(
-                r"(?:(?:\d{2,4}-\d{1,2}-\d{1,2})|(?:\d{1,2}\/\d{1,2}\/\d{2,4}))",
+                r"(?:(?:\d\d\d\d\-\d\d\-\d\d)|(?:\d{1,2}\/\d{1,2}\/\d{2,4}))",
                 Token::Date,
             )?,
             identifier: TokenMatcher::new(r"\w+", Token::Identifier)?,
@@ -51,6 +53,8 @@ mod tests {
         assert!(build_token_library().date.1.is_match("11/12/2024"));
         assert!(build_token_library().date.1.is_match("1/2/24"));
         assert!(build_token_library().date.1.is_match("11/2/24"));
+
+        assert!(build_token_library().date.1.is_match("2024-11-12"));
 
         assert!(!build_token_library().date.1.is_match("1/2"));
         assert!(!build_token_library().date.1.is_match("123"));

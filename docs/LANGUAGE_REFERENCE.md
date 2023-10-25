@@ -213,28 +213,28 @@ The number format to apply to the cell.
 
 
 #### validate
-A variety of validations that can be applied to the data in the cell.
+Validations that can be applied to the data in the cell.
 
 * `validate=custom(FORMULA)` (alias: `validate=c(FORMULA)`)
 * `validate=date_after(DATE)` (alias: `validate=date_gt(DATE)`)
 * `validate=date_before(DATE)` (alias: `validate=date_lt(DATE)`)
-* `validate=date_between(DATE, DATE)` (alias: `validate=date_btwn(DATE, DATE)`)
+* `validate=date_between(DATE DATE)` (alias: `validate=date_btwn(DATE DATE)`)
 * `validate=date_equal_to(DATE)` (alias: `validate=date_eq(DATE)`)
 * `validate=in_list(..)`
 * `validate=in_range(A1)`
 * `validate=date_is_valid` (alias: `validate=is_date`)
 * `validate=is_valid_email` (alias: `validate=is_email`)
 * `validate=is_valid_url` (alias: `validate=is_url`)
-* `validate=date_not_between(DATE, DATE)` (alias: `validate=date_nbtwn(DATE, DATE)`)
+* `validate=date_not_between(DATE DATE)` (alias: `validate=date_nbtwn(DATE DATE)`)
 * `validate=date_on_or_after(DATE)` (alias: `validate=date_gte(DATE)`)
 * `validate=date_on_or_before(DATE)` (alias: `validate=date_lte(DATE)`)
-* `validate=number_between(NUMBER, NUMBER)` (alias: `validate=number_btwn(NUMBER, NUMBER)`)
+* `validate=number_between(NUMBER NUMBER)` (alias: `validate=number_btwn(NUMBER NUMBER)`)
 * `validate=number_equal_to(NUMBER)` (alias: `validate=number_eq(NUMBER)`)
 * `validate=number_greater_than(NUMBER)` (alias: `validate=number_gt(NUMBER)`)
 * `validate=number_greater_than_or_equal_to(NUMBER)` (alias: `validate=number_gte(NUMBER)`)
 * `validate=number_less_than(NUMBER)` (alias: `validate=number_lt(NUMBER)`)
 * `validate=number_less_than_or_equal_to(NUMBER)` (alias: `validate=number_lte(NUMBER)`)
-* `validate=number_not_between(NUMBER, NUMBER)` (alias: `validate=number_nbtwn(NUMBER, NUMBER)`)
+* `validate=number_not_between(NUMBER NUMBER)` (alias: `validate=number_nbtwn(NUMBER NUMBER)`)
 * `validate=number_not_equal_to(NUMBER)` (alias: `validate=number_neq(NUMBER)`)
 * `validate=text_contains(TEXT)`
 * `validate=text_does_not_contain(TEXT)`

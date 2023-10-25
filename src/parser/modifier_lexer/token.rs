@@ -7,7 +7,6 @@ pub(crate) enum Token {
     A1,
     CloseParenthesis,
     Color,
-    Comma,
     Date,
     EndModifier,
     Equals,
@@ -24,6 +23,16 @@ pub(crate) enum Token {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "{:?}", self)
+        write!(f, "{:?}", self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display() {
+        assert_eq!(Token::ModifierName.to_string(), "ModifierName");
     }
 }

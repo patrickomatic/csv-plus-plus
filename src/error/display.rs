@@ -80,82 +80,96 @@ impl fmt::Display for Error {
 
 #[cfg(test)]
 mod tests {
-    /*
     use super::super::{Output, ParseError};
     use super::*;
     use std::path;
 
+    fn build_parse_error() -> ParseError {
+        ParseError {
+            bad_input: "bar".to_string(),
+            message: "it should be foo".to_string(),
+            line_number: 3,
+            line_offset: 5,
+            possible_values: None,
+            highlighted_lines: vec!["foo".to_string(), "bar".to_string(), "baz".to_string()],
+        }
+    }
+
     #[test]
     fn display_cell_syntax_error() {
         let message = Error::CellSyntaxError {
-            line_number: 8,
+            filename: path::PathBuf::from("a_file.csvpp"),
             position: a1_notation::Address::new(1, 5),
-            parse_error: Box::new(ParseError::BadInput {
-                bad_input: "foo".to_string(),
-                message: "You did a foo".to_string(),
-            }),
+            parse_error: Box::new(build_parse_error()),
         };
 
         assert_eq!(
-            "Syntax error in cell B6 on line 8
-    You did a foo
-    bad input: foo
-    ",
-            message.to_string()
+            message.to_string(),
+            "Syntax error in cell B6 of a_file.csvpp
+On line 4 it should be foo but saw bar
+
+foo
+bar
+baz
+
+",
         );
     }
 
     #[test]
     fn display_code_syntax_error() {
         let message = Error::CodeSyntaxError {
-            position: 2,
-            line_number: 1,
-            message: "foo".to_string(),
-            highlighted_lines: vec!["foo".to_string(), "bar".to_string()],
+            filename: path::PathBuf::from("a_file.csvpp"),
+            parse_error: Box::new(build_parse_error()),
         };
 
         assert_eq!(
-            "Syntax error on line 1: foo
-    foo
-    bar
-    ",
-            message.to_string()
+            message.to_string(),
+            "Syntax error in code section of a_file.csvpp
+On line 4 it should be foo but saw bar
+
+foo
+bar
+baz
+
+"
         );
     }
 
     #[test]
     fn display_eval_error() {
         let message = Error::EvalError {
-            position: a1_notation::Address::new(2, 2),
-            line_number: 1,
+            filename: path::PathBuf::from("a_file.csvpp"),
             message: "foo".to_string(),
+            position: a1_notation::Address::new(2, 2),
         };
 
         assert_eq!(
-            "Error evaluating formula in cell C3 on line 1\nfoo\n",
-            message.to_string()
+            message.to_string(),
+            "Error evaluating formula in cell C3 (2, 2) of a_file.csvpp
+foo
+"
         );
     }
 
     #[test]
     fn display_modifier_syntax_error() {
         let message = Error::ModifierSyntaxError {
-            line_number: 5,
+            filename: path::PathBuf::from("a_file.csvpp"),
             position: a1_notation::Address::new(0, 1),
-            parse_error: Box::new(ParseError::BadInputWithPossibilities {
-                bad_input: "foo".to_string(),
-                message: "You did a foo".to_string(),
-                possible_values: "bar | baz".to_string(),
-            }),
+            parse_error: Box::new(build_parse_error()),
         };
 
         assert_eq!(
-            "Invalid modifier definition in cell A2 on line 5
-    You did a foo
-    bad input: foo
-    possible values: bar | baz
-    ",
-            message.to_string()
+            message.to_string(),
+            "Invalid modifier definition in cell A2 (0, 1) of a_file.csvpp
+On line 4 it should be foo but saw bar
+
+foo
+bar
+baz
+
+"
         );
     }
 
@@ -174,8 +188,8 @@ mod tests {
         };
 
         assert_eq!(
+            message.to_string(),
             "Error writing object file bar.xlsx: foo\n",
-            message.to_string()
         );
     }
 
@@ -187,8 +201,8 @@ mod tests {
         };
 
         assert_eq!(
+            message.to_string(),
             "Error reading source a_file.csvpp: foo\n",
-            message.to_string()
         );
     }
 
@@ -200,9 +214,8 @@ mod tests {
         };
 
         assert_eq!(
+            message.to_string(),
             "Error writing to Excel: foo.csvpp: foo\n",
-            message.to_string()
         );
     }
-    */
 }

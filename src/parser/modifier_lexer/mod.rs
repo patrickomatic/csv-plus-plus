@@ -7,11 +7,6 @@
 //! [https://en.wikipedia.org/wiki/Lexer_hack](See also: Lexer hack)
 //!
 //!
-// TODO:
-// * need to lowercase the input but we can't do it on the entire value because we don't want to
-//     lowercase the stuff outside the modifier definition
-//
-// * make the `take_date` parser more strict
 use super::TokenMatcher;
 use crate::error::{BadInput, ParseError, ParseResult};
 use crate::{CharOffset, Runtime};
@@ -29,7 +24,7 @@ pub(crate) use unknown_token::UnknownToken;
 #[derive(Debug)]
 pub(crate) struct ModifierLexer<'a> {
     cell_offset: CharOffset,
-    input: &'a str,
+    pub(crate) input: &'a str,
     position: a1_notation::Address,
     runtime: &'a Runtime,
 }
@@ -76,10 +71,6 @@ impl<'a> ModifierLexer<'a> {
         self.take_token(Token::Identifier)
     }
 
-    pub(super) fn maybe_take_comma(&mut self) -> Option<TokenMatch> {
-        self.maybe_take(Token::Comma, ",")
-    }
-
     pub(super) fn maybe_take_date(&mut self) -> Option<TokenMatch> {
         self.maybe_take_regex(&self.runtime.cell_token_library.date)
     }
@@ -117,6 +108,15 @@ impl<'a> ModifierLexer<'a> {
         self.maybe_take(Token::Slash, "/")
     }
 
+    // is the next token to be consumed a `)`? (this will not consume it)
+    pub(super) fn peek_close_parenthesis(&mut self) -> bool {
+        self.runtime
+            .cell_token_library
+            .close_parenthesis
+            .try_match(self.input)
+            .is_some()
+    }
+
     pub(super) fn take_token(&mut self, token: Token) -> ParseResult<TokenMatch> {
         // spaces can be anywhere, so take any leading space
         self.take_whitespace();
@@ -128,7 +128,6 @@ impl<'a> ModifierLexer<'a> {
             }),
             Token::CloseParenthesis => self.take(token, ")"),
             Token::Color => self.take_color(),
-            Token::Comma => self.take(token, ","),
             Token::Date => self.take_date(),
             Token::EndModifier => self.take(token, "]]"),
             Token::Equals => self.take(token, "="),
@@ -147,10 +146,20 @@ impl<'a> ModifierLexer<'a> {
         }
     }
 
-    // TODO: can do a little better here, we just take numbers and slashes, but we could be more
-    // strict (only 2 slashes allowed)
     pub(super) fn take_date(&mut self) -> ParseResult<TokenMatch> {
-        self.take_while(Token::Date, |ch| ch.is_ascii_digit() || ch == '/')
+        self.take_whitespace();
+
+        if let Some(m) = self.runtime.cell_token_library.date.try_match(self.input) {
+            let str_match = m.str_match;
+
+            // move the offset past any observed whitespace, then build the token
+            self.move_input(m.len_leading_whitespace);
+            let token = self.match_token(Token::Date, str_match);
+            self.move_input(str_match.len());
+            Ok(token)
+        } else {
+            Err(self.unknown_string("Expected a date"))
+        }
     }
 
     pub fn take_whitespace(&mut self) {
@@ -193,7 +202,6 @@ impl<'a> ModifierLexer<'a> {
     fn maybe_take_regex(&mut self, tm: &TokenMatcher<Token>) -> Option<TokenMatch> {
         tm.try_match(self.input).map(|m| {
             let str_match = m.str_match;
-            dbg!(&m);
 
             // move the offset past any observed whitespace, then build the token
             self.move_input(m.len_leading_whitespace);
@@ -352,19 +360,6 @@ mod tests {
     }
 
     #[test]
-    fn maybe_take_comma() {
-        let runtime = build_runtime();
-
-        let mut lexer = test_lexer(" , more stuff", &runtime);
-        assert_eq!(lexer.maybe_take_comma().unwrap().token, Token::Comma);
-        assert_eq!(lexer.input, " more stuff");
-
-        let mut lexer = test_lexer(" anything else", &runtime);
-        assert!(lexer.maybe_take_comma().is_none());
-        assert_eq!(lexer.input, "anything else");
-    }
-
-    #[test]
     fn maybe_take_date() {
         let runtime = build_runtime();
         let mut lexer = test_lexer("  11/2/2024, 1, 2", &runtime);
@@ -491,6 +486,19 @@ mod tests {
         let mut lexer = test_lexer("ABC123", &runtime);
 
         assert_eq!("ABC123", lexer.take_token(Token::Color).unwrap().str_match);
+    }
+
+    #[test]
+    fn take_token_date() {
+        let runtime = build_runtime();
+        let mut lexer = test_lexer(" 2022-01-02, foo", &runtime);
+
+        assert_eq!(
+            "2022-01-02",
+            lexer.take_token(Token::Date).unwrap().str_match
+        );
+        assert_eq!(lexer.input, ", foo");
+        assert_eq!(lexer.cell_offset, 11);
     }
 
     #[test]

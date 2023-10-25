@@ -2,6 +2,7 @@
 
 ### Features
 
+* data validations via the `validate=...` syntax
 * Dates assume local TZ if not specified
 
 ### Bugfixes
@@ -9,6 +10,7 @@
 * Variables defined on rows (i.e., `![[var=this_row]],=this_row`) weren't being evaluated to the 
   correct results
 * More consistent parsing of dates
+* Fix line count in syntax error messages
 
 ### **Breaking Changes**
 
