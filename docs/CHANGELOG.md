@@ -9,6 +9,7 @@
 
 * Variables defined on rows (i.e., `![[var=this_row]],=this_row`) weren't being evaluated to the 
   correct results
+* Expands were incorrectly filling into the rows below them, only for excel
 * More consistent parsing of dates
 * Fix line count in syntax error messages
 

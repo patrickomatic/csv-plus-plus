@@ -15,7 +15,7 @@ use crate::ast::{
 };
 use crate::error::{EvalError, EvalResult};
 use crate::parser::code_section_parser::{CodeSection, CodeSectionParser};
-use crate::{Cell, Result, Row, RowModifier, Runtime, Spreadsheet};
+use crate::{Cell, Result, Row, Runtime, Spreadsheet};
 use a1_notation::{Address, A1};
 use std::cell;
 use std::collections;
@@ -112,27 +112,12 @@ impl<'a> Template<'a> {
 
         for row in s.rows.iter() {
             if let Some(e) = row.modifier.expand {
-                let expand_amount = e.expand_amount(row_num);
-                let new_expand = e.clone_to_row(row_num);
-
-                for _ in 0..expand_amount {
-                    new_spreadsheet.rows.push(Row {
-                        row: row_num.into(),
-                        modifier: RowModifier {
-                            expand: Some(new_expand),
-                            ..row.modifier.clone()
-                        },
-                        cells: row
-                            .cells
-                            .iter()
-                            .map(|c| c.clone_to_row(row_num.into()))
-                            .collect(),
-                    });
-
+                for _ in 0..e.expand_amount(row_num) {
+                    new_spreadsheet.rows.push(row.clone_to_row(row_num.into()));
                     row_num += 1;
                 }
             } else {
-                new_spreadsheet.rows.push(row.clone());
+                new_spreadsheet.rows.push(row.clone_to_row(row_num.into()));
                 row_num += 1;
             }
         }
@@ -361,6 +346,23 @@ mod tests {
         let template = Template::compile(&runtime).unwrap();
 
         assert_eq!(template.spreadsheet.borrow().rows.len(), 1000);
+    }
+
+    #[test]
+    fn compile_with_expand_and_rows() {
+        let test_file = TestFile::new("xlsx", "foo,bar,baz\n![[e=2]]foo,bar,baz\none,last,row\n");
+        let runtime = test_file.into();
+        let template = Template::compile(&runtime).unwrap();
+
+        let spreadsheet = template.spreadsheet.borrow();
+        assert_eq!(spreadsheet.rows[0].row, 0.into());
+        assert_eq!(spreadsheet.rows[0].cells[0].position.row, 0.into());
+        assert_eq!(spreadsheet.rows[1].row, 1.into());
+        assert_eq!(spreadsheet.rows[1].cells[0].position.row, 1.into());
+        assert_eq!(spreadsheet.rows[2].row, 2.into());
+        assert_eq!(spreadsheet.rows[2].cells[0].position.row, 2.into());
+        assert_eq!(spreadsheet.rows[3].row, 3.into());
+        assert_eq!(spreadsheet.rows[3].cells[0].position.row, 3.into());
     }
 
     #[test]

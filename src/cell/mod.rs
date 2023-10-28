@@ -45,7 +45,7 @@ impl Cell {
     /// moved to `new_row`.  This involves updating `position` and `expand.start_row`
     pub(crate) fn clone_to_row(&self, new_row: Row) -> Self {
         Self {
-            position: Address::new(self.position.column.x, new_row.y),
+            position: self.position.with_y(new_row.y),
             ..self.clone()
         }
     }
