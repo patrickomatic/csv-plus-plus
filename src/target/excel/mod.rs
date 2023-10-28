@@ -89,6 +89,10 @@ impl<'a> Excel<'a> {
         cell_validations: Vec<CellValidation>,
     ) {
         let mut validations = u::DataValidations::default();
+        if cell_validations.is_empty() {
+            return;
+        }
+
         validations
             .set_data_validation_list(cell_validations.into_iter().map(|dv| dv.into()).collect());
         worksheet.set_data_validations(validations);
