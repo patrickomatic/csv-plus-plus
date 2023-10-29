@@ -5,26 +5,42 @@ use umya_spreadsheet as u;
 pub(super) struct CellValidation(pub(super) a1_notation::Address, pub(super) DataValidation);
 
 macro_rules! custom_validation {
-    ($v:ident, $type:ident, $formula1:tt, $prompt:expr) => {
+    ($v:ident, $type:ident, $formula1:expr, $prompt:expr) => {
         $v.set_formula1($formula1.to_string())
+            .set_show_input_message(true)
+            .set_show_error_message(true)
             .set_type(u::DataValidationValues::$type)
             .set_prompt($prompt)
     };
-
-    ($v:ident, $type:ident, $formula1:tt, $formula2:tt, $prompt:expr) => {
+    ($v:ident, $type:ident, $formula1:expr, $formula2:expr, $prompt:expr) => {
         custom_validation!($v, $type, $formula1, $prompt).set_formula2($formula2.to_string())
     };
 }
 
 macro_rules! validation {
-    ($v:ident, $type:ident, $op:ident, $formula1:tt, $prompt:expr) => {
+    ($v:ident, $type:ident, $op:ident, $formula1:expr, $prompt:expr) => {
         custom_validation!($v, $type, $formula1, $prompt)
             .set_operator(u::DataValidationOperatorValues::$op)
     };
-
-    ($v:ident, $type:ident, $op:ident, $formula1:tt, $formula2:tt, $prompt:expr) => {
+    ($v:ident, $type:ident, $op:ident, $formula1:expr, $formula2:expr, $prompt:expr) => {
         custom_validation!($v, $type, $formula1, $formula2, $prompt)
             .set_operator(u::DataValidationOperatorValues::$op)
+    };
+}
+
+macro_rules! date_validation {
+    ($v:ident, $op:ident, $formula1:ident, $prompt:expr) => {
+        validation!($v, Date, $op, $formula1.distance_from_epoch(), $prompt)
+    };
+    ($v:ident, $op:ident, $formula1:ident, $formula2:ident, $prompt:expr) => {
+        validation!(
+            $v,
+            Date,
+            $op,
+            $formula1.distance_from_epoch(),
+            $formula2.distance_from_epoch(),
+            $prompt
+        )
     };
 }
 
@@ -49,26 +65,19 @@ impl From<CellValidation> for u::DataValidation {
             }
 
             DataValidation::DateAfter(d) => {
-                validation!(v, Date, GreaterThan, d, format!("Date after {d}"))
+                date_validation!(v, GreaterThan, d, format!("Date after {d}"))
             }
 
             DataValidation::DateBefore(d) => {
-                validation!(v, Date, LessThan, d, format!("Date before {d}"))
+                date_validation!(v, LessThan, d, format!("Date before {d}"))
             }
 
             DataValidation::DateBetween(d1, d2) => {
-                validation!(
-                    v,
-                    Date,
-                    Between,
-                    d1,
-                    d2,
-                    format!("Date between {d1} and {d2}")
-                )
+                date_validation!(v, Between, d1, d2, format!("Date between {d1} and {d2}"))
             }
 
             DataValidation::DateEqualTo(d) => {
-                validation!(v, Date, Equal, d, format!("Date equal to {d}"))
+                date_validation!(v, Equal, d, format!("Date equal to {d}"))
             }
 
             DataValidation::DateIsValid => {
@@ -77,9 +86,8 @@ impl From<CellValidation> for u::DataValidation {
             }
 
             DataValidation::DateNotBetween(d1, d2) => {
-                validation!(
+                date_validation!(
                     v,
-                    Date,
                     NotBetween,
                     d1,
                     d2,
@@ -88,23 +96,11 @@ impl From<CellValidation> for u::DataValidation {
             }
 
             DataValidation::DateOnOrAfter(d) => {
-                validation!(
-                    v,
-                    Date,
-                    GreaterThanOrEqual,
-                    d,
-                    format!("Date on or after {d}")
-                )
+                date_validation!(v, GreaterThanOrEqual, d, format!("Date on or after {d}"))
             }
 
             DataValidation::DateOnOrBefore(d) => {
-                validation!(
-                    v,
-                    Date,
-                    LessThanOrEqual,
-                    d,
-                    format!("Date on or before {d}")
-                )
+                date_validation!(v, LessThanOrEqual, d, format!("Date on or before {d}"))
             }
 
             DataValidation::NumberBetween(n1, n2) => {
