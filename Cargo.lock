@@ -2297,8 +2297,9 @@ checksum = "497961ef93d974e23eb6f433eb5fe1b7930b659f06d12dec6fc44a8f554c0bba"
 
 [[package]]
 name = "umya-spreadsheet"
-version = "1.0.2"
-source = "git+https://github.com/MathNya/umya-spreadsheet.git?rev=af61aa3#af61aa3f9302b85b6a7ebf7d707e7c7772e30cf6"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4cd878f899825bddc40c87af9aaa14c1550d427e2009ce6c02c5ab7ff7a371b"
 dependencies = [
  "aes",
  "ahash",
