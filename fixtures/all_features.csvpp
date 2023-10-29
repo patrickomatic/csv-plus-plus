@@ -6,9 +6,14 @@ fn foo_fn(a, b, c) a + b * c
 # a variable
 bar := 42
 
+depends_on_another := 42 * 100
+
 # a function that takes two args and calls another function
 fn composite_fn(a, b)
     foo_fn(a, b, bar) # a trailing comment
+
+fn my_function()
+  composite_fn(42, 23)
 
 ---
 border        ,                                                                 ,
@@ -56,14 +61,14 @@ note          ,                                                                 
               ,[[note='this is a note']]          note='this is a note'         ,
               ,                                                                 ,
 numberformat  ,                                                                 ,
-              ,[[numberformat=currency]]          numberformat=currency         ,[[numberformat=currency]]123456
-              ,[[numberformat=date]]              numberformat=date             ,[[numberformat=date]]123456
-              ,[[numberformat=datetime]]          numberformat=datetime         ,[[numberformat=datetime]]123456
-              ,[[numberformat=number]]            numberformat=number           ,[[numberformat=number]]123456
-              ,[[numberformat=percent]]           numberformat=percent          ,[[numberformat=percent]]123456
-              ,[[numberformat=text]]              numberformat=text             ,[[numberformat=text]]123456
-              ,[[numberformat=time]]              numberformat=time             ,[[numberformat=time]]123456
-              ,[[numberformat=scientific]]        numberformat=scientific       ,[[numberformat=scientific]]123456
+              ,[[numberformat=currency]]          numberformat=currency         ,[[numberformat=currency]]=123456
+              ,[[numberformat=date]]              numberformat=date             ,[[numberformat=date]]=1234-12-12
+              ,[[numberformat=datetime]]          numberformat=datetime         ,[[numberformat=datetime]]=123456
+              ,[[numberformat=number]]            numberformat=number           ,[[numberformat=number]]=123456
+              ,[[numberformat=percent]]           numberformat=percent          ,[[numberformat=percent]]=123456
+              ,[[numberformat=text]]              numberformat=text             ,[[numberformat=text]]=123456
+              ,[[numberformat=time]]              numberformat=time             ,[[numberformat=time]]=123456
+              ,[[numberformat=scientific]]        numberformat=scientific       ,[[numberformat=scientific]]=123456
               ,                                                                 ,
 validate      ,
 validate=custom(TRUE)                           ,[[validate=custom(TRUE)]]TRUE
@@ -99,4 +104,4 @@ valign        ,                                                                 
 variables     ,                                                                 ,
               ,depends_on_another                                               ,=depends_on_another
               ,my_function()                                                    ,=my_function()
-              ,simple_var                                                       ,=simple_var
+              ,bar                                                              ,=bar

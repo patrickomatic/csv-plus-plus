@@ -40,207 +40,188 @@ impl From<CellValidation> for u::DataValidation {
         let mut sqref = u::SequenceOfReferences::default();
         sqref.set_sqref(position.to_string());
 
-        let mut validation = u::DataValidation::default();
-        validation.set_sequence_of_references(sqref);
+        let mut v = u::DataValidation::default();
+        v.set_sequence_of_references(sqref);
 
         match dv {
             DataValidation::Custom(c) => {
-                custom_validation!(validation, Custom, c, format!("Custom formula: {c}"));
+                custom_validation!(v, Custom, c, format!("Custom formula: {c}"))
             }
 
             DataValidation::DateAfter(d) => {
-                validation!(validation, Date, GreaterThan, d, format!("Date after {d}"));
+                validation!(v, Date, GreaterThan, d, format!("Date after {d}"))
             }
 
             DataValidation::DateBefore(d) => {
-                validation!(validation, Date, LessThan, d, format!("Date before {d}"));
+                validation!(v, Date, LessThan, d, format!("Date before {d}"))
             }
 
             DataValidation::DateBetween(d1, d2) => {
                 validation!(
-                    validation,
+                    v,
                     Date,
                     Between,
                     d1,
                     d2,
                     format!("Date between {d1} and {d2}")
-                );
+                )
             }
 
             DataValidation::DateEqualTo(d) => {
-                validation!(validation, Date, Equal, d, format!("Date equal to {d}"));
+                validation!(v, Date, Equal, d, format!("Date equal to {d}"))
             }
 
             DataValidation::DateIsValid => {
                 let f = format!("=ISNUMBER(DAY({position}))");
-                custom_validation!(validation, Custom, f, "Date is valid");
+                custom_validation!(v, Custom, f, "Date is valid")
             }
 
             DataValidation::DateNotBetween(d1, d2) => {
                 validation!(
-                    validation,
+                    v,
                     Date,
                     NotBetween,
                     d1,
                     d2,
                     format!("Date not between {d1} and {d2}")
-                );
+                )
             }
 
             DataValidation::DateOnOrAfter(d) => {
                 validation!(
-                    validation,
+                    v,
                     Date,
                     GreaterThanOrEqual,
                     d,
                     format!("Date on or after {d}")
-                );
+                )
             }
 
             DataValidation::DateOnOrBefore(d) => {
                 validation!(
-                    validation,
+                    v,
                     Date,
                     LessThanOrEqual,
                     d,
                     format!("Date on or before {d}")
-                );
+                )
             }
 
             DataValidation::NumberBetween(n1, n2) => {
                 validation!(
-                    validation,
+                    v,
                     Decimal,
                     Between,
                     n1,
                     n2,
                     format!("Number between {n1} and {n2}")
-                );
+                )
             }
 
             DataValidation::NumberEqualTo(n) => {
-                validation!(
-                    validation,
-                    Decimal,
-                    Equal,
-                    n,
-                    format!("Number equal to {n}")
-                );
+                validation!(v, Decimal, Equal, n, format!("Number equal to {n}"))
             }
 
             DataValidation::NumberGreaterThan(n) => {
                 validation!(
-                    validation,
+                    v,
                     Decimal,
                     GreaterThan,
                     n,
                     format!("Number greater than {n}")
-                );
+                )
             }
 
             DataValidation::NumberGreaterThanOrEqualTo(n) => {
                 validation!(
-                    validation,
+                    v,
                     Decimal,
                     GreaterThanOrEqual,
                     n,
                     format!("Number greater than or equal to {n}")
-                );
+                )
             }
 
             DataValidation::NumberLessThan(n) => {
-                validation!(
-                    validation,
-                    Decimal,
-                    LessThan,
-                    n,
-                    format!("Number less than {n}")
-                );
+                validation!(v, Decimal, LessThan, n, format!("Number less than {n}"))
             }
 
             DataValidation::NumberLessThanOrEqualTo(n) => {
                 validation!(
-                    validation,
+                    v,
                     Decimal,
                     LessThanOrEqual,
                     n,
                     format!("Number less than or equal to {n}")
-                );
+                )
             }
 
             DataValidation::NumberNotBetween(n1, n2) => {
                 validation!(
-                    validation,
+                    v,
                     Decimal,
                     NotBetween,
                     n1,
                     n2,
                     format!("Number not between {n1} and {n2}")
-                );
+                )
             }
 
             DataValidation::NumberNotEqualTo(n) => {
-                validation!(
-                    validation,
-                    Decimal,
-                    NotEqual,
-                    n,
-                    format!("Number not equal to {n}")
-                );
+                validation!(v, Decimal, NotEqual, n, format!("Number not equal to {n}"))
             }
 
             DataValidation::TextContains(t) => {
                 let f = format!("=ISNUMBER(SEARCH(\"{t}\", {position}))");
-                custom_validation!(validation, Custom, f, format!("Text contains \"{t}\""));
+                custom_validation!(v, Custom, f, format!("Text contains \"{t}\""))
             }
 
             DataValidation::TextDoesNotContain(t) => {
                 let f = format!("=NOT(ISNUMBER(SEARCH(\"{t}\", {position})))");
-                custom_validation!(
-                    validation,
-                    Custom,
-                    f,
-                    format!("Text does not contain \"{t}\"")
-                );
+                custom_validation!(v, Custom, f, format!("Text does not contain \"{t}\""))
             }
 
             DataValidation::TextEqualTo(t) => {
                 let f = format!("{position} = \"{t}\"");
-                custom_validation!(validation, Custom, f, format!("Text equal to \"{t}\""));
+                custom_validation!(v, Custom, f, format!("Text equal to \"{t}\""))
             }
 
             DataValidation::TextIsValidEmail => {
                 // TODO: can probably do better, make a stdlib of useful functions?
                 let f = format!("=ISNUMBER(MATCH(\"*@*.?*\", {position}, 0))");
-                custom_validation!(validation, Custom, f, "Text is valid email");
+                custom_validation!(v, Custom, f, "Text is valid email")
             }
 
             DataValidation::TextIsValidUrl => {
                 // TODO
                 let f = format!("=RegExpMatch({position}, \"^http\")");
-                custom_validation!(validation, Custom, f, "Text is valid URL");
+                custom_validation!(v, Custom, f, "Text is valid URL")
             }
 
             DataValidation::ValueInList(values) => {
-                let list_as_string = &values
-                    .into_iter()
-                    .map(|v| v.to_string())
-                    .collect::<Vec<String>>()
-                    .join(",");
+                let list_as_string = format!(
+                    "\"{}\"",
+                    &values
+                        .into_iter()
+                        .map(|v| v.to_string())
+                        .collect::<Vec<String>>()
+                        .join(",")
+                );
 
                 validation!(
-                    validation,
+                    v,
                     List,
                     Equal,
                     list_as_string,
                     format!("Value in list {list_as_string}")
-                );
+                )
             }
 
             DataValidation::ValueInRange(a1) => {
-                validation!(validation, List, Equal, a1, format!("Value in range {a1}"));
+                validation!(v, List, Equal, a1, format!("Value in range {a1}"))
             }
-        }
-        validation
+        };
+
+        v
     }
 }
