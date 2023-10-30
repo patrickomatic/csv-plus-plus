@@ -1,0 +1,32 @@
+#!/bin/sh
+set -e
+
+if [ "X$1" = "X" ]; then
+  echo "$0: XLSX_FILE [SUB_XML_FILE]" >2
+  exit 1
+fi
+
+WORK_DIR=`mktemp -d`
+
+cp $1 $WORK_DIR/$1.zip
+
+pushd $WORK_DIR
+unzip $1.zip
+
+if [ "X$2" = "X" ]; then
+  xml_files=`find . -type f -iname '*.xml'`
+else
+  xml_files=`find . -type f -iname '*.xml' | grep -i $2`
+fi
+
+for f in $xml_files; do
+  echo "\n-------------------------- $f --------------------------\n"
+  xmllint --format $f
+done
+
+function cleanup {
+  rm -rf $WORK_DIR
+  popd
+}
+
+trap cleanup EXIT
