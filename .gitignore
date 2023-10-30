@@ -1,6 +1,5 @@
 /target/
 release/
 **.csvpo
-fixtures/Makefile
 fixtures/**.csv
 fixtures/**.xlsx
