@@ -1,0 +1,4 @@
+---
+=sum(a) * 5       , =sum(b) * 1000  , =sum(c) / 3.14
+![[e=20]][[v=a]]  , [[v=b]]         , [[v=c]]      
+some              , stuff           , below

@@ -1,5 +1,10 @@
 /target/
 release/
-**.csvpo
-fixtures/**.csv
-fixtures/**.xlsx
+
+playground/**.csv
+playground/**.xlsx
+playground/**.csvpo
+
+# .env can potentially contain sensitive info. we only want to check in .env.example and 
+# people can copy that to .env
+playground/.env

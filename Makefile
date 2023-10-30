@@ -1,52 +1,62 @@
-RELEASE_DIR := release
-TARGET_DIR := target
+# load .env if it's set. (see .env.example as an example to get started)
+ifneq (,$(wildcar ./.env))
+	include .env
+	export
+endif
 
-VERSION := $(shell git describe --tags --candidates 1)
+release_dir := release
+target_dir := target
 
-WINDOWS_TARGET := x86_64-pc-windows-gnu
-TARGETS := x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu \
+version := $(shell git describe --tags --candidates 1)
+
+windows_target := x86_64-pc-windows-gnu
+targets := x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu \
 					 x86_64-apple-darwin aarch64-apple-darwin \
-					 $(WINDOWS_TARGET)
+					 $(windows_target)
 
 # the .tar.gz files and relevant signatures
-RELEASE_DIRS := $(addprefix $(RELEASE_DIR)/csvpp-$(VERSION)-, $(TARGETS))
-RELEASE_FILES := $(RELEASE_DIRS:=.tar.gz)
-RELEASE_FILE_SIGS := $(RELEASE_FILES:=.asc)
+release_dirs := $(addprefix $(release_dir)/csvpp-$(version)-, $(targets))
+release_files := $(release_dirs:=.tar.gz)
+release_file_sigs := $(release_files:=.asc)
 
-DOC_FILES := $(wildcard docs/*.md) LICENSE.txt README.md
-DOC_FILES := $(filter-out docs/RELEASE_CHECKLIST.md, $(DOC_FILES))
+windows_release_dir := csvpp-$(version)-$(windows_target)
+
+doc_files := $(wildcard docs/*.md) LICENSE.txt README.md
+doc_files := $(filter-out docs/RELEASE_CHECKLIST.md, $(doc_files))
 
 .PHONY: all
-all: $(RELEASE_FILES) $(RELEASE_FILE_SIGS)
+all: $(release_files) $(release_file_sigs)
 
 .PHONY: clean
 clean:
 	cargo clean --release
-	rm -rf $(RELEASE_FILES) $(RELEASE_FILE_SIGS) $(RELEASE_DIRS)
+	rm -rf $(release_files) $(release_file_sigs) $(release_dirs)
 
-$(TARGET_DIR)/%/release/csvpp.exe:
-$(TARGET_DIR)/%/release/csvpp:
+$(target_dir)/%/$(release_dir)/csvpp.exe:
+$(target_dir)/%/$(release_dir)/csvpp:
 	cross build --release --target $*
 
-$(RELEASE_DIR)/csvpp-$(VERSION)-%.tar.gz: PREP_DIR=$(@:.tar.gz=)
+$(release_dir)/csvpp-$(version)-%.tar.gz: prep_dir=$(@:.tar.gz=)
+
+# most platforms can be treated the same because they don't have an extension on the final executable
+$(release_dir)/csvpp-$(version)-%/csvpp: $(target_dir)/%/release/csvpp
+	mkdir -p $(prep_dir)
+	cp -R $(doc_files) $(prep_dir)
+	cp $(target_dir)/$*/release/csvpp $(prep_dir)/csv++
+	cp $(target_dir)/$*/release/csvpp $(prep_dir)
+
+$(release_dir)/%.tar.gz: $(release_dir)/%/csvpp
+	cd $(release_dir) && tar -czf $*.tar.gz $*
 
 # we need special handling for windows because we're producing something with an .exe extension. we
 # also don't package csv++.exe (maybe we should? just seems kinda odd)
-$(RELEASE_DIR)/csvpp-$(VERSION)-%/csvpp.exe: target/%/release/csvpp.exe
-	mkdir -p $(PREP_DIR)
-	cp -R $(DOC_FILES) $(PREP_DIR)
-	cp $(TARGET_DIR)/$*/release/csvpp.exe $(PREP_DIR)
+$(release_dir)/$(windows_release_dir)/csvpp.exe: target/$(windows_target)/release/csvpp.exe
+	mkdir -p $(prep_dir)
+	cp -R $(doc_files) $(prep_dir)
+	cp $(target_dir)/$(windows_target)/release/csvpp.exe $(prep_dir)
 
-# the other platforms don't need a file extension so they can all be packaged the same
-$(RELEASE_DIR)/csvpp-$(VERSION)-%/csvpp: $(TARGET_DIR)/%/release/csvpp
-	mkdir -p $(PREP_DIR)
-	cp -R $(DOC_FILES) $(PREP_DIR)
-	cp $(TARGET_DIR)/$*/release/csvpp $(PREP_DIR)
-	cp $(TARGET_DIR)/$*/release/csvpp $(PREP_DIR)/csv++
+$(release_dir)/$(windows_release_dir).tar.gz: $(release_dir)/$(windows_release_dir)/csvpp.exe
+	cd $(release_dir) && tar -czf $(windows_release_dir).tar.gz $(windows_release_dir)
 
-$(RELEASE_DIR)/%.tar.gz: $(RELEASE_DIR)/%/csvpp.exe
-$(RELEASE_DIR)/%.tar.gz: $(RELEASE_DIR)/%/csvpp
-	cd $(RELEASE_DIR) && tar -czf $*.tar.gz $*
-
-%.asc:
-	cd $(RELEASE_DIR) && gpg --detach-sign --armor $*
+%.asc: %.tar.gz
+	gpg --detach-sign --armor $*

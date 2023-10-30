@@ -22,7 +22,7 @@ impl Setup {
 
     #[allow(dead_code)]
     pub(crate) fn from_fixture(fixture_name: &str, extension: &str) -> Self {
-        let input_path = path::Path::new("fixtures")
+        let input_path = path::Path::new("playground")
             .join(format!("{fixture_name}.csvpp"))
             .to_path_buf();
         Self::from_file(input_path, extension, false)
