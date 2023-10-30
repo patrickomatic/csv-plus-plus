@@ -25,9 +25,11 @@ fn date_epoch() -> chrono::NaiveDate {
 }
 
 impl DateTime {
+    /// Excel references Dates since January 1, 1900
     pub(crate) fn distance_from_epoch(&self) -> i64 {
         match self {
             Self::Date(d) => d.signed_duration_since(date_epoch()).num_days(),
+            // TODO: nothing uses these... but this is kinda a footgun, we should implement it
             _ => unimplemented!(),
         }
     }

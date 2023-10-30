@@ -100,6 +100,8 @@ impl<'a> Excel<'a> {
 
     fn set_comment(&self, worksheet: &mut u::Worksheet, cell: &Cell, note: &str) {
         let mut comment = u::Comment::default();
+        comment.set_author("csvpp");
+
         let rt = comment.get_text_mut();
         rt.set_text(note);
 
