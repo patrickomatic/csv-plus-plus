@@ -14,7 +14,7 @@ use std::fmt;
 
 pub(crate) trait BadInput: fmt::Debug + fmt::Display {
     /// Given a `message`, turn this input into an error
-    fn into_parse_error(self, message: &str) -> ParseError;
+    fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError;
 
     /// The line number where the bad input occurred.
     fn line_number(&self) -> LineNumber;

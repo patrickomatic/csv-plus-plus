@@ -216,9 +216,11 @@ impl ModifierParser<'_, '_> {
     validate!(self, validate_value_in_range, {
         take_parens!(self, {
             let a1_match = self.lexer.take_token(Token::A1)?;
-            DataValidation::ValueInRange(a1_notation::new(&a1_match.str_match).map_err(|e| {
-                a1_match.into_parse_error(&format!("Expected an A1 reference: {e}"))
-            })?)
+            DataValidation::ValueInRange(
+                a1_notation::new(&a1_match.str_match).map_err(|e| {
+                    a1_match.into_parse_error(format!("Expected an A1 reference: {e}"))
+                })?,
+            )
         })
     });
 

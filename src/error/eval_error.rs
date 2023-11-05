@@ -10,10 +10,10 @@ pub(crate) struct EvalError {
 }
 
 impl EvalError {
-    pub(crate) fn new(position: a1_notation::Address, message: &str) -> EvalError {
+    pub(crate) fn new<S: Into<String>>(position: a1_notation::Address, message: S) -> EvalError {
         EvalError {
             position,
-            message: message.to_string(),
+            message: message.into(),
         }
     }
 }
@@ -28,6 +28,13 @@ impl error::Error for EvalError {}
 
 #[cfg(test)]
 mod tests {
-    // use super::*;
-    // TODO
+    use super::*;
+
+    #[test]
+    fn display() {
+        assert_eq!(
+            EvalError::new(a1_notation::Address::new(0, 0), "foo").to_string(),
+            "foo\n"
+        );
+    }
 }

@@ -44,8 +44,10 @@ impl SourceCode {
         Self::new(input.as_str(), filename.clone())
     }
 
-    pub fn new(input: &str, filename: path::PathBuf) -> Result<SourceCode> {
-        if let Some((code_section, csv_section)) = input.split_once(CODE_SECTION_SEPARATOR) {
+    pub fn new<S: Into<String>>(input: S, filename: path::PathBuf) -> Result<SourceCode> {
+        let str_input: String = input.into();
+
+        if let Some((code_section, csv_section)) = str_input.split_once(CODE_SECTION_SEPARATOR) {
             let csv_lines = csv_section.lines().count();
             let code_lines = code_section.lines().count();
 
@@ -56,19 +58,19 @@ impl SourceCode {
                 length_of_csv_section: csv_lines,
                 csv_section: csv_section.to_string(),
                 code_section: Some(code_section.to_string()),
-                original: input.to_owned(),
+                original: str_input.to_owned(),
             })
         } else {
-            let csv_lines = input.lines().count();
+            let csv_lines = str_input.lines().count();
 
             Ok(SourceCode {
                 filename,
                 lines: csv_lines,
                 length_of_code_section: 0,
                 length_of_csv_section: csv_lines,
-                csv_section: input.to_owned(),
+                csv_section: str_input.to_owned(),
                 code_section: None,
-                original: input.to_owned(),
+                original: str_input.to_owned(),
             })
         }
     }

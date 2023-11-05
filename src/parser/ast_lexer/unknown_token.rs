@@ -27,7 +27,7 @@ impl BadInput for UnknownToken<'_> {
         self.line_offset
     }
 
-    fn into_parse_error(self, message: &str) -> ParseError {
+    fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError {
         self.source_code.parse_error(self, message)
     }
 }

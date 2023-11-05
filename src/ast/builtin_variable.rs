@@ -12,9 +12,13 @@ pub(crate) struct BuiltinVariable {
 }
 
 impl BuiltinVariable {
-    fn new<F: Fn(a1_notation::Address) -> EvalResult<Node> + 'static>(name: &str, eval: F) -> Self {
+    fn new<F, S>(name: S, eval: F) -> Self
+    where
+        F: Fn(a1_notation::Address) -> EvalResult<Node> + 'static,
+        S: Into<String>,
+    {
         Self {
-            name: name.to_string(),
+            name: name.into(),
             eval: Box::new(eval),
         }
     }
@@ -73,15 +77,16 @@ impl BuiltinVariable {
     }
 }
 
-fn def_var<F>(
+fn def_var<F, S>(
     mut vars: collections::HashMap<String, BuiltinVariable>,
-    name: &str,
+    name: S,
     eval: F,
 ) -> collections::HashMap<String, BuiltinVariable>
 where
     F: Fn(Address) -> EvalResult<Node> + 'static,
+    S: Clone + Into<String>,
 {
-    vars.insert(name.to_string(), BuiltinVariable::new(name, eval));
+    vars.insert(name.clone().into(), BuiltinVariable::new(name, eval));
     vars
 }
 

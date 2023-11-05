@@ -38,6 +38,8 @@ pub(crate) struct CodeSectionParser<'a> {
 /// function and variable references and delegates to `AstParser` for handling expressions
 impl<'a> CodeSectionParser<'a> {
     pub(crate) fn parse(input: &'a str, runtime: &'a Runtime) -> Result<CodeSection> {
+        runtime.info("Parsing code section");
+
         CodeSectionParser {
             lexer: AstLexer::new(input, runtime)
                 .map_err(|e| runtime.source_code.code_syntax_error(e))?,

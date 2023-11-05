@@ -3,6 +3,7 @@
 use super::{CharOffset, LineNumber, SourceCode};
 use crate::error::{BadInput, ParseError};
 use crate::Error;
+use colored::Colorize;
 use std::cmp;
 
 // how many lines above (and below) we'll show as context when highlighting error messages
@@ -28,15 +29,23 @@ impl SourceCode {
         }
     }
 
-    pub(crate) fn eval_error(&self, message: &str, position: a1_notation::Address) -> Error {
+    pub(crate) fn eval_error<S: Into<String>>(
+        &self,
+        message: S,
+        position: a1_notation::Address,
+    ) -> Error {
         Error::EvalError {
-            message: message.to_string(),
+            message: message.into(),
             filename: self.filename.clone(),
             position,
         }
     }
 
-    pub(crate) fn parse_error(&self, bad_input: impl BadInput, message: &str) -> ParseError {
+    pub(crate) fn parse_error<S: Into<String>>(
+        &self,
+        bad_input: impl BadInput,
+        message: S,
+    ) -> ParseError {
         let line_number = bad_input.line_number();
         let line_offset = bad_input.line_offset();
         let highlighted_lines = self.highlight_line(line_number, line_offset);
@@ -44,22 +53,23 @@ impl SourceCode {
         ParseError {
             bad_input: bad_input.to_string(),
             highlighted_lines,
-            message: message.to_string(),
+            message: message.into(),
             line_number,
             line_offset,
             possible_values: None,
         }
     }
 
-    pub(crate) fn parse_error_with_possible_values(
+    pub(crate) fn parse_error_with_possible_values<S: Into<String>>(
         &self,
         bad_input: impl BadInput,
-        message: &str,
+        message: S,
         // TODO: make this a slice
         possible_values: Vec<String>,
     ) -> ParseError {
         let mut parse_error = self.parse_error(bad_input, message);
         parse_error.possible_values = Some(possible_values);
+        // Some(possible_values.into_iter().map(|pv| pv.into()).collect());
         parse_error
     }
 
@@ -81,6 +91,7 @@ impl SourceCode {
         let end_index = cmp::min(lines.len(), line_number + LINES_IN_ERROR_CONTEXT + 1);
 
         // start with 3 lines before, and also include our highlight line
+        // TODO: make the highlighted line red
         let mut lines_out = lines[start_index..(line_number + 1)].to_vec();
 
         // save the number of this line because we want to skip line-numbering it below
@@ -91,7 +102,7 @@ impl SourceCode {
         //      foo!
         // --------^
         // ```
-        lines_out.push(format!("{}^", "-".repeat(line_offset)));
+        lines_out.push(format!("{}^", "-".repeat(line_offset).yellow()));
 
         // and 3 lines after
         lines_out.append(&mut lines[(line_number + 1)..end_index].to_vec());
@@ -110,13 +121,12 @@ impl SourceCode {
                 // ----^ thing and it doesn't correspond to a source code row, it's highlighting the
                 // text above it
                 if i == skip_numbering_on {
-                    format!(" {: <width$}: {}", " ", line, width = longest_line_number)
+                    format!(" {: <width$}: {line}", " ", width = longest_line_number)
                 } else {
                     line_count += 1;
                     format!(
-                        " {: <width$}: {}",
+                        " {: <width$}: {line}",
                         line_count,
-                        line,
                         width = longest_line_number
                     )
                 }

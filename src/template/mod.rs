@@ -42,9 +42,13 @@ impl<'a> Template<'a> {
             None
         };
 
-        Self::new(spreadsheet, code_section, runtime)
+        let compiled_template = Self::new(spreadsheet, code_section, runtime)
             .eval()
-            .map_err(|e| runtime.source_code.eval_error(&e.message, e.position))
+            .map_err(|e| runtime.source_code.eval_error(&e.message, e.position))?;
+
+        runtime.info(&compiled_template);
+
+        Ok(compiled_template)
     }
 
     /// Given a parsed code section and spreadsheet section, this function will assemble all of the
@@ -96,6 +100,7 @@ impl<'a> Template<'a> {
     }
 
     fn eval(self) -> EvalResult<Self> {
+        self.runtime.info("Evaluating all cells");
         self.eval_expands().eval_cells()
     }
 

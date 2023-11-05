@@ -1,12 +1,12 @@
 //!
 use super::super::{file_backer_upper, CompilationTarget};
 use super::Excel;
-use crate::{Error, Result, Template};
+use crate::{Result, Template};
 use umya_spreadsheet as u;
 
 impl CompilationTarget for Excel<'_> {
     fn write_backup(&self) -> Result<()> {
-        file_backer_upper::backup_file(&self.path)?;
+        file_backer_upper::backup_file(self.runtime, &self.path)?;
         Ok(())
     }
 
@@ -22,10 +22,10 @@ impl CompilationTarget for Excel<'_> {
         self.build_worksheet(template, worksheet)?;
 
         u::writer::xlsx::write(&spreadsheet, self.path.clone()).map_err(|e| {
-            Error::TargetWriteError {
-                message: format!("Unable to write target file {}: {e}", self.path.display()),
-                output: self.runtime.output.clone(),
-            }
+            self.runtime.output.clone().into_error(format!(
+                "Unable to write target file {}: {e}",
+                self.path.display()
+            ))
         })?;
 
         Ok(())

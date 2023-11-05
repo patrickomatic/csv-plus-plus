@@ -13,6 +13,7 @@ edition = "2021"
 a1_notation = "0.4.2"
 chrono = { version = "0.4.31", features = ["serde"] }
 clap = { version = "4.2.7", features = ["derive"] }
+colored = "^2.0"
 csv = "1"
 google-drive3 = "^5.0"
 google-sheets4 = "^5.0"

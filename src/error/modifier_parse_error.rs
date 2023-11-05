@@ -34,7 +34,7 @@ impl ModifierParseError {
 impl From<ModifierParseError> for ParseError {
     fn from(e: ModifierParseError) -> Self {
         let modifier_name = e.modifier_name.clone();
-        e.into_parse_error(&format!(
+        e.into_parse_error(format!(
             "received invalid value when parsing `{modifier_name}` modifier"
         ))
     }
@@ -55,7 +55,7 @@ impl BadInput for ModifierParseError {
         self.bad_input.line_offset()
     }
 
-    fn into_parse_error(self, message: &str) -> ParseError {
+    fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError {
         let possible_values = self.possible_values.clone();
         let source_code = self.bad_input.source_code.clone();
         source_code.parse_error_with_possible_values(self, message, possible_values)

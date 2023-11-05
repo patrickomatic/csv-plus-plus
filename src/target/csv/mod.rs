@@ -3,7 +3,7 @@
 //! Functions for writing to CSV files
 //!
 use super::{ExistingCell, ExistingValues};
-use crate::{csv_reader, Error, Output, Result, Runtime};
+use crate::{csv_reader, Output, Result, Runtime};
 use std::ffi;
 use std::fs;
 use std::io;
@@ -11,7 +11,7 @@ use std::path;
 
 mod compilation_target;
 
-pub struct Csv<'a> {
+pub(crate) struct Csv<'a> {
     path: path::PathBuf,
     runtime: &'a Runtime,
 }
@@ -31,10 +31,9 @@ impl<'a> Csv<'a> {
             Err(e) => {
                 return match e.kind() {
                     io::ErrorKind::NotFound => Ok(ExistingValues { cells: vec![] }),
-                    error => Err(Error::TargetWriteError {
-                        message: format!("Error reading output: {}", error),
-                        output: output.clone(),
-                    }),
+                    error => Err(output
+                        .clone()
+                        .into_error(format!("Error reading output: {error}"))),
                 }
             }
         };
@@ -43,10 +42,7 @@ impl<'a> Csv<'a> {
 
         let mut cells = vec![];
         for result in reader.records() {
-            let row = result.or(Err(Error::TargetWriteError {
-                message: "Error reading CSV row".to_owned(),
-                output: output.clone(),
-            }))?;
+            let row = result.or(Err(output.clone().into_error("Error reading CSV row")))?;
             let existing_row = row
                 .iter()
                 .map(|cell| {

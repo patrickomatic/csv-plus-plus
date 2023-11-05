@@ -41,7 +41,7 @@ impl TryFrom<TokenMatch> for Rgb {
 
         if input_len == 3 || input_len == 6 {
             let (r, g, b) = parse_str(&str_match[start_at..])
-                .map_err(|e| input.into_parse_error(&format!("Error parsing hex string: {e}")))?;
+                .map_err(|e| input.into_parse_error(format!("Error parsing hex string: {e}")))?;
             Ok(Rgb::new(r, g, b))
         } else {
             Err(input.into_parse_error(

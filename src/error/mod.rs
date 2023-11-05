@@ -50,10 +50,6 @@ pub enum Error {
     /// due to user error.
     InitError(String),
 
-    /// An error that should never happen. If seen report it to the compiler developers
-    // TODO
-    // InternalError(String),
-
     /// A syntax error encountered while parsing the modifiers of a cell.
     ModifierSyntaxError {
         filename: path::PathBuf,

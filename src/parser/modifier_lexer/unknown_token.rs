@@ -20,7 +20,7 @@ impl fmt::Display for UnknownToken {
 }
 
 impl BadInput for UnknownToken {
-    fn into_parse_error(self, message: &str) -> ParseError {
+    fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError {
         let source_code = self.source_code.clone();
         source_code.parse_error(self, message)
     }

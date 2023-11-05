@@ -1,9 +1,9 @@
 use crate::target::{file_backer_upper, merge_rows, CompilationTarget, Csv, MergeResult};
-use crate::{Error, Result, Template};
+use crate::{Result, Template};
 
 impl CompilationTarget for Csv<'_> {
     fn write_backup(&self) -> Result<()> {
-        file_backer_upper::backup_file(&self.path)?;
+        file_backer_upper::backup_file(self.runtime, &self.path)?;
         Ok(())
     }
 
@@ -16,9 +16,11 @@ impl CompilationTarget for Csv<'_> {
         let mut writer = csv::WriterBuilder::new()
             .flexible(true)
             .from_path(&self.path)
-            .map_err(|e| Error::TargetWriteError {
-                message: format!("Unable to open output file for writing: {:?}", e),
-                output: self.runtime.output.clone(),
+            .map_err(|e| {
+                self.runtime
+                    .output
+                    .clone()
+                    .into_error(format!("Unable to open output file for writing: {:?}", e))
             })?;
 
         for (index, row) in new_values.rows.iter().enumerate() {
@@ -41,17 +43,19 @@ impl CompilationTarget for Csv<'_> {
             // all rows have to be as wide as the widest row
             output_row.resize(widest_row, "".to_string());
 
-            writer
-                .write_record(output_row)
-                .map_err(|e| Error::TargetWriteError {
-                    message: format!("Unable to write row {index}: {e}"),
-                    output: self.runtime.output.clone(),
-                })?;
+            writer.write_record(output_row).map_err(|e| {
+                self.runtime
+                    .output
+                    .clone()
+                    .into_error(format!("Unable to write row {index}: {e}"))
+            })?;
         }
 
-        writer.flush().map_err(|e| Error::TargetWriteError {
-            message: format!("Unable to finish writing to output: {}", e),
-            output: self.runtime.output.clone(),
+        writer.flush().map_err(|e| {
+            self.runtime
+                .output
+                .clone()
+                .into_error(format!("Unable to finish writing to output: {e}"))
         })?;
 
         Ok(())

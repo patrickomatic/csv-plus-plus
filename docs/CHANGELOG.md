@@ -12,6 +12,7 @@
 * Expands were incorrectly filling into the rows below them, only for excel
 * More consistent parsing of dates
 * Fix line count in syntax error messages
+* Improved, colored and more clear error messages throughout
 
 ### **Breaking Changes**
 

@@ -1,9 +1,8 @@
 //! # FileBackerUpper
+use crate::{Result, Runtime};
 use chrono::prelude::Local;
 use std::fs;
 use std::path;
-
-use crate::{Error, Result};
 
 const BACKUP_FORMATS: &[&str] = &[
     // filename.csv -> filename-2023-04-25.csv
@@ -21,25 +20,37 @@ const BACKUP_FORMATS: &[&str] = &[
 // NOTE:
 // this operation is not technically atomic - to do so we'd need to create a tempfile, write to it
 // then move it in place.  (but for this use case I don't think it matters)
-pub(crate) fn backup_file(filename: &path::PathBuf) -> Result<path::PathBuf> {
+pub(crate) fn backup_file(runtime: &Runtime, filename: &path::PathBuf) -> Result<path::PathBuf> {
+    runtime.info(format!("Backing up file: {}", filename.display()));
+
     let now = Local::now();
 
-    // TODO use a TargetError instead
-    let filename_str = filename.to_str().ok_or(Error::InitError(
-        "Unable to format output filename".to_owned(),
-    ))?;
+    let filename_str = filename.to_str().ok_or(
+        runtime
+            .output
+            .clone()
+            .into_error("Unable to format output filename"),
+    )?;
 
-    let file_stem = filename.file_stem().ok_or(Error::InitError(format!(
-        "Unable to get base file for: {filename_str}",
-    )))?;
+    let file_stem = filename.file_stem().ok_or(
+        runtime
+            .output
+            .clone()
+            .into_error(format!("Unable to get base file for: {filename_str}",)),
+    )?;
 
-    let file_parent = filename.parent().ok_or(Error::InitError(format!(
-        "Unable to get parent base file for: {filename_str}",
-    )))?;
+    let file_parent = filename
+        .parent()
+        .ok_or(runtime.output.clone().into_error(format!(
+            "Unable to get parent base file for: {filename_str}",
+        )))?;
 
-    let file_extension = filename.extension().ok_or(Error::InitError(format!(
-        "Unable to get extension for: {filename_str}",
-    )))?;
+    let file_extension = filename.extension().ok_or(
+        runtime
+            .output
+            .clone()
+            .into_error(format!("Unable to get extension for: {filename_str}",)),
+    )?;
 
     for time_format in BACKUP_FORMATS.iter() {
         let timestamp = now.format(time_format);
@@ -53,15 +64,16 @@ pub(crate) fn backup_file(filename: &path::PathBuf) -> Result<path::PathBuf> {
         }
 
         if let Err(e) = fs::copy(filename, &new_file) {
-            return Err(Error::InitError(format!(
-                "Error making backup of {filename_str}: {e}",
-            )));
+            return Err(runtime
+                .output
+                .clone()
+                .into_error(format!("Error making backup of {filename_str}: {e}",)));
         }
 
         return Ok(new_file);
     }
 
-    Err(Error::InitError(format!(
+    Err(runtime.output.clone().into_error(format!(
         "Unable to make backup of output file: {filename_str}",
     )))
 }

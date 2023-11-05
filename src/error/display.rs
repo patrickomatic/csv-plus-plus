@@ -56,23 +56,22 @@ impl fmt::Display for Error {
             }
 
             Self::InitError(message) => {
-                writeln!(f, "Error initializing: {message}")
+                writeln!(f, "{message}")
             }
 
             Self::ObjectWriteError { filename, message } => {
-                writeln!(
-                    f,
-                    "Error writing object file {}: {message}",
-                    filename.display()
-                )
+                writeln!(f, "Error writing object file {}", filename.display())?;
+                writeln!(f, "{message}")
             }
 
             Self::SourceCodeError { filename, message } => {
-                writeln!(f, "Error reading source {}: {message}", filename.display())
+                writeln!(f, "Error reading source {}", filename.display())?;
+                writeln!(f, "{message}")
             }
 
             Self::TargetWriteError { output, message } => {
-                writeln!(f, "Error writing to {output}: {message}")
+                writeln!(f, "Error writing to {output}")?;
+                writeln!(f, "{message}")
             }
         }
     }
@@ -177,7 +176,7 @@ baz
     fn display_init_error() {
         let message = Error::InitError("foo".to_string());
 
-        assert_eq!("Error initializing: foo\n", message.to_string());
+        assert_eq!("foo\n", message.to_string());
     }
 
     #[test]
@@ -189,7 +188,7 @@ baz
 
         assert_eq!(
             message.to_string(),
-            "Error writing object file bar.xlsx: foo\n",
+            "Error writing object file bar.xlsx\nfoo\n",
         );
     }
 
@@ -202,20 +201,17 @@ baz
 
         assert_eq!(
             message.to_string(),
-            "Error reading source a_file.csvpp: foo\n",
+            "Error reading source a_file.csvpp\nfoo\n",
         );
     }
 
     #[test]
     fn display_target_write_error() {
         let message = Error::TargetWriteError {
-            output: Output::Excel(path::PathBuf::from("foo.csvpp")),
+            output: Output::Excel(path::PathBuf::from("foo.xlsx")),
             message: "foo".to_string(),
         };
 
-        assert_eq!(
-            message.to_string(),
-            "Error writing to Excel: foo.csvpp: foo\n",
-        );
+        assert_eq!(message.to_string(), "Error writing to foo.xlsx\nfoo\n",);
     }
 }

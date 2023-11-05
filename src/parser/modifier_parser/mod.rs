@@ -138,7 +138,7 @@ where
                 let amount_string = self.lexer.take_token(Token::PositiveNumber)?;
                 Some(amount_string.str_match.parse::<usize>().map_err(|e| {
                     amount_string
-                        .into_parse_error(&format!("Error parsing expand= repetitions: {e}"))
+                        .into_parse_error(format!("Error parsing expand= repetitions: {e}"))
                 })?)
             } else {
                 None
@@ -167,7 +167,7 @@ where
         assign_modifier!(self, font_size, {
             let font_size_match = self.lexer.take_token(Token::PositiveNumber)?;
             font_size_match.str_match.parse::<u8>().map_err(|e| {
-                font_size_match.into_parse_error(&format!("Error parsing fontsize: {e}"))
+                font_size_match.into_parse_error(format!("Error parsing fontsize: {e}"))
             })?
         })
     }

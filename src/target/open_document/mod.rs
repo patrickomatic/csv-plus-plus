@@ -2,19 +2,19 @@
 //!
 //! Functions for writing to OpenDocument files
 //!
-use std::path::PathBuf;
-
 use super::file_backer_upper;
 use super::CompilationTarget;
-use crate::{Result, Template};
+use crate::{Result, Runtime, Template};
+use std::path::PathBuf;
 
-pub struct OpenDocument {
+pub struct OpenDocument<'a> {
     path: PathBuf,
+    runtime: &'a Runtime,
 }
 
-impl CompilationTarget for OpenDocument {
+impl CompilationTarget for OpenDocument<'_> {
     fn write_backup(&self) -> Result<()> {
-        file_backer_upper::backup_file(&self.path)?;
+        file_backer_upper::backup_file(self.runtime, &self.path)?;
         Ok(())
     }
 
@@ -23,12 +23,12 @@ impl CompilationTarget for OpenDocument {
     }
 }
 
-impl OpenDocument {
-    pub fn new(path: PathBuf) -> Self {
-        Self { path }
+impl<'a> OpenDocument<'a> {
+    pub fn new(runtime: &'a Runtime, path: PathBuf) -> OpenDocument<'a> {
+        Self { path, runtime }
     }
 
-    pub fn supports_extension(os_str: &std::ffi::OsStr) -> bool {
+    pub(crate) fn supports_extension(os_str: &std::ffi::OsStr) -> bool {
         os_str.eq_ignore_ascii_case("ods")
     }
 }

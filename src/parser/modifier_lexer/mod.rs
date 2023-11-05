@@ -177,7 +177,7 @@ impl<'a> ModifierLexer<'a> {
         }
     }
 
-    pub(super) fn unknown_string(&self, message: &str) -> ParseError {
+    pub(super) fn unknown_string<S: Into<String>>(&self, message: S) -> ParseError {
         UnknownToken {
             bad_input: self.input.to_string(),
             position: self.position,
@@ -219,7 +219,7 @@ impl<'a> ModifierLexer<'a> {
             self.replace_input(without_match, substring.len());
             Ok(token_match)
         } else {
-            Err(self.unknown_string(&format!("Error parsing input, expected '{substring}'")))
+            Err(self.unknown_string(format!("Error parsing input, expected '{substring}'")))
         }
     }
 
@@ -237,7 +237,7 @@ impl<'a> ModifierLexer<'a> {
             } else if c.is_alphanumeric() {
                 if matched_alphas > 6 {
                     return Err(
-                        self.unknown_string(&format!("Unexpected RGB color character: '{c}'"))
+                        self.unknown_string(format!("Unexpected RGB color character: '{c}'"))
                     );
                 }
 
@@ -249,8 +249,9 @@ impl<'a> ModifierLexer<'a> {
                     break;
                 }
 
-                return Err(self
-                    .unknown_string(&format!("Invalid character when parsing RGB color: '{c}'")));
+                return Err(
+                    self.unknown_string(format!("Invalid character when parsing RGB color: '{c}'"))
+                );
             }
         }
 
@@ -331,7 +332,7 @@ impl<'a> ModifierLexer<'a> {
         }
 
         if matched.is_empty() {
-            Err(self.unknown_string(&format!("Expected a {token}")))
+            Err(self.unknown_string(format!("Expected a {token}")))
         } else {
             self.move_input(matched.len());
             Ok(self.match_token(token, &matched))

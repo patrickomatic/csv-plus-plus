@@ -5,6 +5,8 @@ use crate::parser::ast_lexer;
 use crate::parser::modifier_lexer;
 use crate::{CliArgs, CompilationTarget, Options, Output, Result, SourceCode};
 use clap::Parser;
+use colored::Colorize;
+use std::fmt;
 use std::sync;
 
 mod display;
@@ -28,5 +30,33 @@ impl Runtime {
 
     pub fn target<'a>(&'a self) -> Result<Box<dyn CompilationTarget + 'a>> {
         self.output.compilation_target(self)
+    }
+
+    // TODO: it would be nice to also be able to make it red... like warning the JSON response on a
+    // failed sheets request
+    pub(crate) fn info<M: fmt::Display>(&self, message: M) {
+        if self.options.verbose {
+            eprintln!("{message}");
+        }
+    }
+
+    // TODO: color red
+    pub(crate) fn warn<M: Into<String>>(&self, message: M) {
+        eprintln!("{}", message.into().red());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    // use super::*;
+
+    #[test]
+    fn info() {
+        // TODO
+    }
+
+    #[test]
+    fn warn() {
+        // TODO
     }
 }

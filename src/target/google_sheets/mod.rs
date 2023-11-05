@@ -22,99 +22,109 @@ type SheetsHub = google_sheets4::Sheets<hyper_rustls::HttpsConnector<hyper::clie
 
 type SheetsValue = google_sheets4::api::CellData;
 
-pub struct GoogleSheets<'a> {
+pub(crate) struct GoogleSheets<'a> {
     async_runtime: tokio::runtime::Runtime,
     credentials: path::PathBuf,
     runtime: &'a Runtime,
-    pub sheet_id: String,
+    pub(crate) sheet_id: String,
+}
+
+macro_rules! unwrap_or_empty {
+    ($to_unwrap:expr) => {{
+        match $to_unwrap {
+            Some(s) => s,
+            None => return Ok(ExistingValues::default()),
+        }
+    }};
 }
 
 impl<'a> GoogleSheets<'a> {
-    pub fn new(runtime: &'a Runtime, sheet_id: &'a str) -> Result<Self> {
+    pub(crate) fn new<S: Into<String>>(runtime: &'a Runtime, sheet_id: S) -> Result<Self> {
         let credentials = Self::get_credentials(runtime)?;
 
         let async_runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
-            .map_err(|e| Error::TargetWriteError {
-                output: runtime.output.clone(),
-                message: format!("Error starting async runtime to write Google Sheets: {}", e),
+            .map_err(|e| {
+                runtime.output.clone().into_error(format!(
+                    "Error starting async runtime to write Google Sheets: {e}"
+                ))
             })?;
 
         Ok(Self {
             async_runtime,
             credentials,
-            sheet_id: sheet_id.to_owned(),
+            sheet_id: sheet_id.into(),
             runtime,
         })
     }
 
     async fn read_existing_cells(&self, hub: &SheetsHub) -> Result<ExistingValues<SheetsValue>> {
-        let request = hub
+        let spreadsheet = match hub
             .spreadsheets()
             .get(&self.sheet_id)
             .include_grid_data(true)
             .doit()
-            .await;
-
-        let empty = Ok(ExistingValues { cells: vec![] });
-
-        let spreadsheet = match request {
+            .await
+        {
             Ok((_, s)) => s,
-            Err(e) => match e {
-                // not necessarily unexpected - the target just doesn't exist yet (returned 404)
-                google_sheets4::Error::BadRequest(obj)
-                    if obj["error"]["code"].as_u64().is_some_and(|c| c == 404) =>
-                {
-                    return empty
+            Err(e) => {
+                self.runtime
+                    .info(format!("Google Sheets API response: {e}"));
+
+                match e {
+                    google_sheets4::Error::BadRequest(obj)
+                        if obj["error"]["code"].as_u64().is_some_and(|c| c == 404) =>
+                    {
+                        // 404 is fine, it just means it doesn't exist yet
+                        return Ok(ExistingValues::default());
+                    }
+                    google_sheets4::Error::BadRequest(obj)
+                        if obj["error"]["code"].as_u64().is_some_and(|c| c == 403) =>
+                    {
+                        return Err(self
+                            .runtime
+                            .output
+                            .clone()
+                            .into_error("Unable to access the given spreadsheet - are you sure you shared it with your service account?"));
+                    }
+                    _ => {
+                        return Err(self
+                            .runtime
+                            .output
+                            .clone()
+                            .into_error(format!("Error reading existing sheet: {e}")));
+                    }
                 }
-                _ => {
-                    return Err(Error::InitError(format!(
-                        "Error reading existing sheet: {}",
-                        e
-                    )))
-                }
-            },
+            }
         };
 
-        // everything in this API is an Option<> so has to be unwrapped...
-        // TODO: there's probably a more rusty way to do this
-        let sheets = match spreadsheet.sheets {
-            Some(s) => s,
-            None => return empty,
-        };
+        // TODO: ugh why can't I just chain .and_thens or .maps or something
+        /*
+        let row_data = spreadsheet
+            .sheets
+            .and_then(|sheets| sheets.get(0))
+            .and_then(|sheet| sheet.data)
+            .and_then(|data| data.get(0))
+            .map(|&grid_data| grid_data.row_data);
+        */
 
-        let sheet = match sheets.get(0) {
-            Some(s) => s,
-            None => return empty,
-        };
-
-        let data = match &sheet.data {
-            Some(d) => d,
-            None => return empty,
-        };
-
-        let grid_data = match data.get(0) {
-            Some(d) => d,
-            None => return empty,
-        };
-
-        let row_data = match &grid_data.row_data {
-            Some(d) => d,
-            None => return empty,
-        };
+        let sheets = unwrap_or_empty!(spreadsheet.sheets);
+        let sheet = unwrap_or_empty!(sheets.get(0));
+        let data = unwrap_or_empty!(&sheet.data);
+        let grid_data = unwrap_or_empty!(data.get(0));
+        let row_data = unwrap_or_empty!(&grid_data.row_data);
 
         let mut existing_cells = vec![];
         for row in row_data.iter() {
-            match &row.values {
-                Some(v) => {
-                    existing_cells.push(
-                        v.iter()
-                            .map(|cell| ExistingCell::Value(cell.clone()))
-                            .collect(),
-                    );
-                }
-                None => existing_cells.push(vec![]),
+            if let Some(v) = &row.values {
+                existing_cells.push(
+                    v.iter()
+                        .map(|cell| ExistingCell::Value(cell.clone()))
+                        .collect(),
+                );
+            } else {
+                existing_cells.push(vec![]);
             }
         }
 
@@ -139,11 +149,11 @@ impl<'a> GoogleSheets<'a> {
         } else if adc_path.exists() {
             adc_path
         } else {
-            return Err(Error::InitError(
+            return Err(runtime.output.clone().into_error(
                     "Could not find Google application credentials.  You must create a service account with \
                     access to your spreadsheet and supply the credentials via $GOOGLE_APPLICATION_CREDENTIALS, \
                     --google-account-credentials or putting them in \
-                    ~/.config/gcloud/application_default_credentials.json".to_owned()));
+                    ~/.config/gcloud/application_default_credentials.json"));
         };
 
         Ok(creds_file)
@@ -183,9 +193,12 @@ impl<'a> GoogleSheets<'a> {
             .doit()
             .await
             .map(|_i| ())
-            .map_err(|e| Error::TargetWriteError {
-                output: self.runtime.output.clone(),
-                message: format!("Error writing to Google Sheets: {}", e),
+            .map_err(|e| {
+                self.runtime.warn(format!("{:?}", e));
+                self.runtime
+                    .output
+                    .clone()
+                    .into_error(format!("Error writing to Google Sheets: {e}"))
             })
     }
 }

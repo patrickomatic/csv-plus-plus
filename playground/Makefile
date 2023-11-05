@@ -1,15 +1,22 @@
-CSVCC := csvpp
+# load .env if it's set. (see .env.example as an example to get started)
+ifneq (,$(wildcard ./.env))
+	include .env
+	export
+endif
+
+# CSVCC := csvpp
+CSVCC := cargo run --
 
 src_files := $(wildcard *.csvpp)
 
 excel_files := $(src_files:%.csvpp=%.xlsx)
 csv_files := $(src_files:%.csvpp=%.csv)
 
-all: csvpp_install $(excel_files) $(csv_files)
+all: $(excel_files) $(csv_files)
 
 .PHONY: all_features_gs
-all_features_gs: all_features.csvpp
-	$(CSVCC) -g "all features" 
+test_gs: test.csvpp
+	$(CSVCC) -v --sheet-name "test" -g $(GOOGLE_SHEETS_TEST_ID) $<
 
 %.csv: %.csvpp
 	$(CSVCC) -o $@ $<

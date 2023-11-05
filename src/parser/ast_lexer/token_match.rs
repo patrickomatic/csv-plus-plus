@@ -23,7 +23,7 @@ impl BadInput for TokenMatch<'_> {
         self.line_offset
     }
 
-    fn into_parse_error(self, message: &str) -> ParseError {
+    fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError {
         self.source_code.parse_error(self, message)
     }
 }
@@ -63,14 +63,14 @@ impl TryFrom<TokenMatch<'_>> for Ast {
             Token::Float => Ok(Box::new(
                 tm.str_match
                     .parse::<f64>()
-                    .map_err(|e| tm.into_parse_error(&format!("Error parsing float value: {e}")))?
+                    .map_err(|e| tm.into_parse_error(format!("Error parsing float value: {e}")))?
                     .into(),
             )),
 
             Token::Integer => Ok(Box::new(
                 tm.str_match
                     .parse::<i64>()
-                    .map_err(|e| tm.into_parse_error(&format!("Error parsing integer value: {e}")))?
+                    .map_err(|e| tm.into_parse_error(format!("Error parsing integer value: {e}")))?
                     .into(),
             )),
 
@@ -80,7 +80,7 @@ impl TryFrom<TokenMatch<'_>> for Ast {
 
             // TODO: create a new error type for these kinds of things... Error::InternalError
             _ => {
-                Err(tm.into_parse_error(&format!("Unable to convert non-terminal token: {:?}", tm)))
+                Err(tm.into_parse_error(format!("Unable to convert non-terminal token: {:?}", tm)))
             }
         }
     }

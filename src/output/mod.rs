@@ -1,6 +1,6 @@
 //! # Output
 //!
-use crate::target;
+use crate::target::*;
 use crate::{CompilationTarget, Error, Result, Runtime};
 use std::path;
 
@@ -18,16 +18,23 @@ pub enum Output {
 }
 
 impl Output {
-    pub fn compilation_target<'a>(
+    pub(crate) fn compilation_target<'a>(
         &'a self,
         runtime: &'a Runtime,
     ) -> Result<Box<dyn CompilationTarget + 'a>> {
         Ok(match self {
-            Self::Csv(path) => Box::new(target::Csv::new(runtime, path.to_path_buf())),
-            Self::Excel(path) => Box::new(target::Excel::new(runtime, path.to_path_buf())),
-            Self::GoogleSheets(sheet_id) => Box::new(target::GoogleSheets::new(runtime, sheet_id)?),
-            Self::OpenDocument(path) => Box::new(target::OpenDocument::new(path.to_path_buf())),
+            Self::Csv(path) => Box::new(Csv::new(runtime, path.to_path_buf())),
+            Self::Excel(path) => Box::new(Excel::new(runtime, path.to_path_buf())),
+            Self::GoogleSheets(sheet_id) => Box::new(GoogleSheets::new(runtime, sheet_id)?),
+            Self::OpenDocument(path) => Box::new(OpenDocument::new(runtime, path.to_path_buf())),
         })
+    }
+
+    pub(crate) fn into_error<M: Into<String>>(self, message: M) -> Error {
+        Error::TargetWriteError {
+            message: message.into(),
+            output: self,
+        }
     }
 
     fn from_filename(path: path::PathBuf) -> Result<Self> {
@@ -35,11 +42,11 @@ impl Output {
             "Output filename must end with .csv, .xlsx or .ods".to_string(),
         ))?;
 
-        if target::Csv::supports_extension(ext) {
+        if Csv::supports_extension(ext) {
             Ok(Self::Csv(path))
-        } else if target::Excel::supports_extension(ext) {
+        } else if Excel::supports_extension(ext) {
             Ok(Self::Excel(path))
-        } else if target::OpenDocument::supports_extension(ext) {
+        } else if OpenDocument::supports_extension(ext) {
             Ok(Self::OpenDocument(path))
         } else {
             Err(Error::InitError(format!(

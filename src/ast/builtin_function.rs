@@ -46,18 +46,19 @@ impl fmt::Debug for BuiltinFunction {
     }
 }
 
-fn def_fn<F>(
+fn def_fn<F, S>(
     mut fns: collections::HashMap<String, BuiltinFunction>,
-    name: &'static str,
+    name: S,
     eval_fn: F,
 ) -> collections::HashMap<FunctionName, BuiltinFunction>
 where
     F: Fn(a1_notation::Address, &[Ast]) -> EvalResult<Node> + 'static,
+    S: Into<String> + Clone,
 {
     fns.insert(
-        name.to_string(),
+        name.clone().into(),
         BuiltinFunction {
-            name: name.to_string(),
+            name: name.into(),
             eval: Box::new(move |current, args| eval_fn(current, args)),
         },
     );
@@ -73,19 +74,19 @@ fn verify_one_column(
     if args.len() != 1 {
         Err(EvalError::new(
             position,
-            &format!("Expected a single argument to `{fn_name}`"),
+            format!("Expected a single argument to `{fn_name}`"),
         ))
     } else if let Node::Reference(r) = &*args[0] {
         Ok(a1_notation::Column::from_str(r).map_err(|e| {
             EvalError::new(
                 position,
-                &format!("Expected an A1 reference as the first argument: {e}"),
+                format!("Expected an A1 reference as the first argument: {e}"),
             )
         })?)
     } else {
         Err(EvalError::new(
             position,
-            &format!("Expected a cell reference as the only argumnent to `{fn_name}`"),
+            format!("Expected a cell reference as the only argumnent to `{fn_name}`"),
         ))
     }
 }

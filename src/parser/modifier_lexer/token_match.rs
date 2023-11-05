@@ -23,13 +23,13 @@ impl TokenMatch {
     pub(crate) fn into_number(self) -> ParseResult<i64> {
         self.str_match
             .parse::<i64>()
-            .map_err(|e| self.into_parse_error(&format!("Unable to parse integer: {e}")))
+            .map_err(|e| self.into_parse_error(format!("Unable to parse integer: {e}")))
     }
 
     pub(crate) fn into_float(self) -> ParseResult<f64> {
         self.str_match
             .parse::<f64>()
-            .map_err(|e| self.into_parse_error(&format!("Unable to parse float: {e}")))
+            .map_err(|e| self.into_parse_error(format!("Unable to parse float: {e}")))
     }
 }
 
@@ -40,7 +40,7 @@ impl fmt::Display for TokenMatch {
 }
 
 impl BadInput for TokenMatch {
-    fn into_parse_error(self, message: &str) -> ParseError {
+    fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError {
         let source_code = self.source_code.clone();
         source_code.parse_error(self, message)
     }

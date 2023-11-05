@@ -74,7 +74,7 @@ impl<'a> AstParser<'a> {
                         ..
                     } => expr,
                     token => {
-                        return Err(token.into_parse_error(&format!(
+                        return Err(token.into_parse_error(format!(
                             "Expected close parenthesis (`)`), received ({token})"
                         )))
                     }
@@ -116,7 +116,7 @@ impl<'a> AstParser<'a> {
                 Token::InfixOperator | Token::OpenParen => op_token.str_match,
 
                 // otherwise undefined
-                t => return Err(op_token.into_parse_error(&format!("Unexpected token ({:?})", &t))),
+                t => return Err(op_token.into_parse_error(format!("Unexpected token ({t:?})"))),
             };
 
             if let Some((l_bp, ())) = self.postfix_binding_power(op) {

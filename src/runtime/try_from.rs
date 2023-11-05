@@ -25,6 +25,8 @@ impl TryFrom<&CliArgs> for Runtime {
         runtime.options.key_values =
             AstParser::parse_key_value_str(&cli_args.key_values, &runtime)?;
 
+        runtime.info(&runtime);
+
         Ok(runtime)
     }
 }
