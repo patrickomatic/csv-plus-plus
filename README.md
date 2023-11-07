@@ -1,5 +1,5 @@
-![github workflow](https://github.com/patrickomatic/csv-plus-plus/actions/workflows/rust.yml/badge.svg)
-![crates.io](https://img.shields.io/crates/v/csvpp.svg)
+[![github workflow](https://github.com/patrickomatic/csv-plus-plus/actions/workflows/rust.yml/badge.svg)](https://github.com/patrickomatic/csv-plus-plus/actions)
+[![crates.io](https://img.shields.io/crates/v/csvpp.svg)](https://crates.io/crates/csvpp)
 
 # csv++
 
