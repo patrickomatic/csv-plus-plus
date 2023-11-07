@@ -3,20 +3,18 @@
 // TODO:
 // * implement backing up
 //
-// * better error handling throughout (cleanup unwrap()s)
-//
 mod batch_update_builder;
 mod compilation_target;
+mod credentials;
 mod google_sheets_modifier;
 
 use super::{ExistingCell, ExistingValues};
 use crate::{Error, Result, Runtime, Template};
 use batch_update_builder::BatchUpdateBuilder;
+use credentials::Credentials;
 use google_sheets4::hyper;
 use google_sheets4::hyper_rustls;
 use google_sheets4::oauth2;
-use std::env;
-use std::path;
 
 type SheetsHub = google_sheets4::Sheets<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>;
 
@@ -24,7 +22,7 @@ type SheetsValue = google_sheets4::api::CellData;
 
 pub(crate) struct GoogleSheets<'a> {
     async_runtime: tokio::runtime::Runtime,
-    credentials: path::PathBuf,
+    credentials: Credentials,
     runtime: &'a Runtime,
     pub(crate) sheet_id: String,
 }
@@ -40,13 +38,13 @@ macro_rules! unwrap_or_empty {
 
 impl<'a> GoogleSheets<'a> {
     pub(crate) fn new<S: Into<String>>(runtime: &'a Runtime, sheet_id: S) -> Result<Self> {
-        let credentials = Self::get_credentials(runtime)?;
+        let credentials = runtime.try_into()?;
 
         let async_runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .map_err(|e| {
-                runtime.output.clone().into_error(format!(
+                Error::InitError(format!(
                     "Error starting async runtime to write Google Sheets: {e}"
                 ))
             })?;
@@ -69,9 +67,6 @@ impl<'a> GoogleSheets<'a> {
         {
             Ok((_, s)) => s,
             Err(e) => {
-                self.runtime
-                    .info(format!("Google Sheets API response: {e}"));
-
                 match e {
                     google_sheets4::Error::BadRequest(obj)
                         if obj["error"]["code"].as_u64().is_some_and(|c| c == 404) =>
@@ -79,21 +74,14 @@ impl<'a> GoogleSheets<'a> {
                         // 404 is fine, it just means it doesn't exist yet
                         return Ok(ExistingValues::default());
                     }
-                    google_sheets4::Error::BadRequest(obj)
-                        if obj["error"]["code"].as_u64().is_some_and(|c| c == 403) =>
-                    {
-                        return Err(self
-                            .runtime
-                            .output
-                            .clone()
-                            .into_error("Unable to access the given spreadsheet - are you sure you shared it with your service account?"));
-                    }
                     _ => {
-                        return Err(self
-                            .runtime
-                            .output
-                            .clone()
-                            .into_error(format!("Error reading existing sheet: {e}")));
+                        self.runtime
+                            .warn(format!("Google Sheets API error response: {e}"));
+
+                        // TODO: show just the message
+                        return Err(Error::GoogleSetupError(format!(
+                            "Error reading existing sheet: {e}",
+                        )));
                     }
                 }
             }
@@ -109,13 +97,14 @@ impl<'a> GoogleSheets<'a> {
             .map(|&grid_data| grid_data.row_data);
         */
 
-        let sheets = unwrap_or_empty!(spreadsheet.sheets);
-        let sheet = unwrap_or_empty!(sheets.get(0));
-        let data = unwrap_or_empty!(&sheet.data);
-        let grid_data = unwrap_or_empty!(data.get(0));
-        let row_data = unwrap_or_empty!(&grid_data.row_data);
+        let sheets = unwrap_or_empty!(spreadsheet.sheets); // Vec<Sheet>
+        let sheet = unwrap_or_empty!(sheets.get(0)); // &Sheet
+        let data = unwrap_or_empty!(&sheet.data); // &Vec<GridData>
+        let grid_data = unwrap_or_empty!(data.get(0)); // &GridData
+        let row_data = unwrap_or_empty!(&grid_data.row_data); // &Vec<RowData>
 
         let mut existing_cells = vec![];
+
         for row in row_data.iter() {
             if let Some(v) = &row.values {
                 existing_cells.push(
@@ -133,43 +122,46 @@ impl<'a> GoogleSheets<'a> {
         })
     }
 
-    fn get_credentials(runtime: &'a Runtime) -> Result<path::PathBuf> {
-        let home_path =
-            home::home_dir().ok_or(Error::InitError("Unable to get home directory".to_string()))?;
+    async fn sheets_hub(&self) -> Result<SheetsHub> {
+        let auth = if self.credentials.is_authorized_user()? {
+            let secret = oauth2::read_authorized_user_secret(&self.credentials.file)
+                .await
+                .map_err(|e| {
+                    Error::GoogleSetupError(format!("Error reading application secret: {e}"))
+                })?;
 
-        let adc_path = home_path
-            .join(".config")
-            .join("gcloud")
-            .join("application_default_credentials.json");
+            oauth2::AuthorizedUserAuthenticator::builder(secret)
+                .build()
+                .await
+                .map_err(|e| {
+                    Error::GoogleSetupError(format!(
+                        "Error requesting access to the spreadsheet: {e}"
+                    ))
+                })?
+        } else if self.credentials.is_service_account()? {
+            let secret = oauth2::read_service_account_key(&self.credentials.file)
+                .await
+                .map_err(|e| {
+                    Error::GoogleSetupError(format!(
+                        "Error reading sevice account credentials: {e}"
+                    ))
+                })?;
 
-        let creds_file = if let Some(creds) = &runtime.options.google_account_credentials {
-            path::PathBuf::from(creds)
-        } else if let Some(env_var) = env::var_os("GOOGLE_APPLICATION_CREDENTIALS") {
-            path::PathBuf::from(env_var)
-        } else if adc_path.exists() {
-            adc_path
+            oauth2::ServiceAccountAuthenticator::builder(secret)
+                .build()
+                .await
+                .map_err(|e| {
+                    Error::GoogleSetupError(format!(
+                        "Error building service account authenticator: {e}"
+                    ))
+                })?
         } else {
-            return Err(runtime.output.clone().into_error(
-                    "Could not find Google application credentials.  You must create a service account with \
-                    access to your spreadsheet and supply the credentials via $GOOGLE_APPLICATION_CREDENTIALS, \
-                    --google-account-credentials or putting them in \
-                    ~/.config/gcloud/application_default_credentials.json"));
+            return Err(Error::GoogleSetupError(
+                "Credentials file must be a service or user account".to_string(),
+            ));
         };
 
-        Ok(creds_file)
-    }
-
-    async fn sheets_hub(&self) -> SheetsHub {
-        let secret = oauth2::read_service_account_key(&self.credentials)
-            .await
-            .expect("Error reading service account key");
-
-        let auth = oauth2::ServiceAccountAuthenticator::builder(secret)
-            .build()
-            .await
-            .expect("Error building service account authenticator");
-
-        google_sheets4::Sheets::new(
+        Ok(google_sheets4::Sheets::new(
             hyper::Client::builder().build(
                 hyper_rustls::HttpsConnectorBuilder::new()
                     .with_native_roots()
@@ -179,11 +171,11 @@ impl<'a> GoogleSheets<'a> {
                     .build(),
             ),
             auth,
-        )
+        ))
     }
 
     async fn write_sheet(&self, template: &Template<'a>) -> Result<()> {
-        let hub = self.sheets_hub().await;
+        let hub = self.sheets_hub().await?;
         let existing_values = self.read_existing_cells(&hub).await?;
         let batch_update_request =
             BatchUpdateBuilder::new(self.runtime, template, &existing_values).build();
@@ -194,7 +186,7 @@ impl<'a> GoogleSheets<'a> {
             .await
             .map(|_i| ())
             .map_err(|e| {
-                self.runtime.warn(format!("{:?}", e));
+                self.runtime.error(format!("{e:?}"));
                 self.runtime
                     .output
                     .clone()

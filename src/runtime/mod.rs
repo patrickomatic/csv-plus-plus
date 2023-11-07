@@ -32,16 +32,23 @@ impl Runtime {
         self.output.compilation_target(self)
     }
 
-    // TODO: it would be nice to also be able to make it red... like warning the JSON response on a
-    // failed sheets request
     pub(crate) fn info<M: fmt::Display>(&self, message: M) {
         if self.options.verbose {
             eprintln!("{message}");
         }
     }
 
-    // TODO: color red
+    pub(crate) fn progress<M: fmt::Display>(&self, message: M) {
+        if self.options.verbose {
+            eprintln!("{}", message.to_string().green());
+        }
+    }
+
     pub(crate) fn warn<M: Into<String>>(&self, message: M) {
+        eprintln!("{}", message.into().yellow());
+    }
+
+    pub(crate) fn error<M: Into<String>>(&self, message: M) {
         eprintln!("{}", message.into().red());
     }
 }
@@ -51,7 +58,12 @@ mod tests {
     // use super::*;
 
     #[test]
-    fn info() {
+    fn info_verbose() {
+        // TODO
+    }
+
+    #[test]
+    fn info_not_verbose() {
         // TODO
     }
 

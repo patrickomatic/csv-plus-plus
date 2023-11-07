@@ -1,9 +1,11 @@
-## main
+## v0.4.1
 
 ### Features
 
 * data validations via the `validate=...` syntax
 * Dates assume local TZ if not specified
+* Google Sheets API access via user accounts (which previously required service accounts)
+* Improved, colored and more clear error messages throughout
 
 ### Bugfixes
 
@@ -12,7 +14,6 @@
 * Expands were incorrectly filling into the rows below them, only for excel
 * More consistent parsing of dates
 * Fix line count in syntax error messages
-* Improved, colored and more clear error messages throughout
 
 ### **Breaking Changes**
 

@@ -46,6 +46,11 @@ pub enum Error {
         position: a1_notation::Address,
     },
 
+    /// Google Sheets requires that the `gcloud` CLI tools are installed and configured.  If we
+    /// think they're not, this message includes a lot of details about setting them up.  So
+    /// it's very Google Sheets-specific.
+    GoogleSetupError(String),
+
     /// An error while building the runtime or reading the source code.  These are typically not
     /// due to user error.
     InitError(String),

@@ -69,7 +69,6 @@ impl SourceCode {
     ) -> ParseError {
         let mut parse_error = self.parse_error(bad_input, message);
         parse_error.possible_values = Some(possible_values);
-        // Some(possible_values.into_iter().map(|pv| pv.into()).collect());
         parse_error
     }
 
@@ -90,9 +89,14 @@ impl SourceCode {
         let start_index = line_number.saturating_sub(LINES_IN_ERROR_CONTEXT);
         let end_index = cmp::min(lines.len(), line_number + LINES_IN_ERROR_CONTEXT + 1);
 
-        // start with 3 lines before, and also include our highlight line
-        // TODO: make the highlighted line red
-        let mut lines_out = lines[start_index..(line_number + 1)].to_vec();
+        // start with 3 lines before the highlighted line
+        let mut lines_out: Vec<colored::ColoredString> = lines[start_index..line_number]
+            .iter()
+            .map(|l| l.dimmed())
+            .collect();
+
+        // and the highlighted line in bright red
+        lines_out.push(lines[line_number].bright_red());
 
         // save the number of this line because we want to skip line-numbering it below
         let skip_numbering_on = lines_out.len();
@@ -102,10 +106,15 @@ impl SourceCode {
         //      foo!
         // --------^
         // ```
-        lines_out.push(format!("{}^", "-".repeat(line_offset).yellow()));
+        lines_out.push(format!("{}^", "-".repeat(line_offset)).yellow());
 
         // and 3 lines after
-        lines_out.append(&mut lines[(line_number + 1)..end_index].to_vec());
+        lines_out.append(
+            &mut lines[(line_number + 1)..end_index]
+                .iter()
+                .map(|l| l.dimmed())
+                .collect(),
+        );
 
         // now format each line with line numbers
         let longest_line_number = (line_number + LINES_IN_ERROR_CONTEXT).to_string().len();
@@ -159,19 +168,10 @@ foo,bar,baz
         )
         .unwrap();
 
-        assert_eq!(
-            source_code.highlight_line(7, 5),
-            vec![
-                " 5 : other_var := 42",
-                " 6 : ",
-                " 7 : something {",
-                " 8 :     foo: bar",
-                "   : -----^",
-                " 9 : }",
-                " 10: ---",
-                " 11: foo,bar,baz",
-            ]
-        );
+        let highlighted_lines = source_code.highlight_line(7, 5);
+        assert_eq!(highlighted_lines.len(), 8);
+        assert!(highlighted_lines[3].contains("foo: bar"));
+        assert!(highlighted_lines[4].contains("-----^"));
     }
 
     #[test]
@@ -192,15 +192,9 @@ foo,bar,baz
         )
         .unwrap();
 
-        assert_eq!(
-            source_code.highlight_line(0, 5),
-            vec![
-                " 1: # A comment",
-                "  : -----^",
-                " 2: ",
-                " 3: var := 1",
-                " 4: other_var := 42",
-            ]
-        );
+        let highlighted_lines = source_code.highlight_line(0, 5);
+        assert_eq!(highlighted_lines.len(), 5);
+        assert!(highlighted_lines[0].contains("# A comment"));
+        assert!(highlighted_lines[4].contains("other_var"));
     }
 }

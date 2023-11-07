@@ -21,7 +21,7 @@ const BACKUP_FORMATS: &[&str] = &[
 // this operation is not technically atomic - to do so we'd need to create a tempfile, write to it
 // then move it in place.  (but for this use case I don't think it matters)
 pub(crate) fn backup_file(runtime: &Runtime, filename: &path::PathBuf) -> Result<path::PathBuf> {
-    runtime.info(format!("Backing up file: {}", filename.display()));
+    runtime.progress(format!("Backing up file: {}", filename.display()));
 
     let now = Local::now();
 

@@ -40,6 +40,28 @@ impl fmt::Display for Error {
                 writeln!(f, "{message}")
             }
 
+            Self::GoogleSetupError(message) => {
+                // TODO: make this a little smarter, if gcloud isn't in path complain about that?
+                // TODO: can we run gcloud auth login automatically?
+                // TODO: gcloud ... --update-adc is deprecated.  this gets us close:
+                // $ gcloud auth application-default login --scopes openid,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/appengine.admin,https://www.googleapis.com/auth/sqlservice.login,https://www.googleapis.com/auth/compute,https://www.googleapis.com/auth/accounts.reauth,https://www.googleapis.com/auth/drive
+                writeln!(
+                    f,
+                    "Unable to access the specified spreadsheet on Google Sheets.
+
+Are you sure that you have the `gcloud` CLI tools installed and properly configured? To 
+authenticate using your Google user account try running:
+
+$ gcloud init
+$ gcloud auth login --enable-gdrive-access --update-adc
+
+If you would like to specify service credentials or the path to your own user credentials, call 
+csv++ with `GOOGLE_APPLICATION_CREDENTIALS` or the `--google-account-credentials` flag.
+
+{message}"
+                )
+            }
+
             Self::ModifierSyntaxError {
                 position,
                 parse_error,

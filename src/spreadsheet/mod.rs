@@ -16,7 +16,7 @@ pub struct Spreadsheet {
 impl Spreadsheet {
     /// Parse the spreadsheet section of a csv++ source file.
     pub(crate) fn parse(runtime: &Runtime) -> Result<Spreadsheet> {
-        runtime.info("Parsing spreadsheet");
+        runtime.progress("Parsing spreadsheet");
 
         let mut csv_reader = csv_reader()
             .trim(csv::Trim::All)

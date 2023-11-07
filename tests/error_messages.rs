@@ -21,13 +21,13 @@ foo,bar
         "Syntax error in code section of integration_test_syntax_error_in_code_section.csvpp
 On line 4 Expected `(` but saw `<`
 
- 1: 
- 2: ## Welcome to the all_features.csvpp test. this is a comment
- 3: ##
- 4: fn foo_fn<a, b, c> a + b * c
-  : ---------^
- 5: ---
- 6: foo,bar
+ 1: \u{1b}[2m\u{1b}[0m
+ 2: \u{1b}[2m## Welcome to the all_features.csvpp test. this is a comment\u{1b}[0m
+ 3: \u{1b}[2m##\u{1b}[0m
+ 4: \u{1b}[91mfn foo_fn<a, b, c> a + b * c\u{1b}[0m
+  : \u{1b}[33m---------^\u{1b}[0m
+ 5: \u{1b}[2m---\u{1b}[0m
+ 6: \u{1b}[2mfoo,bar\u{1b}[0m
 
 "
     );
@@ -50,10 +50,10 @@ foo,bar,[[format=bold ,foo
         "Invalid modifier definition in cell C1 (2, 0) of integration_test_syntax_error_in_modifier_definition.csvpp
 On line 3 Error parsing input, expected ']]' but saw unrecognized token ``
 
- 1: 
- 2: ---
- 3: foo,bar,[[format=bold ,foo
-  : ---------------------^
+ 1: \u{1b}[2m\u{1b}[0m
+ 2: \u{1b}[2m---\u{1b}[0m
+ 3: \u{1b}[91mfoo,bar,[[format=bold ,foo\u{1b}[0m
+  : \u{1b}[33m---------------------^\u{1b}[0m
 
 "
     );
@@ -77,10 +77,10 @@ foo,bar,[[b=foo]],foo
 On line 3 received invalid value when parsing `border` modifier but saw `foo`
 Possible values: all (a) | top (t) | bottom (b) | left (l) | right (r)
 
- 1: 
- 2: ---
- 3: foo,bar,[[b=foo]],foo
-  : ---------------^
+ 1: \u{1b}[2m\u{1b}[0m
+ 2: \u{1b}[2m---\u{1b}[0m
+ 3: \u{1b}[91mfoo,bar,[[b=foo]],foo\u{1b}[0m
+  : \u{1b}[33m---------------^\u{1b}[0m
 
 "
     );

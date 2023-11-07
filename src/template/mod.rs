@@ -100,7 +100,7 @@ impl<'a> Template<'a> {
     }
 
     fn eval(self) -> EvalResult<Self> {
-        self.runtime.info("Evaluating all cells");
+        self.runtime.progress("Evaluating all cells");
         self.eval_expands().eval_cells()
     }
 

@@ -38,7 +38,7 @@ pub(crate) struct CodeSectionParser<'a> {
 /// function and variable references and delegates to `AstParser` for handling expressions
 impl<'a> CodeSectionParser<'a> {
     pub(crate) fn parse(input: &'a str, runtime: &'a Runtime) -> Result<CodeSection> {
-        runtime.info("Parsing code section");
+        runtime.progress("Parsing code section");
 
         CodeSectionParser {
             lexer: AstLexer::new(input, runtime)
