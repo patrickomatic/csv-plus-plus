@@ -125,7 +125,7 @@ impl<'a> BatchUpdateBuilder<'a> {
                     ..Default::default()
                 },
                 _ => api::ExtendedValue {
-                    formula_value: Some(ast.to_string()),
+                    formula_value: Some(format!("={ast}")),
                     ..Default::default()
                 },
             })
