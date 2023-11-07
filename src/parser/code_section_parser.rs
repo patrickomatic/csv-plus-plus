@@ -64,10 +64,10 @@ impl<'a> CodeSectionParser<'a> {
                 Token::Reference => {
                     variables.insert(
                         next.str_match.to_string(),
-                        Box::new(Node::Variable {
-                            name: next.str_match.to_string(),
-                            value: VariableValue::Ast(self.parse_variable_assign()?),
-                        }),
+                        Box::new(Node::var(
+                            next.str_match,
+                            VariableValue::Ast(self.parse_variable_assign()?),
+                        )),
                     );
                 }
                 _ => {

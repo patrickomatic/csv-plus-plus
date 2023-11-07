@@ -85,41 +85,40 @@ pub enum VariableValue {
 /// also nice for some of the code that the builtins call and need to build ASTs.
 impl Node {
     #[cfg(test)]
-    pub(crate) fn fn_def(name: &str, args: &[&str], body: Self) -> Self {
+    pub(crate) fn fn_def<S: Into<String>>(name: S, args: &[&str], body: Self) -> Self {
         Self::Function {
-            name: name.to_string(),
+            name: name.into(),
             args: args.iter().map(|a| a.to_string()).collect(),
             body: Box::new(body),
         }
     }
 
-    pub(crate) fn fn_call(name: &str, args: &[Self]) -> Self {
+    pub(crate) fn fn_call<S: Into<String>>(name: S, args: &[Self]) -> Self {
         Self::FunctionCall {
-            name: name.to_string(),
+            name: name.into(),
             args: args.iter().map(|a| Box::new(a.to_owned())).collect(),
         }
     }
 
-    pub(crate) fn infix_fn_call(left: Self, operator: &str, right: Self) -> Self {
+    pub(crate) fn infix_fn_call<S: Into<String>>(left: Self, operator: S, right: Self) -> Self {
         Self::InfixFunctionCall {
             left: Box::new(left),
-            operator: operator.to_string(),
+            operator: operator.into(),
             right: Box::new(right),
         }
     }
 
-    pub(crate) fn reference(r: &str) -> Self {
-        Self::Reference(r.to_string())
+    pub(crate) fn reference<S: Into<String>>(r: S) -> Self {
+        Self::Reference(r.into())
     }
 
-    pub(crate) fn text(t: &str) -> Self {
-        Self::Text(t.to_string())
+    pub(crate) fn text<S: Into<String>>(t: S) -> Self {
+        Self::Text(t.into())
     }
 
-    #[cfg(test)]
-    pub(crate) fn var(name: &str, value: VariableValue) -> Self {
+    pub(crate) fn var<S: Into<String>>(name: S, value: VariableValue) -> Self {
         Self::Variable {
-            name: name.to_string(),
+            name: name.into(),
             value,
         }
     }
