@@ -18,7 +18,6 @@
 use super::ast_lexer::{AstLexer, Token, TokenMatch};
 use super::ast_parser::AstParser;
 use crate::ast::{Ast, Functions, Node, VariableValue, Variables};
-use crate::error::{BadInput, Error};
 use crate::{Result, Runtime};
 use std::collections::HashMap;
 
@@ -71,10 +70,9 @@ impl<'a> CodeSectionParser<'a> {
                     );
                 }
                 _ => {
-                    return Err(self.token_match_to_error(
-                        next,
-                        "Expected an `fn` or variable definition (`:=`) operator",
-                    ))
+                    return Err(
+                        next.into_error("Expected an `fn` or variable definition (`:=`) operator")
+                    )
                 }
             }
         }
@@ -92,10 +90,7 @@ impl<'a> CodeSectionParser<'a> {
         match next.token {
             // consume an expression
             Token::VarAssign => Ok(self.parse_expr()?),
-            _ => {
-                Err(self
-                    .token_match_to_error(next, "Expected a variable definition operator (`:=`)"))
-            }
+            _ => Err(next.into_error("Expected a variable definition operator (`:=`)")),
         }
     }
 
@@ -112,7 +107,7 @@ impl<'a> CodeSectionParser<'a> {
                 str_match: r,
                 ..
             } => r,
-            token => return Err(self.token_match_to_error(token, "Expected a function name")),
+            token => return Err(token.into_error("Expected a function name")),
         };
 
         // expect a `(`
@@ -121,7 +116,7 @@ impl<'a> CodeSectionParser<'a> {
                 token: Token::OpenParen,
                 ..
             } => (),
-            token => return Err(self.token_match_to_error(token, "Expected `(`")),
+            token => return Err(token.into_error("Expected `(`")),
         };
 
         let mut args = vec![];
@@ -137,7 +132,7 @@ impl<'a> CodeSectionParser<'a> {
                 Token::Reference => {
                     args.push(next.str_match.to_string());
                 }
-                _ => return Err(self.token_match_to_error(next, "Expected `(`")),
+                _ => return Err(next.into_error("Expected `(`")),
             }
         }
 
@@ -156,12 +151,6 @@ impl<'a> CodeSectionParser<'a> {
         AstParser::new(&self.lexer)
             .expr_bp(true, 0)
             .map_err(|e| self.runtime.source_code.code_syntax_error(e))
-    }
-
-    fn token_match_to_error(&'a self, token: TokenMatch<'a>, message: &'a str) -> Error {
-        self.runtime
-            .source_code
-            .code_syntax_error(token.into_parse_error(message))
     }
 }
 

@@ -1,6 +1,6 @@
 use super::Token;
 use crate::ast::{Ast, Node};
-use crate::error::{BadInput, ParseError, ParseResult};
+use crate::error::{BadInput, Error, ParseError, ParseResult};
 use crate::parser::TokenInput;
 use crate::{CharOffset, DateTime, LineNumber, SourceCode};
 use std::fmt;
@@ -12,6 +12,13 @@ pub(crate) struct TokenMatch<'a> {
     pub(crate) line_number: LineNumber,
     pub(crate) line_offset: CharOffset,
     pub(crate) source_code: &'a SourceCode,
+}
+
+impl TokenMatch<'_> {
+    pub(crate) fn into_error<S: Into<String>>(self, message: S) -> Error {
+        self.source_code
+            .code_syntax_error(self.into_parse_error(message))
+    }
 }
 
 impl BadInput for TokenMatch<'_> {
