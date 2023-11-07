@@ -45,6 +45,8 @@ impl Setup {
         })
         .unwrap();
 
+        colored::control::set_override(false);
+
         Setup {
             input_path,
             output_path: output_path.to_path_buf(),
