@@ -3,14 +3,13 @@
 ### Features
 
 * data validations via the `validate=...` syntax
-* Dates assume local TZ if not specified
 * Google Sheets API access via user accounts (which previously required service accounts)
-* Improved, colored and more clear error messages throughout
+* More clear and colored error messages throughout
+* Dates assume local TZ if not specified
 
 ### Bugfixes
 
-* Variables defined on rows (i.e., `![[var=this_row]],=this_row`) weren't being evaluated to the 
-  correct results
+* Variables defined on rows (i.e., `![[var=this_row]],=this_row`) weren't being evaluated to the correct results
 * Expands were incorrectly filling into the rows below them, only for excel
 * More consistent parsing of dates
 * Fix line count in syntax error messages
