@@ -45,6 +45,7 @@ impl Setup {
         })
         .unwrap();
 
+        // we want to match on the output, so suppress colors (which introduce weird control chars)
         colored::control::set_override(false);
 
         Setup {
