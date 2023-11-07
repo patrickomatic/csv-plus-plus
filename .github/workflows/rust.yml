@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  CLI_COLOR_FORCE: true
 
 jobs:
   build:
@@ -29,7 +30,7 @@ jobs:
       run: cargo fmt --all -- --check
 
     - name: Tests
-      run: CLI_COLOR_FORCE=1 cargo test
+      run: cargo test
 
     # TODO
     # - name: Code Coverage
