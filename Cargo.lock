@@ -576,7 +576,7 @@ dependencies = [
 
 [[package]]
 name = "csvpp"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "a1_notation",
  "chrono",
@@ -2256,7 +2256,8 @@ checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
 [[package]]
 name = "umya-spreadsheet"
 version = "1.0.3"
-source = "git+https://github.com/MathNya/umya-spreadsheet.git?rev=878d549#878d549c071b0d6c93647e0a73d762deb81c36e3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4cd878f899825bddc40c87af9aaa14c1550d427e2009ce6c02c5ab7ff7a371b"
 dependencies = [
  "aes",
  "ahash",
