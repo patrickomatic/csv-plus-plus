@@ -1,4 +1,4 @@
-//! # Expand
+//! # Fill
 //!
 use a1_notation::Row;
 use serde::{Deserialize, Serialize};
@@ -9,12 +9,12 @@ mod into;
 const ROW_MAX: usize = 1000;
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub struct Expand {
+pub struct Fill {
     pub amount: Option<usize>,
     pub start_row: Row,
 }
 
-impl Expand {
+impl Fill {
     pub fn clone_to_row<R: Into<Row>>(&self, row: R) -> Self {
         Self {
             amount: self.amount,
@@ -30,7 +30,7 @@ impl Expand {
         }
     }
 
-    pub fn expand_amount<R: Into<Row>>(&self, row: R) -> usize {
+    pub fn fill_amount<R: Into<Row>>(&self, row: R) -> usize {
         self.amount.unwrap_or(ROW_MAX - row.into().y)
     }
 
@@ -48,14 +48,14 @@ mod tests {
 
     #[test]
     fn clone_to_row() {
-        let expand = Expand {
+        let fill = Fill {
             amount: Some(10),
             start_row: 0.into(),
         };
 
         assert_eq!(
-            expand.clone_to_row(55),
-            Expand {
+            fill.clone_to_row(55),
+            Fill {
                 amount: Some(10),
                 start_row: 55.into()
             }
@@ -64,43 +64,43 @@ mod tests {
 
     #[test]
     fn end_row_with_amount() {
-        let expand = Expand {
+        let fill = Fill {
             amount: Some(10),
             start_row: 0.into(),
         };
 
-        assert_eq!(expand.end_row(), 10.into());
+        assert_eq!(fill.end_row(), 10.into());
     }
 
     #[test]
     fn end_row_without_amount() {
-        let expand = Expand {
+        let fill = Fill {
             amount: None,
             start_row: 0.into(),
         };
 
-        assert_eq!(expand.end_row(), 1000.into());
+        assert_eq!(fill.end_row(), 1000.into());
     }
 
     #[test]
-    fn expand_amount_finite() {
-        let expand = Expand {
+    fn fill_amount_finite() {
+        let fill = Fill {
             amount: Some(5),
             start_row: 0.into(),
         };
 
-        assert_eq!(expand.expand_amount(0), 5);
-        assert_eq!(expand.expand_amount(10), 5);
+        assert_eq!(fill.fill_amount(0), 5);
+        assert_eq!(fill.fill_amount(10), 5);
     }
 
     #[test]
-    fn expand_amount_infinite() {
-        let expand = Expand {
+    fn fill_amount_infinite() {
+        let fill = Fill {
             amount: None,
             start_row: 0.into(),
         };
 
-        assert_eq!(expand.expand_amount(0), 1000);
-        assert_eq!(expand.expand_amount(10), 990);
+        assert_eq!(fill.fill_amount(0), 1000);
+        assert_eq!(fill.fill_amount(10), 990);
     }
 }

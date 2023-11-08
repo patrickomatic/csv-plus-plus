@@ -44,20 +44,20 @@ Complex function    , Column 1  , Column 2 ,
 ```
 
 
-## Expands
+## Fills
 
-Another useful feature is to define a range of rows which expand out (either infinitely or by a
+Another useful feature is to define a range of rows which fill out (either infinitely or by a
 finite amount) in the compiled spreadsheet.  To specify one you use the row modifier syntax
 which is similar to above, you just prefix it with `!`: `![[`/`]]`.
 
 ```csvpp
-Product Name   , Quantity          , Price per Unit  , =SUM(D2:D12)
-![[expand=10]] , [[var=quantity]]  , [[var=price]]   , =quantity * price
+Product Name  , Quantity          , Price per Unit  , =SUM(D2:D12)
+![[fill=10]]  , [[var=quantity]]  , [[var=price]]   , =quantity * price
 ```
 
-This will expand the second row and repeat it 10 times in the final spreadsheet.  If you wanted 
+This will take the second row and repeat it 10 times in the final spreadsheet.  If you wanted 
 it to be repeated until the end of the spreadsheet just leave off the `=10` and specify it as 
-`![[expand]]`.
+`![[fill]]`.
 
 
 ## Variable Scoping
@@ -69,8 +69,8 @@ name to a given cell.  As an example of scoping semantics we'll use this csv++ t
 ```csvpp
 foo_from_code_section := 42
 ---
-[[var=bar_outside_expand]] ,                         ,                 ,                     ,                       ,
-![[expand=2]]bar           , [[var=bar_in_expand]]   , =bar_in_expand  , =bar_outside_expand , =foo_from_code_section,
+[[var=bar_outside_fill]] ,                         ,                 ,                     ,                       ,
+![[fill=2]]bar           , [[var=bar_in_fill]]     , =bar_in_fill    , =bar_outside_fill   , =foo_from_code_section,
 ```
 
 which will compile to:
@@ -84,16 +84,16 @@ bar  ,     , =B3 , =A1 , =42
 Breaking this down:
 
 * `foo_from_code_section` - Is always `42` no matter where it is used.
-* `bar_in_expand` - Since it is defined within an `![[expand]]`, it's value depends on the final
+* `bar_in_fill` - Since it is defined within an `![[fill]]`, it's value depends on the final
   row, which will be `B2` or `B3`
-* `bar_outside_expand` - Will always be `A1`, pointing to the cell where it was defined.  There
-  is no relative aspect to it since it's not defined in an `expand`.
+* `bar_outside_fill` - Will always be `A1`, pointing to the cell where it was defined.  There
+  is no relative aspect to it since it's not defined in an `fill`.
 
 
 ## Builtin Functions & Variables
 
 csv++ comes with several built-in functions and variables that are mostly helpful when working with
-the `expand` modifier.
+the `fill` modifier.
 
 ### Variables
 
@@ -120,19 +120,19 @@ You can apply basic cell formatting which will either apply for the entire row o
 individual cells.  To apply formatting to individual cells use the `[[`/`]]` syntax:
 
 ```csvpp
-[[format=bold/format=underline]]foo,[[fontsize=20]]bar,baz,
+[[text=bold/text=underline]]foo,[[fontsize=20]]bar,baz,
 ```
 
 and here is the same thing using short-hand:
 
 ```csvpp
-[[f=b/f=u]]foo,[[fs=20]]bar,baz,
+[[t=b/t=u]]foo,[[fs=20]]bar,baz,
 ```
 
 To format the entire row you can use `![[`/`]]` at the beginning of the line
 
 ```csvpp
-![[f=b/f=u]]foo,bar,baz,
+![[t=b/t=u]]foo,bar,baz,
 ```
 
 For a full list of formatting features, take a look at the [language reference](docs/LANGUAGE_REFERENCE.md)

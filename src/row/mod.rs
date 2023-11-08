@@ -49,7 +49,7 @@ impl Row {
         Self {
             row: new_row,
             modifier: RowModifier {
-                expand: self.modifier.expand.map(|e| e.clone_to_row(new_row)),
+                fill: self.modifier.fill.map(|e| e.clone_to_row(new_row)),
                 ..self.modifier.clone()
             },
             cells: self.cells.iter().map(|c| c.clone_to_row(new_row)).collect(),
@@ -78,7 +78,7 @@ mod tests {
                 value: "foo".to_string(),
             }],
             modifier: RowModifier {
-                expand: Some(Expand::new(22, Some(100))),
+                fill: Some(Fill::new(22, Some(100))),
                 ..Default::default()
             },
         };
@@ -94,7 +94,7 @@ mod tests {
                     value: "foo".to_string(),
                 }],
                 modifier: RowModifier {
-                    expand: Some(Expand::new(5, Some(100))),
+                    fill: Some(Fill::new(5, Some(100))),
                     ..Default::default()
                 },
             }

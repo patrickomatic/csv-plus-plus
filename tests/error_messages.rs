@@ -40,7 +40,7 @@ fn syntax_error_in_modifier_definition() {
         "csv",
         r#"
 ---
-foo,bar,[[format=bold ,foo
+foo,bar,[[text=bold ,foo
 "#,
     );
     let template = Template::compile(&s.runtime);
@@ -52,8 +52,8 @@ On line 3 Error parsing input, expected ']]' but saw unrecognized token ``
 
  1: 
  2: ---
- 3: foo,bar,[[format=bold ,foo
-  : ---------------------^
+ 3: foo,bar,[[text=bold ,foo
+  : -------------------^
 
 "
     );

@@ -3,7 +3,7 @@
 use super::modifier_lexer::{ModifierLexer, Token, TokenMatch};
 use crate::error::{BadInput, ParseResult, Result};
 use crate::modifier::*;
-use crate::{Expand, Rgb, Runtime};
+use crate::{Fill, Rgb, Runtime};
 use a1_notation::{Address, Row};
 
 mod validate;
@@ -126,25 +126,24 @@ where
         })
     }
 
-    fn expand_modifier(&mut self, modifier: TokenMatch, row: a1_notation::Row) -> ParseResult<()> {
+    fn fill_modifier(&mut self, modifier: TokenMatch, row: a1_notation::Row) -> ParseResult<()> {
         if !self.is_row_modifier {
             return Err(
-                modifier.into_parse_error("`expand` modifiers can only be used in a `![[..]]`")
+                modifier.into_parse_error("`fill` modifiers can only be used in a `![[..]]`")
             );
         }
 
-        assign_modifier!(self, expand, {
+        assign_modifier!(self, fill, {
             let amount = if self.lexer.maybe_take_equals().is_some() {
                 let amount_string = self.lexer.take_token(Token::PositiveNumber)?;
                 Some(amount_string.str_match.parse::<usize>().map_err(|e| {
-                    amount_string
-                        .into_parse_error(format!("Error parsing expand= repetitions: {e}"))
+                    amount_string.into_parse_error(format!("Error parsing fill= repetitions: {e}"))
                 })?)
             } else {
                 None
             };
 
-            Expand::new(row, amount)
+            Fill::new(row, amount)
         })
     }
 
@@ -172,12 +171,6 @@ where
         })
     }
 
-    fn format_modifier(&mut self) -> ParseResult<()> {
-        insert_modifier!(self, formats, {
-            TextFormat::try_from(self.lexer.take_modifier_right_side()?)?
-        })
-    }
-
     fn halign_modifier(&mut self) -> ParseResult<()> {
         assign_modifier!(self, horizontal_align, {
             HorizontalAlign::try_from(self.lexer.take_modifier_right_side()?)?
@@ -202,6 +195,12 @@ where
         })
     }
 
+    fn text_modifier(&mut self) -> ParseResult<()> {
+        insert_modifier!(self, formats, {
+            TextFormat::try_from(self.lexer.take_modifier_right_side()?)?
+        })
+    }
+
     fn valign_modifier(&mut self) -> ParseResult<()> {
         assign_modifier!(self, vertical_align, {
             VerticalAlign::try_from(self.lexer.take_modifier_right_side()?)?
@@ -222,8 +221,7 @@ where
             "bs" | "borderstyle" => self.border_style_modifier(),
             "c" | "color" => self.color_modifier(),
             "dv" | "validate" => self.validate(),
-            "e" | "expand" => self.expand_modifier(modifier_name, row),
-            "f" | "format" => self.format_modifier(),
+            "f" | "fill" => self.fill_modifier(modifier_name, row),
             "fc" | "fontcolor" => self.font_color_modifier(),
             "ff" | "fontfamily" => self.font_family_modifier(),
             "fs" | "fontsize" => self.font_size_modifier(),
@@ -231,6 +229,7 @@ where
             "l" | "lock" => self.lock(),
             "n" | "note" => self.note(),
             "nf" | "numberformat" => self.number_format(),
+            "t" | "text" => self.text_modifier(),
             "v" | "var" => self.var_modifier(),
             "va" | "valign" => self.valign_modifier(),
             _ => Err(modifier_name.into_parse_error("Unrecognized modifier")),
@@ -278,7 +277,7 @@ mod tests {
     fn parse_modifier() {
         let ParsedCell {
             value, modifier, ..
-        } = test_parse("[[format=bold]]abc123");
+        } = test_parse("[[text=bold]]abc123");
 
         assert_eq!(value, "abc123");
         assert!(modifier.unwrap().formats.contains(&TextFormat::Bold));
@@ -290,7 +289,7 @@ mod tests {
             value,
             row_modifier,
             ..
-        } = test_parse("![[format=italic/valign=top/expand]]abc123");
+        } = test_parse("![[text=italic/valign=top/fill]]abc123");
 
         assert_eq!(value, "abc123");
 
@@ -298,8 +297,8 @@ mod tests {
         assert!(m.formats.contains(&TextFormat::Italic));
         assert_eq!(m.vertical_align, Some(VerticalAlign::Top));
         assert_eq!(
-            m.expand,
-            Some(Expand {
+            m.fill,
+            Some(Fill {
                 amount: None,
                 start_row: 0.into()
             })
@@ -310,7 +309,7 @@ mod tests {
     fn parse_multiple_modifiers_shorthand() {
         let ParsedCell {
             value, modifier, ..
-        } = test_parse("[[ha=l/va=c/f=u/fs=12]]abc123");
+        } = test_parse("[[ha=l/va=c/t=u/fs=12]]abc123");
 
         assert_eq!(value, "abc123");
 
@@ -323,7 +322,7 @@ mod tests {
 
     #[test]
     fn parse_row_modifier() {
-        let ParsedCell { row_modifier, .. } = test_parse("![[format=bold]]abc123");
+        let ParsedCell { row_modifier, .. } = test_parse("![[text=bold]]abc123");
 
         assert!(row_modifier.unwrap().formats.contains(&TextFormat::Bold));
     }
@@ -350,10 +349,10 @@ mod tests {
     }
 
     #[test]
-    fn parse_expand() {
-        let ParsedCell { row_modifier, .. } = test_parse("![[expand=20]]abc123");
+    fn parse_fill() {
+        let ParsedCell { row_modifier, .. } = test_parse("![[fill=20]]abc123");
 
-        assert!(row_modifier.unwrap().expand.is_some());
+        assert!(row_modifier.unwrap().fill.is_some());
     }
 
     #[test]
@@ -375,13 +374,6 @@ mod tests {
         let ParsedCell { modifier, .. } = test_parse("[[fontsize=20]]abc123");
 
         assert_eq!(modifier.unwrap().font_size, Some(20));
-    }
-
-    #[test]
-    fn parse_format() {
-        let ParsedCell { modifier, .. } = test_parse("[[format=bold]]abc123");
-
-        assert!(modifier.unwrap().formats.contains(&TextFormat::Bold));
     }
 
     #[test]
@@ -416,6 +408,13 @@ mod tests {
             modifier.unwrap().number_format,
             Some(NumberFormat::DateTime)
         );
+    }
+
+    #[test]
+    fn parse_text() {
+        let ParsedCell { modifier, .. } = test_parse("[[text=bold]]abc123");
+
+        assert!(modifier.unwrap().formats.contains(&TextFormat::Bold));
     }
 
     #[test]

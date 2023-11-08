@@ -5,10 +5,10 @@
 //!
 // TODO:
 // * we need more unit tests around the various eval phases
-//      - expands
+//      - fills
 //      - row vs cell variable definitions
 // * eval cells in parallel (rayon)
-// * make sure there is only one infinite expand in the docs (ones can follow it, but they have to
+// * make sure there is only one infinite fill in the docs (ones can follow it, but they have to
 //      be finite and subtract from it
 use crate::ast::{
     Ast, AstReferences, BuiltinFunction, BuiltinVariable, Functions, Node, VariableValue, Variables,
@@ -101,23 +101,23 @@ impl<'a> Template<'a> {
 
     fn eval(self) -> EvalResult<Self> {
         self.runtime.progress("Evaluating all cells");
-        self.eval_expands().eval_cells()
+        self.eval_fills().eval_cells()
     }
 
-    /// For each row of the spreadsheet, if it has an [[expand=]] modifier then we need to actually
-    /// expand it to that many rows.  
+    /// For each row of the spreadsheet, if it has an [[fill=]] modifier then we need to actually
+    /// fill it to that many rows.  
     ///
     /// This has to happen before eval()ing the cells because that process depends on them being in
     /// their final location.
-    // TODO: make sure there is only one infinite expand
-    fn eval_expands(self) -> Self {
+    // TODO: make sure there is only one infinite fill
+    fn eval_fills(self) -> Self {
         let mut new_spreadsheet = Spreadsheet::default();
         let s = self.spreadsheet.borrow_mut();
         let mut row_num = 0;
 
         for row in s.rows.iter() {
-            if let Some(e) = row.modifier.expand {
-                for _ in 0..e.expand_amount(row_num) {
+            if let Some(e) = row.modifier.fill {
+                for _ in 0..e.fill_amount(row_num) {
                     new_spreadsheet.rows.push(row.clone_to_row(row_num.into()));
                     row_num += 1;
                 }
@@ -245,8 +245,8 @@ impl<'a> Template<'a> {
                         // already an AST, just clone it
                         VariableValue::Ast(ast) => *ast.clone(),
 
-                        // it's relative to an expand - so if it's referenced inside the
-                        // expand, it's the value at that location.  If it's outside the expand
+                        // it's relative to an fill - so if it's referenced inside the
+                        // fill, it's the value at that location.  If it's outside the fill
                         // it's the range that it represents
                         VariableValue::ColumnRelative { scope, column } => {
                             let scope_a1: A1 = (*scope).into();
@@ -266,11 +266,11 @@ impl<'a> Template<'a> {
                         VariableValue::RowRelative { scope, .. } => {
                             let scope_a1: A1 = (*scope).into();
                             if scope_a1.contains(&position.into()) {
-                                // we're within the scope (expand) so it's the row we're on
+                                // we're within the scope (fill) so it's the row we're on
                                 let row_a1: A1 = position.row.into();
                                 row_a1.into()
                             } else {
-                                // we're outside the scope (expand), so it represents the entire
+                                // we're outside the scope (fill), so it represents the entire
                                 // range contained by it (the scope)
                                 let row_range: A1 = (*scope).into();
                                 row_range.into()
@@ -327,8 +327,8 @@ mod tests {
     }
 
     #[test]
-    fn compile_with_expand_finite() {
-        let test_file = TestFile::new("xlsx", "![[expand=10]]foo,bar,baz");
+    fn compile_with_fill_finite() {
+        let test_file = TestFile::new("xlsx", "![[fill=10]]foo,bar,baz");
         let runtime = test_file.into();
         let template = Template::compile(&runtime).unwrap();
 
@@ -336,8 +336,8 @@ mod tests {
     }
 
     #[test]
-    fn compile_with_expand_infinite() {
-        let test_file = TestFile::new("xlsx", "![[expand]]foo,bar,baz");
+    fn compile_with_fill_infinite() {
+        let test_file = TestFile::new("xlsx", "![[fill]]foo,bar,baz");
         let runtime = test_file.into();
         let template = Template::compile(&runtime).unwrap();
 
@@ -345,8 +345,8 @@ mod tests {
     }
 
     #[test]
-    fn compile_with_expand_multiple() {
-        let test_file = TestFile::new("xlsx", "![[e=10]]foo,bar,baz\n![[e]]1,2,3");
+    fn compile_with_fill_multiple() {
+        let test_file = TestFile::new("xlsx", "![[f=10]]foo,bar,baz\n![[f]]1,2,3");
         let runtime = test_file.into();
         let template = Template::compile(&runtime).unwrap();
 
@@ -354,8 +354,8 @@ mod tests {
     }
 
     #[test]
-    fn compile_with_expand_and_rows() {
-        let test_file = TestFile::new("xlsx", "foo,bar,baz\n![[e=2]]foo,bar,baz\none,last,row\n");
+    fn compile_with_fill_and_rows() {
+        let test_file = TestFile::new("xlsx", "foo,bar,baz\n![[f=2]]foo,bar,baz\none,last,row\n");
         let runtime = test_file.into();
         let template = Template::compile(&runtime).unwrap();
 

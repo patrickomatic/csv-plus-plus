@@ -54,8 +54,8 @@ fees := commission_charge * celladjacent(D)
 profit := (celladjacent(B) * celladjacent(C)) - fees
 
 ---
-![[format=bold/halign=center]]Date ,[[f=b]] Purchase ,Price  ,Quantity ,Profit     ,Fees
-![[expand=2]]                      ,[[format=bold]]  ,       ,         ,"=profit"  ,"=fees"
+![[text=bold/halign=center]]Date   ,[[t=b]] Purchase ,Price  ,Quantity ,Profit     ,Fees
+![[fill=2]]                        ,[[text=bold]]    ,       ,         ,"=profit"  ,"=fees"
 "#,
     );
 
@@ -86,7 +86,7 @@ fn funky_fun(a, b) a + b
 
 ---
 [[var=a1]]A1,foo,bar
-![[expand=10]],bar,=var2
+![[fill=10]],bar,=var2
 foo
 [[lock]]test,
 ![[lock]]test1,test2,test3,

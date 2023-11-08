@@ -41,8 +41,8 @@ impl Spreadsheet {
         for row in &self.rows {
             // does the row itself have a var?
             if let Some(var_id) = &row.modifier.var {
-                let reference = if let Some(scope) = row.modifier.expand {
-                    // if there's also an expand it's relative to that
+                let reference = if let Some(scope) = row.modifier.fill {
+                    // if there's also an fill it's relative to that
                     Node::Variable {
                         name: var_id.clone(),
                         value: VariableValue::RowRelative {
@@ -63,7 +63,7 @@ impl Spreadsheet {
 
             row.cells.iter().for_each(|c| {
                 if let Some(var_id) = &c.modifier.var {
-                    let reference = if let Some(scope) = row.modifier.expand {
+                    let reference = if let Some(scope) = row.modifier.fill {
                         Node::Variable {
                             name: var_id.clone(),
                             value: VariableValue::ColumnRelative {
@@ -165,7 +165,7 @@ mod tests {
 
     #[test]
     fn parse_with_modifiers() {
-        let runtime = build_runtime("[[f=b / fs=20]]foo");
+        let runtime = build_runtime("[[t=b / fs=20]]foo");
         let spreadsheet = Spreadsheet::parse(&runtime).unwrap();
 
         assert!(spreadsheet.rows[0].cells[0]
@@ -177,7 +177,7 @@ mod tests {
 
     #[test]
     fn parse_with_row_modifier() {
-        let runtime = build_runtime("![[f=b]]foo,bar,baz");
+        let runtime = build_runtime("![[t=b]]foo,bar,baz");
         let spreadsheet = Spreadsheet::parse(&runtime).unwrap();
 
         assert!(spreadsheet.rows[0].cells[0]
@@ -241,7 +241,7 @@ mod tests {
                 Row {
                     row: 0.into(),
                     modifier: RowModifier {
-                        expand: Some(Expand::new(0, Some(10))),
+                        fill: Some(Fill::new(0, Some(10))),
                         ..Default::default()
                     },
                     cells: vec![Cell {
@@ -257,7 +257,7 @@ mod tests {
                 Row {
                     row: 1.into(),
                     modifier: RowModifier {
-                        expand: Some(Expand::new(10, Some(100))),
+                        fill: Some(Fill::new(10, Some(100))),
                         ..Default::default()
                     },
                     cells: vec![Cell {
@@ -279,7 +279,7 @@ mod tests {
             Node::var(
                 "foo",
                 VariableValue::ColumnRelative {
-                    scope: Expand {
+                    scope: Fill {
                         amount: Some(10),
                         start_row: 0.into()
                     },
@@ -292,7 +292,7 @@ mod tests {
             Node::var(
                 "bar",
                 VariableValue::ColumnRelative {
-                    scope: Expand {
+                    scope: Fill {
                         amount: Some(100),
                         start_row: 10.into()
                     },

@@ -42,7 +42,7 @@ impl Cell {
     }
 
     /// Clone the `Cell` keeping all of it's data the same, except it will reflect that it's been
-    /// moved to `new_row`.  This involves updating `position` and `expand.start_row`
+    /// moved to `new_row`.  This involves updating `position` and `fill.start_row`
     pub(crate) fn clone_to_row(&self, new_row: Row) -> Self {
         Self {
             position: self.position.with_y(new_row.y),

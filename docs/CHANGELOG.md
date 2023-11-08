@@ -1,3 +1,12 @@
+## v0.5.0
+
+### Features
+
+### **Breaking (Language) Changes**
+
+* Rename `![[expand]]` to `![[fill]]` and all related code references
+* Rename `[[format]]`  to `[[text]]` 
+
 ## v0.4.1
 
 ### Features

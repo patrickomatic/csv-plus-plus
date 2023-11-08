@@ -13,7 +13,7 @@ mod number_format;
 mod text_format;
 mod vertical_align;
 
-use crate::{Expand, Rgb};
+use crate::{Fill, Rgb};
 pub use border_side::BorderSide;
 pub use border_style::BorderStyle;
 pub use data_validation::DataValidation;
@@ -44,7 +44,7 @@ pub struct Modifier {
     pub vertical_align: Option<VerticalAlign>,
 }
 
-/// Verrrry similar to `Modifier`, except `RowModifier` can also have an `expand`.
+/// Verrrry similar to `Modifier`, except `RowModifier` can also have an `fill`.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct RowModifier {
     pub border_color: Option<Rgb>,
@@ -52,7 +52,7 @@ pub struct RowModifier {
     pub borders: HashSet<BorderSide>,
     pub color: Option<Rgb>,
     pub data_validation: Option<DataValidation>,
-    pub expand: Option<Expand>,
+    pub fill: Option<Fill>,
     pub font_color: Option<Rgb>,
     pub font_family: Option<String>,
     pub font_size: Option<u8>,

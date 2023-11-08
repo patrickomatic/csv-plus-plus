@@ -1,5 +1,5 @@
 use super::{Ast, FunctionArgs, FunctionName, VariableName};
-use crate::Expand;
+use crate::Fill;
 use a1_notation::{Address, Column, Row};
 use serde::{Deserialize, Serialize};
 
@@ -71,14 +71,14 @@ pub enum VariableValue {
     /// If a variable is defined in the code section it will have an AST as a value.
     Ast(Ast),
 
-    /// It's scoped as a column relative to an expand.
-    ColumnRelative { column: Column, scope: Expand },
+    /// It's scoped as a column relative to a fill.
+    ColumnRelative { column: Column, scope: Fill },
 
     /// It's scoped as a row.
     Row(Row),
 
-    /// It's scoped as a row relative to an expand.
-    RowRelative { row: Row, scope: Expand },
+    /// It's scoped as a row relative to a fill.
+    RowRelative { row: Row, scope: Fill },
 }
 
 /// Most of these just make testing easier to not have to call .to_string() constantly, but they're

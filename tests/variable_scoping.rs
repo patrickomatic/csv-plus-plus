@@ -2,7 +2,7 @@ use csvpp::Template;
 mod common;
 
 #[test]
-fn cell_variable_in_expand() {
+fn cell_variable_in_fill() {
     let s = common::Setup::from_str(
         "cell_variable_in_expand",
         "csv",
@@ -10,7 +10,7 @@ fn cell_variable_in_expand() {
 bar := test + 1
 ---
 Foo,Bar,Baz,=SUM(test)
-![[e=3]][[var=test]],=test*5,=bar,
+![[f=3]][[var=test]],=test*5,=bar,
 "#,
     );
     let template = Template::compile(&s.runtime).unwrap();
@@ -28,14 +28,14 @@ Foo,Bar,Baz,=SUM(test)
 }
 
 #[test]
-fn row_variable_in_expand() {
+fn row_variable_in_fill() {
     let s = common::Setup::from_str(
         "row_variable_in_expand",
         "csv",
         r#"
 ---
 ,=SUM(cell),=SUM(row)
-![[e=3 / var=row]][[var=cell]],=cell,=row,
+![[f=3 / var=row]][[var=cell]],=cell,=row,
 "#,
     );
     let template = Template::compile(&s.runtime).unwrap();

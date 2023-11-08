@@ -101,7 +101,7 @@ Interest Rate:,[[var=interest_rate]]0.05
 ```
 
 in the above example, `interest_on_amount` will be evaluated per the different amount on each
-row.  This gets interesting when combined with the `![[expand=]]` directive:
+row.  This gets interesting when combined with the `![[fill=]]` directive:
 
 ```
 # TODO: make an example
@@ -157,11 +157,11 @@ The color of the cell, where `HEX_COLOR` is a 6-character hex color code.
 > ##### Alias `c = HEX_COLOR`
 
 
-#### expand
-#### expand = AMOUNT
+#### fill
+#### fill = AMOUNT
 Duplicate the row `AMOUNT` times.  If `AMOUNT` is not supplied, the row will be repeated for the rest of the sheet.
 
-> ##### Alias `e = AMOUNT` (optional)
+> ##### Alias `f = AMOUNT` (optional)
 
 
 #### fontcolor = HEX\_COLOR
@@ -180,12 +180,6 @@ The font family to use.  It must be a valid font, compatible with your target sp
 The font size to use, as a whole number.
 
 > ##### Alias `fs = INTEGER`
-
-
-#### format = bold | italic | strikethrough | underline
-Applies the given format. Can be repeated multiple times to set multiple formats.
-
-> ##### Alias `f = b | i | s | u`
 
 
 #### halign = left | center | right
@@ -210,6 +204,12 @@ A note to associate with the cell. The `STRING` should be quoted with single quo
 The number format to apply to the cell.
 
 > ##### Alias `nf = c | d | dt | n | p | text | t | s`
+
+
+#### text = bold | italic | strikethrough | underline
+Applies the given format. Can be repeated multiple times to set multiple formats.
+
+> ##### Alias `t = b | i | s | u`
 
 
 #### validate
@@ -258,18 +258,18 @@ Bind a variable (specified by `VARIABLE_ID`) to reference this cell. TODO
 * Align the second cell left, align the last cell to the center and make it bold and italicized:
 
 ```csvpp
-Date,[[ha=l]]Amount,Quantity,[[ha=c/f=b/f=i]]Price
+Date,[[ha=l]]Amount,Quantity,[[ha=c/t=b/t=i]]Price
 ```
 
 * Underline and center-align an entire row:
 
 ```csvpp
-![[ha=c/f=u]]Date,Amount,Quantity,Price
+![[ha=c/t=u]]Date,Amount,Quantity,Price
 ```
 
 * A header for the first row, then some formulas that repeat for each row for the rest of the spreadsheet:
 
 ```csvpp
-![[ha=c/f=b]]Date,Price,Quantity,Profit
+![[ha=c/t=b]]Date,Price,Quantity,Profit
 ![[e]],,,"=MULTIPLY(cellref(B), cellref(C))"
 ```
