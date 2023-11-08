@@ -2,6 +2,8 @@
 
 ### Features
 
+* Code coverage reporting
+
 ### **Breaking (Language) Changes**
 
 * Rename `![[expand]]` to `![[fill]]` and all related code references
