@@ -1,9 +1,3 @@
-# load .env if it's set. (see .env.example as an example to get started)
-ifneq (,$(wildcar ./.env))
-	include .env
-	export
-endif
-
 release_dir := release
 target_dir := target
 
@@ -58,5 +52,5 @@ $(release_dir)/$(windows_release_dir)/csvpp.exe: target/$(windows_target)/releas
 $(release_dir)/$(windows_release_dir).tar.gz: $(release_dir)/$(windows_release_dir)/csvpp.exe
 	cd $(release_dir) && tar -czf $(windows_release_dir).tar.gz $(windows_release_dir)
 
-%.asc: %.tar.gz
-	gpg --detach-sign --armor $*
+%.tar.gz.asc: %.tar.gz
+	gpg --detach-sign --armor $<
