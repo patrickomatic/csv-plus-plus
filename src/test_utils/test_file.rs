@@ -32,7 +32,7 @@ impl From<TestFile> for Runtime {
 
 impl From<TestFile> for SourceCode {
     fn from(test_file: TestFile) -> Self {
-        Self::new(&test_file.read_input(), test_file.input_file.clone()).unwrap()
+        Self::new(test_file.read_input(), test_file.input_file.clone()).unwrap()
     }
 }
 
@@ -54,7 +54,7 @@ impl TestFile {
     }
 
     #[allow(dead_code)]
-    fn read_output(&self) -> String {
+    pub(crate) fn read_output(&self) -> String {
         fs::read_to_string(&self.output_file).unwrap()
     }
 

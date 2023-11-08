@@ -37,7 +37,7 @@ impl<'a> Excel<'a> {
     }
 
     /// Since the excel library allows us to modify the speadsheet in place, the strategy here is
-    /// to be a light-touch as possible and just loop through our values and set them (or not
+    /// to be as light-touch as possible and just loop through our values and set them (or not
     /// depending on the merge strategy).
     fn build_worksheet(&self, template: &Template, worksheet: &mut u::Worksheet) -> Result<()> {
         let s = template.spreadsheet.borrow();
@@ -153,9 +153,7 @@ impl<'a> Excel<'a> {
         if self.path.exists() {
             u::reader::xlsx::read(self.path.as_path()).map_err(|e| {
                 self.runtime
-                    .output
-                    .clone()
-                    .into_error(format!("Unable to open target file: {e}"))
+                    .output_error(format!("Unable to open target file: {e}"))
             })
         } else {
             Ok(u::new_file_empty_worksheet())
@@ -168,7 +166,7 @@ impl<'a> Excel<'a> {
         let existing = spreadsheet.get_sheet_by_name(&sheet_name);
         if existing.is_err() {
             spreadsheet.new_sheet(&sheet_name).map_err(|e| {
-                self.runtime.output.clone().into_error(format!(
+                self.runtime.output_error(format!(
                     "Unable to create new worksheet {sheet_name} in target file: {e}"
                 ))
             })?;
@@ -183,7 +181,7 @@ impl<'a> Excel<'a> {
     ) -> Result<&'a mut u::Worksheet> {
         let sheet_name = &self.runtime.options.sheet_name;
         spreadsheet.get_sheet_by_name_mut(sheet_name).map_err(|e| {
-            self.runtime.output.clone().into_error(format!(
+            self.runtime.output_error(format!(
                 "Unable to open worksheet {sheet_name} in target file: {e}"
             ))
         })

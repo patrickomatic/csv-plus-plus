@@ -3,6 +3,8 @@ use std::env;
 use std::fs;
 use std::path;
 
+/// The file containing credentials that will be used to connect to Sheets API
+#[derive(Debug)]
 pub(super) struct Credentials {
     pub(super) file: path::PathBuf,
 }
@@ -83,5 +85,83 @@ impl Credentials {
         serde_json::from_str(&json).map_err(|e| {
             Error::GoogleSetupError(format!("Error parsing credentials file JSON: {e}"))
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_utils::*;
+    use std::env;
+
+    #[test]
+    fn is_authorized_user_true() {
+        let test_file = TestFile::new("json", "{\"type\": \"authorized_user\"}");
+        let creds = Credentials {
+            file: test_file.input_file.clone(),
+        };
+        assert!(creds.is_authorized_user().unwrap());
+    }
+
+    #[test]
+    fn is_authorized_user_false() {
+        let test_file = TestFile::new("json", "{}");
+        let creds = Credentials {
+            file: test_file.input_file.clone(),
+        };
+        assert!(!creds.is_authorized_user().unwrap());
+    }
+
+    #[test]
+    fn is_service_account_true() {
+        let test_file = TestFile::new("json", "{\"type\": \"service_account\"}");
+        let creds = Credentials {
+            file: test_file.input_file.clone(),
+        };
+        assert!(creds.is_service_account().unwrap());
+    }
+
+    #[test]
+    fn is_service_account_false() {
+        let test_file = TestFile::new("json", "{}");
+        let creds = Credentials {
+            file: test_file.input_file.clone(),
+        };
+        assert!(!creds.is_service_account().unwrap());
+    }
+
+    #[test]
+    fn try_from_default_location() {
+        // Todo
+    }
+
+    #[ignore]
+    #[test]
+    fn try_from_env_var() {
+        let test_file = TestFile::new("csv", "{\"type\": \"service_account\"}");
+        env::set_var(
+            "GOOGLE_APPLICATION_CREDENTIALS",
+            test_file.output_file.to_string_lossy().to_string(),
+        );
+        let runtime: Runtime = test_file.into();
+
+        let creds = Credentials::try_from(&runtime);
+        dbg!(&creds);
+        assert!(Credentials::try_from(&runtime).is_ok());
+    }
+
+    #[test]
+    fn try_from_options() {
+        // Todo
+    }
+
+    #[test]
+    fn try_from_not_found() {
+        // Todo
+    }
+
+    #[test]
+    fn try_from_does_not_exist() {
+        // Todo
     }
 }

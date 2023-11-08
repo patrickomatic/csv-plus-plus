@@ -18,7 +18,7 @@ pub(crate) enum ExistingCell<V: Clone> {
     Empty,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct ExistingValues<V: Clone> {
     cells: Vec<Vec<ExistingCell<V>>>,
 }

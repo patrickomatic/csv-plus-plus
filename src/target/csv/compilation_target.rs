@@ -18,9 +18,7 @@ impl CompilationTarget for Csv<'_> {
             .from_path(&self.path)
             .map_err(|e| {
                 self.runtime
-                    .output
-                    .clone()
-                    .into_error(format!("Unable to open output file for writing: {:?}", e))
+                    .output_error(format!("Unable to open output file for writing: {e:?}"))
             })?;
 
         for (index, row) in new_values.rows.iter().enumerate() {
@@ -45,17 +43,13 @@ impl CompilationTarget for Csv<'_> {
 
             writer.write_record(output_row).map_err(|e| {
                 self.runtime
-                    .output
-                    .clone()
-                    .into_error(format!("Unable to write row {index}: {e}"))
+                    .output_error(format!("Unable to write row {index}: {e}"))
             })?;
         }
 
         writer.flush().map_err(|e| {
             self.runtime
-                .output
-                .clone()
-                .into_error(format!("Unable to finish writing to output: {e}"))
+                .output_error(format!("Unable to finish writing to output: {e}"))
         })?;
 
         Ok(())
@@ -64,7 +58,23 @@ impl CompilationTarget for Csv<'_> {
 
 #[cfg(test)]
 mod tests {
-    // use super::*;
+    use super::*;
+    use crate::test_utils::*;
+    use crate::*;
 
-    // TODO more tests
+    #[test]
+    fn write() {
+        let test_file = TestFile::new(
+            "csv",
+            "foo,bar,baz
+one,,two,,three
+",
+        );
+        let output_file = test_file.output_file.clone();
+        let runtime: Runtime = test_file.clone().into();
+        let template = Template::compile(&runtime).unwrap();
+        let csv = Csv::new(&runtime, output_file);
+
+        assert!(csv.write(&template).is_ok());
+    }
 }

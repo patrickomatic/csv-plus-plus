@@ -37,3 +37,36 @@ impl From<UnknownToken<'_>> for ParseError {
         u.into_parse_error("Error parsing input - invalid token")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_utils::build_source_code;
+
+    #[test]
+    fn display() {
+        let ut = UnknownToken {
+            bad_input: "foo".to_string(),
+            line_number: 10,
+            line_offset: 1,
+            source_code: &build_source_code(),
+        };
+
+        assert_eq!(ut.to_string(), "foo");
+    }
+
+    #[test]
+    fn display_long() {
+        let ut = UnknownToken {
+            bad_input: "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890".to_string(),
+            line_number: 10,
+            line_offset: 1,
+            source_code: &build_source_code(),
+        };
+
+        assert_eq!(
+            ut.to_string(),
+            "12345678901234567890123456789012345678901234567890"
+        );
+    }
+}

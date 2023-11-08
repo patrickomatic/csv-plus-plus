@@ -3,7 +3,7 @@
 use crate::ast::{BuiltinFunctions, BuiltinVariables};
 use crate::parser::ast_lexer;
 use crate::parser::modifier_lexer;
-use crate::{CliArgs, CompilationTarget, Options, Output, Result, SourceCode};
+use crate::{CliArgs, CompilationTarget, Error, Options, Output, Result, SourceCode};
 use clap::Parser;
 use colored::Colorize;
 use std::fmt;
@@ -32,10 +32,18 @@ impl Runtime {
         self.output.compilation_target(self)
     }
 
+    pub(crate) fn error<M: Into<String>>(&self, message: M) {
+        eprintln!("{}", message.into().red());
+    }
+
     pub(crate) fn info<M: fmt::Display>(&self, message: M) {
         if self.options.verbose {
             eprintln!("{message}");
         }
+    }
+
+    pub(crate) fn output_error<M: Into<String>>(&self, message: M) -> Error {
+        self.output.clone().into_error(message)
     }
 
     pub(crate) fn progress<M: fmt::Display>(&self, message: M) {
@@ -46,10 +54,6 @@ impl Runtime {
 
     pub(crate) fn warn<M: Into<String>>(&self, message: M) {
         eprintln!("{}", message.into().yellow());
-    }
-
-    pub(crate) fn error<M: Into<String>>(&self, message: M) {
-        eprintln!("{}", message.into().red());
     }
 }
 

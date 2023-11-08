@@ -22,7 +22,7 @@ impl CompilationTarget for Excel<'_> {
         self.build_worksheet(template, worksheet)?;
 
         u::writer::xlsx::write(&spreadsheet, self.path.clone()).map_err(|e| {
-            self.runtime.output.clone().into_error(format!(
+            self.runtime.output_error(format!(
                 "Unable to write target file {}: {e}",
                 self.path.display()
             ))

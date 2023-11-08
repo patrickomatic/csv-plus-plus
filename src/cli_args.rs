@@ -97,3 +97,26 @@ impl Default for CliArgs {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+
+    #[test]
+    fn parse_defaults() {
+        let cli_args = CliArgs::parse_from(["csv++", "foo.csvpp"]);
+
+        assert_eq!(cli_args.x_offset, 0);
+        assert_eq!(cli_args.y_offset, 0);
+        assert!(!cli_args.safe);
+        assert!(!cli_args.backup);
+    }
+
+    #[test]
+    fn parse_without_input_file() {
+        let cli_args = CliArgs::try_parse_from(["csv++"]);
+
+        assert!(cli_args.is_err());
+    }
+}

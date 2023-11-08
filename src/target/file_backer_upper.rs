@@ -1,4 +1,3 @@
-//! # FileBackerUpper
 use crate::{Result, Runtime};
 use chrono::prelude::Local;
 use std::fs;
@@ -18,40 +17,28 @@ const BACKUP_FORMATS: &[&str] = &[
 /// Makes a copy of a file like foo.xlsx to foo-2023-04-25.xlsx
 ///
 // NOTE:
-// this operation is not technically atomic - to do so we'd need to create a tempfile, write to it
+// this operation is not atomic - to do so we'd need to create a tempfile, write to it
 // then move it in place.  (but for this use case I don't think it matters)
 pub(crate) fn backup_file(runtime: &Runtime, filename: &path::PathBuf) -> Result<path::PathBuf> {
     runtime.progress(format!("Backing up file: {}", filename.display()));
 
+    let filename_str = filename
+        .to_str()
+        .ok_or(runtime.output_error("Unable to format output filename"))?;
+
+    let file_stem = filename
+        .file_stem()
+        .ok_or(runtime.output_error(format!("Unable to get base file for: {filename_str}")))?;
+
+    let file_parent = filename.parent().ok_or(runtime.output_error(format!(
+        "Unable to get parent base file for: {filename_str}",
+    )))?;
+
+    let file_extension = filename
+        .extension()
+        .ok_or(runtime.output_error(format!("Unable to get extension for: {filename_str}")))?;
+
     let now = Local::now();
-
-    let filename_str = filename.to_str().ok_or(
-        runtime
-            .output
-            .clone()
-            .into_error("Unable to format output filename"),
-    )?;
-
-    let file_stem = filename.file_stem().ok_or(
-        runtime
-            .output
-            .clone()
-            .into_error(format!("Unable to get base file for: {filename_str}",)),
-    )?;
-
-    let file_parent = filename
-        .parent()
-        .ok_or(runtime.output.clone().into_error(format!(
-            "Unable to get parent base file for: {filename_str}",
-        )))?;
-
-    let file_extension = filename.extension().ok_or(
-        runtime
-            .output
-            .clone()
-            .into_error(format!("Unable to get extension for: {filename_str}",)),
-    )?;
-
     for time_format in BACKUP_FORMATS.iter() {
         let timestamp = now.format(time_format);
 
@@ -64,16 +51,15 @@ pub(crate) fn backup_file(runtime: &Runtime, filename: &path::PathBuf) -> Result
         }
 
         if let Err(e) = fs::copy(filename, &new_file) {
-            return Err(runtime
-                .output
-                .clone()
-                .into_error(format!("Error making backup of {filename_str}: {e}",)));
+            return Err(
+                runtime.output_error(format!("Error making backup of {filename_str}: {e}",))
+            );
         }
 
         return Ok(new_file);
     }
 
-    Err(runtime.output.clone().into_error(format!(
+    Err(runtime.output_error(format!(
         "Unable to make backup of output file: {filename_str}",
     )))
 }

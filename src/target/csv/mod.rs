@@ -63,6 +63,7 @@ impl<'a> Csv<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::*;
 
     #[test]
     fn supports_extension_true() {
@@ -76,5 +77,46 @@ mod tests {
         assert!(!Csv::supports_extension(ffi::OsStr::new("XLSX")));
     }
 
-    // TODO more tests
+    #[test]
+    fn read_exists() {
+        let test_file = TestFile::new(
+            "csv",
+            "foo,bar,baz
+one,,two,,three
+",
+        );
+        let ev = Csv::read(
+            &test_file.input_file,
+            &Output::Csv(test_file.output_file.clone()),
+        )
+        .unwrap();
+
+        assert_eq!(
+            ev,
+            ExistingValues {
+                cells: vec![
+                    vec![
+                        ExistingCell::Value("foo".to_string()),
+                        ExistingCell::Value("bar".to_string()),
+                        ExistingCell::Value("baz".to_string()),
+                    ],
+                    vec![
+                        ExistingCell::Value("one".to_string()),
+                        ExistingCell::Empty,
+                        ExistingCell::Value("two".to_string()),
+                        ExistingCell::Empty,
+                        ExistingCell::Value("three".to_string()),
+                    ],
+                ],
+            }
+        );
+    }
+
+    #[test]
+    fn read_does_not_exist() {
+        let csv_file = path::Path::new("foo.csv").to_path_buf();
+        let ev = Csv::read(&csv_file, &Output::Csv(csv_file.clone())).unwrap();
+
+        assert_eq!(ev.cells.len(), 0);
+    }
 }
