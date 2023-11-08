@@ -21,6 +21,10 @@ doc_files := $(filter-out docs/RELEASE_CHECKLIST.md, $(doc_files))
 .PHONY: all
 all: $(release_files) $(release_file_sigs)
 
+.PHONY: cov
+cov:
+	cargo llvm-cov
+
 .PHONY: clean
 clean:
 	cargo clean --release
