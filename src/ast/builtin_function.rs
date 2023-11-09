@@ -13,27 +13,21 @@ pub(crate) struct BuiltinFunction {
 
 impl BuiltinFunction {
     pub fn all() -> collections::HashMap<FunctionName, BuiltinFunction> {
-        let mut fns = collections::HashMap::new();
-
-        // A reference to a cell above this row
+        /* NOTE:
+         * this is an example of a built-in function, but there are no currently active ones.
+         * I went through a lot of trouble to build out the concept of builtin functions but the
+         * concept itself never really caught traction - all of the functions I could think of
+         * could already be done with native spreadsheet functions.  And not only that, by adding
+         * support for importing functions, you could just implement these all as a "standard lib"
+         *
+        let fns = collections::HashMap::new();
         fns = def_fn(fns, "cellabove", |current, args| {
             let column = verify_one_column("cellabove", args, current)?;
             Ok(current.shift_up(1).with_x(column.x).into())
         });
-
-        // A reference to a cell below this row
-        fns = def_fn(fns, "cellbelow", |current, args| {
-            let column = verify_one_column("cellbelow", args, current)?;
-            Ok(current.shift_down(1).with_x(column.x).into())
-        });
-
-        // A reference to a cell in the current row
-        fns = def_fn(fns, "celladjacent", |current, args| {
-            let column = verify_one_column("celladjacent", args, current)?;
-            Ok(current.with_x(column.x).into())
-        });
-
         fns
+        */
+        collections::HashMap::new()
     }
 }
 
@@ -46,6 +40,7 @@ impl fmt::Debug for BuiltinFunction {
     }
 }
 
+#[allow(dead_code)]
 fn def_fn<F, S>(
     mut fns: collections::HashMap<String, BuiltinFunction>,
     name: S,
@@ -66,6 +61,7 @@ where
     fns
 }
 
+#[allow(dead_code)]
 fn verify_one_column(
     fn_name: &str,
     args: &[Ast],
@@ -93,42 +89,5 @@ fn verify_one_column(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use a1_notation::Address;
-
-    #[test]
-    fn all_cellabove() {
-        let fns = BuiltinFunction::all();
-        let current = Address::new(0, 1);
-        let cellabove = fns.get("cellabove").unwrap();
-
-        assert_eq!(
-            (cellabove.eval)(current, &[Box::new(Node::reference("C"))]).unwrap(),
-            Node::reference("C1")
-        );
-    }
-
-    #[test]
-    fn all_celladjacent() {
-        let fns = BuiltinFunction::all();
-        let current = Address::new(0, 1);
-        let celladjacent = fns.get("celladjacent").unwrap();
-
-        assert_eq!(
-            (celladjacent.eval)(current, &[Box::new(Node::reference("C"))]).unwrap(),
-            Node::reference("C2")
-        );
-    }
-
-    #[test]
-    fn all_cellbelow() {
-        let fns = BuiltinFunction::all();
-        let current = Address::new(0, 1);
-        let cellbelow = fns.get("cellbelow").unwrap();
-
-        assert_eq!(
-            (cellbelow.eval)(current, &[Box::new(Node::reference("C"))]).unwrap(),
-            Node::reference("C3")
-        );
-    }
+    // use super::*;
 }

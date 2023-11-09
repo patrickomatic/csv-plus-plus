@@ -2,7 +2,6 @@
 //!
 use super::{Node, VariableEval, VariableName};
 use crate::error::EvalResult;
-use a1_notation::{Address, RangeOrCell};
 use std::collections;
 use std::fmt;
 
@@ -12,6 +11,7 @@ pub(crate) struct BuiltinVariable {
 }
 
 impl BuiltinVariable {
+    #[allow(dead_code)]
     fn new<F, S>(name: S, eval: F) -> Self
     where
         F: Fn(a1_notation::Address) -> EvalResult<Node> + 'static,
@@ -23,67 +23,33 @@ impl BuiltinVariable {
         }
     }
 
-    // TODO: better names for these!  I dunno what it is but I don't like these, it feels
-    // unintuitive.
     pub fn all() -> collections::HashMap<String, BuiltinVariable> {
+        /* NOTE
+         * this is an example of a built-in variable, but there are no currently active ones.
+         * I went through a lot of trouble to build out the concept of builtin functions but the
+         * concept itself never really caught traction - all of the functions I could think of
+         * could already be done with native spreadsheet functions.  And not only that, by adding
+         * support for importing functions, you could just implement these all as a "standard lib"
+         *
         let mut vars = collections::HashMap::new();
-
-        // `colleft` - A (column-relative) reference to the column left of the current cell.
         vars = def_var(vars, "colleft", |a1| {
             let col: RangeOrCell = a1.shift_left(1).column.into();
             Ok(col.into())
         });
-
-        // `colright` - A (column-relative) reference to the column right of the current cell.
-        vars = def_var(vars, "colright", |a1| {
-            let col: RangeOrCell = a1.shift_right(1).column.into();
-            Ok(col.into())
-        });
-
-        // `colnum` - The number of the current column.
-        vars = def_var(vars, "colnum", |a1| Ok(((a1.column.x as i64) + 1).into()));
-
-        // `cellref` - A reference to the current cell.
-        vars = def_var(vars, "cellref", |a1| Ok(a1.into()));
-
-        // `colref` - A reference to the current column.
-        vars = def_var(vars, "colref", |a1| {
-            let col: RangeOrCell = a1.column.into();
-            Ok(col.into())
-        });
-
-        // `rowabove` - A (row-relative) reference to the row above the current cell.
-        vars = def_var(vars, "rowabove", |a1| {
-            let row: RangeOrCell = a1.shift_up(1).row.into();
-            Ok(row.into())
-        });
-
-        // `rowbelow` - A (row-relative) reference to the row below the current cell.
-        vars = def_var(vars, "rowbelow", |a1| {
-            let row: RangeOrCell = a1.shift_down(1).row.into();
-            Ok(row.into())
-        });
-
-        // `rownum` - The number of the current row.  Starts at 1.
-        vars = def_var(vars, "rownum", |a1| Ok(((a1.row.y as i64) + 1).into()));
-
-        // `rowref` - A reference to the current row.
-        vars = def_var(vars, "rowref", |a1| {
-            let row: RangeOrCell = a1.row.into();
-            Ok(row.into())
-        });
-
         vars
+        */
+        collections::HashMap::new()
     }
 }
 
+#[allow(dead_code)]
 fn def_var<F, S>(
     mut vars: collections::HashMap<String, BuiltinVariable>,
     name: S,
     eval: F,
 ) -> collections::HashMap<String, BuiltinVariable>
 where
-    F: Fn(Address) -> EvalResult<Node> + 'static,
+    F: Fn(a1_notation::Address) -> EvalResult<Node> + 'static,
     S: Clone + Into<String>,
 {
     vars.insert(name.clone().into(), BuiltinVariable::new(name, eval));
@@ -100,14 +66,5 @@ impl fmt::Debug for BuiltinVariable {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-
-    #[test]
-    fn colleft() {
-        let vars = BuiltinVariable::all();
-        let current = Address::new(4, 0);
-        let colleft = vars.get("colleft").unwrap();
-
-        assert_eq!((colleft.eval)(current).unwrap(), Node::reference("D:D"));
-    }
+    // use super::*;
 }

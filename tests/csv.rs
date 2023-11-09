@@ -50,8 +50,8 @@ fn write_expand() {
         r#"
 commission_charge := 0.65 # the broker charges $0.65 a contract/share
 
-fees := commission_charge * celladjacent(D)
-profit := (celladjacent(B) * celladjacent(C)) - fees
+fees := commission_charge * D
+profit := (B * C) - fees
 
 ---
 ![[text=bold/halign=center]]Date   ,[[t=b]] Purchase ,Price  ,Quantity ,Profit     ,Fees
@@ -66,8 +66,8 @@ profit := (celladjacent(B) * celladjacent(C)) - fees
     assert_eq!(
         s.read_output(),
         "Date,Purchase,Price,Quantity,Profit,Fees
-,,,,=((B2 * C2) - (0.65 * D2)),=(0.65 * D2)
-,,,,=((B3 * C3) - (0.65 * D3)),=(0.65 * D3)
+,,,,=((B * C) - (0.65 * D)),=(0.65 * D)
+,,,,=((B * C) - (0.65 * D)),=(0.65 * D)
 "
     );
 }

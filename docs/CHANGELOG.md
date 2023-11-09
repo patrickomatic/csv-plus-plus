@@ -6,6 +6,7 @@
 
 ### **Breaking (Language) Changes**
 
+* All builtin variables & functions are removed.  All of the functionality provided by them could be done with native spreadsheet functions anyway.  And we're adding support for module loading which means they could just be implemented as a lib instead.
 * Rename `![[expand]]` to `![[fill]]` and all related code references
 * Rename `[[format]]`  to `[[text]]` 
 
