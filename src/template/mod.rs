@@ -105,8 +105,8 @@ impl Template {
         self.eval_fills().eval_cells(runtime)
     }
 
-    /// For each row of the spreadsheet, if it has an [[fill=]] modifier then we need to actually
-    /// fill it to that many rows.  
+    /// For each row of the spreadsheet, if it has a [[fill=]] then we need to actually fill it to
+    /// that many rows.  
     ///
     /// This has to happen before eval()ing the cells because that process depends on them being in
     /// their final location.
@@ -117,7 +117,7 @@ impl Template {
         let mut row_num = 0;
 
         for row in s.rows.iter() {
-            if let Some(e) = row.modifier.fill {
+            if let Some(e) = row.fill {
                 for _ in 0..e.fill_amount(row_num) {
                     new_spreadsheet.rows.push(row.clone_to_row(row_num.into()));
                     row_num += 1;
@@ -197,14 +197,13 @@ impl Template {
 
             cells.push(Cell {
                 ast: evaled_ast,
-                modifier: cell.modifier.clone(),
-                value: cell.value.clone(),
+                ..cell.clone()
             });
         }
 
         Ok(Row {
             cells,
-            modifier: row.modifier.clone(),
+            ..row.clone()
         })
     }
 

@@ -1,7 +1,7 @@
-use super::{DataValidation, ModifierParser, Token};
+use super::{CellParser, Token};
 use crate::ast::Ast;
-use crate::error::{BadInput, ModifierParseError, ParseResult};
-use crate::DateTime;
+use crate::error::{BadInput, CellParseError, ParseResult};
+use crate::{DataValidation, DateTime};
 
 macro_rules! take_parens {
     ($self:ident, $tt:tt) => {{
@@ -15,15 +15,20 @@ macro_rules! take_parens {
 macro_rules! validate {
     ($self:ident, $variant:ident, $tt:tt) => {
         fn $variant(&mut $self) -> ParseResult<()> {
-            $self.modifier.data_validation = Some($tt);
+            if $self.is_row_options {
+                $self.row.data_validation = Some($tt);
+            } else {
+                $self.cell.data_validation = Some($tt);
+            }
+
             Ok(())
         }
     };
 }
 
-impl ModifierParser<'_, '_> {
+impl CellParser<'_, '_> {
     pub(super) fn validate(&mut self) -> ParseResult<()> {
-        let name = self.lexer.take_modifier_right_side()?;
+        let name = self.lexer.take_option_right_side()?;
 
         match name.str_match.to_lowercase().as_str() {
             "c" | "custom" => self.validate_custom(),
@@ -54,7 +59,7 @@ impl ModifierParser<'_, '_> {
             "text_contains" => self.validate_text_contains(),
             "text_does_not_contain" => self.validate_text_does_not_contain(),
             "text_eq" | "text_equal_to" => self.validate_text_equal_to(),
-            _ => Err(ModifierParseError::new(
+            _ => Err(CellParseError::new(
                 "validate",
                 name,
                 &[
@@ -263,16 +268,18 @@ impl ModifierParser<'_, '_> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::*;
+    use super::*;
     use crate::ast::*;
     use crate::test_utils::*;
     use crate::DateTime;
+    use crate::*;
 
-    fn test_parse(input: &str) -> ParsedCell {
-        ModifierParser::parse(
+    fn test_parse(input: &str) -> Cell {
+        let mut row = Row::default();
+        CellParser::parse(
             input,
-            Address::new(0, 0),
-            &RowModifier::default(),
+            a1_notation::Address::new(0, 0),
+            &mut row,
             &build_runtime(),
         )
         .unwrap()
@@ -280,36 +287,36 @@ mod tests {
 
     #[test]
     fn parse_validate_custom() {
-        let parsed_modifiers = test_parse("[[validate=custom('foo')]]abc123");
+        let cell = test_parse("[[validate=custom('foo')]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::Custom("foo".to_string())
         );
     }
 
     #[test]
     fn parse_validate_date_after() {
-        let parsed_modifiers = test_parse("[[validate=date_after(11/22/2024)]]abc123");
+        let cell = test_parse("[[validate=date_after(11/22/2024)]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::DateAfter(build_date_time_ymd(2024, 11, 22))
         );
     }
 
     #[test]
     fn parse_validate_date_before() {
-        let parsed_modifiers = test_parse("[[validate=date_before(12/1/23)]]abc123");
+        let cell = test_parse("[[validate=date_before(12/1/23)]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::DateBefore(build_date_time_ymd(2023, 12, 1))
         );
     }
 
     #[test]
     fn parse_validate_date_between() {
-        let parsed_modifiers = test_parse("[[validate=date_between(2/4/2025 10/20/2026)]]abc123");
+        let cell = test_parse("[[validate=date_between(2/4/2025 10/20/2026)]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::DateBetween(
                 build_date_time_ymd(2025, 2, 4),
                 build_date_time_ymd(2026, 10, 20)
@@ -319,27 +326,24 @@ mod tests {
 
     #[test]
     fn parse_validate_date_equal_to() {
-        let parsed_modifiers = test_parse("[[validate=date_equal_to(2023-12-01)]]abc123");
+        let cell = test_parse("[[validate=date_equal_to(2023-12-01)]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::DateEqualTo(build_date_time_ymd(2023, 12, 1))
         );
     }
 
     #[test]
     fn parse_validate_date_is_valid() {
-        let parsed_modifiers = test_parse("[[validate=date_is_valid]]abc123");
-        assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
-            DataValidation::DateIsValid
-        );
+        let cell = test_parse("[[validate=date_is_valid]]abc123");
+        assert_eq!(cell.data_validation.unwrap(), DataValidation::DateIsValid);
     }
 
     #[test]
     fn parse_validate_date_not_between() {
-        let parsed_modifiers = test_parse("[[validate=date_not_between(1/2/23 4/5/26)]]abc123");
+        let cell = test_parse("[[validate=date_not_between(1/2/23 4/5/26)]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::DateNotBetween(
                 build_date_time_ymd(2023, 1, 2),
                 build_date_time_ymd(2026, 4, 5)
@@ -349,28 +353,28 @@ mod tests {
 
     #[test]
     fn parse_validate_date_on_or_after() {
-        let parsed_modifiers = test_parse("[[validate=date_on_or_after(11/22/2024)]]abc123");
+        let cell = test_parse("[[validate=date_on_or_after(11/22/2024)]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::DateOnOrAfter(build_date_time_ymd(2024, 11, 22))
         );
     }
 
     #[test]
     fn parse_validate_date_on_or_before() {
-        let parsed_modifiers = test_parse("[[validate=date_on_or_before(12/1/23)]]abc123");
+        let cell = test_parse("[[validate=date_on_or_before(12/1/23)]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::DateOnOrBefore(build_date_time_ymd(2023, 12, 1))
         );
     }
 
     #[test]
     fn parse_validate_invalid() {
-        let res = ModifierParser::parse(
+        let res = CellParser::parse(
             "[[validate=foo_bar(12/1/23)]]abc123",
-            Address::new(0, 0),
-            &RowModifier::default(),
+            a1_notation::Address::new(0, 0),
+            &mut Row::default(),
             &build_runtime(),
         );
         assert!(res.is_err());
@@ -378,20 +382,20 @@ mod tests {
 
     #[test]
     fn parse_validate_in_range() {
-        let parsed_modifiers = test_parse("[[validate=in_range(A:A)]]abc123");
+        let cell = test_parse("[[validate=in_range(A:A)]]abc123");
 
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::ValueInRange(a1_notation::column(0))
         );
     }
 
     #[test]
     fn parse_validate_in_list() {
-        let parsed_modifiers = test_parse("[[validate=in_list('foo' bar 123 11/22/2024)]]abc123");
+        let cell = test_parse("[[validate=in_list('foo' bar 123 11/22/2024)]]abc123");
 
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::ValueInList(vec![
                 Box::new(Node::Text("foo".to_string())),
                 Box::new(Node::Reference("bar".to_string())),
@@ -405,118 +409,117 @@ mod tests {
 
     #[test]
     fn parse_validate_is_valid_email() {
-        let parsed_modifiers = test_parse("[[validate=is_valid_email]]abc123");
+        let cell = test_parse("[[validate=is_valid_email]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::TextIsValidEmail
         );
     }
 
     #[test]
     fn parse_validate_is_valid_url() {
-        let parsed_modifiers = test_parse("[[validate=is_valid_url]]abc123");
+        let cell = test_parse("[[validate=is_valid_url]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::TextIsValidUrl,
         );
     }
 
     #[test]
     fn parse_validate_number_between() {
-        let parsed_modifiers = test_parse("[[validate=number_between(123 456)]]abc123");
+        let cell = test_parse("[[validate=number_between(123 456)]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::NumberBetween(123, 456)
         );
     }
 
     #[test]
     fn parse_validate_number_equal_to() {
-        let parsed_modifiers = test_parse("[[validate=number_equal_to(123)]]abc123");
+        let cell = test_parse("[[validate=number_equal_to(123)]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::NumberEqualTo(123)
         );
     }
 
     #[test]
     fn parse_validate_number_greater_than() {
-        let parsed_modifiers = test_parse("[[validate=number_greater_than(123)]]abc123");
+        let cell = test_parse("[[validate=number_greater_than(123)]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::NumberGreaterThan(123)
         );
     }
 
     #[test]
     fn parse_validate_number_greater_than_or_equal_to() {
-        let parsed_modifiers =
-            test_parse("[[validate=number_greater_than_or_equal_to(123)]]abc123");
+        let cell = test_parse("[[validate=number_greater_than_or_equal_to(123)]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::NumberGreaterThanOrEqualTo(123)
         );
     }
 
     #[test]
     fn parse_validate_number_less_than() {
-        let parsed_modifiers = test_parse("[[validate=number_less_than(123)]]abc123");
+        let cell = test_parse("[[validate=number_less_than(123)]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::NumberLessThan(123)
         );
     }
 
     #[test]
     fn parse_validate_number_less_than_or_equal_to() {
-        let parsed_modifiers = test_parse("[[validate=number_less_than_or_equal_to(123)]]abc123");
+        let cell = test_parse("[[validate=number_less_than_or_equal_to(123)]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::NumberLessThanOrEqualTo(123)
         );
     }
 
     #[test]
     fn parse_validate_number_not_between() {
-        let parsed_modifiers = test_parse("[[validate=number_not_between(123 456)]]abc123");
+        let cell = test_parse("[[validate=number_not_between(123 456)]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::NumberNotBetween(123, 456)
         );
     }
 
     #[test]
     fn parse_validate_number_not_equal_to() {
-        let parsed_modifiers = test_parse("[[validate=number_not_equal_to(123)]]abc123");
+        let cell = test_parse("[[validate=number_not_equal_to(123)]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::NumberNotEqualTo(123)
         );
     }
 
     #[test]
     fn parse_validate_text_contains() {
-        let parsed_modifiers = test_parse("[[validate=text_contains('foo')]]abc123");
+        let cell = test_parse("[[validate=text_contains('foo')]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::TextContains("foo".to_string())
         );
     }
 
     #[test]
     fn parse_validate_text_does_not_contain() {
-        let parsed_modifiers = test_parse("[[validate=text_does_not_contain('foo')]]abc123");
+        let cell = test_parse("[[validate=text_does_not_contain('foo')]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::TextDoesNotContain("foo".to_string())
         );
     }
 
     #[test]
     fn parse_validate_text_equal_to() {
-        let parsed_modifiers = test_parse("[[validate=text_equal_to('foo')]]abc123");
+        let cell = test_parse("[[validate=text_equal_to('foo')]]abc123");
         assert_eq!(
-            parsed_modifiers.modifier.unwrap().data_validation.unwrap(),
+            cell.data_validation.unwrap(),
             DataValidation::TextEqualTo("foo".to_string())
         );
     }

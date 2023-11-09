@@ -4,9 +4,7 @@
 //!
 use super::DateTime;
 use crate::error::{BadInput, ParseError, ParseResult};
-use crate::parser::ast_lexer;
-use crate::parser::modifier_lexer;
-use crate::parser::TokenInput;
+use crate::parser::{ast_lexer, cell_lexer, TokenInput};
 
 // I wish chrono had some kind of smart string parser but it seems like it's up to me to handle all
 // the nuances of different types and supported patterns
@@ -66,9 +64,9 @@ impl TryFrom<ast_lexer::TokenMatch<'_>> for DateTime {
     }
 }
 
-impl TryFrom<modifier_lexer::TokenMatch> for DateTime {
+impl TryFrom<cell_lexer::TokenMatch> for DateTime {
     type Error = ParseError;
-    fn try_from(input: modifier_lexer::TokenMatch) -> ParseResult<Self> {
+    fn try_from(input: cell_lexer::TokenMatch) -> ParseResult<Self> {
         token_into(input)
     }
 }

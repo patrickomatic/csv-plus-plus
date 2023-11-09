@@ -1,10 +1,8 @@
 //!
-use crate::error::ModifierParseError;
-use crate::parser::modifier_lexer::TokenMatch;
-use serde::{Deserialize, Serialize};
+use crate::error::CellParseError;
+use crate::parser::cell_lexer::TokenMatch;
 
-/// The possible values for aligning a cell horizontally.
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Copy, Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
 pub enum HorizontalAlign {
     Center,
     Left,
@@ -12,14 +10,14 @@ pub enum HorizontalAlign {
 }
 
 impl TryFrom<TokenMatch> for HorizontalAlign {
-    type Error = ModifierParseError;
+    type Error = CellParseError;
 
     fn try_from(input: TokenMatch) -> Result<Self, Self::Error> {
         match input.str_match.to_lowercase().as_str() {
             "c" | "center" => Ok(Self::Center),
             "l" | "left" => Ok(Self::Left),
             "r" | "right" => Ok(Self::Right),
-            _ => Err(ModifierParseError::new(
+            _ => Err(CellParseError::new(
                 "halign",
                 input,
                 &["center (c)", "left (l)", "right (r)"],
@@ -37,15 +35,15 @@ mod tests {
     fn try_from_right() {
         assert_eq!(
             HorizontalAlign::Right,
-            HorizontalAlign::try_from(build_modifier_token_match("r")).unwrap()
+            HorizontalAlign::try_from(build_cell_token_match("r")).unwrap()
         );
         assert_eq!(
             HorizontalAlign::Right,
-            HorizontalAlign::try_from(build_modifier_token_match("right")).unwrap()
+            HorizontalAlign::try_from(build_cell_token_match("right")).unwrap()
         );
         assert_eq!(
             HorizontalAlign::Right,
-            HorizontalAlign::try_from(build_modifier_token_match("RIGHT")).unwrap()
+            HorizontalAlign::try_from(build_cell_token_match("RIGHT")).unwrap()
         );
     }
 
@@ -53,15 +51,15 @@ mod tests {
     fn try_from_center() {
         assert_eq!(
             HorizontalAlign::Center,
-            HorizontalAlign::try_from(build_modifier_token_match("c")).unwrap()
+            HorizontalAlign::try_from(build_cell_token_match("c")).unwrap()
         );
         assert_eq!(
             HorizontalAlign::Center,
-            HorizontalAlign::try_from(build_modifier_token_match("center")).unwrap()
+            HorizontalAlign::try_from(build_cell_token_match("center")).unwrap()
         );
         assert_eq!(
             HorizontalAlign::Center,
-            HorizontalAlign::try_from(build_modifier_token_match("CENTER")).unwrap()
+            HorizontalAlign::try_from(build_cell_token_match("CENTER")).unwrap()
         );
     }
 
@@ -69,20 +67,20 @@ mod tests {
     fn try_from_left() {
         assert_eq!(
             HorizontalAlign::Left,
-            HorizontalAlign::try_from(build_modifier_token_match("l")).unwrap()
+            HorizontalAlign::try_from(build_cell_token_match("l")).unwrap()
         );
         assert_eq!(
             HorizontalAlign::Left,
-            HorizontalAlign::try_from(build_modifier_token_match("left")).unwrap()
+            HorizontalAlign::try_from(build_cell_token_match("left")).unwrap()
         );
         assert_eq!(
             HorizontalAlign::Left,
-            HorizontalAlign::try_from(build_modifier_token_match("LEFT")).unwrap()
+            HorizontalAlign::try_from(build_cell_token_match("LEFT")).unwrap()
         );
     }
 
     #[test]
     fn try_from_invalid() {
-        assert!(HorizontalAlign::try_from(build_modifier_token_match("foo")).is_err());
+        assert!(HorizontalAlign::try_from(build_cell_token_match("foo")).is_err());
     }
 }

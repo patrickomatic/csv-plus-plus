@@ -1,11 +1,9 @@
 //! # VerticalAlign
 //!
-use crate::error::ModifierParseError;
-use crate::parser::modifier_lexer::TokenMatch;
-use serde::{Deserialize, Serialize};
+use crate::error::CellParseError;
+use crate::parser::cell_lexer::TokenMatch;
 
-/// The possible values for aligning a cell vertically.
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Copy, Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
 pub enum VerticalAlign {
     Bottom,
     Center,
@@ -13,14 +11,14 @@ pub enum VerticalAlign {
 }
 
 impl TryFrom<TokenMatch> for VerticalAlign {
-    type Error = ModifierParseError;
+    type Error = CellParseError;
 
     fn try_from(input: TokenMatch) -> Result<Self, Self::Error> {
         match input.str_match.to_lowercase().as_str() {
             "b" | "bottom" => Ok(Self::Bottom),
             "c" | "center" => Ok(Self::Center),
             "t" | "top" => Ok(Self::Top),
-            _ => Err(ModifierParseError::new(
+            _ => Err(CellParseError::new(
                 "valign",
                 input,
                 &["bottom (b)", "center (c)", "top (t)"],
@@ -38,15 +36,15 @@ mod tests {
     fn try_from_top() {
         assert_eq!(
             VerticalAlign::Top,
-            VerticalAlign::try_from(build_modifier_token_match("t")).unwrap()
+            VerticalAlign::try_from(build_cell_token_match("t")).unwrap()
         );
         assert_eq!(
             VerticalAlign::Top,
-            VerticalAlign::try_from(build_modifier_token_match("top")).unwrap()
+            VerticalAlign::try_from(build_cell_token_match("top")).unwrap()
         );
         assert_eq!(
             VerticalAlign::Top,
-            VerticalAlign::try_from(build_modifier_token_match("TOP")).unwrap()
+            VerticalAlign::try_from(build_cell_token_match("TOP")).unwrap()
         );
     }
 
@@ -54,15 +52,15 @@ mod tests {
     fn try_from_center() {
         assert_eq!(
             VerticalAlign::Center,
-            VerticalAlign::try_from(build_modifier_token_match("c")).unwrap()
+            VerticalAlign::try_from(build_cell_token_match("c")).unwrap()
         );
         assert_eq!(
             VerticalAlign::Center,
-            VerticalAlign::try_from(build_modifier_token_match("center")).unwrap()
+            VerticalAlign::try_from(build_cell_token_match("center")).unwrap()
         );
         assert_eq!(
             VerticalAlign::Center,
-            VerticalAlign::try_from(build_modifier_token_match("CENTER")).unwrap()
+            VerticalAlign::try_from(build_cell_token_match("CENTER")).unwrap()
         );
     }
 
@@ -70,15 +68,15 @@ mod tests {
     fn try_from_bottom() {
         assert_eq!(
             VerticalAlign::Bottom,
-            VerticalAlign::try_from(build_modifier_token_match("b")).unwrap()
+            VerticalAlign::try_from(build_cell_token_match("b")).unwrap()
         );
         assert_eq!(
             VerticalAlign::Bottom,
-            VerticalAlign::try_from(build_modifier_token_match("bottom")).unwrap()
+            VerticalAlign::try_from(build_cell_token_match("bottom")).unwrap()
         );
         assert_eq!(
             VerticalAlign::Bottom,
-            VerticalAlign::try_from(build_modifier_token_match("BOTTOM")).unwrap()
+            VerticalAlign::try_from(build_cell_token_match("BOTTOM")).unwrap()
         );
     }
 }

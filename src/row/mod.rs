@@ -1,55 +1,59 @@
-use crate::{Cell, Result, RowModifier, Runtime};
-use serde::{Deserialize, Serialize};
-
 mod display;
+
+use crate::{
+    BorderSide, BorderStyle, Cell, DataValidation, Fill, HorizontalAlign, NumberFormat, Result,
+    Rgb, Runtime, TextFormat, VerticalAlign,
+};
+use std::collections::HashSet;
 
 type CsvRowResult = std::result::Result<csv::StringRecord, csv::Error>;
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct Row {
     pub cells: Vec<Cell>,
-    pub modifier: RowModifier,
+    pub border_color: Option<Rgb>,
+    pub border_style: Option<BorderStyle>,
+    pub borders: HashSet<BorderSide>,
+    pub color: Option<Rgb>,
+    pub data_validation: Option<DataValidation>,
+    pub fill: Option<Fill>,
+    pub font_color: Option<Rgb>,
+    pub font_family: Option<String>,
+    pub font_size: Option<u8>,
+    pub horizontal_align: Option<HorizontalAlign>,
+    pub lock: bool,
+    pub note: Option<String>,
+    pub number_format: Option<NumberFormat>,
+    pub text_formats: HashSet<TextFormat>,
+    pub var: Option<String>,
+    pub vertical_align: Option<VerticalAlign>,
 }
 
 impl Row {
     pub(crate) fn parse(
         record_result: CsvRowResult,
-        // TODO: maybe make this be a Row... but the naming gets weird
-        row_index: usize,
+        row_a1: a1_notation::Row,
         runtime: &Runtime,
     ) -> Result<Self> {
-        let mut cells: Vec<Cell> = vec![];
-        let mut row_modifier = RowModifier::default();
+        let mut row = Self::default();
 
         // handle if the row is blank or an error or something. (maybe we should warn here if it's
         // an error?)
         let csv_parsed_row = &record_result.unwrap_or_default();
 
         for (cell_index, unparsed_value) in csv_parsed_row.into_iter().enumerate() {
-            let a1 = a1_notation::Address::new(cell_index, row_index);
-            let (cell, rm) = Cell::parse(unparsed_value, a1, &row_modifier, runtime)?;
-
-            // a row modifier was defined, so make sure it applies to cells going forward
-            if let Some(r) = rm {
-                row_modifier = r;
-            }
-
-            cells.push(cell);
+            let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
+            let cell = Cell::parse(unparsed_value, cell_a1, &mut row, runtime)?;
+            row.cells.push(cell);
         }
 
-        Ok(Self {
-            cells,
-            modifier: row_modifier,
-        })
+        Ok(row)
     }
 
     pub(crate) fn clone_to_row(&self, new_row: a1_notation::Row) -> Self {
         Self {
-            modifier: RowModifier {
-                fill: self.modifier.fill.map(|f| f.clone_to_row(new_row)),
-                ..self.modifier.clone()
-            },
-            cells: self.cells.clone(),
+            fill: self.fill.map(|f| f.clone_to_row(new_row)),
+            ..self.clone()
         }
     }
 }
@@ -68,28 +72,22 @@ mod tests {
     fn clone_to_row() {
         let row = Row {
             cells: vec![Cell {
-                ast: None,
-                modifier: Modifier::default(),
                 value: "foo".to_string(),
-            }],
-            modifier: RowModifier {
-                fill: Some(Fill::new(22, Some(100))),
                 ..Default::default()
-            },
+            }],
+            fill: Some(Fill::new(22, Some(100))),
+            ..Default::default()
         };
 
         assert_eq!(
             row.clone_to_row(5.into()),
             Row {
                 cells: vec![Cell {
-                    ast: None,
-                    modifier: Modifier::default(),
                     value: "foo".to_string(),
-                }],
-                modifier: RowModifier {
-                    fill: Some(Fill::new(5, Some(100))),
                     ..Default::default()
-                },
+                }],
+                fill: Some(Fill::new(5, Some(100))),
+                ..Default::default()
             }
         );
     }

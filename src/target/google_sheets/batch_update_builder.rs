@@ -1,6 +1,6 @@
 //! # BatchUpdateBuilder
 //!
-use super::{google_sheets_modifier, SheetsValue};
+use super::{google_sheets_cell, SheetsValue};
 use crate::ast::Node;
 use crate::target::{merge_rows, ExistingValues, MergeResult};
 use crate::{Cell, Runtime, Template};
@@ -59,12 +59,12 @@ impl<'a> BatchUpdateBuilder<'a> {
 
                     // build a new value
                     MergeResult::New(cell) => {
-                        let modifier = google_sheets_modifier::GoogleSheetsModifier(&cell.modifier);
+                        let gs_cell = google_sheets_cell::GoogleSheetsCell(cell);
                         api::CellData {
-                            data_validation: modifier.data_validation_rule(),
-                            user_entered_format: modifier.cell_format(),
+                            data_validation: gs_cell.data_validation_rule(),
+                            user_entered_format: gs_cell.cell_format(),
                             user_entered_value: self.user_entered_value(cell),
-                            note: cell.modifier.note.clone(),
+                            note: cell.note.clone(),
                             ..Default::default()
                         }
                     }
@@ -153,12 +153,11 @@ mod tests {
 
         let mut spreadsheet = Spreadsheet::default();
         spreadsheet.rows.push(Row {
-            modifier: RowModifier::default(),
             cells: vec![Cell {
-                ast: None,
                 value: "Test".to_string(),
-                modifier: Modifier::default(),
+                ..Default::default()
             }],
+            ..Default::default()
         });
 
         let template = Template::new(spreadsheet, None, &runtime);

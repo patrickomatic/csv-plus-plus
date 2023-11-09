@@ -84,7 +84,6 @@ fn merge_cell<V: Clone>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Modifier;
 
     fn build_options(overwrite_values: bool) -> Options {
         Options {
@@ -102,9 +101,8 @@ mod tests {
             ExistingCell::Value(3),
         ];
         let new = vec![Cell {
-            ast: None,
-            modifier: Modifier::default(),
             value: "new value".to_string(),
+            ..Default::default()
         }];
         let merged_row = merge_rows(existing.as_slice(), &new, &options);
 
@@ -126,9 +124,8 @@ mod tests {
         );
 
         let cell = Cell {
-            ast: None,
-            modifier: Modifier::default(),
             value: "new value".to_string(),
+            ..Default::default()
         };
         assert_eq!(
             MergeResult::Existing(1),
@@ -151,9 +148,8 @@ mod tests {
         );
 
         let cell = Cell {
-            ast: None,
-            modifier: Modifier::default(),
             value: "new value".to_string(),
+            ..Default::default()
         };
         assert_eq!(
             MergeResult::New(cell.clone()),

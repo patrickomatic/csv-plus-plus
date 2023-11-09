@@ -1,6 +1,6 @@
 use super::Rgb;
 use crate::error::{BadInput, ParseError, ParseResult};
-use crate::parser::modifier_lexer::TokenMatch;
+use crate::parser::cell_lexer::TokenMatch;
 
 fn string_to_hex(
     hex_code: &str,
@@ -58,8 +58,7 @@ mod tests {
 
     #[test]
     fn try_from_7_chars() {
-        let rgb = Rgb::try_from(build_modifier_token_match("#00FF11")).unwrap();
-
+        let rgb = Rgb::try_from(build_cell_token_match("#00FF11")).unwrap();
         assert_eq!(0, rgb.r);
         assert_eq!(255, rgb.g);
         assert_eq!(17, rgb.b);
@@ -67,8 +66,7 @@ mod tests {
 
     #[test]
     fn try_from_6_chars() {
-        let rgb = Rgb::try_from(build_modifier_token_match("0B33F0")).unwrap();
-
+        let rgb = Rgb::try_from(build_cell_token_match("0B33F0")).unwrap();
         assert_eq!(11, rgb.r);
         assert_eq!(51, rgb.g);
         assert_eq!(240, rgb.b);
@@ -76,8 +74,7 @@ mod tests {
 
     #[test]
     fn try_from_3_chars() {
-        let rgb = Rgb::try_from(build_modifier_token_match("FFF")).unwrap();
-
+        let rgb = Rgb::try_from(build_cell_token_match("FFF")).unwrap();
         assert_eq!(255, rgb.r);
         assert_eq!(255, rgb.g);
         assert_eq!(255, rgb.b);

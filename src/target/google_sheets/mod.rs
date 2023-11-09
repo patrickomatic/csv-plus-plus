@@ -6,7 +6,7 @@
 mod batch_update_builder;
 mod compilation_target;
 mod credentials;
-mod google_sheets_modifier;
+mod google_sheets_cell;
 
 use super::{ExistingCell, ExistingValues};
 use crate::{Error, Result, Runtime, Template};

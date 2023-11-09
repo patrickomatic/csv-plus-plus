@@ -34,9 +34,9 @@ On line 4 Expected `(` but saw `<`
 }
 
 #[test]
-fn syntax_error_in_modifier_definition() {
+fn syntax_error_in_option_definition() {
     let s = common::Setup::from_str(
-        "syntax_error_in_modifier_definition",
+        "syntax_error_in_option_definition",
         "csv",
         r#"
 ---
@@ -47,7 +47,7 @@ foo,bar,[[text=bold ,foo
 
     assert_eq!(
         template.unwrap_err().to_string(),
-        "Invalid modifier definition in cell C1 (2, 0) of integration_test_syntax_error_in_modifier_definition.csvpp
+        "Syntax error in cell C1 of integration_test_syntax_error_in_option_definition.csvpp
 On line 3 Error parsing input, expected ']]' but saw unrecognized token ``
 
  1: 
@@ -60,9 +60,9 @@ On line 3 Error parsing input, expected ']]' but saw unrecognized token ``
 }
 
 #[test]
-fn bad_choice_in_modifier_with_possibilities() {
+fn bad_choice_in_option_with_possibilities() {
     let s = common::Setup::from_str(
-        "bad_choice_in_modifier_with_possibilities",
+        "bad_choice_in_option_with_possibilities",
         "csv",
         r#"
 ---
@@ -73,8 +73,8 @@ foo,bar,[[b=foo]],foo
 
     assert_eq!(
         template.unwrap_err().to_string(),
-        "Invalid modifier definition in cell C1 (2, 0) of integration_test_bad_choice_in_modifier_with_possibilities.csvpp
-On line 3 received invalid value when parsing `border` modifier but saw `foo`
+        "Syntax error in cell C1 of integration_test_bad_choice_in_option_with_possibilities.csvpp
+On line 3 received invalid value when parsing `border` option but saw `foo`
 Possible values: all (a) | top (t) | bottom (b) | left (l) | right (r)
 
  1: 

@@ -24,8 +24,7 @@ impl Spreadsheet {
 
         let mut rows: Vec<Row> = vec![];
         for (row_index, result) in csv_reader.records().enumerate() {
-            let row = Row::parse(result, row_index, runtime)?;
-            rows.push(row);
+            rows.push(Row::parse(result, row_index.into(), runtime)?);
         }
 
         Ok(Spreadsheet { rows })
@@ -42,8 +41,8 @@ impl Spreadsheet {
             let row_a1: a1_notation::Row = row_index.into();
 
             // does the row itself have a var?
-            if let Some(var_id) = &row.modifier.var {
-                let reference = if let Some(scope) = row.modifier.fill {
+            if let Some(var_id) = &row.var {
+                let reference = if let Some(scope) = row.fill {
                     // if there's also an fill it's relative to that
                     Node::Variable {
                         name: var_id.clone(),
@@ -63,8 +62,8 @@ impl Spreadsheet {
             for (cell_index, cell) in row.cells.iter().enumerate() {
                 let cell_a1 = a1_notation::Address::new(cell_index, row_index);
 
-                if let Some(var_id) = &cell.modifier.var {
-                    let reference = if let Some(scope) = row.modifier.fill {
+                if let Some(var_id) = &cell.var {
+                    let reference = if let Some(scope) = row.fill {
                         Node::Variable {
                             name: var_id.clone(),
                             value: VariableValue::ColumnRelative {
@@ -99,7 +98,6 @@ impl Spreadsheet {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::modifier::TextFormat;
     use crate::test_utils::*;
     use crate::*;
     use a1_notation::Address;
@@ -157,33 +155,29 @@ mod tests {
     }
 
     #[test]
-    fn parse_with_modifiers() {
+    fn parse_with_options() {
         let runtime = build_runtime("[[t=b / fs=20]]foo");
         let spreadsheet = Spreadsheet::parse(&runtime).unwrap();
 
         assert!(spreadsheet.rows[0].cells[0]
-            .modifier
-            .formats
+            .text_formats
             .contains(&TextFormat::Bold));
-        assert_eq!(spreadsheet.rows[0].cells[0].modifier.font_size, Some(20))
+        assert_eq!(spreadsheet.rows[0].cells[0].font_size, Some(20))
     }
 
     #[test]
-    fn parse_with_row_modifier() {
+    fn parse_with_row_option() {
         let runtime = build_runtime("![[t=b]]foo,bar,baz");
         let spreadsheet = Spreadsheet::parse(&runtime).unwrap();
 
         assert!(spreadsheet.rows[0].cells[0]
-            .modifier
-            .formats
+            .text_formats
             .contains(&TextFormat::Bold));
         assert!(spreadsheet.rows[0].cells[1]
-            .modifier
-            .formats
+            .text_formats
             .contains(&TextFormat::Bold));
         assert!(spreadsheet.rows[0].cells[2]
-            .modifier
-            .formats
+            .text_formats
             .contains(&TextFormat::Bold));
     }
 
@@ -191,25 +185,17 @@ mod tests {
     fn variables_unscoped() {
         let spreadsheet = Spreadsheet {
             rows: vec![Row {
-                modifier: RowModifier::default(),
                 cells: vec![
                     Cell {
-                        ast: None,
-                        modifier: Modifier {
-                            var: Some("foo".to_string()),
-                            ..Default::default()
-                        },
-                        value: "".to_string(),
+                        var: Some("foo".to_string()),
+                        ..Default::default()
                     },
                     Cell {
-                        ast: None,
-                        modifier: Modifier {
-                            var: Some("bar".to_string()),
-                            ..Default::default()
-                        },
-                        value: "".to_string(),
+                        var: Some("bar".to_string()),
+                        ..Default::default()
                     },
                 ],
+                ..Default::default()
             }],
         };
 
@@ -229,32 +215,17 @@ mod tests {
         let spreadsheet = Spreadsheet {
             rows: vec![
                 Row {
-                    modifier: RowModifier {
-                        fill: Some(Fill::new(0, Some(10))),
-                        ..Default::default()
-                    },
+                    fill: Some(Fill::new(0, Some(10))),
                     cells: vec![Cell {
-                        ast: None,
-                        modifier: Modifier {
-                            var: Some("foo".to_string()),
-                            ..Default::default()
-                        },
-                        value: "".to_string(),
+                        var: Some("foo".to_string()),
+                        ..Default::default()
                     }],
+                    ..Default::default()
                 },
                 Row {
-                    modifier: RowModifier {
-                        fill: Some(Fill::new(10, Some(100))),
-                        ..Default::default()
-                    },
-                    cells: vec![Cell {
-                        ast: None,
-                        modifier: Modifier {
-                            var: Some("bar".to_string()),
-                            ..Default::default()
-                        },
-                        value: "".to_string(),
-                    }],
+                    fill: Some(Fill::new(10, Some(100))),
+                    var: Some("bar".to_string()),
+                    ..Default::default()
                 },
             ],
         };
@@ -277,12 +248,12 @@ mod tests {
             **variables.get("bar").unwrap(),
             Node::var(
                 "bar",
-                VariableValue::ColumnRelative {
+                VariableValue::RowRelative {
                     scope: Fill {
                         amount: Some(100),
                         start_row: 10.into()
                     },
-                    column: 0.into(),
+                    row: 1.into(),
                 }
             )
         );
@@ -291,23 +262,22 @@ mod tests {
     #[test]
     fn widest_row() {
         let cell = Cell {
-            ast: None,
-            modifier: Modifier::default(),
             value: "foo".to_string(),
+            ..Default::default()
         };
         let spreadsheet = Spreadsheet {
             rows: vec![
                 Row {
                     cells: vec![cell.clone()],
-                    modifier: RowModifier::default(),
+                    ..Default::default()
                 },
                 Row {
                     cells: vec![cell.clone(), cell.clone()],
-                    modifier: RowModifier::default(),
+                    ..Default::default()
                 },
                 Row {
                     cells: vec![cell.clone(), cell.clone(), cell.clone()],
-                    modifier: RowModifier::default(),
+                    ..Default::default()
                 },
             ],
         };

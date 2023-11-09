@@ -1,10 +1,14 @@
 mod ast;
+mod border_side;
+mod border_style;
 mod cell;
 mod cli_args;
+mod data_validation;
 mod date_time;
 mod error;
 mod fill;
-mod modifier;
+mod horizontal_align;
+mod number_format;
 mod options;
 mod output;
 mod parser;
@@ -15,13 +19,19 @@ mod source_code;
 mod spreadsheet;
 mod target;
 mod template;
+mod text_format;
+mod vertical_align;
 
+pub use border_side::BorderSide;
+pub use border_style::BorderStyle;
 pub use cell::Cell;
 pub use cli_args::CliArgs;
+pub use data_validation::DataValidation;
 pub use date_time::DateTime;
 pub use error::{Error, ParseError, Result};
 pub use fill::Fill;
-pub use modifier::{Modifier, RowModifier};
+pub use horizontal_align::HorizontalAlign;
+pub use number_format::NumberFormat;
 pub use options::Options;
 pub use output::Output;
 pub use rgb::Rgb;
@@ -31,6 +41,8 @@ pub use source_code::{CharOffset, LineNumber, SourceCode};
 pub use spreadsheet::Spreadsheet;
 pub use target::CompilationTarget;
 pub use template::Template;
+pub use text_format::TextFormat;
+pub use vertical_align::VerticalAlign;
 
 // test_utils should only be included in tests, never referenced by release code (or built into the
 // release)

@@ -12,7 +12,7 @@ use umya_spreadsheet as u;
 
 mod cell_validation;
 mod compilation_target;
-mod excel_modifier;
+mod excel_cell;
 
 use cell_validation::CellValidation;
 
@@ -68,11 +68,11 @@ impl<'a> Excel<'a> {
                             e.set_style(style);
                         }
 
-                        if let Some(n) = &cell.modifier.note {
+                        if let Some(n) = &cell.note {
                             self.set_comment(worksheet, position, n);
                         }
 
-                        if let Some(data_validation) = cell.modifier.data_validation {
+                        if let Some(data_validation) = cell.data_validation {
                             cell_validations.push(CellValidation(position, data_validation));
                         }
                     }
@@ -135,12 +135,12 @@ impl<'a> Excel<'a> {
     }
 
     fn build_style(&self, cell: &Cell) -> Option<u::Style> {
-        let modifier = cell.modifier.clone();
-        if modifier.is_empty() {
+        let excel_cell = excel_cell::ExcelCell(cell);
+        if !excel_cell.has_style() {
             return None;
         }
 
-        Some(excel_modifier::ExcelModifier(modifier).into())
+        Some(excel_cell.into())
     }
 
     fn get_existing_cell(

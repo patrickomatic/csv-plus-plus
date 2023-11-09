@@ -46,7 +46,7 @@ impl<T> TokenMatcher<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::modifier_lexer::Token;
+    use crate::parser::cell_lexer::Token;
 
     #[test]
     fn try_match_some() {

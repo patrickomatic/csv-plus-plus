@@ -2,11 +2,10 @@
 //!
 //! Represents a side (or all) of a spreadsheet cell.
 //!
-use crate::error::ModifierParseError;
-use crate::parser::modifier_lexer::TokenMatch;
-use serde::{Deserialize, Serialize};
+use crate::error::CellParseError;
+use crate::parser::cell_lexer::TokenMatch;
 
-#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, serde::Deserialize, serde::Serialize)]
 pub enum BorderSide {
     All,
     Top,
@@ -16,7 +15,7 @@ pub enum BorderSide {
 }
 
 impl TryFrom<TokenMatch> for BorderSide {
-    type Error = ModifierParseError;
+    type Error = CellParseError;
 
     fn try_from(input: TokenMatch) -> Result<Self, Self::Error> {
         match input.str_match.to_lowercase().as_str() {
@@ -25,7 +24,7 @@ impl TryFrom<TokenMatch> for BorderSide {
             "b" | "bottom" => Ok(Self::Bottom),
             "l" | "left" => Ok(Self::Left),
             "r" | "right" => Ok(Self::Right),
-            _ => Err(ModifierParseError::new(
+            _ => Err(CellParseError::new(
                 "border",
                 input,
                 &["all (a)", "top (t)", "bottom (b)", "left (l)", "right (r)"],
@@ -43,15 +42,15 @@ mod tests {
     fn try_from_all() {
         assert_eq!(
             BorderSide::All,
-            BorderSide::try_from(build_modifier_token_match("a")).unwrap()
+            BorderSide::try_from(build_cell_token_match("a")).unwrap()
         );
         assert_eq!(
             BorderSide::All,
-            BorderSide::try_from(build_modifier_token_match("all")).unwrap()
+            BorderSide::try_from(build_cell_token_match("all")).unwrap()
         );
         assert_eq!(
             BorderSide::All,
-            BorderSide::try_from(build_modifier_token_match("ALL")).unwrap()
+            BorderSide::try_from(build_cell_token_match("ALL")).unwrap()
         );
     }
 
@@ -59,15 +58,15 @@ mod tests {
     fn try_from_top() {
         assert_eq!(
             BorderSide::Top,
-            BorderSide::try_from(build_modifier_token_match("t")).unwrap()
+            BorderSide::try_from(build_cell_token_match("t")).unwrap()
         );
         assert_eq!(
             BorderSide::Top,
-            BorderSide::try_from(build_modifier_token_match("top")).unwrap()
+            BorderSide::try_from(build_cell_token_match("top")).unwrap()
         );
         assert_eq!(
             BorderSide::Top,
-            BorderSide::try_from(build_modifier_token_match("TOP")).unwrap()
+            BorderSide::try_from(build_cell_token_match("TOP")).unwrap()
         );
     }
 
@@ -75,15 +74,15 @@ mod tests {
     fn try_from_right() {
         assert_eq!(
             BorderSide::Right,
-            BorderSide::try_from(build_modifier_token_match("r")).unwrap()
+            BorderSide::try_from(build_cell_token_match("r")).unwrap()
         );
         assert_eq!(
             BorderSide::Right,
-            BorderSide::try_from(build_modifier_token_match("right")).unwrap()
+            BorderSide::try_from(build_cell_token_match("right")).unwrap()
         );
         assert_eq!(
             BorderSide::Right,
-            BorderSide::try_from(build_modifier_token_match("RIGHT")).unwrap()
+            BorderSide::try_from(build_cell_token_match("RIGHT")).unwrap()
         );
     }
 
@@ -91,15 +90,15 @@ mod tests {
     fn try_from_bottom() {
         assert_eq!(
             BorderSide::Bottom,
-            BorderSide::try_from(build_modifier_token_match("b")).unwrap()
+            BorderSide::try_from(build_cell_token_match("b")).unwrap()
         );
         assert_eq!(
             BorderSide::Bottom,
-            BorderSide::try_from(build_modifier_token_match("bottom")).unwrap()
+            BorderSide::try_from(build_cell_token_match("bottom")).unwrap()
         );
         assert_eq!(
             BorderSide::Bottom,
-            BorderSide::try_from(build_modifier_token_match("BOTTOM")).unwrap()
+            BorderSide::try_from(build_cell_token_match("BOTTOM")).unwrap()
         );
     }
 
@@ -107,21 +106,21 @@ mod tests {
     fn try_from_left() {
         assert_eq!(
             BorderSide::Left,
-            BorderSide::try_from(build_modifier_token_match("l")).unwrap()
+            BorderSide::try_from(build_cell_token_match("l")).unwrap()
         );
         assert_eq!(
             BorderSide::Left,
-            BorderSide::try_from(build_modifier_token_match("left")).unwrap()
+            BorderSide::try_from(build_cell_token_match("left")).unwrap()
         );
         assert_eq!(
             BorderSide::Left,
-            BorderSide::try_from(build_modifier_token_match("LEFT")).unwrap()
+            BorderSide::try_from(build_cell_token_match("LEFT")).unwrap()
         );
     }
 
     #[test]
     fn try_from_invalid() {
-        assert!(BorderSide::try_from(build_modifier_token_match("middle")).is_err());
-        assert!(BorderSide::try_from(build_modifier_token_match("123")).is_err());
+        assert!(BorderSide::try_from(build_cell_token_match("middle")).is_err());
+        assert!(BorderSide::try_from(build_cell_token_match("123")).is_err());
     }
 }

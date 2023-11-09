@@ -2,48 +2,71 @@
 //!
 use crate::ast::Ast;
 use crate::parser::ast_parser::AstParser;
-use crate::parser::modifier_parser::ModifierParser;
-use crate::{Modifier, Result, RowModifier, Runtime};
+use crate::parser::cell_parser::CellParser;
+use crate::{
+    BorderSide, BorderStyle, DataValidation, HorizontalAlign, NumberFormat, Result, Rgb, Row,
+    Runtime, TextFormat, VerticalAlign,
+};
 use a1_notation::Address;
-use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 mod display;
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct Cell {
     pub ast: Option<Ast>,
-    pub modifier: Modifier,
     pub value: String,
+    pub border_color: Option<Rgb>,
+    pub border_style: Option<BorderStyle>,
+    pub borders: HashSet<BorderSide>,
+    pub color: Option<Rgb>,
+    pub data_validation: Option<DataValidation>,
+    pub font_color: Option<Rgb>,
+    pub font_family: Option<String>,
+    pub font_size: Option<u8>,
+    pub horizontal_align: Option<HorizontalAlign>,
+    pub lock: bool,
+    pub note: Option<String>,
+    pub number_format: Option<NumberFormat>,
+    pub text_formats: HashSet<TextFormat>,
+    pub var: Option<String>,
+    pub vertical_align: Option<VerticalAlign>,
+}
+
+fn parse_ast(input: &str, runtime: &Runtime) -> Result<Option<Ast>> {
+    Ok(if let Some(without_equals) = input.strip_prefix('=') {
+        Some(AstParser::parse(without_equals, false, runtime)?)
+    } else {
+        None
+    })
 }
 
 impl Cell {
-    pub fn parse(
-        input: &str,
-        position: Address,
-        row_modifier: &RowModifier,
-        runtime: &Runtime,
-    ) -> Result<(Self, Option<RowModifier>)> {
-        let parsed_modifiers = ModifierParser::parse(input, position, row_modifier, runtime)?;
-        let cell = Self {
-            ast: Self::parse_ast(&parsed_modifiers.value, runtime)?,
-            modifier: parsed_modifiers.modifier.unwrap_or_else(|| {
-                parsed_modifiers
-                    .row_modifier
-                    .clone()
-                    .unwrap_or(row_modifier.clone())
-                    .into_without_var()
-            }),
-            value: parsed_modifiers.value.to_string(),
-        };
+    pub fn parse(input: &str, position: Address, row: &mut Row, runtime: &Runtime) -> Result<Self> {
+        let mut cell = CellParser::parse(input, position, row, runtime)?;
+        cell.ast = parse_ast(&cell.value, runtime)?;
 
-        Ok((cell, parsed_modifiers.row_modifier))
+        Ok(cell)
     }
 
-    fn parse_ast(input: &str, runtime: &Runtime) -> Result<Option<Ast>> {
-        if let Some(without_equals) = input.strip_prefix('=') {
-            Ok(Some(AstParser::parse(without_equals, false, runtime)?))
-        } else {
-            Ok(None)
+    /// Copy all of the values from `row` which are relevant for a `Cell` to inherit
+    pub(crate) fn default_from(row: &Row) -> Self {
+        Self {
+            border_color: row.border_color.clone(),
+            border_style: row.border_style,
+            borders: row.borders.clone(),
+            color: row.color.clone(),
+            data_validation: row.data_validation.clone(),
+            font_color: row.font_color.clone(),
+            font_family: row.font_family.clone(),
+            font_size: row.font_size,
+            horizontal_align: row.horizontal_align,
+            lock: row.lock,
+            note: row.note.clone(),
+            number_format: row.number_format,
+            text_formats: row.text_formats.clone(),
+            vertical_align: row.vertical_align,
+            ..Default::default()
         }
     }
 }
@@ -58,13 +81,8 @@ mod tests {
     fn parse_no_ast() {
         let test_file = TestFile::new("csv", "foo,bar,baz\n1,2,3\n");
         let source_code = test_file.into();
-        let (cell, _) = Cell::parse(
-            "foo",
-            Address::new(0, 4),
-            &RowModifier::default(),
-            &source_code,
-        )
-        .unwrap();
+        let cell =
+            Cell::parse("foo", Address::new(0, 4), &mut Row::default(), &source_code).unwrap();
 
         assert_eq!(cell.value, "foo");
         assert_eq!(cell.ast, None);
@@ -74,10 +92,10 @@ mod tests {
     fn parse_ast() {
         let test_file = TestFile::new("csv", "foo,bar,baz\n1,2,3\n");
         let source_code = test_file.into();
-        let (cell, _) = Cell::parse(
+        let cell = Cell::parse(
             "=1 + foo",
             Address::new(0, 4),
-            &RowModifier::default(),
+            &mut Row::default(),
             &source_code,
         )
         .unwrap();

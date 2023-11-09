@@ -1,4 +1,4 @@
-use crate::modifier::DataValidation;
+use crate::DataValidation;
 use umya_spreadsheet as u;
 
 #[derive(Debug)]

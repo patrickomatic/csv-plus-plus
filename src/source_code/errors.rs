@@ -17,12 +17,12 @@ impl SourceCode {
         }
     }
 
-    pub(crate) fn modifier_syntax_error(
+    pub(crate) fn cell_syntax_error(
         &self,
         parse_error: ParseError,
         position: a1_notation::Address,
     ) -> Error {
-        Error::ModifierSyntaxError {
+        Error::CellSyntaxError {
             filename: self.filename.clone(),
             parse_error: Box::new(parse_error),
             position,

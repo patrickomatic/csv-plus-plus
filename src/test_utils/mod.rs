@@ -2,7 +2,7 @@
 //! final release executable.
 //!
 use crate::parser::ast_lexer;
-use crate::parser::modifier_lexer;
+use crate::parser::cell_lexer;
 use crate::{DateTime, Runtime, SourceCode};
 use std::sync;
 
@@ -22,10 +22,10 @@ pub(crate) fn build_ast_token_match<'a>(
     }
 }
 
-pub(crate) fn build_modifier_token_match(str_match: &str) -> modifier_lexer::TokenMatch {
+pub(crate) fn build_cell_token_match(str_match: &str) -> cell_lexer::TokenMatch {
     let source_code = build_source_code();
-    modifier_lexer::TokenMatch {
-        token: modifier_lexer::Token::Identifier,
+    cell_lexer::TokenMatch {
+        token: cell_lexer::Token::Identifier,
         str_match: str_match.to_string(),
         position: a1_notation::Address::new(0, 0),
         cell_offset: 0,

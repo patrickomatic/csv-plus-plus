@@ -22,8 +22,6 @@ impl fmt::Display for Row {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::modifier::*;
     use crate::*;
 
     #[test]
@@ -31,22 +29,19 @@ mod tests {
         let row = Row {
             cells: vec![
                 Cell {
-                    ast: None,
-                    modifier: Modifier::default(),
                     value: "foo".to_string(),
+                    ..Default::default()
                 },
                 Cell {
-                    ast: None,
-                    modifier: Modifier::default(),
                     value: "bar".to_string(),
+                    ..Default::default()
                 },
                 Cell {
-                    ast: None,
-                    modifier: Modifier::default(),
                     value: "baz".to_string(),
+                    ..Default::default()
                 },
             ],
-            modifier: RowModifier::default(),
+            ..Default::default()
         };
 
         assert_eq!(row.to_string(), "|\tfoo\t|\tbar\t|\tbaz\t|");

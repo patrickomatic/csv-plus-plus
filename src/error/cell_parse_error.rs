@@ -1,28 +1,28 @@
-//! # ModifierParseError
+//! # CellParseError
 //!
-//! An error that can be thrown when parsing the value of a modifier.
+//! An error that can be thrown when parsing a cell.
 use super::BadInput;
-use crate::parser::modifier_lexer::TokenMatch;
+use crate::parser::cell_lexer::TokenMatch;
 use crate::{CharOffset, LineNumber, ParseError};
 use std::error;
 use std::fmt;
 
 #[derive(Debug)]
-pub(crate) struct ModifierParseError {
-    pub(crate) modifier_name: String,
+pub(crate) struct CellParseError {
+    pub(crate) option_name: String,
     pub(crate) bad_input: TokenMatch,
     pub(crate) possible_values: Vec<String>,
 }
 
-impl ModifierParseError {
-    pub(crate) fn new(
-        modifier_name: &str,
+impl CellParseError {
+    pub(crate) fn new<S: Into<String>>(
+        option_name: S,
         bad_input: TokenMatch,
         possible_values: &[&str],
-    ) -> ModifierParseError {
-        ModifierParseError {
+    ) -> CellParseError {
+        CellParseError {
             bad_input,
-            modifier_name: modifier_name.to_string(),
+            option_name: option_name.into(),
             possible_values: possible_values
                 .iter()
                 .map(|pv| pv.to_string())
@@ -31,22 +31,22 @@ impl ModifierParseError {
     }
 }
 
-impl From<ModifierParseError> for ParseError {
-    fn from(e: ModifierParseError) -> Self {
-        let modifier_name = e.modifier_name.clone();
+impl From<CellParseError> for ParseError {
+    fn from(e: CellParseError) -> Self {
+        let option_name = e.option_name.clone();
         e.into_parse_error(format!(
-            "received invalid value when parsing `{modifier_name}` modifier"
+            "received invalid value when parsing `{option_name}` option"
         ))
     }
 }
 
-impl fmt::Display for ModifierParseError {
+impl fmt::Display for CellParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "`{}`", self.bad_input.str_match)
     }
 }
 
-impl BadInput for ModifierParseError {
+impl BadInput for CellParseError {
     fn line_number(&self) -> LineNumber {
         self.bad_input.line_number()
     }
@@ -62,7 +62,7 @@ impl BadInput for ModifierParseError {
     }
 }
 
-impl error::Error for ModifierParseError {}
+impl error::Error for CellParseError {}
 
 #[cfg(test)]
 mod tests {

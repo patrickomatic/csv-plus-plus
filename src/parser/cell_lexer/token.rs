@@ -8,22 +8,22 @@ pub(crate) enum Token {
     CloseParenthesis,
     Color,
     Date,
-    EndModifier,
+    EndOptions,
     Equals,
     Identifier,
-    ModifierName,
     Number,
     OpenParenthesis,
+    OptionName,
     PositiveNumber,
     String,
     Slash,
-    StartCellModifier,
-    StartRowModifier,
+    StartCellOptions,
+    StartRowOptions,
 }
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 
@@ -33,6 +33,6 @@ mod tests {
 
     #[test]
     fn display() {
-        assert_eq!(Token::ModifierName.to_string(), "ModifierName");
+        assert_eq!(Token::OptionName.to_string(), "OptionName");
     }
 }

@@ -2,12 +2,10 @@
 //!
 //! How we handle dates and times (or both together).  This is mostly a wrapper around `chrono` but
 //! it's important that we handle timezones and parsing uniformly across the app.
-use serde::{Deserialize, Serialize};
-
 mod display;
 mod try_from;
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
 pub enum DateTime {
     // Just a date.  No timezone is used.
     Date(chrono::NaiveDate),
@@ -25,7 +23,8 @@ fn date_epoch() -> chrono::NaiveDate {
 }
 
 impl DateTime {
-    /// Excel references Dates since January 1, 1900
+    /// Kinda odd but Excel references Dates as days since January 1, 1900 (we don't support other
+    /// use-cases (for now))
     pub(crate) fn distance_from_epoch(&self) -> i64 {
         match self {
             Self::Date(d) => d.signed_duration_since(date_epoch()).num_days(),

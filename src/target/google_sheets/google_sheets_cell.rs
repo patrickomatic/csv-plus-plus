@@ -1,15 +1,17 @@
-//! # GoogleSheetsModifier
+//! # GoogleSheetsCell
 //!
-//! A wrapper around `Modifier` to make it more compatible with the Google Sheets API.  An
-//! important design principal here is that we only send the changes that the user set - we should
-//! not be sending a bunch of default values and prefer to return None instead.  In other words the
-//! API payloads should reflect only the things the user specified in the modifier.
+//! A wrapper around `Cell` to make it more compatible with the Google Sheets API.  An important
+//! design principal here is that we only send the changes that the user set - we should not be
+//! sending a bunch of default values and prefer to return None instead.  In other words the API
+//! payloads should reflect only the things the user specified on the cell.
 //!
-use crate::modifier;
-use crate::{Modifier, Rgb};
+use crate::{
+    BorderSide, BorderStyle, Cell, DataValidation, HorizontalAlign, NumberFormat, Rgb, TextFormat,
+    VerticalAlign,
+};
 use google_sheets4::api;
 
-pub struct GoogleSheetsModifier<'a>(pub &'a Modifier);
+pub(super) struct GoogleSheetsCell<'a>(pub(super) &'a Cell);
 
 macro_rules! validate_str {
     ($gs_name:literal $(, $dv:ident)*) => {
@@ -44,7 +46,7 @@ macro_rules! validate_date {
     };
 }
 
-impl<'a> GoogleSheetsModifier<'a> {
+impl<'a> GoogleSheetsCell<'a> {
     pub(super) fn cell_format(&self) -> Option<api::CellFormat> {
         let borders = self.borders();
         let background_color_style = self.color_style(&self.0.color);
@@ -77,52 +79,52 @@ impl<'a> GoogleSheetsModifier<'a> {
     pub(super) fn data_validation_rule(&self) -> Option<api::DataValidationRule> {
         Some(api::DataValidationRule {
             condition: Some(match self.0.data_validation.as_ref()? {
-                modifier::DataValidation::Custom(c) => validate_str!("CUSTOM", c),
-                modifier::DataValidation::DateAfter(d) => validate_date!("DATE_AFTER", d),
-                modifier::DataValidation::DateBefore(d) => validate_date!("DATE_BEFORE", d),
-                modifier::DataValidation::DateBetween(da, db) => {
+                DataValidation::Custom(c) => validate_str!("CUSTOM", c),
+                DataValidation::DateAfter(d) => validate_date!("DATE_AFTER", d),
+                DataValidation::DateBefore(d) => validate_date!("DATE_BEFORE", d),
+                DataValidation::DateBetween(da, db) => {
                     validate_date!("DATE_BETWEEN", da, db)
                 }
-                modifier::DataValidation::DateEqualTo(d) => validate_date!("DATE_EQUAL_TO", d),
-                modifier::DataValidation::DateIsValid => validate_date!("DATE_IS_VALID_DATE"),
-                modifier::DataValidation::DateNotBetween(da, db) => {
+                DataValidation::DateEqualTo(d) => validate_date!("DATE_EQUAL_TO", d),
+                DataValidation::DateIsValid => validate_date!("DATE_IS_VALID_DATE"),
+                DataValidation::DateNotBetween(da, db) => {
                     validate_date!("DATE_NOT_BETWEEN", da, db)
                 }
-                modifier::DataValidation::DateOnOrAfter(d) => validate_date!("DATE_ON_OR_AFTER", d),
-                modifier::DataValidation::DateOnOrBefore(d) => {
+                DataValidation::DateOnOrAfter(d) => validate_date!("DATE_ON_OR_AFTER", d),
+                DataValidation::DateOnOrBefore(d) => {
                     validate_date!("DATE_ON_OR_BEFORE", d)
                 }
                 // TODO: these might need to be prefixed with `"="`
-                modifier::DataValidation::NumberBetween(na, nb) => {
+                DataValidation::NumberBetween(na, nb) => {
                     validate_str!("NUMBER_BETWEEN", na, nb)
                 }
-                modifier::DataValidation::NumberEqualTo(n) => validate_str!("NUMBER_EQUAL_TO", n),
-                modifier::DataValidation::NumberGreaterThan(n) => {
+                DataValidation::NumberEqualTo(n) => validate_str!("NUMBER_EQUAL_TO", n),
+                DataValidation::NumberGreaterThan(n) => {
                     validate_str!("NUMBER_GREATER_THAN", n)
                 }
-                modifier::DataValidation::NumberGreaterThanOrEqualTo(n) => {
+                DataValidation::NumberGreaterThanOrEqualTo(n) => {
                     validate_str!("NUMBER_GREATER_THAN_OR_EQUAL_TO", n)
                 }
-                modifier::DataValidation::NumberLessThan(n) => {
+                DataValidation::NumberLessThan(n) => {
                     validate_str!("NUMBER_LESS_THAN", n)
                 }
-                modifier::DataValidation::NumberLessThanOrEqualTo(n) => {
+                DataValidation::NumberLessThanOrEqualTo(n) => {
                     validate_str!("NUMBER_LESS_THAN_OR_EQUAL_TO", n)
                 }
-                modifier::DataValidation::NumberNotBetween(na, nb) => {
+                DataValidation::NumberNotBetween(na, nb) => {
                     validate_str!("NUMBER_NOT_BETWEEN", na, nb)
                 }
-                modifier::DataValidation::NumberNotEqualTo(n) => {
+                DataValidation::NumberNotEqualTo(n) => {
                     validate_str!("NUMBER_NOT_EQUAL_TO", n)
                 }
-                modifier::DataValidation::TextContains(t) => validate_str!("TEXT_CONTAINS", t),
-                modifier::DataValidation::TextDoesNotContain(t) => {
+                DataValidation::TextContains(t) => validate_str!("TEXT_CONTAINS", t),
+                DataValidation::TextDoesNotContain(t) => {
                     validate_str!("TEXT_DOES_NOT_CONTAIN", t)
                 }
-                modifier::DataValidation::TextEqualTo(t) => validate_str!("TEXT_EQUAL_TO", t),
-                modifier::DataValidation::TextIsValidEmail => validate_str!("TEXT_IS_VALID_EMAIL"),
-                modifier::DataValidation::TextIsValidUrl => validate_str!("TEXT_IS_VALID_URL"),
-                modifier::DataValidation::ValueInList(list) => api::BooleanCondition {
+                DataValidation::TextEqualTo(t) => validate_str!("TEXT_EQUAL_TO", t),
+                DataValidation::TextIsValidEmail => validate_str!("TEXT_IS_VALID_EMAIL"),
+                DataValidation::TextIsValidUrl => validate_str!("TEXT_IS_VALID_URL"),
+                DataValidation::ValueInList(list) => api::BooleanCondition {
                     type_: Some("VALUE_IN_LIST".to_string()),
                     values: Some(
                         list.iter()
@@ -133,7 +135,7 @@ impl<'a> GoogleSheetsModifier<'a> {
                             .collect(),
                     ),
                 },
-                modifier::DataValidation::ValueInRange(a1) => validate_str!("VALUE_IN_RANGE", a1),
+                DataValidation::ValueInRange(a1) => validate_str!("VALUE_IN_RANGE", a1),
             }),
             // TODO: show a helpful message?
             input_message: None,
@@ -144,8 +146,8 @@ impl<'a> GoogleSheetsModifier<'a> {
         })
     }
 
-    fn border_side(&self, side: &modifier::BorderSide) -> Option<api::Border> {
-        if self.0.borders.contains(side) {
+    fn border_side(&self, side: BorderSide) -> Option<api::Border> {
+        if self.0.borders.contains(&side) {
             Some(self.border())
         } else {
             None
@@ -154,14 +156,14 @@ impl<'a> GoogleSheetsModifier<'a> {
 
     /// https://developers.google.com/apps-script/reference/spreadsheet/border-style
     fn border_style(&self) -> Option<String> {
-        self.0.border_style.clone().map(|bs| {
+        self.0.border_style.map(|bs| {
             match bs {
-                modifier::BorderStyle::Dashed => "DASHED",
-                modifier::BorderStyle::Dotted => "DOTTED",
-                modifier::BorderStyle::Double => "DOUBLE",
-                modifier::BorderStyle::Solid => "SOLID",
-                modifier::BorderStyle::SolidMedium => "SOLID_MEDIUM",
-                modifier::BorderStyle::SolidThick => "SOLID_THICK",
+                BorderStyle::Dashed => "DASHED",
+                BorderStyle::Dotted => "DOTTED",
+                BorderStyle::Double => "DOUBLE",
+                BorderStyle::Solid => "SOLID",
+                BorderStyle::SolidMedium => "SOLID_MEDIUM",
+                BorderStyle::SolidThick => "SOLID_THICK",
             }
             .to_string()
         })
@@ -173,10 +175,10 @@ impl<'a> GoogleSheetsModifier<'a> {
         }
 
         Some(api::Borders {
-            bottom: self.border_side(&modifier::BorderSide::Bottom),
-            left: self.border_side(&modifier::BorderSide::Left),
-            right: self.border_side(&modifier::BorderSide::Right),
-            top: self.border_side(&modifier::BorderSide::Top),
+            bottom: self.border_side(BorderSide::Bottom),
+            left: self.border_side(BorderSide::Left),
+            right: self.border_side(BorderSide::Right),
+            top: self.border_side(BorderSide::Top),
         })
     }
 
@@ -207,8 +209,8 @@ impl<'a> GoogleSheetsModifier<'a> {
         }
     }
 
-    fn format_as_option(&self, format: &modifier::TextFormat) -> Option<bool> {
-        if self.0.formats.contains(format) {
+    fn format_as_option(&self, format: TextFormat) -> Option<bool> {
+        if self.0.text_formats.contains(&format) {
             Some(true)
         } else {
             None
@@ -216,11 +218,11 @@ impl<'a> GoogleSheetsModifier<'a> {
     }
 
     fn horizontal_alignment(&self) -> Option<String> {
-        self.0.horizontal_align.clone().map(|ha| {
+        self.0.horizontal_align.map(|ha| {
             match ha {
-                modifier::HorizontalAlign::Left => "LEFT",
-                modifier::HorizontalAlign::Center => "MIDDLE",
-                modifier::HorizontalAlign::Right => "RIGHT",
+                HorizontalAlign::Left => "LEFT",
+                HorizontalAlign::Center => "MIDDLE",
+                HorizontalAlign::Right => "RIGHT",
             }
             .to_string()
         })
@@ -229,16 +231,16 @@ impl<'a> GoogleSheetsModifier<'a> {
     /// https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/cells#numberformat
     /// https://docs.rs/google-sheets4/latest/google_sheets4/api/struct.NumberFormat.html
     fn number_format(&self) -> Option<api::NumberFormat> {
-        self.0.number_format.clone().map(|nf| {
+        self.0.number_format.map(|nf| {
             let nf_type = match nf {
-                modifier::NumberFormat::Currency => "CURRENCY",
-                modifier::NumberFormat::Date => "DATE",
-                modifier::NumberFormat::DateTime => "DATE_TIME",
-                modifier::NumberFormat::Number => "NUMBER",
-                modifier::NumberFormat::Percent => "PERCENT",
-                modifier::NumberFormat::Text => "TEXT",
-                modifier::NumberFormat::Time => "TIME",
-                modifier::NumberFormat::Scientific => "SCIENTIFIC",
+                NumberFormat::Currency => "CURRENCY",
+                NumberFormat::Date => "DATE",
+                NumberFormat::DateTime => "DATE_TIME",
+                NumberFormat::Number => "NUMBER",
+                NumberFormat::Percent => "PERCENT",
+                NumberFormat::Text => "TEXT",
+                NumberFormat::Time => "TIME",
+                NumberFormat::Scientific => "SCIENTIFIC",
             }
             .to_string();
 
@@ -250,13 +252,13 @@ impl<'a> GoogleSheetsModifier<'a> {
     }
 
     fn text_format(&self) -> Option<api::TextFormat> {
-        let bold = self.format_as_option(&modifier::TextFormat::Bold);
+        let bold = self.format_as_option(TextFormat::Bold);
         let font_family = self.0.font_family.clone();
         let font_size = self.0.font_size.map(|fs| fs as i32);
         let foreground_color_style = self.color_style(&self.0.font_color);
-        let italic = self.format_as_option(&modifier::TextFormat::Italic);
-        let strikethrough = self.format_as_option(&modifier::TextFormat::Strikethrough);
-        let underline = self.format_as_option(&modifier::TextFormat::Underline);
+        let italic = self.format_as_option(TextFormat::Italic);
+        let strikethrough = self.format_as_option(TextFormat::Strikethrough);
+        let underline = self.format_as_option(TextFormat::Underline);
 
         if font_family.is_none()
             && font_size.is_none()
@@ -283,11 +285,11 @@ impl<'a> GoogleSheetsModifier<'a> {
     }
 
     fn vertical_alignment(&self) -> Option<String> {
-        self.0.vertical_align.clone().map(|va| {
+        self.0.vertical_align.map(|va| {
             match va {
-                modifier::VerticalAlign::Top => "TOP",
-                modifier::VerticalAlign::Center => "MIDDLE",
-                modifier::VerticalAlign::Bottom => "BOTTOM",
+                VerticalAlign::Top => "TOP",
+                VerticalAlign::Center => "MIDDLE",
+                VerticalAlign::Bottom => "BOTTOM",
             }
             .to_string()
         })
@@ -297,24 +299,22 @@ impl<'a> GoogleSheetsModifier<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::modifier;
 
     #[test]
     fn cell_format_none() {
-        let modifier = Modifier::default();
-        let gs_modifier = GoogleSheetsModifier(&modifier);
-        let cell_format = gs_modifier.cell_format();
-
-        assert!(cell_format.is_none());
+        let cell = Cell::default();
+        let gs_cell = GoogleSheetsCell(&cell);
+        assert!(gs_cell.cell_format().is_none());
     }
 
     #[test]
     fn cell_format_some() {
-        let mut modifier = Modifier::default();
-        modifier.formats.insert(modifier::TextFormat::Bold);
-        modifier.vertical_align = Some(modifier::VerticalAlign::Top);
-        let gs_modifier = GoogleSheetsModifier(&modifier);
-        let cell_format = gs_modifier.cell_format().unwrap();
+        let mut cell = Cell::default();
+        cell.text_formats.insert(TextFormat::Bold);
+        cell.vertical_align = Some(VerticalAlign::Top);
+
+        let gs_cell = GoogleSheetsCell(&cell);
+        let cell_format = gs_cell.cell_format().unwrap();
 
         assert!(cell_format.text_format.is_some());
         assert!(cell_format.vertical_alignment.is_some());

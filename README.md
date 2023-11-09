@@ -33,7 +33,7 @@ Sum             , Column 1, Column 2,
 ```
 
 One more useful feature is the ability to bind variables to a cell.  You can use the `[[`/`]]`
-modifier syntax on the cell you want to bind it on.
+syntax on the cell you want to bind it on.
 
 ```csvpp
 fn my_complex_fn(a, b)
@@ -48,7 +48,7 @@ Complex function    , Column 1  , Column 2 ,
 ## Fills
 
 Another useful feature is to define a range of rows which fill out (either infinitely or by a
-finite amount) in the compiled spreadsheet.  To specify one you use the row modifier syntax
+finite amount) in the compiled spreadsheet.  To specify one you use the row-option syntax
 which is similar to above, you just prefix it with `!`: `![[`/`]]`.
 
 ```csvpp

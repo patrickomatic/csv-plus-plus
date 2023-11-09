@@ -2,7 +2,7 @@
 //!
 use crate::ast::{BuiltinFunctions, BuiltinVariables};
 use crate::parser::ast_lexer;
-use crate::parser::modifier_lexer;
+use crate::parser::cell_lexer;
 use crate::{CliArgs, CompilationTarget, Error, Options, Output, Result, SourceCode};
 use clap::Parser;
 use colored::Colorize;
@@ -20,7 +20,7 @@ pub struct Runtime {
     pub output: Output,
     pub source_code: sync::Arc<SourceCode>,
     pub(crate) ast_token_library: ast_lexer::TokenLibrary,
-    pub(crate) cell_token_library: modifier_lexer::TokenLibrary,
+    pub(crate) cell_token_library: cell_lexer::TokenLibrary,
 }
 
 impl Runtime {

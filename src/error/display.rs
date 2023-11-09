@@ -62,21 +62,6 @@ csv++ with `GOOGLE_APPLICATION_CREDENTIALS` or the `--google-account-credentials
                 )
             }
 
-            Self::ModifierSyntaxError {
-                position,
-                parse_error,
-                filename,
-            } => {
-                writeln!(
-                    f,
-                    "Invalid modifier definition in cell {position} ({}, {}) of {}",
-                    position.column.x,
-                    position.row.y,
-                    filename.display()
-                )?;
-                writeln!(f, "{parse_error}")
-            }
-
             Self::InitError(message) => {
                 writeln!(f, "{message}")
             }
@@ -169,27 +154,6 @@ baz
             message.to_string(),
             "Error evaluating formula in cell C3 (2, 2) of a_file.csvpp
 foo
-"
-        );
-    }
-
-    #[test]
-    fn display_modifier_syntax_error() {
-        let message = Error::ModifierSyntaxError {
-            filename: path::PathBuf::from("a_file.csvpp"),
-            position: a1_notation::Address::new(0, 1),
-            parse_error: Box::new(build_parse_error()),
-        };
-
-        assert_eq!(
-            message.to_string(),
-            "Invalid modifier definition in cell A2 (0, 1) of a_file.csvpp
-On line 4 it should be foo but saw bar
-
-foo
-bar
-baz
-
 "
         );
     }

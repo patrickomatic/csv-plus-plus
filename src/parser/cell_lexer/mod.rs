@@ -1,11 +1,10 @@
-//! # ModifierLexer
+//! # CellLexer
 //!
-//! This is the lexer/tokenizer used for parsing csv++ modifiers - it's a little different than
+//! This is the lexer/tokenizer used for parsing csv++ cells - it's a little different than
 //! most parsers which parse their entire input into tokens in one go. This tokenizes as the
 //! parser goes since it is context-dependent.
 //!
 //! [https://en.wikipedia.org/wiki/Lexer_hack](See also: Lexer hack)
-//!
 //!
 use super::TokenMatcher;
 use crate::error::{BadInput, ParseError, ParseResult};
@@ -22,14 +21,14 @@ pub(crate) use token_match::TokenMatch;
 pub(crate) use unknown_token::UnknownToken;
 
 #[derive(Debug)]
-pub(crate) struct ModifierLexer<'a> {
+pub(crate) struct CellLexer<'a> {
     cell_offset: CharOffset,
     pub(crate) input: &'a str,
     position: a1_notation::Address,
     runtime: &'a Runtime,
 }
 
-impl<'a> ModifierLexer<'a> {
+impl<'a> CellLexer<'a> {
     pub(super) fn new(
         input: &'a str,
         position: a1_notation::Address,
@@ -48,15 +47,15 @@ impl<'a> ModifierLexer<'a> {
         self.input.trim().to_string()
     }
 
-    pub(super) fn maybe_take_start_modifier(&mut self) -> Option<TokenMatch> {
+    pub(super) fn maybe_take_start_options(&mut self) -> Option<TokenMatch> {
         self.take_whitespace();
 
         if let Some(without_match) = self.input.strip_prefix("[[") {
-            let token_match = self.match_token(Token::StartCellModifier, "[[");
+            let token_match = self.match_token(Token::StartCellOptions, "[[");
             self.replace_input(without_match, 2);
             Some(token_match)
         } else if let Some(without_match) = self.input.strip_prefix("![[") {
-            let token_match = self.match_token(Token::StartRowModifier, "![[");
+            let token_match = self.match_token(Token::StartRowOptions, "![[");
             self.replace_input(without_match, 3);
             Some(token_match)
         } else {
@@ -66,7 +65,7 @@ impl<'a> ModifierLexer<'a> {
 
     // TODO: this name is kinda misleading since it also takes an equal first
     // maybe just rename to take_identifier
-    pub(super) fn take_modifier_right_side(&mut self) -> ParseResult<TokenMatch> {
+    pub(super) fn take_option_right_side(&mut self) -> ParseResult<TokenMatch> {
         self.take_token(Token::Equals)?;
         self.take_token(Token::Identifier)
     }
@@ -129,9 +128,9 @@ impl<'a> ModifierLexer<'a> {
             Token::CloseParenthesis => self.take(token, ")"),
             Token::Color => self.take_color(),
             Token::Date => self.take_date(),
-            Token::EndModifier => self.take(token, "]]"),
+            Token::EndOptions => self.take(token, "]]"),
             Token::Equals => self.take(token, "="),
-            Token::ModifierName => self.take_while(token, |ch| ch.is_alphanumeric()),
+            Token::OptionName => self.take_while(token, |ch| ch.is_alphanumeric()),
             Token::Identifier => self.take_while(token, |ch| ch.is_alphanumeric() || ch == '_'),
             Token::Number => {
                 // TODO: I could do a little better (enforce only one starting - and one .)
@@ -141,8 +140,8 @@ impl<'a> ModifierLexer<'a> {
             Token::PositiveNumber => self.take_while(token, |ch| ch.is_ascii_digit()),
             Token::String => self.take_string(),
             Token::Slash => self.take(token, "/"),
-            Token::StartCellModifier => self.take(token, "[["),
-            Token::StartRowModifier => self.take(token, "![["),
+            Token::StartCellOptions => self.take(token, "[["),
+            Token::StartRowOptions => self.take(token, "![["),
         }
     }
 
@@ -361,8 +360,8 @@ mod tests {
     use crate::test_utils::*;
     use crate::Runtime;
 
-    fn test_lexer<'a>(lexer_input: &'a str, runtime: &'a Runtime) -> ModifierLexer<'a> {
-        ModifierLexer::new(lexer_input, a1_notation::Address::new(0, 0), runtime)
+    fn test_lexer<'a>(lexer_input: &'a str, runtime: &'a Runtime) -> CellLexer<'a> {
+        CellLexer::new(lexer_input, a1_notation::Address::new(0, 0), runtime)
     }
 
     #[test]
@@ -406,52 +405,49 @@ mod tests {
     }
 
     #[test]
-    fn maybe_take_start_modifier_modifier() {
+    fn maybe_take_start_cell_options() {
         let runtime = build_runtime();
         let mut lexer = test_lexer("[[", &runtime);
 
         assert_eq!(
-            Token::StartCellModifier,
-            lexer.maybe_take_start_modifier().unwrap().token
+            Token::StartCellOptions,
+            lexer.maybe_take_start_options().unwrap().token
         );
     }
 
     #[test]
-    fn maybe_take_start_modifier_row_modifier() {
+    fn maybe_take_start_row_options() {
         let runtime = build_runtime();
         let mut lexer = test_lexer("![[", &runtime);
 
         assert_eq!(
-            Token::StartRowModifier,
-            lexer.maybe_take_start_modifier().unwrap().token
+            Token::StartRowOptions,
+            lexer.maybe_take_start_options().unwrap().token
         );
     }
 
     #[test]
-    fn maybe_take_start_modifier_none() {
+    fn maybe_take_start_options_none() {
         let runtime = build_runtime();
         let mut lexer = test_lexer("foo", &runtime);
 
-        assert!(lexer.maybe_take_start_modifier().is_none());
+        assert!(lexer.maybe_take_start_options().is_none());
     }
 
     #[test]
-    fn take_modifier_right_side() {
+    fn take_option_right_side() {
         let runtime = build_runtime();
         let mut lexer = test_lexer("=foo_bar", &runtime);
 
-        assert_eq!(
-            "foo_bar",
-            lexer.take_modifier_right_side().unwrap().str_match
-        );
+        assert_eq!("foo_bar", lexer.take_option_right_side().unwrap().str_match);
     }
 
     #[test]
-    fn take_modifier_right_side_invalid() {
+    fn take_option_right_side_invalid() {
         let runtime = build_runtime();
         let mut lexer = test_lexer("foo", &runtime);
 
-        assert!(lexer.take_modifier_right_side().is_err());
+        assert!(lexer.take_option_right_side().is_err());
     }
 
     #[test]
@@ -508,14 +504,11 @@ mod tests {
     }
 
     #[test]
-    fn take_token_end_modifier() {
+    fn take_token_end_options() {
         let runtime = build_runtime();
         let mut lexer = test_lexer("]]", &runtime);
 
-        assert_eq!(
-            "]]",
-            lexer.take_token(Token::EndModifier).unwrap().str_match
-        );
+        assert_eq!("]]", lexer.take_token(Token::EndOptions).unwrap().str_match);
     }
 
     #[test]
@@ -527,13 +520,13 @@ mod tests {
     }
 
     #[test]
-    fn take_token_modifier_name() {
+    fn take_token_option_name() {
         let runtime = build_runtime();
         let mut lexer = test_lexer("foo", &runtime);
 
         assert_eq!(
             "foo",
-            lexer.take_token(Token::ModifierName).unwrap().str_match
+            lexer.take_token(Token::OptionName).unwrap().str_match
         );
     }
 

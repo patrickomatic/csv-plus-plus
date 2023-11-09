@@ -1,14 +1,12 @@
-//! # ExcelModifier
+//! # ExcelCell
 //!
-//! Converts between a Modifier and an umya_spreadsheet::Style (which feature-wise actually happen
+//! Converts between a Cell and an umya_spreadsheet::Style (which feature-wise actually happen
 //! to map pretty nicely)
-use crate::modifier::{
-    BorderSide, BorderStyle, HorizontalAlign, NumberFormat, TextFormat, VerticalAlign,
+use crate::{
+    BorderSide, BorderStyle, Cell, HorizontalAlign, NumberFormat, Rgb, TextFormat, VerticalAlign,
 };
-use crate::{Modifier, Rgb};
 
-// A Newtype around `Modifier` which allows us to have umya/excel-specific functionality
-pub(super) struct ExcelModifier(pub Modifier);
+pub(super) struct ExcelCell<'a>(pub(super) &'a Cell);
 
 impl From<BorderStyle> for umya_spreadsheet::Border {
     fn from(value: BorderStyle) -> Self {
@@ -25,8 +23,8 @@ impl From<BorderStyle> for umya_spreadsheet::Border {
     }
 }
 
-impl From<ExcelModifier> for umya_spreadsheet::Style {
-    fn from(value: ExcelModifier) -> Self {
+impl From<ExcelCell<'_>> for umya_spreadsheet::Style {
+    fn from(value: ExcelCell<'_>) -> Self {
         let mut style = umya_spreadsheet::Style::default();
 
         value.set_alignment(&mut style);
@@ -84,18 +82,33 @@ impl From<VerticalAlign> for umya_spreadsheet::VerticalAlignmentValues {
     }
 }
 
-impl ExcelModifier {
+impl<'a> ExcelCell<'a> {
+    pub(super) fn has_style(&self) -> bool {
+        let cell = self.0;
+        cell.border_color.is_none()
+            && cell.border_style.is_none()
+            && cell.borders.is_empty()
+            && cell.color.is_none()
+            && cell.font_color.is_none()
+            && cell.font_family.is_none()
+            && cell.font_size.is_none()
+            && cell.text_formats.is_empty()
+            && cell.horizontal_align.is_none()
+            && cell.number_format.is_none()
+            && cell.vertical_align.is_none()
+    }
+
     fn set_alignment(&self, s: &mut umya_spreadsheet::Style) {
         if self.0.horizontal_align.is_none() && self.0.vertical_align.is_none() {
             return;
         }
 
         let mut alignment = umya_spreadsheet::Alignment::default();
-        if let Some(h) = self.0.horizontal_align.clone() {
+        if let Some(h) = self.0.horizontal_align {
             alignment.set_horizontal(h.into());
         }
 
-        if let Some(v) = self.0.vertical_align.clone() {
+        if let Some(v) = self.0.vertical_align {
             alignment.set_vertical(v.into());
         }
 
@@ -113,25 +126,23 @@ impl ExcelModifier {
             return;
         }
 
-        let border: umya_spreadsheet::Border =
-            self.0.clone().border_style.unwrap_or_default().into();
+        let border: umya_spreadsheet::Border = self.0.border_style.unwrap_or_default().into();
 
+        let all_borders = self.0.borders.contains(&BorderSide::All);
         let b = s.get_borders_mut();
-        if self.0.borders.contains(&BorderSide::All) || self.0.borders.contains(&BorderSide::Left) {
+        if all_borders || self.0.borders.contains(&BorderSide::Left) {
             b.set_left_border(border.clone());
         }
 
-        if self.0.borders.contains(&BorderSide::All) || self.0.borders.contains(&BorderSide::Right)
-        {
+        if all_borders || self.0.borders.contains(&BorderSide::Right) {
             b.set_right_border(border.clone());
         }
 
-        if self.0.borders.contains(&BorderSide::All) || self.0.borders.contains(&BorderSide::Top) {
+        if all_borders || self.0.borders.contains(&BorderSide::Top) {
             b.set_top_border(border.clone());
         }
 
-        if self.0.borders.contains(&BorderSide::All) || self.0.borders.contains(&BorderSide::Bottom)
-        {
+        if all_borders || self.0.borders.contains(&BorderSide::Bottom) {
             b.set_bottom_border(border);
         }
     }
@@ -140,7 +151,7 @@ impl ExcelModifier {
         if self.0.font_size.is_none()
             && self.0.font_color.is_none()
             && self.0.font_family.is_none()
-            && self.0.formats.is_empty()
+            && self.0.text_formats.is_empty()
         {
             return;
         }
@@ -159,19 +170,19 @@ impl ExcelModifier {
             font.set_color(fc.into());
         }
 
-        if self.0.formats.contains(&TextFormat::Bold) {
+        if self.0.text_formats.contains(&TextFormat::Bold) {
             font.set_bold(true);
         }
 
-        if self.0.formats.contains(&TextFormat::Italic) {
+        if self.0.text_formats.contains(&TextFormat::Italic) {
             font.set_italic(true);
         }
 
-        if self.0.formats.contains(&TextFormat::Strikethrough) {
+        if self.0.text_formats.contains(&TextFormat::Strikethrough) {
             font.set_strikethrough(true);
         }
 
-        if self.0.formats.contains(&TextFormat::Underline) {
+        if self.0.text_formats.contains(&TextFormat::Underline) {
             font.set_underline("single");
         }
 
@@ -179,7 +190,7 @@ impl ExcelModifier {
     }
 
     fn set_number_format(&self, s: &mut umya_spreadsheet::Style) {
-        if let Some(nf) = self.0.number_format.clone() {
+        if let Some(nf) = self.0.number_format {
             s.set_numbering_format(nf.into());
         }
     }
@@ -211,18 +222,18 @@ mod tests {
     }
 
     #[test]
-    fn into_excel_modifier_style() {
-        let mut modifier = Modifier {
+    fn into_excel_cell_style() {
+        let mut cell = Cell {
             font_size: Some(50),
             border_style: Some(BorderStyle::Dashed),
             note: Some("a note".to_string()),
 
             ..Default::default()
         };
-        modifier.borders.insert(BorderSide::Top);
-        modifier.formats.insert(TextFormat::Bold);
+        cell.borders.insert(BorderSide::Top);
+        cell.text_formats.insert(TextFormat::Bold);
 
-        let style: umya_spreadsheet::Style = ExcelModifier(modifier).into();
+        let style: umya_spreadsheet::Style = ExcelCell(&cell).into();
         assert_eq!(style.get_font().clone().unwrap().get_size(), &50.0);
     }
 
