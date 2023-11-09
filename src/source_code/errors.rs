@@ -171,7 +171,7 @@ foo,bar,baz
         let highlighted_lines = source_code.highlight_line(7, 5);
         assert_eq!(highlighted_lines.len(), 8);
         assert!(highlighted_lines[3].contains("foo: bar"));
-        assert!(highlighted_lines[4].contains("-----^"));
+        assert!(highlighted_lines[4].contains("----^"));
     }
 
     #[test]

@@ -26,6 +26,7 @@ mod tests {
 
     fn build_template() -> Template {
         Template {
+            compiler_version: "v0.0.1".to_string(),
             functions: collections::HashMap::new(),
             module: "main".to_string(),
             spreadsheet: cell::RefCell::new(Spreadsheet::default()),

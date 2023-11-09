@@ -53,7 +53,7 @@ On line 3 Error parsing input, expected ']]' but saw unrecognized token ``
  1: 
  2: ---
  3: foo,bar,[[text=bold ,foo
-  : -------------------^
+  : ------------------^
 
 "
     );
@@ -80,7 +80,7 @@ Possible values: all (a) | top (t) | bottom (b) | left (l) | right (r)
  1: 
  2: ---
  3: foo,bar,[[b=foo]],foo
-  : ---------------^
+  : --------------^
 
 "
     );

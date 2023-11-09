@@ -172,7 +172,7 @@ impl<'a> ModifierLexer<'a> {
             token,
             str_match: str_match.to_string(),
             position: self.position,
-            cell_offset: self.cell_offset,
+            cell_offset: self.last_cell_offset(),
             source_code: self.runtime.source_code.clone(),
         }
     }
@@ -181,7 +181,7 @@ impl<'a> ModifierLexer<'a> {
         UnknownToken {
             bad_input: self.input.to_string(),
             position: self.position,
-            cell_offset: self.cell_offset,
+            cell_offset: self.last_cell_offset(),
             source_code: self.runtime.source_code.clone(),
         }
         .into_parse_error(message)
@@ -337,6 +337,11 @@ impl<'a> ModifierLexer<'a> {
             self.move_input(matched.len());
             Ok(self.match_token(token, &matched))
         }
+    }
+
+    // our parser has the `cell_offset` set to one position ahead of where we last read
+    fn last_cell_offset(&self) -> CharOffset {
+        self.cell_offset.saturating_sub(1)
     }
 
     fn move_input(&mut self, amount: CharOffset) {

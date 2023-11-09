@@ -29,6 +29,7 @@ pub struct Template {
     pub module: String,
     pub spreadsheet: cell::RefCell<Spreadsheet>,
     pub variables: Variables,
+    pub compiler_version: String,
 }
 
 impl Template {
@@ -87,9 +88,10 @@ impl Template {
         };
 
         Self {
-            spreadsheet: cell::RefCell::new(spreadsheet),
-            module: runtime.source_code.module.clone(),
+            compiler_version: env!("CARGO_PKG_VERSION").to_string(),
             functions: code_section_fns,
+            module: runtime.source_code.module.clone(),
+            spreadsheet: cell::RefCell::new(spreadsheet),
             variables: code_section_vars
                 .into_iter()
                 .chain(spreadsheet_vars)
@@ -143,6 +145,7 @@ impl Template {
         }
 
         Ok(Self {
+            compiler_version: self.compiler_version.clone(),
             functions: self.functions.clone(),
             module: self.module.clone(),
             spreadsheet: cell::RefCell::new(Spreadsheet { rows: evaled_rows }),
@@ -301,6 +304,7 @@ mod tests {
 
     fn build_template() -> Template {
         Template {
+            compiler_version: "v0.0.1".to_string(),
             functions: collections::HashMap::new(),
             module: "main".to_string(),
             spreadsheet: cell::RefCell::new(Spreadsheet::default()),

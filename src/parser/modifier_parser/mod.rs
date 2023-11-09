@@ -232,7 +232,7 @@ where
             "t" | "text" => self.text_modifier(),
             "v" | "var" => self.var_modifier(),
             "va" | "valign" => self.valign_modifier(),
-            _ => Err(modifier_name.into_parse_error("Unrecognized modifier")),
+            _ => Err(modifier_name.into_parse_error("Expected a modifier")),
         }
     }
 
