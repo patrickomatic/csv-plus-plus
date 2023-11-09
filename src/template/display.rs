@@ -1,7 +1,7 @@
 use super::Template;
 use std::fmt;
 
-impl fmt::Display for Template<'_> {
+impl fmt::Display for Template {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "# Variables")?;
         for ast in self.variables.values() {
@@ -20,26 +20,22 @@ impl fmt::Display for Template<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::TestFile;
-    use crate::{Runtime, Spreadsheet, Template};
+    use crate::{Spreadsheet, Template};
     use std::cell;
     use std::collections;
 
-    fn build_template(runtime: &Runtime) -> Template {
+    fn build_template() -> Template {
         Template {
-            csv_line_number: 5,
             functions: collections::HashMap::new(),
-            variables: collections::HashMap::new(),
-            runtime,
+            module: "main".to_string(),
             spreadsheet: cell::RefCell::new(Spreadsheet::default()),
+            variables: collections::HashMap::new(),
         }
     }
 
     #[test]
     fn display() {
-        let test_file = TestFile::new("csv", "");
-        let runtime = test_file.into();
-        let template_str = build_template(&runtime).to_string();
+        let template_str = build_template().to_string();
 
         assert!(template_str.contains("# Variables"));
         assert!(template_str.contains("# Functions"));

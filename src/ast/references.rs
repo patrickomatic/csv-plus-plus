@@ -1,5 +1,5 @@
 use super::{Ast, FunctionName, Node, VariableName};
-use crate::Template;
+use crate::{Runtime, Template};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct AstReferences {
@@ -16,11 +16,21 @@ impl AstReferences {
 impl Node {
     /// Does a depth first search on `ast` and parses out all identifiers that might be able to be
     /// eval()ed
-    pub(crate) fn extract_references(&self, template: &Template) -> AstReferences {
+    pub(crate) fn extract_references(
+        &self,
+        runtime: &Runtime,
+        template: &Template,
+    ) -> AstReferences {
         let mut fns = vec![];
         let mut vars = vec![];
 
-        extract_dfs(&Box::new(self.clone()), template, &mut fns, &mut vars);
+        extract_dfs(
+            runtime,
+            &Box::new(self.clone()),
+            template,
+            &mut fns,
+            &mut vars,
+        );
 
         AstReferences {
             functions: fns,
@@ -30,6 +40,7 @@ impl Node {
 }
 
 fn extract_dfs(
+    runtime: &Runtime,
     ast: &Ast,
     template: &Template,
     fns: &mut Vec<FunctionName>,
@@ -38,24 +49,24 @@ fn extract_dfs(
     match &**ast {
         // `FunctionCall`s might be user-defined but we always need to recurse on them
         Node::FunctionCall { name, args } => {
-            if template.is_function_defined(name) {
+            if template.is_function_defined(runtime, name) {
                 fns.push(name.to_string());
             }
 
             for arg in args {
-                extract_dfs(arg, template, fns, vars);
+                extract_dfs(runtime, arg, template, fns, vars);
             }
         }
 
         // `InfixFunctionCall`s can't be defined by the user but we need to recurse on the left and
         // right sides
         Node::InfixFunctionCall { left, right, .. } => {
-            extract_dfs(left, template, fns, vars);
-            extract_dfs(right, template, fns, vars);
+            extract_dfs(runtime, left, template, fns, vars);
+            extract_dfs(runtime, right, template, fns, vars);
         }
 
         // take any references corresponding do a defined variable
-        Node::Reference(r) if template.is_variable_defined(r) => vars.push(r.to_string()),
+        Node::Reference(r) if template.is_variable_defined(runtime, r) => vars.push(r.to_string()),
 
         // anything else is terminal
         _ => (),
@@ -78,7 +89,8 @@ mod tests {
         let test_file = TestFile::new("csv", "");
         let runtime = test_file.into();
 
-        let references = Node::extract_references(&Box::new(5.into()), &build_template(&runtime));
+        let references =
+            Node::extract_references(&Box::new(5.into()), &runtime, &build_template(&runtime));
 
         assert!(references.is_empty());
     }
@@ -101,6 +113,7 @@ mod tests {
                 "foo",
                 &[Node::reference("bar"), Node::reference("baz")],
             )),
+            &runtime,
             &template,
         );
 
@@ -127,6 +140,7 @@ mod tests {
                 "foo",
                 &[Node::reference("bar"), Node::reference("baz")],
             )),
+            &runtime,
             &template,
         );
 
@@ -154,6 +168,7 @@ mod tests {
                 "+",
                 Node::fn_call("bar", &[Node::reference("bar"), Node::reference("baz")]),
             )),
+            &runtime,
             &template,
         );
 
@@ -183,6 +198,7 @@ mod tests {
                     &[Node::reference("bar"), Node::reference("baz")],
                 )],
             )),
+            &runtime,
             &template,
         );
 
@@ -199,7 +215,8 @@ mod tests {
             .variables
             .insert("foo".to_string(), Box::new(Node::reference("return value")));
 
-        let references = Node::extract_references(&Box::new(Node::reference("foo")), &template);
+        let references =
+            Node::extract_references(&Box::new(Node::reference("foo")), &runtime, &template);
 
         assert_eq!(references.variables.len(), 1);
         assert_eq!(&references.variables[0], "foo");
@@ -222,6 +239,7 @@ mod tests {
                     &[Node::reference("bar"), Node::reference("baz")],
                 )],
             )),
+            &runtime,
             &template,
         );
 

@@ -174,7 +174,7 @@ impl<'a> GoogleSheets<'a> {
         ))
     }
 
-    async fn write_sheet(&self, template: &Template<'a>) -> Result<()> {
+    async fn write_sheet(&self, template: &Template) -> Result<()> {
         let hub = self.sheets_hub().await?;
         let existing_values = self.read_existing_cells(&hub).await?;
         let batch_update_request =
@@ -188,9 +188,7 @@ impl<'a> GoogleSheets<'a> {
             .map_err(|e| {
                 self.runtime.error(format!("{e:?}"));
                 self.runtime
-                    .output
-                    .clone()
-                    .into_error(format!("Error writing to Google Sheets: {e}"))
+                    .output_error(format!("Error writing to Google Sheets: {e}"))
             })
     }
 }

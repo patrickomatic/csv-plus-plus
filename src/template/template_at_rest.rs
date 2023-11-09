@@ -1,55 +1,39 @@
-use super::Template;
-use crate::ast::{Functions, Variables};
-use crate::{Result, SourceCode, Spreadsheet};
-use serde::{Deserialize, Serialize};
-use std::convert;
+use crate::{Error, Result, Runtime, Template};
+use std::fs;
 use std::path;
 
-/// A template stripped down to just it's serializable fields.  This is internal to this module and
-/// should be converted as we read from or write to the object files.
-#[derive(Deserialize, Serialize)]
-struct TemplateAtRest {
-    pub functions: Functions,
-    pub spreadsheet: Spreadsheet,
-    pub variables: Variables,
-    csv_line_number: usize,
-}
+impl Template {
+    pub fn write_object_file(&self, runtime: &Runtime) -> Result<path::PathBuf> {
+        runtime.progress("Writing object file");
 
-impl convert::From<&Template<'_>> for TemplateAtRest {
-    fn from(template: &Template) -> Self {
-        TemplateAtRest {
-            functions: template.functions.clone(),
-            spreadsheet: template.spreadsheet.borrow().clone(),
-            variables: template.variables.clone(),
-            csv_line_number: template.csv_line_number,
-        }
-    }
-}
+        let object_code_filename = runtime.source_code.object_code_filename();
 
-impl Template<'_> {
-    /* TODO: read and use object files for linking
-    fn from_template_at_rest(&self) -> Self {
-        todo!()
-    }
-    */
-
-    pub fn write_object_file(&self, source_code: &SourceCode) -> Result<path::PathBuf> {
-        let object_code_filename = source_code.object_code_filename();
-        /* TODO spend some more time thinking about what would be a good representation
-        // let mut s = flexbuffers::FlexbufferSerializer::new();
-
-        let template_at_rest = TemplateAtRest::from(self);
-        // let serializer = template_at_rest.serialize(&mut s).unwrap();
-        let file = fs::File::create(&object_code_filename).unwrap();
-        let writer = ciborium::into_writer(&template_at_rest, &file).unwrap();
-        fs::write(&object_code_filename, writer).map_err(|e| {
+        let object_file = fs::File::create(&object_code_filename).map_err(|e| {
+            runtime.error(format!("IO error: {e:?}"));
             Error::ObjectWriteError {
                 filename: object_code_filename.clone(),
-                message: format!("Error writing object file: {}", e),
+                message: format!("Error opening object code for writing: {e}"),
             }
         })?;
-        */
+
+        serde_cbor::to_writer(object_file, self).map_err(|e| {
+            runtime.error(format!("CBOR write error: {e:?}"));
+            Error::ObjectWriteError {
+                filename: object_code_filename.clone(),
+                message: format!("Error serializing object code for writing: {e}"),
+            }
+        })?;
 
         Ok(object_code_filename)
     }
+
+    // pub fn read_object_file(&self) ->
+}
+
+#[cfg(test)]
+mod tests {
+    // use super::*;
+
+    // #[test]
+    // fn write_object_file() {}
 }

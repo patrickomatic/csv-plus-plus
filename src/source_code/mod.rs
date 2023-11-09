@@ -24,12 +24,25 @@ pub type CharOffset = usize;
 #[derive(Debug)]
 pub struct SourceCode {
     pub filename: path::PathBuf,
-    pub lines: LineNumber,
-    pub length_of_code_section: LineNumber,
-    pub length_of_csv_section: LineNumber,
-    pub code_section: Option<String>,
-    pub csv_section: String,
-    pub original: String,
+    pub(crate) lines: LineNumber,
+    pub(crate) length_of_code_section: LineNumber,
+    pub(crate) length_of_csv_section: LineNumber,
+    pub(crate) code_section: Option<String>,
+    pub(crate) csv_section: String,
+    pub(crate) original: String,
+    pub(crate) module: String,
+}
+
+// TODO: make modules nestable?
+fn path_buf_to_module(filename: &path::Path) -> Result<String> {
+    if let Some(f) = filename.file_stem() {
+        Ok(f.to_string_lossy().to_string())
+    } else {
+        Err(Error::ObjectWriteError {
+            filename: filename.to_path_buf(),
+            message: "Unable to get base filename".to_string(),
+        })
+    }
 }
 
 impl SourceCode {
@@ -46,6 +59,7 @@ impl SourceCode {
 
     pub fn new<S: Into<String>>(input: S, filename: path::PathBuf) -> Result<SourceCode> {
         let str_input: String = input.into();
+        let module = path_buf_to_module(&filename)?;
 
         if let Some((code_section, csv_section)) = str_input.split_once(CODE_SECTION_SEPARATOR) {
             let csv_lines = csv_section.lines().count();
@@ -59,6 +73,7 @@ impl SourceCode {
                 csv_section: csv_section.to_string(),
                 code_section: Some(code_section.to_string()),
                 original: str_input.to_owned(),
+                module,
             })
         } else {
             let csv_lines = str_input.lines().count();
@@ -71,6 +86,7 @@ impl SourceCode {
                 csv_section: str_input.to_owned(),
                 code_section: None,
                 original: str_input.to_owned(),
+                module,
             })
         }
     }
@@ -141,6 +157,7 @@ mod tests {
             code_section: Some("\n".repeat(10)),
             csv_section: "foo,bar,baz".to_string(),
             original: "\n\n\n\n\n\n\n\n\n\n---\nfoo,bar,baz".to_string(),
+            module: "test".to_string(),
         }
     }
 
@@ -164,6 +181,34 @@ foo1,bar1,baz1
             7,
             source_code.csv_line_number(a1_notation::Address::new(1, 1))
         );
+    }
+
+    #[test]
+    fn module_just_file() {
+        let source_code = SourceCode::new(
+            "var := 1
+---
+foo,bar,baz
+            ",
+            path::PathBuf::from("test.csvpp"),
+        )
+        .unwrap();
+
+        assert_eq!(source_code.module, "test");
+    }
+
+    #[test]
+    fn module_just_path() {
+        let source_code = SourceCode::new(
+            "var := 1
+---
+foo,bar,baz
+            ",
+            path::PathBuf::from("/home/foo/projects/test.csvpp"),
+        )
+        .unwrap();
+
+        assert_eq!(source_code.module, "test");
     }
 
     #[test]

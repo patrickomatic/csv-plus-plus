@@ -10,7 +10,7 @@ use std::str::FromStr;
 pub(crate) struct BatchUpdateBuilder<'a> {
     existing_values: &'a ExistingValues<SheetsValue>,
     runtime: &'a Runtime,
-    template: &'a Template<'a>,
+    template: &'a Template,
 }
 
 impl<'a> BatchUpdateBuilder<'a> {
