@@ -8,8 +8,7 @@ impl fmt::Display for Row {
         } else {
             write!(
                 f,
-                "{}: |\t{}\t|",
-                self.row,
+                "|\t{}\t|",
                 &self
                     .cells
                     .iter()
@@ -33,27 +32,23 @@ mod tests {
             cells: vec![
                 Cell {
                     ast: None,
-                    position: a1_notation::Address::new(0, 0),
                     modifier: Modifier::default(),
                     value: "foo".to_string(),
                 },
                 Cell {
                     ast: None,
-                    position: a1_notation::Address::new(0, 1),
                     modifier: Modifier::default(),
                     value: "bar".to_string(),
                 },
                 Cell {
                     ast: None,
-                    position: a1_notation::Address::new(0, 2),
                     modifier: Modifier::default(),
                     value: "baz".to_string(),
                 },
             ],
             modifier: RowModifier::default(),
-            row: 0.into(),
         };
 
-        assert_eq!(row.to_string(), "1: |\tfoo\t|\tbar\t|\tbaz\t|");
+        assert_eq!(row.to_string(), "|\tfoo\t|\tbar\t|\tbaz\t|");
     }
 }

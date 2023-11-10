@@ -153,11 +153,9 @@ mod tests {
 
         let mut spreadsheet = Spreadsheet::default();
         spreadsheet.rows.push(Row {
-            row: 1.into(),
             modifier: RowModifier::default(),
             cells: vec![Cell {
                 ast: None,
-                position: a1_notation::Address::new(0, 1),
                 value: "Test".to_string(),
                 modifier: Modifier::default(),
             }],

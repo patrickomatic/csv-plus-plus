@@ -140,8 +140,8 @@ impl Template {
         let spreadsheet = self.spreadsheet.borrow();
 
         let mut evaled_rows = vec![];
-        for row in spreadsheet.rows.iter() {
-            evaled_rows.push(self.eval_row(runtime, row)?);
+        for (row_index, row) in spreadsheet.rows.iter().enumerate() {
+            evaled_rows.push(self.eval_row(runtime, row, row_index.into())?);
         }
 
         Ok(Self {
@@ -184,19 +184,19 @@ impl Template {
         Ok(Box::new(evaled_ast))
     }
 
-    fn eval_row(&self, runtime: &Runtime, row: &Row) -> EvalResult<Row> {
+    fn eval_row(&self, runtime: &Runtime, row: &Row, row_a1: a1_notation::Row) -> EvalResult<Row> {
         let mut cells = vec![];
 
-        for cell in row.cells.iter() {
+        for (cell_index, cell) in row.cells.iter().enumerate() {
+            let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
             let evaled_ast = if let Some(ast) = &cell.ast {
-                Some(self.eval_ast(runtime, ast, cell.position)?)
+                Some(self.eval_ast(runtime, ast, cell_a1)?)
             } else {
                 None
             };
 
             cells.push(Cell {
                 ast: evaled_ast,
-                position: cell.position,
                 modifier: cell.modifier.clone(),
                 value: cell.value.clone(),
             });
@@ -204,7 +204,6 @@ impl Template {
 
         Ok(Row {
             cells,
-            row: row.row,
             modifier: row.modifier.clone(),
         })
     }
@@ -362,16 +361,9 @@ mod tests {
         let test_file = TestFile::new("xlsx", "foo,bar,baz\n![[f=2]]foo,bar,baz\none,last,row\n");
         let runtime = test_file.into();
         let template = Template::compile(&runtime).unwrap();
-
         let spreadsheet = template.spreadsheet.borrow();
-        assert_eq!(spreadsheet.rows[0].row, 0.into());
-        assert_eq!(spreadsheet.rows[0].cells[0].position.row, 0.into());
-        assert_eq!(spreadsheet.rows[1].row, 1.into());
-        assert_eq!(spreadsheet.rows[1].cells[0].position.row, 1.into());
-        assert_eq!(spreadsheet.rows[2].row, 2.into());
-        assert_eq!(spreadsheet.rows[2].cells[0].position.row, 2.into());
-        assert_eq!(spreadsheet.rows[3].row, 3.into());
-        assert_eq!(spreadsheet.rows[3].cells[0].position.row, 3.into());
+
+        assert_eq!(spreadsheet.rows.len(), 4);
     }
 
     #[test]

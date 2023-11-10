@@ -43,10 +43,12 @@ impl<'a> Excel<'a> {
         let s = template.spreadsheet.borrow();
         let mut cell_validations = vec![];
 
-        for row in &s.rows {
-            for cell in &row.cells {
+        for (row_index, row) in s.rows.iter().enumerate() {
+            for (cell_index, cell) in row.cells.iter().enumerate() {
+                let position = a1_notation::Address::new(cell_index, row_index);
+
                 let merged_cell = merge_cell(
-                    &self.get_existing_cell(cell.position, worksheet),
+                    &self.get_existing_cell(position, worksheet),
                     Some(cell),
                     &self.runtime.options,
                 );
@@ -58,7 +60,7 @@ impl<'a> Excel<'a> {
 
                     // build a new value
                     MergeResult::New(cell) => {
-                        let e = worksheet.get_cell_mut(cell.position.to_string());
+                        let e = worksheet.get_cell_mut(position.to_string());
 
                         self.set_value(e, &cell);
 
@@ -67,11 +69,11 @@ impl<'a> Excel<'a> {
                         }
 
                         if let Some(n) = &cell.modifier.note {
-                            self.set_comment(worksheet, &cell, n);
+                            self.set_comment(worksheet, position, n);
                         }
 
                         if let Some(data_validation) = cell.modifier.data_validation {
-                            cell_validations.push(CellValidation(cell.position, data_validation));
+                            cell_validations.push(CellValidation(position, data_validation));
                         }
                     }
                 }
@@ -98,7 +100,12 @@ impl<'a> Excel<'a> {
         worksheet.set_data_validations(validations);
     }
 
-    fn set_comment(&self, worksheet: &mut u::Worksheet, cell: &Cell, note: &str) {
+    fn set_comment(
+        &self,
+        worksheet: &mut u::Worksheet,
+        position: a1_notation::Address,
+        note: &str,
+    ) {
         let mut comment = u::Comment::default();
         comment.set_author("csvpp");
 
@@ -106,8 +113,8 @@ impl<'a> Excel<'a> {
         rt.set_text(note);
 
         let coord = comment.get_coordinate_mut();
-        coord.set_col_num(cell.position.column.x as u32);
-        coord.set_row_num(cell.position.row.y as u32);
+        coord.set_col_num(position.column.x as u32);
+        coord.set_row_num(position.row.y as u32);
 
         worksheet.add_comments(comment);
     }

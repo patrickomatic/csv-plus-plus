@@ -8,6 +8,7 @@ use a1_notation::{Address, Row};
 
 mod validate;
 
+// XXX rename to CellParser
 pub(crate) struct ModifierParser<'a, 'b: 'a> {
     /// We re-use the lexer in some contexts so take a reference to an existing one (with it's own
     /// lifetime)

@@ -9,7 +9,6 @@ type CsvRowResult = std::result::Result<csv::StringRecord, csv::Error>;
 pub struct Row {
     pub cells: Vec<Cell>,
     pub modifier: RowModifier,
-    pub row: a1_notation::Row,
 }
 
 impl Row {
@@ -41,18 +40,16 @@ impl Row {
         Ok(Self {
             cells,
             modifier: row_modifier,
-            row: row_index.into(),
         })
     }
 
     pub(crate) fn clone_to_row(&self, new_row: a1_notation::Row) -> Self {
         Self {
-            row: new_row,
             modifier: RowModifier {
-                fill: self.modifier.fill.map(|e| e.clone_to_row(new_row)),
+                fill: self.modifier.fill.map(|f| f.clone_to_row(new_row)),
                 ..self.modifier.clone()
             },
-            cells: self.cells.iter().map(|c| c.clone_to_row(new_row)).collect(),
+            cells: self.cells.clone(),
         }
     }
 }
@@ -70,10 +67,8 @@ mod tests {
     #[test]
     fn clone_to_row() {
         let row = Row {
-            row: 22.into(),
             cells: vec![Cell {
                 ast: None,
-                position: a1_notation::Address::new(0, 22),
                 modifier: Modifier::default(),
                 value: "foo".to_string(),
             }],
@@ -86,10 +81,8 @@ mod tests {
         assert_eq!(
             row.clone_to_row(5.into()),
             Row {
-                row: 5.into(),
                 cells: vec![Cell {
                     ast: None,
-                    position: a1_notation::Address::new(0, 5),
                     modifier: Modifier::default(),
                     value: "foo".to_string(),
                 }],

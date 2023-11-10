@@ -17,14 +17,12 @@ impl fmt::Display for Cell {
 mod tests {
     use crate::ast::*;
     use crate::*;
-    use a1_notation::Address;
 
     #[test]
     fn display_function_call() {
         let cell = Cell {
             ast: Some(Box::new(Node::fn_call("foo", &[1.into(), 2.into()]))),
             value: "foo".to_string(),
-            position: Address::new(0, 4),
             modifier: Modifier::default(),
         };
 
@@ -36,7 +34,6 @@ mod tests {
         let cell = Cell {
             ast: Some(Box::new(Node::infix_fn_call(1.into(), "*", 2.into()))),
             value: "foo".to_string(),
-            position: Address::new(0, 4),
             modifier: Modifier::default(),
         };
 
@@ -48,7 +45,6 @@ mod tests {
         let cell = Cell {
             ast: Some(Box::new(1.into())),
             value: "foo".to_string(),
-            position: Address::new(0, 4),
             modifier: Modifier::default(),
         };
 

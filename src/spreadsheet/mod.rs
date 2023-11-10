@@ -38,49 +38,50 @@ impl Spreadsheet {
     pub(crate) fn variables(&self) -> Variables {
         let mut vars = collections::HashMap::new();
 
-        for row in &self.rows {
+        for (row_index, row) in self.rows.iter().enumerate() {
+            let row_a1: a1_notation::Row = row_index.into();
+
             // does the row itself have a var?
             if let Some(var_id) = &row.modifier.var {
                 let reference = if let Some(scope) = row.modifier.fill {
                     // if there's also an fill it's relative to that
                     Node::Variable {
                         name: var_id.clone(),
-                        value: VariableValue::RowRelative {
-                            scope,
-                            row: row.row,
-                        },
+                        value: VariableValue::RowRelative { scope, row: row_a1 },
                     }
                 } else {
                     // otherwise it's just relative to the single row where it was defined
                     Node::Variable {
                         name: var_id.clone(),
-                        value: VariableValue::Row(row.row),
+                        value: VariableValue::Row(row_a1),
                     }
                 };
 
                 vars.insert(var_id.to_owned(), Box::new(reference));
             };
 
-            row.cells.iter().for_each(|c| {
-                if let Some(var_id) = &c.modifier.var {
+            for (cell_index, cell) in row.cells.iter().enumerate() {
+                let cell_a1 = a1_notation::Address::new(cell_index, row_index);
+
+                if let Some(var_id) = &cell.modifier.var {
                     let reference = if let Some(scope) = row.modifier.fill {
                         Node::Variable {
                             name: var_id.clone(),
                             value: VariableValue::ColumnRelative {
                                 scope,
-                                column: c.position.column,
+                                column: cell_a1.column,
                             },
                         }
                     } else {
                         Node::Variable {
                             name: var_id.clone(),
-                            value: VariableValue::Absolute(c.position),
+                            value: VariableValue::Absolute(cell_a1),
                         }
                     };
 
                     vars.insert(var_id.to_owned(), Box::new(reference));
                 }
-            });
+            }
         }
 
         vars
@@ -118,14 +119,6 @@ mod tests {
         // each row has 3 cells
         assert_eq!(spreadsheet.rows[0].cells.len(), 3);
         assert_eq!(spreadsheet.rows[1].cells.len(), 3);
-
-        // the cells have the correct positions
-        assert_eq!(spreadsheet.rows[0].cells[0].position.to_string(), "A1");
-        assert_eq!(spreadsheet.rows[0].cells[1].position.to_string(), "B1");
-        assert_eq!(spreadsheet.rows[0].cells[2].position.to_string(), "C1");
-        assert_eq!(spreadsheet.rows[1].cells[0].position.to_string(), "A2");
-        assert_eq!(spreadsheet.rows[1].cells[1].position.to_string(), "B2");
-        assert_eq!(spreadsheet.rows[1].cells[2].position.to_string(), "C2");
 
         // each row has a parsed value
         assert_eq!(spreadsheet.rows[0].cells[0].value, "foo");
@@ -198,12 +191,10 @@ mod tests {
     fn variables_unscoped() {
         let spreadsheet = Spreadsheet {
             rows: vec![Row {
-                row: 0.into(),
                 modifier: RowModifier::default(),
                 cells: vec![
                     Cell {
                         ast: None,
-                        position: Address::new(0, 0),
                         modifier: Modifier {
                             var: Some("foo".to_string()),
                             ..Default::default()
@@ -212,7 +203,6 @@ mod tests {
                     },
                     Cell {
                         ast: None,
-                        position: Address::new(1, 1),
                         modifier: Modifier {
                             var: Some("bar".to_string()),
                             ..Default::default()
@@ -230,7 +220,7 @@ mod tests {
         );
         assert_eq!(
             **variables.get("bar").unwrap(),
-            Node::var("bar", VariableValue::Absolute(Address::new(1, 1)))
+            Node::var("bar", VariableValue::Absolute(Address::new(1, 0)))
         );
     }
 
@@ -239,14 +229,12 @@ mod tests {
         let spreadsheet = Spreadsheet {
             rows: vec![
                 Row {
-                    row: 0.into(),
                     modifier: RowModifier {
                         fill: Some(Fill::new(0, Some(10))),
                         ..Default::default()
                     },
                     cells: vec![Cell {
                         ast: None,
-                        position: (0, 0).into(),
                         modifier: Modifier {
                             var: Some("foo".to_string()),
                             ..Default::default()
@@ -255,14 +243,12 @@ mod tests {
                     }],
                 },
                 Row {
-                    row: 1.into(),
                     modifier: RowModifier {
                         fill: Some(Fill::new(10, Some(100))),
                         ..Default::default()
                     },
                     cells: vec![Cell {
                         ast: None,
-                        position: (1, 1).into(),
                         modifier: Modifier {
                             var: Some("bar".to_string()),
                             ..Default::default()
@@ -296,7 +282,7 @@ mod tests {
                         amount: Some(100),
                         start_row: 10.into()
                     },
-                    column: 1.into(),
+                    column: 0.into(),
                 }
             )
         );
@@ -306,7 +292,6 @@ mod tests {
     fn widest_row() {
         let cell = Cell {
             ast: None,
-            position: Address::new(0, 0),
             modifier: Modifier::default(),
             value: "foo".to_string(),
         };
@@ -314,17 +299,14 @@ mod tests {
             rows: vec![
                 Row {
                     cells: vec![cell.clone()],
-                    row: 0.into(),
                     modifier: RowModifier::default(),
                 },
                 Row {
                     cells: vec![cell.clone(), cell.clone()],
-                    row: 1.into(),
                     modifier: RowModifier::default(),
                 },
                 Row {
                     cells: vec![cell.clone(), cell.clone(), cell.clone()],
-                    row: 2.into(),
                     modifier: RowModifier::default(),
                 },
             ],

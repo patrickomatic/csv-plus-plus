@@ -85,7 +85,6 @@ fn merge_cell<V: Clone>(
 mod tests {
     use super::*;
     use crate::Modifier;
-    use a1_notation::Address;
 
     fn build_options(overwrite_values: bool) -> Options {
         Options {
@@ -104,7 +103,6 @@ mod tests {
         ];
         let new = vec![Cell {
             ast: None,
-            position: Address::new(0, 0),
             modifier: Modifier::default(),
             value: "new value".to_string(),
         }];
@@ -129,7 +127,6 @@ mod tests {
 
         let cell = Cell {
             ast: None,
-            position: Address::new(0, 0),
             modifier: Modifier::default(),
             value: "new value".to_string(),
         };
@@ -155,7 +152,6 @@ mod tests {
 
         let cell = Cell {
             ast: None,
-            position: Address::new(0, 0),
             modifier: Modifier::default(),
             value: "new value".to_string(),
         };
