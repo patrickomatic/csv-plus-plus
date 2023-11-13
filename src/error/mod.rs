@@ -56,7 +56,7 @@ pub enum Error {
     InitError(String),
 
     /// An error encountered while serializing the compiled template to an object file.
-    ObjectWriteError {
+    ObjectCodeError {
         filename: path::PathBuf,
         message: String,
     },

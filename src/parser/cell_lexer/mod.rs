@@ -269,7 +269,6 @@ impl<'a> CellLexer<'a> {
         }
     }
 
-    #[allow(clippy::explicit_counter_loop)]
     fn take_single_quoted_string(&mut self) -> ParseResult<TokenMatch> {
         let mut escape_mode = false;
         let mut matched = "".to_string();

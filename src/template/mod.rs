@@ -18,10 +18,12 @@ use crate::parser::code_section_parser::{CodeSection, CodeSectionParser};
 use crate::{Cell, Result, Row, Runtime, Spreadsheet};
 use a1_notation::{Address, A1};
 use std::cell;
+use std::cmp;
 use std::collections;
+use std::fs;
+use std::path;
 
 mod display;
-mod template_at_rest;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct Template {
@@ -34,21 +36,37 @@ pub struct Template {
 
 impl Template {
     pub fn compile(runtime: &Runtime) -> Result<Self> {
-        let spreadsheet = Spreadsheet::parse(runtime)?;
-
-        let code_section = if let Some(code_section_source) = &runtime.source_code.code_section {
-            Some(CodeSectionParser::parse(code_section_source, runtime)?)
+        Ok(if let Some(t) = Self::read_from_object_file(runtime)? {
+            runtime.progress("Read template from object file (not compiling)");
+            runtime.info(&t);
+            t
         } else {
-            None
-        };
+            runtime.progress("Compiling template from source code");
 
-        let compiled_template = Self::new(spreadsheet, code_section, runtime)
-            .eval(runtime)
-            .map_err(|e| runtime.source_code.eval_error(&e.message, e.position))?;
+            let spreadsheet = Spreadsheet::parse(runtime)?;
 
-        runtime.info(&compiled_template);
+            let code_section = if let Some(code_section_source) = &runtime.source_code.code_section
+            {
+                Some(CodeSectionParser::parse(code_section_source, runtime)?)
+            } else {
+                None
+            };
 
-        Ok(compiled_template)
+            let compiled_template = Self::new(spreadsheet, code_section, runtime)
+                .eval(runtime)
+                .map_err(|e| runtime.source_code.eval_error(&e.message, e.position))?;
+
+            runtime.progress("Compiled template");
+            runtime.info(&compiled_template);
+
+            runtime.progress(format!(
+                "Writing object file {}",
+                runtime.source_code.object_code_filename().display()
+            ));
+            compiled_template.write_object_file(runtime)?;
+
+            compiled_template
+        })
     }
 
     /// Given a parsed code section and spreadsheet section, this function will assemble all of the
@@ -100,6 +118,84 @@ impl Template {
         }
     }
 
+    pub(crate) fn write_object_file(&self, runtime: &Runtime) -> Result<path::PathBuf> {
+        runtime.progress("Writing object file");
+
+        let object_code_filename = runtime.source_code.object_code_filename();
+
+        let object_file = fs::File::create(&object_code_filename).map_err(|e| {
+            runtime.error(format!("IO error: {e:?}"));
+            runtime
+                .source_code
+                .object_code_error(format!("Error opening object code for writing: {e}"))
+        })?;
+
+        serde_cbor::to_writer(object_file, self).map_err(|e| {
+            runtime.error(format!("CBOR write error: {e:?}"));
+            runtime
+                .source_code
+                .object_code_error(format!("Error serializing object code for writing: {e}"))
+        })?;
+
+        Ok(object_code_filename)
+    }
+
+    fn read_from_object_file(runtime: &Runtime) -> Result<Option<Self>> {
+        let sc = &runtime.source_code;
+        let obj_file = sc.object_code_filename();
+
+        // does the object code file even exist?
+        if !obj_file.exists() {
+            return Ok(None);
+        }
+
+        let obj_file_modified = fs::metadata(&obj_file)
+            .and_then(|s| s.modified())
+            .map_err(|e| sc.object_code_error(format!("Unable to stat object code: {e}")))?;
+        let source_file_modified = fs::metadata(&runtime.source_code.filename)
+            .and_then(|s| s.modified())
+            .map_err(|e| sc.object_code_error(format!("Unable to stat source code: {e}")))?;
+
+        // is the object code more recent than the source? (i.e., no changes since it was last
+        // written)
+        if source_file_modified > obj_file_modified {
+            return Ok(None);
+        }
+
+        let obj_file_reader = fs::File::open(&obj_file)
+            .map_err(|e| sc.object_code_error(format!("Error opening object code: {e}")))?;
+
+        let Ok(loaded_template): std::result::Result<Self, serde_cbor::Error> =
+            serde_cbor::from_reader(obj_file_reader)
+        else {
+            // if we fail to load the old object file just warn about it and move on.  for whatever
+            // reason (written by an old version) it's not compatible with our current version
+            runtime.warn(format!(
+                "Error loading object code from {}.  Was it written with an old version of csv++?",
+                obj_file.display()
+            ));
+            return Ok(None);
+        };
+
+        let current_version = env!("CARGO_PKG_VERSION").to_string();
+        let this_version = semver::Version::parse(&current_version).map_err(|e| {
+            sc.object_code_error(format!("Unable to parse version `{current_version}`: {e}"))
+        })?;
+        let loaded_version =
+            semver::Version::parse(&loaded_template.compiler_version).map_err(|e| {
+                sc.object_code_error(format!(
+                    "Unable to parse loaded template version `{}`: {e}",
+                    &loaded_template.compiler_version
+                ))
+            })?;
+
+        // if the version is less than ours, don't use it and recompile instead.  otherwise we can
+        // trust that it's ok to use
+        Ok(match this_version.cmp(&loaded_version) {
+            cmp::Ordering::Equal | cmp::Ordering::Greater => Some(loaded_template),
+            cmp::Ordering::Less => None,
+        })
+    }
     fn eval(self, runtime: &Runtime) -> EvalResult<Self> {
         runtime.progress("Evaluating all cells");
         self.eval_fills().eval_cells(runtime)

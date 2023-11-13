@@ -66,8 +66,8 @@ csv++ with `GOOGLE_APPLICATION_CREDENTIALS` or the `--google-account-credentials
                 writeln!(f, "{message}")
             }
 
-            Self::ObjectWriteError { filename, message } => {
-                writeln!(f, "Error writing object file {}", filename.display())?;
+            Self::ObjectCodeError { filename, message } => {
+                writeln!(f, "Error updating object file {}", filename.display())?;
                 writeln!(f, "{message}")
             }
 
@@ -167,14 +167,14 @@ foo
 
     #[test]
     fn display_object_write_error() {
-        let message = Error::ObjectWriteError {
+        let message = Error::ObjectCodeError {
             filename: path::PathBuf::from("bar.xlsx"),
             message: "foo".to_string(),
         };
 
         assert_eq!(
             message.to_string(),
-            "Error writing object file bar.xlsx\nfoo\n",
+            "Error updating object file bar.xlsx\nfoo\n",
         );
     }
 

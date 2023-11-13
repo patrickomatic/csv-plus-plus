@@ -38,7 +38,7 @@ fn path_buf_to_module(filename: &path::Path) -> Result<String> {
     if let Some(f) = filename.file_stem() {
         Ok(f.to_string_lossy().to_string())
     } else {
-        Err(Error::ObjectWriteError {
+        Err(Error::ObjectCodeError {
             filename: filename.to_path_buf(),
             message: "Unable to get base filename".to_string(),
         })

@@ -589,6 +589,7 @@ dependencies = [
  "home",
  "rand",
  "regex",
+ "semver",
  "serde",
  "serde_cbor",
  "serde_json",
