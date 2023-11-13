@@ -4,6 +4,7 @@
 
 * Using object code files (.csvpo) during compilation
 * Code coverage reporting
+* Tooling to run benchmarks
 
 ### **Breaking (Language) Changes**
 

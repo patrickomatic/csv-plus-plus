@@ -1,0 +1,15 @@
+## benchmark.csvpp
+# 
+# A file which has a single, infinitely-expanding fill with a deep nesting of variable resolution
+#
+a := 1
+b := a * 5
+
+fn c(x)
+  b * x + a
+
+fn d(x)
+  c(x) + b
+
+---
+![[f / var=row_var]][[var=first_cell]] ,      ,[[t=bold / t=underline / halign=right / valign=center]] =d(first_cell) , =d(row_var),
