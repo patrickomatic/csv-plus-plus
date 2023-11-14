@@ -80,8 +80,8 @@ impl TestSourceCode {
 #[allow(unused_must_use)]
 impl Drop for TestSourceCode {
     fn drop(&mut self) {
+        fs::remove_file(self.object_code_filename());
         fs::remove_file(&self.input_file);
         fs::remove_file(&self.output_file);
-        fs::remove_file(self.object_code_filename());
     }
 }
