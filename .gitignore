@@ -1,5 +1,6 @@
 /target/
-release/
+release/*
+!release/Makefile
 
 playground/**.csv
 playground/**.xlsx
