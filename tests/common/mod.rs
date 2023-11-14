@@ -56,6 +56,12 @@ impl Setup {
         }
     }
 
+    fn object_code_filename(&self) -> path::PathBuf {
+        let mut f = self.input_path.clone();
+        f.set_extension("csvpo");
+        f
+    }
+
     // this is used by tests but the linter doesn't seem to know that
     #[allow(dead_code)]
     pub(crate) fn read_output(&self) -> String {
@@ -68,10 +74,10 @@ impl Setup {
 #[allow(unused_must_use)]
 impl Drop for Setup {
     fn drop(&mut self) {
+        fs::remove_file(self.object_code_filename());
         if self.cleanup_input {
             fs::remove_file(&self.input_path);
         }
-
         fs::remove_file(&self.output_path);
     }
 }

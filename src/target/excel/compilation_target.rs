@@ -35,12 +35,12 @@ impl CompilationTarget for Excel<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::TestFile;
+    use crate::test_utils::*;
 
     #[test]
     fn write() {
-        let test_file = TestFile::new("xlsx", "foo,bar,baz");
-        let runtime = test_file.clone().into();
+        let test_file = &TestSourceCode::new("xlsx", "foo,bar,baz");
+        let runtime = test_file.into();
         let target = Excel::new(&runtime, test_file.output_file.clone());
         let template = Template::compile(&runtime).unwrap();
 

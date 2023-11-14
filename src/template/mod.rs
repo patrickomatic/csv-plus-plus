@@ -393,7 +393,7 @@ impl Template {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::TestFile;
+    use crate::test_utils::TestSourceCode;
     use std::cell;
 
     fn build_template() -> Template {
@@ -408,7 +408,7 @@ mod tests {
 
     #[test]
     fn compile_empty() {
-        let test_file = TestFile::new("csv", "");
+        let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
         let template = Template::compile(&runtime);
 
@@ -417,7 +417,7 @@ mod tests {
 
     #[test]
     fn compile_simple() {
-        let test_file = TestFile::new("csv", "---\nfoo,bar,baz\n1,2,3");
+        let test_file = &TestSourceCode::new("csv", "---\nfoo,bar,baz\n1,2,3");
         let runtime = test_file.into();
         let template = Template::compile(&runtime).unwrap();
 
@@ -426,7 +426,7 @@ mod tests {
 
     #[test]
     fn compile_with_fill_finite() {
-        let test_file = TestFile::new("xlsx", "![[fill=10]]foo,bar,baz");
+        let test_file = &TestSourceCode::new("xlsx", "![[fill=10]]foo,bar,baz");
         let runtime = test_file.into();
         let template = Template::compile(&runtime).unwrap();
 
@@ -435,8 +435,10 @@ mod tests {
 
     #[test]
     fn compile_with_fill_infinite() {
-        let test_file = TestFile::new("xlsx", "![[fill]]foo,bar,baz");
+        let test_file = &TestSourceCode::new("xlsx", "![[fill]]foo,bar,baz");
+        println!("runtime turning inoto");
         let runtime = test_file.into();
+        println!("runtime turned inoto");
         let template = Template::compile(&runtime).unwrap();
 
         assert_eq!(template.spreadsheet.borrow().rows.len(), 1000);
@@ -444,7 +446,7 @@ mod tests {
 
     #[test]
     fn compile_with_fill_multiple() {
-        let test_file = TestFile::new("xlsx", "![[f=10]]foo,bar,baz\n![[f]]1,2,3");
+        let test_file = &TestSourceCode::new("xlsx", "![[f=10]]foo,bar,baz\n![[f]]1,2,3");
         let runtime = test_file.into();
         let template = Template::compile(&runtime).unwrap();
 
@@ -453,7 +455,8 @@ mod tests {
 
     #[test]
     fn compile_with_fill_and_rows() {
-        let test_file = TestFile::new("xlsx", "foo,bar,baz\n![[f=2]]foo,bar,baz\none,last,row\n");
+        let test_file =
+            &TestSourceCode::new("xlsx", "foo,bar,baz\n![[f=2]]foo,bar,baz\none,last,row\n");
         let runtime = test_file.into();
         let template = Template::compile(&runtime).unwrap();
         let spreadsheet = template.spreadsheet.borrow();
@@ -463,7 +466,7 @@ mod tests {
 
     #[test]
     fn is_function_defined_true() {
-        let test_file = TestFile::new("csv", "");
+        let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
         let mut template = build_template();
         template
@@ -475,7 +478,7 @@ mod tests {
 
     #[test]
     fn is_function_defined_builtin_true() {
-        let test_file = TestFile::new("csv", "");
+        let test_file = &TestSourceCode::new("csv", "");
         let mut runtime: Runtime = test_file.into();
         runtime.builtin_functions.insert(
             "foo".to_string(),
@@ -491,7 +494,7 @@ mod tests {
 
     #[test]
     fn is_variable_defined_true() {
-        let test_file = TestFile::new("csv", "");
+        let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
         let mut template = build_template();
         template
@@ -503,7 +506,7 @@ mod tests {
 
     #[test]
     fn is_variable_defined_builtin_true() {
-        let test_file = TestFile::new("csv", "");
+        let test_file = &TestSourceCode::new("csv", "");
         let mut runtime: Runtime = test_file.into();
         runtime.builtin_variables.insert(
             "foo".to_string(),
@@ -519,7 +522,7 @@ mod tests {
 
     #[test]
     fn new_with_code_section() {
-        let test_file = TestFile::new("csv", "");
+        let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
         let mut functions = collections::HashMap::new();
         functions.insert("foo".to_string(), Box::new(1.into()));
@@ -537,7 +540,7 @@ mod tests {
 
     #[test]
     fn new_without_code_section() {
-        let test_file = TestFile::new("csv", "");
+        let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
         let template = Template::new(Spreadsheet::default(), None, &runtime);
 

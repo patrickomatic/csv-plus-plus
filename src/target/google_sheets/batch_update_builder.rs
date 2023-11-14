@@ -143,13 +143,12 @@ impl<'a> BatchUpdateBuilder<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::TestFile;
+    use crate::test_utils::*;
     use crate::*;
 
     #[test]
     fn build() {
-        let test_file = TestFile::new("csv", "");
-        let runtime = test_file.into();
+        let runtime = build_runtime();
 
         let mut spreadsheet = Spreadsheet::default();
         spreadsheet.rows.push(Row {

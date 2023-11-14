@@ -74,12 +74,12 @@ impl Cell {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::TestFile;
+    use crate::test_utils::*;
     use crate::*;
 
     #[test]
     fn parse_no_ast() {
-        let test_file = TestFile::new("csv", "foo,bar,baz\n1,2,3\n");
+        let test_file = &TestSourceCode::new("csv", "foo,bar,baz\n1,2,3\n");
         let source_code = test_file.into();
         let cell =
             Cell::parse("foo", Address::new(0, 4), &mut Row::default(), &source_code).unwrap();
@@ -90,7 +90,7 @@ mod tests {
 
     #[test]
     fn parse_ast() {
-        let test_file = TestFile::new("csv", "foo,bar,baz\n1,2,3\n");
+        let test_file = &TestSourceCode::new("csv", "foo,bar,baz\n1,2,3\n");
         let source_code = test_file.into();
         let cell = Cell::parse(
             "=1 + foo",

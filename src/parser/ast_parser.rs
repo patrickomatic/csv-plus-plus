@@ -207,7 +207,7 @@ mod tests {
     use crate::test_utils::*;
 
     fn test_parse(input: &str) -> Ast {
-        let runtime: Runtime = TestFile::new("xlsx", input).into();
+        let runtime: Runtime = (&TestSourceCode::new("xlsx", input)).into();
         AstParser::parse(input, false, &runtime).unwrap()
     }
 
@@ -286,7 +286,7 @@ mod tests {
 
     #[test]
     fn parse_key_value_str() {
-        let runtime: Runtime = TestFile::new("csv", "foo,bar").into();
+        let runtime: Runtime = (&TestSourceCode::new("csv", "foo,bar")).into();
         let parsed_vars =
             AstParser::parse_key_value_str(&["foo=bar".to_string(), "baz=1".to_string()], &runtime)
                 .unwrap();
@@ -296,7 +296,7 @@ mod tests {
 
     #[test]
     fn parse_key_value_str_empty() {
-        let runtime: Runtime = TestFile::new("csv", "foo,bar").into();
+        let runtime: Runtime = (&TestSourceCode::new("csv", "foo,bar")).into();
         let parsed_vars = AstParser::parse_key_value_str(&[], &runtime).unwrap();
 
         assert_eq!(parsed_vars.len(), 0);

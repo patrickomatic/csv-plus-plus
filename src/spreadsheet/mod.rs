@@ -103,7 +103,7 @@ mod tests {
     use a1_notation::Address;
 
     fn build_runtime(input: &str) -> Runtime {
-        TestFile::new("csv", input).into()
+        (&TestSourceCode::new("csv", input)).into()
     }
 
     #[test]

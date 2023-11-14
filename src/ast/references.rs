@@ -86,7 +86,7 @@ mod tests {
 
     #[test]
     fn extract_references_empty() {
-        let test_file = TestFile::new("csv", "");
+        let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
 
         let references =
@@ -97,7 +97,7 @@ mod tests {
 
     #[test]
     fn extract_references_fns_builtin() {
-        let test_file = TestFile::new("csv", "");
+        let test_file = &TestSourceCode::new("csv", "");
         let mut runtime: Runtime = test_file.into();
         runtime.builtin_functions.insert(
             "foo".to_string(),
@@ -123,7 +123,7 @@ mod tests {
 
     #[test]
     fn extract_references_fns_user_defined() {
-        let test_file = TestFile::new("csv", "");
+        let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
         let mut template = build_template(&runtime);
         template.functions.insert(
@@ -150,7 +150,7 @@ mod tests {
 
     #[test]
     fn extract_references_fns_infix() {
-        let test_file = TestFile::new("csv", "");
+        let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
         let mut template = build_template(&runtime);
         template.functions.insert(
@@ -178,7 +178,7 @@ mod tests {
 
     #[test]
     fn extract_references_fns_nested() {
-        let test_file = TestFile::new("csv", "");
+        let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
         let mut template = build_template(&runtime);
         template.functions.insert(
@@ -208,7 +208,7 @@ mod tests {
 
     #[test]
     fn extract_references_vars() {
-        let test_file = TestFile::new("csv", "");
+        let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
         let mut template = build_template(&runtime);
         template
@@ -224,7 +224,7 @@ mod tests {
 
     #[test]
     fn extract_references_vars_nested() {
-        let test_file = TestFile::new("csv", "");
+        let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
         let mut template = build_template(&runtime);
         template

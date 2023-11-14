@@ -64,14 +64,14 @@ mod tests {
 
     #[test]
     fn write() {
-        let test_file = TestFile::new(
+        let test_file = &TestSourceCode::new(
             "csv",
             "foo,bar,baz
 one,,two,,three
 ",
         );
         let output_file = test_file.output_file.clone();
-        let runtime: Runtime = test_file.clone().into();
+        let runtime: Runtime = test_file.into();
         let template = Template::compile(&runtime).unwrap();
         let csv = Csv::new(&runtime, output_file);
 

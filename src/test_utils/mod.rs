@@ -7,7 +7,10 @@ use crate::{DateTime, Runtime, SourceCode};
 use std::sync;
 
 mod test_file;
+mod test_source_code;
+
 pub(crate) use test_file::TestFile;
+pub(crate) use test_source_code::TestSourceCode;
 
 pub(crate) fn build_ast_token_match<'a>(
     str_match: &'a str,
@@ -39,10 +42,10 @@ pub(crate) fn build_date_time_ymd(y: i32, m: u32, d: u32) -> DateTime {
 
 /// If the test just needs a runtime but doesn't care about it at all
 pub(crate) fn build_runtime() -> Runtime {
-    TestFile::new("foo.xlsx", "foo,bar,baz").into()
+    (&TestSourceCode::new("foo.xlsx", "foo,bar,baz")).into()
 }
 
 /// If the test just needs a source code but doesn't care about it at all
 pub(crate) fn build_source_code() -> SourceCode {
-    TestFile::new("bar.xlsx", "foo,bar,baz").into()
+    (&TestSourceCode::new("bar.xlsx", "foo,bar,baz")).into()
 }

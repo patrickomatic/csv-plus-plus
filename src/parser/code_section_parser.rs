@@ -161,7 +161,7 @@ mod tests {
     use crate::test_utils::*;
 
     fn test(input: &str) -> CodeSection {
-        let runtime: Runtime = TestFile::new("csv", input).into();
+        let runtime: Runtime = (&TestSourceCode::new("csv", input)).into();
         CodeSectionParser::parse(input, &runtime).unwrap()
     }
 

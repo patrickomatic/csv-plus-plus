@@ -79,7 +79,7 @@ mod tests {
 
     #[test]
     fn read_exists() {
-        let test_file = TestFile::new(
+        let test_file = TestSourceCode::new(
             "csv",
             "foo,bar,baz
 one,,two,,three

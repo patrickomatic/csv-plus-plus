@@ -145,7 +145,7 @@ impl SourceCode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::TestFile;
+    use crate::test_utils::*;
     use std::path;
 
     fn build_source_code() -> SourceCode {
@@ -292,7 +292,7 @@ foo1,bar1,baz1
 
     #[test]
     fn open_code_section() {
-        let s = TestFile::new(
+        let s = TestSourceCode::new(
             "csv",
             "
 foo := 1

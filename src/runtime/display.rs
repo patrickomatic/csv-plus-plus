@@ -14,12 +14,12 @@ impl fmt::Display for Runtime {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::TestFile;
+    use crate::test_utils::*;
     use crate::*;
 
     #[test]
     fn display() {
-        let test_file = TestFile::new("csv", "foo,bar,baz");
+        let test_file = TestSourceCode::new("csv", "foo,bar,baz");
         let cli_args = CliArgs {
             input_filename: test_file.input_file.clone(),
             google_sheet_id: Some("abc123".to_string()),

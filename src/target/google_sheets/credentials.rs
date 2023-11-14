@@ -98,7 +98,7 @@ mod tests {
     fn is_authorized_user_true() {
         let test_file = TestFile::new("json", "{\"type\": \"authorized_user\"}");
         let creds = Credentials {
-            file: test_file.input_file.clone(),
+            file: test_file.0.clone(),
         };
         assert!(creds.is_authorized_user().unwrap());
     }
@@ -107,7 +107,7 @@ mod tests {
     fn is_authorized_user_false() {
         let test_file = TestFile::new("json", "{}");
         let creds = Credentials {
-            file: test_file.input_file.clone(),
+            file: test_file.0.clone(),
         };
         assert!(!creds.is_authorized_user().unwrap());
     }
@@ -116,7 +116,7 @@ mod tests {
     fn is_service_account_true() {
         let test_file = TestFile::new("json", "{\"type\": \"service_account\"}");
         let creds = Credentials {
-            file: test_file.input_file.clone(),
+            file: test_file.0.clone(),
         };
         assert!(creds.is_service_account().unwrap());
     }
@@ -125,7 +125,7 @@ mod tests {
     fn is_service_account_false() {
         let test_file = TestFile::new("json", "{}");
         let creds = Credentials {
-            file: test_file.input_file.clone(),
+            file: test_file.0.clone(),
         };
         assert!(!creds.is_service_account().unwrap());
     }
@@ -138,12 +138,12 @@ mod tests {
     #[ignore]
     #[test]
     fn try_from_env_var() {
-        let test_file = TestFile::new("csv", "{\"type\": \"service_account\"}");
+        let test_file = TestFile::new("json", "{\"type\": \"service_account\"}");
         env::set_var(
             "GOOGLE_APPLICATION_CREDENTIALS",
-            test_file.output_file.to_string_lossy().to_string(),
+            test_file.0.to_string_lossy().to_string(),
         );
-        let runtime: Runtime = test_file.into();
+        let runtime = build_runtime();
 
         let creds = Credentials::try_from(&runtime);
         dbg!(&creds);
