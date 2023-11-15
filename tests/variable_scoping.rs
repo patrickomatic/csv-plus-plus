@@ -1,4 +1,4 @@
-use csvpp::Template;
+use csvpp::Module;
 mod common;
 
 #[test]
@@ -13,9 +13,9 @@ Foo,Bar,Baz,=SUM(test)
 ![[f=3]][[var=test]],=test*5,=bar,
 "#,
     );
-    let template = Template::compile(&s.runtime).unwrap();
+    let module = Module::compile(&s.runtime).unwrap();
     let target = s.runtime.target().unwrap();
-    target.write(&template).unwrap();
+    target.write(&module).unwrap();
 
     assert_eq!(
         s.read_output(),
@@ -38,9 +38,9 @@ fn row_variable_in_fill() {
 ![[f=3 / var=row]][[var=cell]],=cell,=row,
 "#,
     );
-    let template = Template::compile(&s.runtime).unwrap();
+    let module = Module::compile(&s.runtime).unwrap();
     let target = s.runtime.target().unwrap();
-    target.write(&template).unwrap();
+    target.write(&module).unwrap();
 
     assert_eq!(
         s.read_output(),

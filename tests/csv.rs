@@ -1,6 +1,6 @@
 //! CSV is a particularly nice for testing because we can exihibit language features without yucky
 //! things like a binary format (excel) or an API (google sheets)
-use csvpp::Template;
+use csvpp::Module;
 mod common;
 
 #[test]
@@ -13,9 +13,9 @@ fn write_no_code_section() {
 foo,bar,baz
 "#,
     );
-    let template = Template::compile(&s.runtime).unwrap();
+    let module = Module::compile(&s.runtime).unwrap();
     let target = s.runtime.target().unwrap();
-    target.write(&template).unwrap();
+    target.write(&module).unwrap();
 
     assert_eq!(s.read_output(), "foo,bar,baz\n");
 }
@@ -31,9 +31,9 @@ foo := 1
 foo,bar,baz,=foo
 "#,
     );
-    let template = Template::compile(&s.runtime).unwrap();
+    let module = Module::compile(&s.runtime).unwrap();
     let target = s.runtime.target().unwrap();
-    target.write(&template).unwrap();
+    target.write(&module).unwrap();
 
     assert_eq!(
         s.read_output(),
@@ -59,9 +59,9 @@ profit := (B * C) - fees
 "#,
     );
 
-    let template = Template::compile(&s.runtime).unwrap();
+    let module = Module::compile(&s.runtime).unwrap();
     let target = s.runtime.target().unwrap();
-    target.write(&template).unwrap();
+    target.write(&module).unwrap();
 
     assert_eq!(
         s.read_output(),
@@ -93,9 +93,9 @@ foo
 "#,
     );
 
-    let template = Template::compile(&s.runtime).unwrap();
+    let module = Module::compile(&s.runtime).unwrap();
     let target = s.runtime.target().unwrap();
-    target.write(&template).unwrap();
+    target.write(&module).unwrap();
 
     assert_eq!(
         s.read_output(),

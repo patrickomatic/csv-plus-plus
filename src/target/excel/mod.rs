@@ -1,10 +1,10 @@
 //! # Excel
 //!
-//! Functions for writing compiled templates to Excel
+//! Functions for writing compiled modules to Excel
 //!
 use super::{merge_cell, ExistingCell, MergeResult};
 use crate::ast::Node;
-use crate::{Cell, Result, Runtime, Template};
+use crate::{Cell, Module, Result, Runtime};
 use a1_notation::Address;
 use std::ffi;
 use std::path;
@@ -39,8 +39,8 @@ impl<'a> Excel<'a> {
     /// Since the excel library allows us to modify the speadsheet in place, the strategy here is
     /// to be as light-touch as possible and just loop through our values and set them (or not
     /// depending on the merge strategy).
-    fn build_worksheet(&self, template: &Template, worksheet: &mut u::Worksheet) -> Result<()> {
-        let s = template.spreadsheet.borrow();
+    fn build_worksheet(&self, module: &Module, worksheet: &mut u::Worksheet) -> Result<()> {
+        let s = module.spreadsheet.borrow();
         let mut cell_validations = vec![];
 
         for (row_index, row) in s.rows.iter().enumerate() {

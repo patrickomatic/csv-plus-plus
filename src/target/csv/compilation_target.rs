@@ -1,5 +1,5 @@
 use crate::target::{file_backer_upper, merge_rows, CompilationTarget, Csv, MergeResult};
-use crate::{Result, Template};
+use crate::{Module, Result};
 
 impl CompilationTarget for Csv<'_> {
     fn write_backup(&self) -> Result<()> {
@@ -7,10 +7,10 @@ impl CompilationTarget for Csv<'_> {
         Ok(())
     }
 
-    fn write(&self, template: &Template) -> Result<()> {
+    fn write(&self, module: &Module) -> Result<()> {
         let existing_values = Self::read(&self.path, &self.runtime.output)?;
 
-        let new_values = template.spreadsheet.borrow();
+        let new_values = module.spreadsheet.borrow();
         let widest_row = new_values.widest_row();
 
         let mut writer = csv::WriterBuilder::new()
@@ -72,9 +72,9 @@ one,,two,,three
         );
         let output_file = test_file.output_file.clone();
         let runtime: Runtime = test_file.into();
-        let template = Template::compile(&runtime).unwrap();
+        let module = Module::compile(&runtime).unwrap();
         let csv = Csv::new(&runtime, output_file);
 
-        assert!(csv.write(&template).is_ok());
+        assert!(csv.write(&module).is_ok());
     }
 }

@@ -1,6 +1,6 @@
-//! # Template
+//! # Module
 //!
-//! A `template` holds the final compiled state for a single csv++ source file, as well as managing
+//! A `module` holds the final compiled state for a single csv++ source file, as well as managing
 //! evaluation and scope resolution.
 //!
 // TODO:
@@ -26,7 +26,7 @@ use std::path;
 mod display;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
-pub struct Template {
+pub struct Module {
     pub functions: Functions,
     pub module: String,
     pub spreadsheet: cell::RefCell<Spreadsheet>,
@@ -34,14 +34,14 @@ pub struct Template {
     pub compiler_version: String,
 }
 
-impl Template {
+impl Module {
     pub fn compile(runtime: &Runtime) -> Result<Self> {
         Ok(if let Some(t) = Self::read_from_object_file(runtime)? {
-            runtime.progress("Read template from object file (not compiling)");
+            runtime.progress("Read module from object file (not compiling)");
             runtime.info(&t);
             t
         } else {
-            runtime.progress("Compiling template from source code");
+            runtime.progress("Compiling module from source code");
 
             let spreadsheet = Spreadsheet::parse(runtime)?;
 
@@ -52,20 +52,20 @@ impl Template {
                 None
             };
 
-            let compiled_template = Self::new(spreadsheet, code_section, runtime)
+            let compiled_module = Self::new(spreadsheet, code_section, runtime)
                 .eval(runtime)
                 .map_err(|e| runtime.source_code.eval_error(&e.message, e.position))?;
 
-            runtime.progress("Compiled template");
-            runtime.info(&compiled_template);
+            runtime.progress("Compiled module");
+            runtime.info(&compiled_module);
 
             runtime.progress(format!(
                 "Writing object file {}",
                 runtime.source_code.object_code_filename().display()
             ));
-            compiled_template.write_object_file(runtime)?;
+            compiled_module.write_object_file(runtime)?;
 
-            compiled_template
+            compiled_module
         })
     }
 
@@ -165,7 +165,7 @@ impl Template {
         let obj_file_reader = fs::File::open(&obj_file)
             .map_err(|e| sc.object_code_error(format!("Error opening object code: {e}")))?;
 
-        let Ok(loaded_template): std::result::Result<Self, serde_cbor::Error> =
+        let Ok(loaded_module): std::result::Result<Self, serde_cbor::Error> =
             serde_cbor::from_reader(obj_file_reader)
         else {
             // if we fail to load the old object file just warn about it and move on.  for whatever
@@ -182,17 +182,17 @@ impl Template {
             sc.object_code_error(format!("Unable to parse version `{current_version}`: {e}"))
         })?;
         let loaded_version =
-            semver::Version::parse(&loaded_template.compiler_version).map_err(|e| {
+            semver::Version::parse(&loaded_module.compiler_version).map_err(|e| {
                 sc.object_code_error(format!(
-                    "Unable to parse loaded template version `{}`: {e}",
-                    &loaded_template.compiler_version
+                    "Unable to parse loaded module version `{}`: {e}",
+                    &loaded_module.compiler_version
                 ))
             })?;
 
         // if the version is less than ours, don't use it and recompile instead.  otherwise we can
         // trust that it's ok to use
         Ok(match this_version.cmp(&loaded_version) {
-            cmp::Ordering::Equal | cmp::Ordering::Greater => Some(loaded_template),
+            cmp::Ordering::Equal | cmp::Ordering::Greater => Some(loaded_module),
             cmp::Ordering::Less => None,
         })
     }
@@ -396,8 +396,8 @@ mod tests {
     use crate::test_utils::TestSourceCode;
     use std::cell;
 
-    fn build_template() -> Template {
-        Template {
+    fn build_module() -> Module {
+        Module {
             compiler_version: "v0.0.1".to_string(),
             functions: collections::HashMap::new(),
             module: "main".to_string(),
@@ -410,27 +410,27 @@ mod tests {
     fn compile_empty() {
         let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
-        let template = Template::compile(&runtime);
+        let module = Module::compile(&runtime);
 
-        assert!(template.is_ok());
+        assert!(module.is_ok());
     }
 
     #[test]
     fn compile_simple() {
         let test_file = &TestSourceCode::new("csv", "---\nfoo,bar,baz\n1,2,3");
         let runtime = test_file.into();
-        let template = Template::compile(&runtime).unwrap();
+        let module = Module::compile(&runtime).unwrap();
 
-        assert_eq!(template.spreadsheet.borrow().rows.len(), 2);
+        assert_eq!(module.spreadsheet.borrow().rows.len(), 2);
     }
 
     #[test]
     fn compile_with_fill_finite() {
         let test_file = &TestSourceCode::new("xlsx", "![[fill=10]]foo,bar,baz");
         let runtime = test_file.into();
-        let template = Template::compile(&runtime).unwrap();
+        let module = Module::compile(&runtime).unwrap();
 
-        assert_eq!(template.spreadsheet.borrow().rows.len(), 10);
+        assert_eq!(module.spreadsheet.borrow().rows.len(), 10);
     }
 
     #[test]
@@ -439,18 +439,18 @@ mod tests {
         println!("runtime turning inoto");
         let runtime = test_file.into();
         println!("runtime turned inoto");
-        let template = Template::compile(&runtime).unwrap();
+        let module = Module::compile(&runtime).unwrap();
 
-        assert_eq!(template.spreadsheet.borrow().rows.len(), 1000);
+        assert_eq!(module.spreadsheet.borrow().rows.len(), 1000);
     }
 
     #[test]
     fn compile_with_fill_multiple() {
         let test_file = &TestSourceCode::new("xlsx", "![[f=10]]foo,bar,baz\n![[f]]1,2,3");
         let runtime = test_file.into();
-        let template = Template::compile(&runtime).unwrap();
+        let module = Module::compile(&runtime).unwrap();
 
-        assert_eq!(template.spreadsheet.borrow().rows.len(), 1000);
+        assert_eq!(module.spreadsheet.borrow().rows.len(), 1000);
     }
 
     #[test]
@@ -458,8 +458,8 @@ mod tests {
         let test_file =
             &TestSourceCode::new("xlsx", "foo,bar,baz\n![[f=2]]foo,bar,baz\none,last,row\n");
         let runtime = test_file.into();
-        let template = Template::compile(&runtime).unwrap();
-        let spreadsheet = template.spreadsheet.borrow();
+        let module = Module::compile(&runtime).unwrap();
+        let spreadsheet = module.spreadsheet.borrow();
 
         assert_eq!(spreadsheet.rows.len(), 4);
     }
@@ -468,12 +468,12 @@ mod tests {
     fn is_function_defined_true() {
         let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
-        let mut template = build_template();
-        template
+        let mut module = build_module();
+        module
             .functions
             .insert("foo".to_string(), Box::new(42.into()));
 
-        assert!(template.is_function_defined(&runtime, "foo"));
+        assert!(module.is_function_defined(&runtime, "foo"));
     }
 
     #[test]
@@ -487,21 +487,21 @@ mod tests {
                 eval: Box::new(|_a1, _args| Ok(42.into())),
             },
         );
-        let template = build_template();
+        let module = build_module();
 
-        assert!(template.is_function_defined(&runtime, "foo"));
+        assert!(module.is_function_defined(&runtime, "foo"));
     }
 
     #[test]
     fn is_variable_defined_true() {
         let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
-        let mut template = build_template();
-        template
+        let mut module = build_module();
+        module
             .variables
             .insert("foo".to_string(), Box::new(42.into()));
 
-        assert!(template.is_variable_defined(&runtime, "foo"));
+        assert!(module.is_variable_defined(&runtime, "foo"));
     }
 
     #[test]
@@ -515,9 +515,9 @@ mod tests {
                 eval: Box::new(|_a1| Ok(42.into())),
             },
         );
-        let template = build_template();
+        let module = build_module();
 
-        assert!(template.is_variable_defined(&runtime, "foo"));
+        assert!(module.is_variable_defined(&runtime, "foo"));
     }
 
     #[test]
@@ -532,19 +532,19 @@ mod tests {
             functions,
             variables,
         };
-        let template = Template::new(Spreadsheet::default(), Some(code_section), &runtime);
+        let module = Module::new(Spreadsheet::default(), Some(code_section), &runtime);
 
-        assert!(template.functions.contains_key("foo"));
-        assert!(template.variables.contains_key("bar"));
+        assert!(module.functions.contains_key("foo"));
+        assert!(module.variables.contains_key("bar"));
     }
 
     #[test]
     fn new_without_code_section() {
         let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
-        let template = Template::new(Spreadsheet::default(), None, &runtime);
+        let module = Module::new(Spreadsheet::default(), None, &runtime);
 
-        assert!(template.functions.is_empty());
-        assert!(template.variables.is_empty());
+        assert!(module.functions.is_empty());
+        assert!(module.variables.is_empty());
     }
 }

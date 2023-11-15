@@ -53,7 +53,7 @@ pub struct CliArgs {
     #[arg(
         short = 'n',
         long,
-        help = "The name of the sheet to apply the template to."
+        help = "The name of the sheet (the tab) to write the compiled spreadsheet to."
     )]
     pub sheet_name: Option<String>,
 
@@ -64,7 +64,7 @@ pub struct CliArgs {
         short,
         long,
         default_value_t = 0,
-        help = "Apply the template offset by this many cells"
+        help = "Offset the spreadsheet by this many cells"
     )]
     pub x_offset: u32,
 
@@ -72,7 +72,7 @@ pub struct CliArgs {
         short,
         long,
         default_value_t = 0,
-        help = "Apply the template offset by this many rows"
+        help = "Offset the spreadsheet by this many rows"
     )]
     pub y_offset: u32,
 

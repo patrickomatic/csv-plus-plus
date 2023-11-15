@@ -22,7 +22,7 @@ pub(crate) type ParseResult<T> = std::result::Result<T, ParseError>;
 pub(crate) type EvalResult<T> = std::result::Result<T, EvalError>;
 
 /// The various kinds of errors that can occur during compilation and evaluation of a csv++
-/// template.
+/// module.
 #[derive(Debug)]
 pub enum Error {
     /// A syntax error in a formula in a cell.
@@ -55,7 +55,7 @@ pub enum Error {
     /// due to user error.
     InitError(String),
 
-    /// An error encountered while serializing the compiled template to an object file.
+    /// An error encountered while serializing the compiled module to an object file.
     ObjectCodeError {
         filename: path::PathBuf,
         message: String,

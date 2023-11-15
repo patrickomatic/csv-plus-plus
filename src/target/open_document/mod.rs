@@ -4,7 +4,7 @@
 //!
 use super::file_backer_upper;
 use super::CompilationTarget;
-use crate::{Result, Runtime, Template};
+use crate::{Module, Result, Runtime};
 use std::path::PathBuf;
 
 pub struct OpenDocument<'a> {
@@ -18,7 +18,7 @@ impl CompilationTarget for OpenDocument<'_> {
         Ok(())
     }
 
-    fn write(&self, _template: &Template) -> Result<()> {
+    fn write(&self, _module: &Module) -> Result<()> {
         todo!()
     }
 }

@@ -1,4 +1,4 @@
-use csvpp::Template;
+use csvpp::Module;
 mod common;
 
 #[test]
@@ -14,10 +14,10 @@ fn foo_fn<a, b, c> a + b * c
 foo,bar
 "#,
     );
-    let template = Template::compile(&s.runtime);
+    let module = Module::compile(&s.runtime);
 
     assert_eq!(
-        template.unwrap_err().to_string(),
+        module.unwrap_err().to_string(),
         "Syntax error in code section of integration_test_syntax_error_in_code_section.csvpp
 On line 4 Expected `(` but saw `<`
 
@@ -43,10 +43,10 @@ fn syntax_error_in_option_definition() {
 foo,bar,[[text=bold ,foo
 "#,
     );
-    let template = Template::compile(&s.runtime);
+    let module = Module::compile(&s.runtime);
 
     assert_eq!(
-        template.unwrap_err().to_string(),
+        module.unwrap_err().to_string(),
         "Syntax error in cell C1 of integration_test_syntax_error_in_option_definition.csvpp
 On line 3 Error parsing input, expected ']]' but saw unrecognized token ``
 
@@ -69,10 +69,10 @@ fn bad_choice_in_option_with_possibilities() {
 foo,bar,[[b=foo]],foo
 "#,
     );
-    let template = Template::compile(&s.runtime);
+    let module = Module::compile(&s.runtime);
 
     assert_eq!(
-        template.unwrap_err().to_string(),
+        module.unwrap_err().to_string(),
         "Syntax error in cell C1 of integration_test_bad_choice_in_option_with_possibilities.csvpp
 On line 3 received invalid value when parsing `border` option but saw `foo`
 Possible values: all (a) | top (t) | bottom (b) | left (l) | right (r)

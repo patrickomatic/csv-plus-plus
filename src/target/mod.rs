@@ -1,4 +1,4 @@
-use crate::{Cell, Options, Result, Template};
+use crate::{Cell, Module, Options, Result};
 use std::cmp;
 
 mod csv;
@@ -28,8 +28,8 @@ pub trait CompilationTarget {
     /// a file, but different for Google Sheets
     fn write_backup(&self) -> Result<()>;
 
-    /// Write the compiled `Template` to the target.
-    fn write(&self, template: &Template) -> Result<()>;
+    /// Write the compiled `Module` to the target.
+    fn write(&self, module: &Module) -> Result<()>;
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -41,14 +41,14 @@ pub(crate) enum MergeResult<V: Clone> {
 
 fn merge_rows<V: Clone>(
     existing_row: &[ExistingCell<V>],
-    template_row: &[Cell],
+    module_row: &[Cell],
     options: &Options,
 ) -> Vec<MergeResult<V>> {
-    (0..cmp::max(existing_row.len(), template_row.len()))
+    (0..cmp::max(existing_row.len(), module_row.len()))
         .map(|i| {
             merge_cell(
                 existing_row.get(i).unwrap_or(&ExistingCell::Empty),
-                template_row.get(i),
+                module_row.get(i),
                 options,
             )
         })

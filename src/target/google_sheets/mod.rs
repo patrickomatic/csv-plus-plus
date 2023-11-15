@@ -9,7 +9,7 @@ mod credentials;
 mod google_sheets_cell;
 
 use super::{ExistingCell, ExistingValues};
-use crate::{Error, Result, Runtime, Template};
+use crate::{Error, Module, Result, Runtime};
 use batch_update_builder::BatchUpdateBuilder;
 use credentials::Credentials;
 use google_sheets4::hyper;
@@ -174,11 +174,11 @@ impl<'a> GoogleSheets<'a> {
         ))
     }
 
-    async fn write_sheet(&self, template: &Template) -> Result<()> {
+    async fn write_sheet(&self, module: &Module) -> Result<()> {
         let hub = self.sheets_hub().await?;
         let existing_values = self.read_existing_cells(&hub).await?;
         let batch_update_request =
-            BatchUpdateBuilder::new(self.runtime, template, &existing_values).build();
+            BatchUpdateBuilder::new(self.runtime, module, &existing_values).build();
 
         hub.spreadsheets()
             .batch_update(batch_update_request, &self.sheet_id)
@@ -210,17 +210,17 @@ mod tests {
         Runtime::new(cli_args).unwrap()
     }
 
-    fn build_template() -> Template {
-        Template::default()
+    fn build_module() -> Module {
+        Module::default()
     }
 
     #[test]
     fn write() {
-        let template = build_template();
+        let module = build_module();
         let runtime = build_runtime();
         let target = GoogleSheets::new(&runtime, "1z1PQsfooud19mPwKcix3ocUpg9yXeiAXA2GycxWlpqU").unwrap();
 
-        let result = target.write(&template);
+        let result = target.write(&module);
         assert!(result.is_ok());
     }
     */

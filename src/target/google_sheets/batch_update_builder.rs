@@ -3,26 +3,26 @@
 use super::{google_sheets_cell, SheetsValue};
 use crate::ast::Node;
 use crate::target::{merge_rows, ExistingValues, MergeResult};
-use crate::{Cell, Runtime, Template};
+use crate::{Cell, Module, Runtime};
 use google_sheets4::api;
 use std::str::FromStr;
 
 pub(super) struct BatchUpdateBuilder<'a> {
     existing_values: &'a ExistingValues<SheetsValue>,
     runtime: &'a Runtime,
-    template: &'a Template,
+    module: &'a Module,
 }
 
 impl<'a> BatchUpdateBuilder<'a> {
     pub(super) fn new(
         runtime: &'a Runtime,
-        template: &'a Template,
+        module: &'a Module,
         existing_values: &'a ExistingValues<SheetsValue>,
     ) -> Self {
         Self {
             existing_values,
             runtime,
-            template,
+            module,
         }
     }
 
@@ -74,7 +74,7 @@ impl<'a> BatchUpdateBuilder<'a> {
     }
 
     fn row_data(&self) -> Vec<api::RowData> {
-        let spreadsheet = self.template.spreadsheet.borrow();
+        let spreadsheet = self.module.spreadsheet.borrow();
 
         spreadsheet
             .rows
@@ -159,9 +159,9 @@ mod tests {
             ..Default::default()
         });
 
-        let template = Template::new(spreadsheet, None, &runtime);
+        let module = Module::new(spreadsheet, None, &runtime);
         let existing_values = ExistingValues { cells: vec![] };
-        let builder = BatchUpdateBuilder::new(&runtime, &template, &existing_values).build();
+        let builder = BatchUpdateBuilder::new(&runtime, &module, &existing_values).build();
 
         assert_eq!(1, builder.requests.unwrap().len());
     }
