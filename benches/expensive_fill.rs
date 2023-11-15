@@ -11,11 +11,16 @@ fn compile_template(filename: &str) {
     Template::compile(&runtime).unwrap();
 }
 
-fn criterion_benchmark(c: &mut criterion::Criterion) {
+fn bench(c: &mut criterion::Criterion) {
     c.bench_function("fill", |b| {
         b.iter(|| compile_template("benches_expensive_fill.csvpp"))
     });
 }
 
-criterion::criterion_group!(benches, criterion_benchmark);
+criterion::criterion_group! {
+    name = benches;
+    config = criterion::Criterion::default()
+        .with_profiler(pprof::criterion::PProfProfiler::new(100, pprof::criterion::Output::Flamegraph(None)));
+    targets = bench
+}
 criterion::criterion_main!(benches);

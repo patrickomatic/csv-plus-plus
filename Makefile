@@ -1,4 +1,4 @@
-bench_report := target/criterion/report/index.html
+bench_output := target/criterion
 
 # TODO: why does this build each one individually?
 .PHONY: all
@@ -11,7 +11,9 @@ all:
 
 .PHONY: bench
 bench:
-	cargo bench && open $(bench_report)
+	cargo bench --bench expensive_fill -- --profile-time=5
+	open $(bench_output)/report/index.html
+	open $(bench_output)/fill/profile/flamegraph.svg
 
 .PHONY: cov
 cov:
