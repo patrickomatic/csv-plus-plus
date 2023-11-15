@@ -7,14 +7,14 @@ use crate::{Cell, Runtime, Template};
 use google_sheets4::api;
 use std::str::FromStr;
 
-pub(crate) struct BatchUpdateBuilder<'a> {
+pub(super) struct BatchUpdateBuilder<'a> {
     existing_values: &'a ExistingValues<SheetsValue>,
     runtime: &'a Runtime,
     template: &'a Template,
 }
 
 impl<'a> BatchUpdateBuilder<'a> {
-    pub(crate) fn new(
+    pub(super) fn new(
         runtime: &'a Runtime,
         template: &'a Template,
         existing_values: &'a ExistingValues<SheetsValue>,
@@ -27,7 +27,7 @@ impl<'a> BatchUpdateBuilder<'a> {
     }
 
     /// Loops over each row of the spreadsheet, building up `UpdateCellsRequest`s.  
-    pub(crate) fn build(&self) -> api::BatchUpdateSpreadsheetRequest {
+    pub(super) fn build(&self) -> api::BatchUpdateSpreadsheetRequest {
         api::BatchUpdateSpreadsheetRequest {
             requests: Some(self.batch_update_cells_requests()),
             ..Default::default()

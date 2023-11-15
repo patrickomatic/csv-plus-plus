@@ -1,10 +1,7 @@
 //! # CellLexer
 //!
-//! This is the lexer/tokenizer used for parsing csv++ cells - it's a little different than
-//! most parsers which parse their entire input into tokens in one go. This tokenizes as the
-//! parser goes since it is context-dependent.
-//!
-//! [https://en.wikipedia.org/wiki/Lexer_hack](See also: Lexer hack)
+//! This is the lexer/tokenizer used for parsing csv++ cells - rather than tokenizing all in one
+//! go, this lexer works by extracting a token one at a time as we parse.
 //!
 use super::TokenMatcher;
 use crate::error::{BadInput, ParseError, ParseResult};

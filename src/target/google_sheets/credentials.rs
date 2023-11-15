@@ -131,11 +131,12 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn try_from_default_location() {
-        // Todo
+        // hard to do this one because it checks ~/.config/gcloud/...
+        todo!()
     }
 
-    #[ignore]
     #[test]
     fn try_from_env_var() {
         let test_file = TestFile::new("json", "{\"type\": \"service_account\"}");
@@ -145,23 +146,23 @@ mod tests {
         );
         let runtime = build_runtime();
 
-        let creds = Credentials::try_from(&runtime);
-        dbg!(&creds);
         assert!(Credentials::try_from(&runtime).is_ok());
     }
 
     #[test]
     fn try_from_options() {
-        // Todo
+        let test_file = TestFile::new("json", "{\"type\": \"service_account\"}");
+        let mut runtime = build_runtime();
+        runtime.options.google_account_credentials =
+            Some(test_file.0.clone().into_os_string().into_string().unwrap());
+
+        assert!(Credentials::try_from(&runtime).is_ok());
     }
 
     #[test]
-    fn try_from_not_found() {
-        // Todo
-    }
-
-    #[test]
+    #[ignore]
     fn try_from_does_not_exist() {
-        // Todo
+        // hard to test this because it will always catch the default application creds locally
+        todo!()
     }
 }

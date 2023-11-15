@@ -13,14 +13,14 @@ use google_sheets4::api;
 
 pub(super) struct GoogleSheetsCell<'a>(pub(super) &'a Cell);
 
-macro_rules! validate_str {
-    ($gs_name:literal $(, $dv:ident)*) => {
+macro_rules! build_boolean_condition {
+    ($gs_name:literal, $conditional_value_attr:ident $(, $dv:ident)*) => {
         api::BooleanCondition {
             type_: Some($gs_name.to_string()),
             values: Some(vec![
                 $(
                     api::ConditionValue {
-                        user_entered_value: Some($dv.to_string()),
+                        $conditional_value_attr: Some($dv.to_string()),
                         ..Default::default()
                     },
                 )*
@@ -29,20 +29,15 @@ macro_rules! validate_str {
     };
 }
 
-// TODO: make the underlying macro reusable with the above?
 macro_rules! validate_date {
     ($gs_name:literal $(, $dv:ident)*) => {
-        api::BooleanCondition {
-            type_: Some($gs_name.to_string()),
-            values: Some(vec![
-                $(
-                    api::ConditionValue {
-                        relative_date: Some($dv.to_string()),
-                        ..Default::default()
-                    },
-                )*
-            ]),
-        }
+        build_boolean_condition!($gs_name, relative_date $(,$dv)*)
+    };
+}
+
+macro_rules! validate_str {
+    ($gs_name:literal $(, $dv:ident)*) => {
+        build_boolean_condition!($gs_name, user_entered_value $(,$dv)*)
     };
 }
 
@@ -62,6 +57,7 @@ impl<'a> GoogleSheetsCell<'a> {
             && text_format.is_none()
             && vertical_alignment.is_none()
         {
+            // don't waste API calls and spreadsheet mutations if everything is blank
             return None;
         }
 
@@ -304,6 +300,7 @@ mod tests {
     fn cell_format_none() {
         let cell = Cell::default();
         let gs_cell = GoogleSheetsCell(&cell);
+
         assert!(gs_cell.cell_format().is_none());
     }
 
@@ -312,11 +309,38 @@ mod tests {
         let mut cell = Cell::default();
         cell.text_formats.insert(TextFormat::Bold);
         cell.vertical_align = Some(VerticalAlign::Top);
+        cell.horizontal_align = Some(HorizontalAlign::Right);
+        cell.number_format = Some(NumberFormat::Date);
+        cell.color = Some(Rgb::new(255, 0, 0));
+        cell.borders.insert(BorderSide::All);
 
         let gs_cell = GoogleSheetsCell(&cell);
         let cell_format = gs_cell.cell_format().unwrap();
 
+        assert!(cell_format.borders.is_some());
+        assert!(cell_format.background_color_style.is_some());
+        assert!(cell_format.number_format.is_some());
         assert!(cell_format.text_format.is_some());
         assert!(cell_format.vertical_alignment.is_some());
+        assert!(cell_format.horizontal_alignment.is_some());
+    }
+
+    #[test]
+    fn data_validation_rule_none() {
+        let cell = Cell::default();
+        let gs_cell = GoogleSheetsCell(&cell);
+
+        assert!(gs_cell.data_validation_rule().is_none());
+    }
+
+    #[test]
+    fn data_validation_rule_some() {
+        let cell = Cell {
+            data_validation: Some(DataValidation::DateIsValid),
+            ..Default::default()
+        };
+        let gs_cell = GoogleSheetsCell(&cell);
+
+        assert!(gs_cell.data_validation_rule().is_some());
     }
 }
