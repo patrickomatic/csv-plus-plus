@@ -3,7 +3,7 @@ use std::fmt;
 
 impl fmt::Display for Module {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "# Variables")?;
+        writeln!(f, "\n# Variables")?;
         for ast in self.variables.values() {
             writeln!(f, "{ast}")?;
         }
@@ -20,6 +20,7 @@ impl fmt::Display for Module {
 
 #[cfg(test)]
 mod tests {
+    use super::super::ModuleName;
     use crate::{Module, Spreadsheet};
     use std::cell;
     use std::collections;
@@ -28,7 +29,7 @@ mod tests {
         Module {
             compiler_version: "v0.0.1".to_string(),
             functions: collections::HashMap::new(),
-            module: "main".to_string(),
+            module_name: ModuleName("main".to_string()),
             spreadsheet: cell::RefCell::new(Spreadsheet::default()),
             variables: collections::HashMap::new(),
         }

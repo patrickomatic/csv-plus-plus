@@ -18,13 +18,36 @@
 use super::ast_lexer::{AstLexer, Token, TokenMatch};
 use super::ast_parser::AstParser;
 use crate::ast::{Ast, Functions, Node, VariableValue, Variables};
+use crate::module::ModuleName;
 use crate::{Result, Runtime};
 use std::collections::HashMap;
+use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CodeSection {
     pub(crate) functions: Functions,
+    pub(crate) required_modules: Vec<ModuleName>,
     pub(crate) variables: Variables,
+}
+
+impl fmt::Display for CodeSection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "# Required Modules")?;
+        for m in &self.required_modules {
+            writeln!(f, "{m}")?;
+        }
+
+        writeln!(f, "\n# Variables")?;
+        for ast in self.variables.values() {
+            writeln!(f, "{ast}")?;
+        }
+
+        writeln!(f, "\n# Functions")?;
+        for ast in self.functions.values() {
+            writeln!(f, "fn {ast}")?;
+        }
+        Ok(())
+    }
 }
 
 pub(crate) struct CodeSectionParser<'a> {
@@ -34,7 +57,8 @@ pub(crate) struct CodeSectionParser<'a> {
 
 /// A recursive descent parser which relies on `AstParser` for individual expressions.  As
 /// mentioned above, the contract here is that this parser handles parsing a series of
-/// function and variable references and delegates to `AstParser` for handling expressions
+/// function, use statements and variable assignments and delegates to `AstParser` for handling
+/// expressions
 impl<'a> CodeSectionParser<'a> {
     pub(crate) fn parse(input: &'a str, runtime: &'a Runtime) -> Result<CodeSection> {
         runtime.progress("Parsing code section");
@@ -47,10 +71,10 @@ impl<'a> CodeSectionParser<'a> {
         .parse_code_section()
     }
 
-    /// our entry point - just expects a series of variable and function definitions in any order
     fn parse_code_section(&'a self) -> Result<CodeSection> {
         let mut variables = HashMap::new();
         let mut functions = HashMap::new();
+        let mut required_modules = Vec::new();
 
         loop {
             let next = self.lexer.next();
@@ -59,6 +83,9 @@ impl<'a> CodeSectionParser<'a> {
                 Token::FunctionDefinition => {
                     let (fn_name, function) = self.parse_fn_definition()?;
                     functions.insert(fn_name, Box::new(function));
+                }
+                Token::UseModule => {
+                    required_modules.push(self.parse_use_module()?);
                 }
                 Token::Reference => {
                     variables.insert(
@@ -79,8 +106,14 @@ impl<'a> CodeSectionParser<'a> {
 
         Ok(CodeSection {
             functions,
+            required_modules,
             variables,
         })
+    }
+
+    /// parses `use` followed by a module name
+    fn parse_use_module(&self) -> Result<ModuleName> {
+        self.lexer.next().try_into()
     }
 
     /// parses a `:=` folloed by an `<expr>`
@@ -167,8 +200,8 @@ mod tests {
 
     #[test]
     fn parse_function() {
-        let fns_and_vars = test("fn foo(a, b) a + b");
-        let foo = fns_and_vars.functions.get("foo").unwrap();
+        let cs = test("fn foo(a, b) a + b");
+        let foo = cs.functions.get("foo").unwrap();
 
         let expected: Ast = Box::new(Node::fn_def(
             "foo",
@@ -181,8 +214,8 @@ mod tests {
 
     #[test]
     fn parse_function_without_args() {
-        let fns_and_vars = test("fn foo() 1 * 2");
-        let foo = fns_and_vars.functions.get("foo").unwrap();
+        let cs = test("fn foo() 1 * 2");
+        let foo = cs.functions.get("foo").unwrap();
 
         let expected: Ast = Box::new(Node::fn_def(
             "foo",
@@ -195,7 +228,7 @@ mod tests {
 
     #[test]
     fn parse_multiple_functions() {
-        let fns_and_vars = test(
+        let cs = test(
             r#"
 fn foo()
     1 * 2
@@ -204,19 +237,19 @@ fn bar(a, b)
 "#,
         );
 
-        assert_eq!(fns_and_vars.functions.len(), 2);
+        assert_eq!(cs.functions.len(), 2);
     }
 
     #[test]
     fn parse_variables() {
-        let fns_and_vars = test("foo := \"bar\"");
+        let cs = test("foo := \"bar\"");
 
-        assert!(fns_and_vars.variables.get("foo").is_some());
+        assert!(cs.variables.get("foo").is_some());
     }
 
     #[test]
     fn parse_variables_and_functions() {
-        let fns_and_vars = test(
+        let cs = test(
             r#"
 fn foo_fn() 1 * 2
 foo_var := 3 * 4 + 5
@@ -225,10 +258,36 @@ bar_var := D1
 "#,
         );
 
-        assert!(fns_and_vars.functions.get("foo_fn").is_some());
-        assert!(fns_and_vars.functions.get("bar_fn").is_some());
+        assert!(cs.functions.get("foo_fn").is_some());
+        assert!(cs.functions.get("bar_fn").is_some());
 
-        assert!(fns_and_vars.variables.get("foo_var").is_some());
-        assert!(fns_and_vars.variables.get("bar_var").is_some());
+        assert!(cs.variables.get("foo_var").is_some());
+        assert!(cs.variables.get("bar_var").is_some());
+    }
+
+    #[test]
+    fn parse_use_module() {
+        let cs = test(
+            r#"
+use foo
+"#,
+        );
+
+        assert_eq!(cs.required_modules.len(), 1);
+        assert_eq!(cs.required_modules[0].0, "foo");
+    }
+
+    #[test]
+    fn parse_use_module_multiple() {
+        let cs = test(
+            r#"
+use foo
+use bar
+"#,
+        );
+
+        assert_eq!(cs.required_modules.len(), 2);
+        assert_eq!(cs.required_modules[0].0, "foo");
+        assert_eq!(cs.required_modules[1].0, "bar");
     }
 }

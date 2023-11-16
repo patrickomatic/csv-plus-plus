@@ -8,7 +8,7 @@
         - [Code Section](language_reference/file_structure/code_section.md)
         - [CSV Section](language_reference/file_structure/csv_section.md)
     - [Modules](language_reference/modules.md)
-    - [Variable Scoping](language_reference/variable_scoping.md)
+    - [Variables](language_reference/variables.md)
     - [Cell & Row Options](language_reference/cell_and_row_options.md)
         - [Text Formatting](language_reference/text_formatting_options.md)
         - [Data Validations](language_reference/data_validations.md)

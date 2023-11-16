@@ -28,6 +28,7 @@ pub(crate) struct TokenLibrary {
     pub(crate) newline: Matcher,
     pub(crate) open_paren: Matcher,
     pub(crate) reference: Matcher,
+    pub(crate) use_module: Matcher,
     pub(crate) var_assign: Matcher,
 }
 
@@ -67,6 +68,7 @@ impl TokenLibrary {
             newline: TokenMatcher::new(r"\n", Token::Newline)?,
             open_paren: TokenMatcher::new(r"\(", Token::OpenParen)?,
             reference: TokenMatcher::new(r"[$!\w:]+", Token::Reference)?,
+            use_module: TokenMatcher::new(r"use", Token::UseModule)?,
             var_assign: TokenMatcher::new(r":=", Token::VarAssign)?,
         })
     }

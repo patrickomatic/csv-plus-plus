@@ -15,5 +15,6 @@ pub enum Token {
     Newline,
     OpenParen,
     Reference,
+    UseModule,
     VarAssign,
 }

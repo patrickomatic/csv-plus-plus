@@ -28,7 +28,6 @@ mod tests {
             code_section: Some("\n".repeat(10)),
             csv_section: "foo,bar,baz".to_string(),
             original: "\n\n\n\n\n\n\n\n\n\n---\nfoo,bar,baz".to_string(),
-            module: "test".to_string(),
         }
     }
 

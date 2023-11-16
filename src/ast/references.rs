@@ -77,7 +77,7 @@ mod tests {
     use crate::{Runtime, Spreadsheet};
 
     fn build_module(runtime: &Runtime) -> Module {
-        Module::new(Spreadsheet::default(), None, runtime)
+        Module::new(Spreadsheet::default(), None, runtime).unwrap()
     }
 
     #[test]

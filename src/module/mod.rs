@@ -24,11 +24,14 @@ use std::fs;
 use std::path;
 
 mod display;
+mod module_name;
+
+pub use module_name::ModuleName;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct Module {
     pub functions: Functions,
-    pub module: String,
+    pub module_name: ModuleName,
     pub spreadsheet: cell::RefCell<Spreadsheet>,
     pub variables: Variables,
     pub compiler_version: String,
@@ -44,15 +47,19 @@ impl Module {
             runtime.progress("Compiling module from source code");
 
             let spreadsheet = Spreadsheet::parse(runtime)?;
+            runtime.progress("Parsed spreadsheet");
 
             let code_section = if let Some(code_section_source) = &runtime.source_code.code_section
             {
-                Some(CodeSectionParser::parse(code_section_source, runtime)?)
+                let cs = CodeSectionParser::parse(code_section_source, runtime)?;
+                runtime.progress("Parsed code section");
+                runtime.info(&cs);
+                Some(cs)
             } else {
                 None
             };
 
-            let compiled_module = Self::new(spreadsheet, code_section, runtime)
+            let compiled_module = Self::new(spreadsheet, code_section, runtime)?
                 .eval(runtime)
                 .map_err(|e| runtime.source_code.eval_error(&e.message, e.position))?;
 
@@ -95,7 +102,7 @@ impl Module {
         spreadsheet: Spreadsheet,
         code_section: Option<CodeSection>,
         runtime: &Runtime,
-    ) -> Self {
+    ) -> Result<Self> {
         // TODO: need to lift variable resultion (and therefore runtime.options.key_values out)
         let cli_vars = &runtime.options.key_values;
         let spreadsheet_vars = spreadsheet.variables();
@@ -105,17 +112,17 @@ impl Module {
             (collections::HashMap::new(), collections::HashMap::new())
         };
 
-        Self {
+        Ok(Self {
             compiler_version: env!("CARGO_PKG_VERSION").to_string(),
             functions: code_section_fns,
-            module: runtime.source_code.module.clone(),
+            module_name: runtime.source_code.filename.clone().try_into()?,
             spreadsheet: cell::RefCell::new(spreadsheet),
             variables: code_section_vars
                 .into_iter()
                 .chain(spreadsheet_vars)
                 .chain(cli_vars.clone())
                 .collect(),
-        }
+        })
     }
 
     pub(crate) fn write_object_file(&self, runtime: &Runtime) -> Result<path::PathBuf> {
@@ -243,7 +250,7 @@ impl Module {
         Ok(Self {
             compiler_version: self.compiler_version.clone(),
             functions: self.functions.clone(),
-            module: self.module.clone(),
+            module_name: self.module_name.clone(),
             spreadsheet: cell::RefCell::new(Spreadsheet { rows: evaled_rows }),
             variables: self.variables.clone(),
         })
@@ -400,7 +407,7 @@ mod tests {
         Module {
             compiler_version: "v0.0.1".to_string(),
             functions: collections::HashMap::new(),
-            module: "main".to_string(),
+            module_name: ModuleName("main".to_string()),
             spreadsheet: cell::RefCell::new(Spreadsheet::default()),
             variables: collections::HashMap::new(),
         }
@@ -531,8 +538,9 @@ mod tests {
         let code_section = CodeSection {
             functions,
             variables,
+            ..Default::default()
         };
-        let module = Module::new(Spreadsheet::default(), Some(code_section), &runtime);
+        let module = Module::new(Spreadsheet::default(), Some(code_section), &runtime).unwrap();
 
         assert!(module.functions.contains_key("foo"));
         assert!(module.variables.contains_key("bar"));
@@ -542,7 +550,7 @@ mod tests {
     fn new_without_code_section() {
         let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
-        let module = Module::new(Spreadsheet::default(), None, &runtime);
+        let module = Module::new(Spreadsheet::default(), None, &runtime).unwrap();
 
         assert!(module.functions.is_empty());
         assert!(module.variables.is_empty());
