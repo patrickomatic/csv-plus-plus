@@ -13,7 +13,7 @@ fn foo_fn<a, b, c> a + b * c
 foo,bar
 "#,
     );
-    let module = s.runtime.compile();
+    let module = s.compiler.compile();
 
     assert_eq!(
         module.unwrap_err().to_string(),
@@ -42,7 +42,7 @@ fn syntax_error_in_option_definition() {
 foo,bar,[[text=bold ,foo
 "#,
     );
-    let module = s.runtime.compile();
+    let module = s.compiler.compile();
 
     assert_eq!(
         module.unwrap_err().to_string(),
@@ -68,7 +68,7 @@ fn bad_choice_in_option_with_possibilities() {
 foo,bar,[[b=foo]],foo
 "#,
     );
-    let module = s.runtime.compile();
+    let module = s.compiler.compile();
 
     assert_eq!(
         module.unwrap_err().to_string(),

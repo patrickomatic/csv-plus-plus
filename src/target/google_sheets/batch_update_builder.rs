@@ -3,25 +3,25 @@
 use super::{google_sheets_cell, SheetsValue};
 use crate::ast::Node;
 use crate::target::{merge_rows, ExistingValues, MergeResult};
-use crate::{Cell, Module, Runtime};
+use crate::{Cell, Compiler, Module};
 use google_sheets4::api;
 use std::str::FromStr;
 
 pub(super) struct BatchUpdateBuilder<'a> {
     existing_values: &'a ExistingValues<SheetsValue>,
-    runtime: &'a Runtime,
+    compiler: &'a Compiler,
     module: &'a Module,
 }
 
 impl<'a> BatchUpdateBuilder<'a> {
     pub(super) fn new(
-        runtime: &'a Runtime,
+        compiler: &'a Compiler,
         module: &'a Module,
         existing_values: &'a ExistingValues<SheetsValue>,
     ) -> Self {
         Self {
             existing_values,
-            runtime,
+            compiler,
             module,
         }
     }
@@ -83,7 +83,7 @@ impl<'a> BatchUpdateBuilder<'a> {
             .map(|(i, row)| {
                 let empty_row = vec![];
                 let existing_row = self.existing_values.cells.get(i).unwrap_or(&empty_row);
-                let merged_row = merge_rows(existing_row, &row.cells, &self.runtime.options);
+                let merged_row = merge_rows(existing_row, &row.cells, &self.compiler.options);
 
                 api::RowData {
                     values: Some(self.cell_data(&merged_row)),
@@ -96,8 +96,8 @@ impl<'a> BatchUpdateBuilder<'a> {
         api::UpdateCellsRequest {
             fields: Some(google_sheets4::FieldMask::from_str("*").unwrap()),
             start: Some(api::GridCoordinate {
-                column_index: Some(self.runtime.options.offset.1 as i32),
-                row_index: Some(self.runtime.options.offset.0 as i32),
+                column_index: Some(self.compiler.options.offset.1 as i32),
+                row_index: Some(self.compiler.options.offset.0 as i32),
                 sheet_id: None,
             }),
             rows: Some(rows.to_vec()),
@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn build() {
-        let runtime = build_runtime();
+        let compiler = build_compiler();
 
         let mut spreadsheet = Spreadsheet::default();
         spreadsheet.rows.push(Row {
@@ -161,7 +161,7 @@ mod tests {
 
         let module = Module::new(spreadsheet, None, ModuleName::new("foo"));
         let existing_values = ExistingValues { cells: vec![] };
-        let builder = BatchUpdateBuilder::new(&runtime, &module, &existing_values).build();
+        let builder = BatchUpdateBuilder::new(&compiler, &module, &existing_values).build();
 
         assert_eq!(1, builder.requests.unwrap().len());
     }

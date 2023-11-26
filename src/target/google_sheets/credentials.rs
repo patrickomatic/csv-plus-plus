@@ -1,4 +1,4 @@
-use crate::{Error, Result, Runtime};
+use crate::{Compiler, Error, Result};
 use std::env;
 use std::fs;
 use std::path;
@@ -32,20 +32,20 @@ fn adc_path() -> Result<path::PathBuf> {
     }
 }
 
-impl TryFrom<&Runtime> for Credentials {
+impl TryFrom<&Compiler> for Credentials {
     type Error = Error;
 
-    fn try_from(runtime: &Runtime) -> Result<Self> {
+    fn try_from(compiler: &Compiler) -> Result<Self> {
         let adc_path = adc_path()?;
 
-        let creds_file = if let Some(creds) = &runtime.options.google_account_credentials {
-            runtime.info("Using credentials from --google-account-credentials flag");
+        let creds_file = if let Some(creds) = &compiler.options.google_account_credentials {
+            compiler.info("Using credentials from --google-account-credentials flag");
             path::PathBuf::from(creds)
         } else if let Some(env_var) = env::var_os("GOOGLE_APPLICATION_CREDENTIALS") {
-            runtime.info("Using credentials from GOOGLE_APPLICATION_CREDENTIALS env var");
+            compiler.info("Using credentials from GOOGLE_APPLICATION_CREDENTIALS env var");
             path::PathBuf::from(env_var)
         } else if adc_path.exists() {
-            runtime.info(format!(
+            compiler.info(format!(
                 "Using credentials from ADC path: {}",
                 adc_path.display()
             ));
@@ -144,19 +144,19 @@ mod tests {
             "GOOGLE_APPLICATION_CREDENTIALS",
             test_file.0.to_string_lossy().to_string(),
         );
-        let runtime = build_runtime();
+        let compiler = build_compiler();
 
-        assert!(Credentials::try_from(&runtime).is_ok());
+        assert!(Credentials::try_from(&compiler).is_ok());
     }
 
     #[test]
     fn try_from_options() {
         let test_file = TestFile::new("json", "{\"type\": \"service_account\"}");
-        let mut runtime = build_runtime();
-        runtime.options.google_account_credentials =
+        let mut compiler = build_compiler();
+        compiler.options.google_account_credentials =
             Some(test_file.0.clone().into_os_string().into_string().unwrap());
 
-        assert!(Credentials::try_from(&runtime).is_ok());
+        assert!(Credentials::try_from(&compiler).is_ok());
     }
 
     #[test]

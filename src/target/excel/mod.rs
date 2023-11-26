@@ -4,7 +4,7 @@
 //!
 use super::{merge_cell, ExistingCell, MergeResult};
 use crate::ast::Node;
-use crate::{Cell, Module, Result, Runtime};
+use crate::{Cell, Compiler, Module, Result};
 use a1_notation::Address;
 use std::ffi;
 use std::path;
@@ -21,12 +21,12 @@ type ExcelValue = u::Cell;
 #[derive(Debug)]
 pub(crate) struct Excel<'a> {
     path: path::PathBuf,
-    runtime: &'a Runtime,
+    compiler: &'a Compiler,
 }
 
 impl<'a> Excel<'a> {
-    pub(crate) fn new(runtime: &'a Runtime, path: path::PathBuf) -> Self {
-        Self { path, runtime }
+    pub(crate) fn new(compiler: &'a Compiler, path: path::PathBuf) -> Self {
+        Self { path, compiler }
     }
 
     pub(crate) fn supports_extension(os_str: &ffi::OsStr) -> bool {
@@ -50,7 +50,7 @@ impl<'a> Excel<'a> {
                 let merged_cell = merge_cell(
                     &self.get_existing_cell(position, worksheet),
                     Some(cell),
-                    &self.runtime.options,
+                    &self.compiler.options,
                 );
 
                 match merged_cell {
@@ -159,7 +159,7 @@ impl<'a> Excel<'a> {
     fn open_spreadsheet(&self) -> Result<u::Spreadsheet> {
         if self.path.exists() {
             u::reader::xlsx::read(self.path.as_path()).map_err(|e| {
-                self.runtime
+                self.compiler
                     .output_error(format!("Unable to open target file: {e}"))
             })
         } else {
@@ -168,12 +168,12 @@ impl<'a> Excel<'a> {
     }
 
     fn create_worksheet(&self, spreadsheet: &mut u::Spreadsheet) -> Result<()> {
-        let sheet_name = self.runtime.options.sheet_name.clone();
+        let sheet_name = self.compiler.options.sheet_name.clone();
 
         let existing = spreadsheet.get_sheet_by_name(&sheet_name);
         if existing.is_err() {
             spreadsheet.new_sheet(&sheet_name).map_err(|e| {
-                self.runtime.output_error(format!(
+                self.compiler.output_error(format!(
                     "Unable to create new worksheet {sheet_name} in target file: {e}"
                 ))
             })?;
@@ -186,9 +186,9 @@ impl<'a> Excel<'a> {
         &'a self,
         spreadsheet: &'a mut u::Spreadsheet,
     ) -> Result<&'a mut u::Worksheet> {
-        let sheet_name = &self.runtime.options.sheet_name;
+        let sheet_name = &self.compiler.options.sheet_name;
         spreadsheet.get_sheet_by_name_mut(sheet_name).map_err(|e| {
-            self.runtime.output_error(format!(
+            self.compiler.output_error(format!(
                 "Unable to open worksheet {sheet_name} in target file: {e}"
             ))
         })
@@ -202,18 +202,18 @@ mod tests {
     /*
     #[test]
     fn open_worksheet_does_exist() {
-        let runtime = build_runtime();
+        let compiler = build_compiler();
         let setup = TestFile::new("xlsx", "");
-        let spreadsheet = Excel::new(&runtime, setup.output).open_worksheet().unwrap();
+        let spreadsheet = Excel::new(&compiler, setup.output).open_worksheet().unwrap();
 
         // assert!(spreadsheet.is_ok());
     }
 
     #[test]
     fn open_worksheet_does_not_exist() {
-        let runtime = build_runtime();
+        let compiler = build_compiler();
         let filename = path::PathBuf::from("foobar.xlsx");
-        let spreadsheet = Excel::new(&runtime, filename).open_worksheet().unwrap();
+        let spreadsheet = Excel::new(&compiler, filename).open_worksheet().unwrap();
 
         // assert!(spreadsheet.is_ok());
     }

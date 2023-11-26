@@ -1,7 +1,7 @@
 //! # Output
 //!
 use crate::target::*;
-use crate::{CompilationTarget, Error, Result, Runtime};
+use crate::{CompilationTarget, Compiler, Error, Result};
 use std::path;
 
 mod display;
@@ -20,13 +20,13 @@ pub enum Output {
 impl Output {
     pub(crate) fn compilation_target<'a>(
         &'a self,
-        runtime: &'a Runtime,
+        compiler: &'a Compiler,
     ) -> Result<Box<dyn CompilationTarget + 'a>> {
         Ok(match self {
-            Self::Csv(path) => Box::new(Csv::new(runtime, path.to_path_buf())),
-            Self::Excel(path) => Box::new(Excel::new(runtime, path.to_path_buf())),
-            Self::GoogleSheets(sheet_id) => Box::new(GoogleSheets::new(runtime, sheet_id)?),
-            Self::OpenDocument(path) => Box::new(OpenDocument::new(runtime, path.to_path_buf())),
+            Self::Csv(path) => Box::new(Csv::new(compiler, path.to_path_buf())),
+            Self::Excel(path) => Box::new(Excel::new(compiler, path.to_path_buf())),
+            Self::GoogleSheets(sheet_id) => Box::new(GoogleSheets::new(compiler, sheet_id)?),
+            Self::OpenDocument(path) => Box::new(OpenDocument::new(compiler, path.to_path_buf())),
         })
     }
 

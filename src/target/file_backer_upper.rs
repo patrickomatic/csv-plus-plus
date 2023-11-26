@@ -1,4 +1,4 @@
-use crate::{Result, Runtime};
+use crate::{Compiler, Result};
 use chrono::prelude::Local;
 use std::fs;
 use std::path;
@@ -19,24 +19,24 @@ const BACKUP_FORMATS: &[&str] = &[
 // NOTE:
 // this operation is not atomic - to do so we'd need to create a tempfile, write to it
 // then move it in place.  (but for this use case I don't think it matters)
-pub(crate) fn backup_file(runtime: &Runtime, filename: &path::PathBuf) -> Result<path::PathBuf> {
-    runtime.progress(format!("Backing up file: {}", filename.display()));
+pub(crate) fn backup_file(compiler: &Compiler, filename: &path::PathBuf) -> Result<path::PathBuf> {
+    compiler.progress(format!("Backing up file: {}", filename.display()));
 
     let filename_str = filename
         .to_str()
-        .ok_or(runtime.output_error("Unable to format output filename"))?;
+        .ok_or(compiler.output_error("Unable to format output filename"))?;
 
     let file_stem = filename
         .file_stem()
-        .ok_or(runtime.output_error(format!("Unable to get base file for: {filename_str}")))?;
+        .ok_or(compiler.output_error(format!("Unable to get base file for: {filename_str}")))?;
 
-    let file_parent = filename.parent().ok_or(runtime.output_error(format!(
+    let file_parent = filename.parent().ok_or(compiler.output_error(format!(
         "Unable to get parent base file for: {filename_str}",
     )))?;
 
     let file_extension = filename
         .extension()
-        .ok_or(runtime.output_error(format!("Unable to get extension for: {filename_str}")))?;
+        .ok_or(compiler.output_error(format!("Unable to get extension for: {filename_str}")))?;
 
     let now = Local::now();
     for time_format in BACKUP_FORMATS.iter() {
@@ -52,14 +52,14 @@ pub(crate) fn backup_file(runtime: &Runtime, filename: &path::PathBuf) -> Result
 
         if let Err(e) = fs::copy(filename, &new_file) {
             return Err(
-                runtime.output_error(format!("Error making backup of {filename_str}: {e}",))
+                compiler.output_error(format!("Error making backup of {filename_str}: {e}",))
             );
         }
 
         return Ok(new_file);
     }
 
-    Err(runtime.output_error(format!(
+    Err(compiler.output_error(format!(
         "Unable to make backup of output file: {filename_str}",
     )))
 }

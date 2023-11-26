@@ -14,7 +14,7 @@
 use super::ast_lexer::*;
 use crate::ast::{Ast, Node, Variables};
 use crate::error::{BadInput, Error, ParseResult, Result};
-use crate::Runtime;
+use crate::Compiler;
 use std::collections;
 
 pub(crate) struct AstParser<'a> {
@@ -27,13 +27,13 @@ impl<'a> AstParser<'a> {
     }
 
     /// Parse `input` from a `SourceCode`.
-    pub(crate) fn parse(input: &'a str, single_expr: bool, runtime: &'a Runtime) -> Result<Ast> {
-        let lexer =
-            AstLexer::new(input, runtime).map_err(|e| runtime.source_code.code_syntax_error(e))?;
+    pub(crate) fn parse(input: &'a str, single_expr: bool, compiler: &'a Compiler) -> Result<Ast> {
+        let lexer = AstLexer::new(input, compiler)
+            .map_err(|e| compiler.source_code.code_syntax_error(e))?;
 
         AstParser::new(&lexer)
             .expr_bp(single_expr, 0)
-            .map_err(|e| runtime.source_code.code_syntax_error(e))
+            .map_err(|e| compiler.source_code.code_syntax_error(e))
     }
 
     /// Parse `input` from the command line, specified as a simple key/value string like
@@ -42,13 +42,13 @@ impl<'a> AstParser<'a> {
     // TODO: take multiple key values via the same flag.  similar to awk -v foo1=bar -v foo2=bar
     pub(crate) fn parse_key_value_str(
         key_values: &'a [String],
-        runtime: &'a Runtime,
+        compiler: &'a Compiler,
     ) -> Result<Variables> {
         let mut variables = collections::HashMap::new();
 
         for kv in key_values.iter() {
             if let Some((key, value)) = kv.split_once('=') {
-                variables.insert(key.to_string(), Self::parse(value, false, runtime)?);
+                variables.insert(key.to_string(), Self::parse(value, false, compiler)?);
             } else {
                 return Err(Error::InitError(format!(
                     "Invalid key/value variables: {kv}"
@@ -207,8 +207,8 @@ mod tests {
     use crate::test_utils::*;
 
     fn test_parse(input: &str) -> Ast {
-        let runtime: Runtime = (&TestSourceCode::new("xlsx", input)).into();
-        AstParser::parse(input, false, &runtime).unwrap()
+        let compiler: Compiler = (&TestSourceCode::new("xlsx", input)).into();
+        AstParser::parse(input, false, &compiler).unwrap()
     }
 
     #[test]
@@ -286,18 +286,20 @@ mod tests {
 
     #[test]
     fn parse_key_value_str() {
-        let runtime: Runtime = (&TestSourceCode::new("csv", "foo,bar")).into();
-        let parsed_vars =
-            AstParser::parse_key_value_str(&["foo=bar".to_string(), "baz=1".to_string()], &runtime)
-                .unwrap();
+        let compiler: Compiler = (&TestSourceCode::new("csv", "foo,bar")).into();
+        let parsed_vars = AstParser::parse_key_value_str(
+            &["foo=bar".to_string(), "baz=1".to_string()],
+            &compiler,
+        )
+        .unwrap();
 
         assert_eq!(parsed_vars.len(), 2);
     }
 
     #[test]
     fn parse_key_value_str_empty() {
-        let runtime: Runtime = (&TestSourceCode::new("csv", "foo,bar")).into();
-        let parsed_vars = AstParser::parse_key_value_str(&[], &runtime).unwrap();
+        let compiler: Compiler = (&TestSourceCode::new("csv", "foo,bar")).into();
+        let parsed_vars = AstParser::parse_key_value_str(&[], &compiler).unwrap();
 
         assert_eq!(parsed_vars.len(), 0);
     }

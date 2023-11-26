@@ -12,8 +12,8 @@ Foo,Bar,Baz,=SUM(test)
 ![[f=3]][[var=test]],=test*5,=bar,
 "#,
     );
-    let module = s.runtime.compile().unwrap();
-    let target = s.runtime.target().unwrap();
+    let module = s.compiler.compile().unwrap();
+    let target = s.compiler.target().unwrap();
     target.write(&module).unwrap();
 
     assert_eq!(
@@ -37,8 +37,8 @@ fn row_variable_in_fill() {
 ![[f=3 / var=row]][[var=cell]],=cell,=row,
 "#,
     );
-    let module = s.runtime.compile().unwrap();
-    let target = s.runtime.target().unwrap();
+    let module = s.compiler.compile().unwrap();
+    let target = s.compiler.target().unwrap();
     target.write(&module).unwrap();
 
     assert_eq!(

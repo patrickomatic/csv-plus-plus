@@ -9,7 +9,7 @@ impl CompilationTarget for GoogleSheets<'_> {
     }
 
     fn write(&self, module: &Module) -> Result<()> {
-        self.async_runtime
+        self.async_compiler
             .block_on(async { self.write_sheet(module).await })
     }
 }

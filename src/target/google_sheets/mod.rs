@@ -9,7 +9,7 @@ mod credentials;
 mod google_sheets_cell;
 
 use super::{ExistingCell, ExistingValues};
-use crate::{Error, Module, Result, Runtime};
+use crate::{Compiler, Error, Module, Result};
 use batch_update_builder::BatchUpdateBuilder;
 use credentials::Credentials;
 use google_sheets4::hyper;
@@ -21,9 +21,9 @@ type SheetsHub = google_sheets4::Sheets<hyper_rustls::HttpsConnector<hyper::clie
 type SheetsValue = google_sheets4::api::CellData;
 
 pub(crate) struct GoogleSheets<'a> {
-    async_runtime: tokio::runtime::Runtime,
+    async_compiler: tokio::runtime::Runtime,
     credentials: Credentials,
-    runtime: &'a Runtime,
+    compiler: &'a Compiler,
     pub(crate) sheet_id: String,
 }
 
@@ -37,23 +37,23 @@ macro_rules! unwrap_or_empty {
 }
 
 impl<'a> GoogleSheets<'a> {
-    pub(crate) fn new<S: Into<String>>(runtime: &'a Runtime, sheet_id: S) -> Result<Self> {
-        let credentials = runtime.try_into()?;
+    pub(crate) fn new<S: Into<String>>(compiler: &'a Compiler, sheet_id: S) -> Result<Self> {
+        let credentials = compiler.try_into()?;
 
-        let async_runtime = tokio::runtime::Builder::new_current_thread()
+        let async_compiler = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .map_err(|e| {
                 Error::InitError(format!(
-                    "Error starting async runtime to write Google Sheets: {e}"
+                    "Error starting async compiler to write Google Sheets: {e}"
                 ))
             })?;
 
         Ok(Self {
-            async_runtime,
+            async_compiler,
             credentials,
             sheet_id: sheet_id.into(),
-            runtime,
+            compiler,
         })
     }
 
@@ -75,7 +75,7 @@ impl<'a> GoogleSheets<'a> {
                         return Ok(ExistingValues::default());
                     }
                     _ => {
-                        self.runtime
+                        self.compiler
                             .warn(format!("Google Sheets API error response: {e}"));
 
                         // TODO: show just the message
@@ -178,7 +178,7 @@ impl<'a> GoogleSheets<'a> {
         let hub = self.sheets_hub().await?;
         let existing_values = self.read_existing_cells(&hub).await?;
         let batch_update_request =
-            BatchUpdateBuilder::new(self.runtime, module, &existing_values).build();
+            BatchUpdateBuilder::new(self.compiler, module, &existing_values).build();
 
         hub.spreadsheets()
             .batch_update(batch_update_request, &self.sheet_id)
@@ -186,8 +186,8 @@ impl<'a> GoogleSheets<'a> {
             .await
             .map(|_i| ())
             .map_err(|e| {
-                self.runtime.error(format!("{e:?}"));
-                self.runtime
+                self.compiler.error(format!("{e:?}"));
+                self.compiler
                     .output_error(format!("Error writing to Google Sheets: {e}"))
             })
     }
@@ -201,13 +201,13 @@ mod tests {
     use super::*;
     use crate::CliArgs;
 
-    fn build_runtime() -> Runtime {
+    fn build_compiler() -> Compiler {
         let cli_args = CliArgs {
             input_filename: path::PathBuf::from("foo.csvpp"),
             google_sheet_id: Some("abc123".to_string()),
             ..Default::default()
         };
-        Runtime::new(cli_args).unwrap()
+        Compiler::new(cli_args).unwrap()
     }
 
     fn build_module() -> Module {
@@ -217,8 +217,8 @@ mod tests {
     #[test]
     fn write() {
         let module = build_module();
-        let runtime = build_runtime();
-        let target = GoogleSheets::new(&runtime, "1z1PQsfooud19mPwKcix3ocUpg9yXeiAXA2GycxWlpqU").unwrap();
+        let compiler = build_compiler();
+        let target = GoogleSheets::new(&compiler, "1z1PQsfooud19mPwKcix3ocUpg9yXeiAXA2GycxWlpqU").unwrap();
 
         let result = target.write(&module);
         assert!(result.is_ok());

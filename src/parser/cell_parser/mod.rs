@@ -5,7 +5,7 @@ mod validate;
 use super::cell_lexer::{CellLexer, Token, TokenMatch};
 use crate::error::{BadInput, ParseResult, Result};
 use crate::{
-    BorderSide, BorderStyle, Cell, Fill, HorizontalAlign, NumberFormat, Rgb, Row, Runtime,
+    BorderSide, BorderStyle, Cell, Compiler, Fill, HorizontalAlign, NumberFormat, Rgb, Row,
     TextFormat, VerticalAlign,
 };
 
@@ -55,10 +55,10 @@ where
         input: &'b str,
         position: a1_notation::Address,
         row: &'b mut Row,
-        runtime: &'b Runtime,
+        compiler: &'b Compiler,
     ) -> Result<Cell> {
-        Self::parse_cell(input, position, row, runtime)
-            .map_err(move |e| runtime.source_code.cell_syntax_error(e, position))
+        Self::parse_cell(input, position, row, compiler)
+            .map_err(move |e| compiler.source_code.cell_syntax_error(e, position))
     }
 
     // TODO just merge this into the above function?
@@ -66,9 +66,9 @@ where
         input: &'b str,
         position: a1_notation::Address,
         row: &'b mut Row,
-        runtime: &'b Runtime,
+        compiler: &'b Compiler,
     ) -> ParseResult<Cell> {
-        let mut lexer = CellLexer::new(input, position, runtime);
+        let mut lexer = CellLexer::new(input, position, compiler);
         let mut parsed_cell = None;
 
         while let Some(start_token) = lexer.maybe_take_start_options() {
@@ -268,7 +268,7 @@ mod tests {
             input,
             a1_notation::Address::new(0, 0),
             row,
-            &build_runtime(),
+            &build_compiler(),
         )
         .unwrap()
     }

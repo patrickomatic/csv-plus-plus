@@ -19,7 +19,7 @@ use super::ast_lexer::{AstLexer, Token, TokenMatch};
 use super::ast_parser::AstParser;
 use crate::ast::{Ast, Functions, Node, VariableValue, Variables};
 use crate::module::ModuleName;
-use crate::{Result, Runtime};
+use crate::{Compiler, Result};
 use std::collections::HashMap;
 use std::fmt;
 
@@ -52,7 +52,7 @@ impl fmt::Display for CodeSection {
 
 pub(crate) struct CodeSectionParser<'a> {
     lexer: AstLexer<'a>,
-    runtime: &'a Runtime,
+    compiler: &'a Compiler,
 }
 
 /// A recursive descent parser which relies on `AstParser` for individual expressions.  As
@@ -60,13 +60,13 @@ pub(crate) struct CodeSectionParser<'a> {
 /// function, use statements and variable assignments and delegates to `AstParser` for handling
 /// expressions
 impl<'a> CodeSectionParser<'a> {
-    pub(crate) fn parse(input: &'a str, runtime: &'a Runtime) -> Result<CodeSection> {
-        runtime.progress("Parsing code section");
+    pub(crate) fn parse(input: &'a str, compiler: &'a Compiler) -> Result<CodeSection> {
+        compiler.progress("Parsing code section");
 
         CodeSectionParser {
-            lexer: AstLexer::new(input, runtime)
-                .map_err(|e| runtime.source_code.code_syntax_error(e))?,
-            runtime,
+            lexer: AstLexer::new(input, compiler)
+                .map_err(|e| compiler.source_code.code_syntax_error(e))?,
+            compiler,
         }
         .parse_code_section()
     }
@@ -183,7 +183,7 @@ impl<'a> CodeSectionParser<'a> {
         // same stream of tokens
         AstParser::new(&self.lexer)
             .expr_bp(true, 0)
-            .map_err(|e| self.runtime.source_code.code_syntax_error(e))
+            .map_err(|e| self.compiler.source_code.code_syntax_error(e))
     }
 }
 
@@ -194,8 +194,8 @@ mod tests {
     use crate::test_utils::*;
 
     fn test(input: &str) -> CodeSection {
-        let runtime: Runtime = (&TestSourceCode::new("csv", input)).into();
-        CodeSectionParser::parse(input, &runtime).unwrap()
+        let compiler: Compiler = (&TestSourceCode::new("csv", input)).into();
+        CodeSectionParser::parse(input, &compiler).unwrap()
     }
 
     #[test]

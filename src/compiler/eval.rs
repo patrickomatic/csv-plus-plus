@@ -1,11 +1,11 @@
 use crate::ast::{Ast, AstReferences, BuiltinFunction, BuiltinVariable, Node};
 use crate::error::{EvalError, EvalResult};
 use crate::parser::code_section_parser::CodeSectionParser;
-use crate::{Cell, Module, ModuleName, Result, Row, Runtime, Spreadsheet};
+use crate::{Cell, Compiler, Module, ModuleName, Result, Row, Spreadsheet};
 use std::cell;
 use std::collections;
 
-impl Runtime {
+impl Compiler {
     pub fn compile(&self) -> Result<Module> {
         Ok(if let Some(t) = Module::read_from_object_file(self)? {
             self.progress("Read module from object file (not compiling)");

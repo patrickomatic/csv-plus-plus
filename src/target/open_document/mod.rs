@@ -4,17 +4,17 @@
 //!
 use super::file_backer_upper;
 use super::CompilationTarget;
-use crate::{Module, Result, Runtime};
+use crate::{Compiler, Module, Result};
 use std::path::PathBuf;
 
 pub struct OpenDocument<'a> {
     path: PathBuf,
-    runtime: &'a Runtime,
+    compiler: &'a Compiler,
 }
 
 impl CompilationTarget for OpenDocument<'_> {
     fn write_backup(&self) -> Result<()> {
-        file_backer_upper::backup_file(self.runtime, &self.path)?;
+        file_backer_upper::backup_file(self.compiler, &self.path)?;
         Ok(())
     }
 
@@ -24,8 +24,8 @@ impl CompilationTarget for OpenDocument<'_> {
 }
 
 impl<'a> OpenDocument<'a> {
-    pub fn new(runtime: &'a Runtime, path: PathBuf) -> OpenDocument<'a> {
-        Self { path, runtime }
+    pub fn new(compiler: &'a Compiler, path: PathBuf) -> OpenDocument<'a> {
+        Self { path, compiler }
     }
 
     pub(crate) fn supports_extension(os_str: &std::ffi::OsStr) -> bool {

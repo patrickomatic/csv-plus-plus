@@ -2,16 +2,16 @@ use crate::ast::{BuiltinFunction, BuiltinVariable};
 use crate::parser::ast_lexer;
 use crate::parser::ast_parser::AstParser;
 use crate::parser::cell_lexer;
-use crate::{CliArgs, Options, Output, Runtime, SourceCode};
+use crate::{CliArgs, Compiler, Options, Output, SourceCode};
 use std::sync;
 
-impl TryFrom<&CliArgs> for Runtime {
+impl TryFrom<&CliArgs> for Compiler {
     type Error = crate::Error;
 
     fn try_from(cli_args: &CliArgs) -> std::result::Result<Self, Self::Error> {
         let source_code = SourceCode::open(&cli_args.input_filename)?;
 
-        let mut runtime = Self {
+        let mut compiler = Self {
             builtin_functions: BuiltinFunction::all(),
             builtin_variables: BuiltinVariable::all(),
             options: Options::try_from(cli_args)?,
@@ -21,13 +21,13 @@ impl TryFrom<&CliArgs> for Runtime {
             cell_token_library: cell_lexer::TokenLibrary::build()?,
         };
 
-        // we have to parse key/values afterwards, because we need an initialized `Runtime` to do so
-        runtime.options.key_values =
-            AstParser::parse_key_value_str(&cli_args.key_values, &runtime)?;
+        // we have to parse key/values afterwards, because we need an initialized `Compiler` to do so
+        compiler.options.key_values =
+            AstParser::parse_key_value_str(&cli_args.key_values, &compiler)?;
 
-        runtime.info(&runtime);
+        compiler.info(&compiler);
 
-        Ok(runtime)
+        Ok(compiler)
     }
 }
 
@@ -44,8 +44,8 @@ mod tests {
             google_sheet_id: Some("abc123".to_string()),
             ..Default::default()
         };
-        let runtime = Runtime::try_from(&cli_args);
+        let compiler = Compiler::try_from(&cli_args);
 
-        assert!(runtime.is_ok());
+        assert!(compiler.is_ok());
     }
 }

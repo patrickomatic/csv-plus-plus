@@ -1,4 +1,4 @@
-use csvpp::{CliArgs, Runtime};
+use csvpp::{CliArgs, Compiler};
 use rand::Rng;
 use std::fs;
 use std::path;
@@ -7,7 +7,7 @@ pub(crate) struct Setup {
     pub(crate) input_path: path::PathBuf,
     pub(crate) output_path: path::PathBuf,
     cleanup_input: bool,
-    pub(crate) runtime: Runtime,
+    pub(crate) compiler: Compiler,
 }
 
 impl Setup {
@@ -38,7 +38,7 @@ impl Setup {
         let output_filename = format!("integration_test_output_{}.{extension}", rng.gen::<u64>());
         let output_path = path::Path::new(&output_filename);
 
-        let runtime = Runtime::try_from(&CliArgs {
+        let compiler = Compiler::try_from(&CliArgs {
             input_filename: input_path.clone(),
             output_filename: Some(output_path.to_path_buf()),
             ..Default::default()
@@ -52,7 +52,7 @@ impl Setup {
             input_path,
             output_path: output_path.to_path_buf(),
             cleanup_input,
-            runtime,
+            compiler,
         }
     }
 

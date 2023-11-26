@@ -3,7 +3,7 @@
 //!
 use crate::parser::ast_lexer;
 use crate::parser::cell_lexer;
-use crate::{DateTime, Runtime, SourceCode};
+use crate::{Compiler, DateTime, SourceCode};
 use std::sync;
 
 mod test_file;
@@ -40,8 +40,8 @@ pub(crate) fn build_date_time_ymd(y: i32, m: u32, d: u32) -> DateTime {
     DateTime::Date(chrono::NaiveDate::from_ymd_opt(y, m, d).unwrap())
 }
 
-/// If the test just needs a runtime but doesn't care about it at all
-pub(crate) fn build_runtime() -> Runtime {
+/// If the test just needs a compiler but doesn't care about it at all
+pub(crate) fn build_compiler() -> Compiler {
     (&TestSourceCode::new("foo.xlsx", "foo,bar,baz")).into()
 }
 

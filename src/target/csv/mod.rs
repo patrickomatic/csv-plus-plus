@@ -3,7 +3,7 @@
 //! Functions for writing to CSV files
 //!
 use super::{ExistingCell, ExistingValues};
-use crate::{csv_reader, Output, Result, Runtime};
+use crate::{csv_reader, Compiler, Output, Result};
 use std::ffi;
 use std::fs;
 use std::io;
@@ -13,12 +13,12 @@ mod compilation_target;
 
 pub(crate) struct Csv<'a> {
     path: path::PathBuf,
-    runtime: &'a Runtime,
+    compiler: &'a Compiler,
 }
 
 impl<'a> Csv<'a> {
-    pub fn new(runtime: &'a Runtime, path: path::PathBuf) -> Self {
-        Self { path, runtime }
+    pub fn new(compiler: &'a Compiler, path: path::PathBuf) -> Self {
+        Self { path, compiler }
     }
 
     pub fn supports_extension(os_str: &ffi::OsStr) -> bool {

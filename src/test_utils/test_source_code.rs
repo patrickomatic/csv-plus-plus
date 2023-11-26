@@ -1,4 +1,4 @@
-use crate::{CliArgs, Runtime, SourceCode};
+use crate::{CliArgs, Compiler, SourceCode};
 use rand::Rng;
 use std::fs;
 use std::path;
@@ -18,11 +18,11 @@ pub(crate) struct TestSourceCode {
     pub(crate) output_file: path::PathBuf,
 }
 
-/// We frequently need to be able to produce a `Runtime` given a source file.
+/// We frequently need to be able to produce a `Compiler` given a source file.
 /// NOTE: It's important that this takes a reference to a `TestSourceCode` rather than an owned
 /// struct, because if it took the latter it would immediately trigger the `Drop` impl which would
 /// remove the files.  So we need to keep a reference open to it rather than owning it
-impl From<&TestSourceCode> for Runtime {
+impl From<&TestSourceCode> for Compiler {
     fn from(test_file: &TestSourceCode) -> Self {
         Self::try_from(&CliArgs {
             input_filename: test_file.input_file.clone(),

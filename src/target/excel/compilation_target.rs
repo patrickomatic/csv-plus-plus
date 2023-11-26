@@ -6,7 +6,7 @@ use umya_spreadsheet as u;
 
 impl CompilationTarget for Excel<'_> {
     fn write_backup(&self) -> Result<()> {
-        file_backer_upper::backup_file(self.runtime, &self.path)?;
+        file_backer_upper::backup_file(self.compiler, &self.path)?;
         Ok(())
     }
 
@@ -22,7 +22,7 @@ impl CompilationTarget for Excel<'_> {
         self.build_worksheet(module, worksheet)?;
 
         u::writer::xlsx::write(&spreadsheet, self.path.clone()).map_err(|e| {
-            self.runtime.output_error(format!(
+            self.compiler.output_error(format!(
                 "Unable to write target file {}: {e}",
                 self.path.display()
             ))
@@ -40,9 +40,9 @@ mod tests {
     #[test]
     fn write() {
         let test_file = &TestSourceCode::new("xlsx", "foo,bar,baz");
-        let runtime = test_file.into();
-        let target = Excel::new(&runtime, test_file.output_file.clone());
-        let module = runtime.compile().unwrap();
+        let compiler = test_file.into();
+        let target = Excel::new(&compiler, test_file.output_file.clone());
+        let module = compiler.compile().unwrap();
 
         assert!(target.write(&module).is_ok());
     }

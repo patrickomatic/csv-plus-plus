@@ -15,7 +15,7 @@ pub struct ParseError {
     // number and offset and do all the calculations in the `fmt::Display` trait when it's rendered.
     // However it was a real struggle to do that because since the error must contain everything it
     // needs to render itself, that means it would need a reference to the `SourceCode` or
-    // `Runtime`.  Both of which were really tough to do from a lifetime-perspective, but maybe
+    // `Compiler`.  Both of which were really tough to do from a lifetime-perspective, but maybe
     // it's possible by someone smarter.
     pub highlighted_lines: Vec<String>,
 

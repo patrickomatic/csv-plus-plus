@@ -2,7 +2,7 @@
 //!
 use super::TokenMatcher;
 use crate::error::ParseResult;
-use crate::{CharOffset, LineNumber, Runtime, SourceCode};
+use crate::{CharOffset, Compiler, LineNumber, SourceCode};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -52,7 +52,7 @@ fn matchers_ordered(tl: &TokenLibrary) -> [&TokenMatcher<Token>; 17] {
 }
 
 impl<'a> AstLexer<'a> {
-    pub(crate) fn new(input: &'a str, runtime: &'a Runtime) -> ParseResult<AstLexer<'a>> {
+    pub(crate) fn new(input: &'a str, compiler: &'a Compiler) -> ParseResult<AstLexer<'a>> {
         let mut line_number = 0;
         let mut position = 0;
 
@@ -62,7 +62,7 @@ impl<'a> AstLexer<'a> {
         loop {
             let mut matched = false;
 
-            for token_matcher in matchers_ordered(&runtime.ast_token_library).iter() {
+            for token_matcher in matchers_ordered(&compiler.ast_token_library).iter() {
                 let token = token_matcher.0;
 
                 if let Some(m) = token_matcher.try_match(p) {
@@ -78,7 +78,7 @@ impl<'a> AstLexer<'a> {
                             str_match: m.str_match,
                             line_number,
                             line_offset: position + m.len_leading_whitespace,
-                            source_code: &runtime.source_code,
+                            source_code: &compiler.source_code,
                         });
                     }
 
@@ -107,7 +107,7 @@ impl<'a> AstLexer<'a> {
                     bad_input: p.to_string(),
                     line_number,
                     line_offset: position,
-                    source_code: &runtime.source_code,
+                    source_code: &compiler.source_code,
                 }
                 .into());
             }
@@ -119,7 +119,7 @@ impl<'a> AstLexer<'a> {
             tokens: Rc::new(RefCell::new(tokens)),
             eof_position: position,
             lines: line_number,
-            source_code: &runtime.source_code,
+            source_code: &compiler.source_code,
         })
     }
 
@@ -166,8 +166,8 @@ mod tests {
 
     #[test]
     fn lexer_new() {
-        let runtime = build_runtime();
-        let lexer = AstLexer::new("foo bar,\"a\",123 \n(d, b) + * 0.25", &runtime).unwrap();
+        let compiler = build_compiler();
+        let lexer = AstLexer::new("foo bar,\"a\",123 \n(d, b) + * 0.25", &compiler).unwrap();
 
         assert_token_match_eq!(lexer, Token::Reference, "foo", 0, 0);
         assert_token_match_eq!(lexer, Token::Reference, "bar", 0, 4);
@@ -189,8 +189,8 @@ mod tests {
 
     #[test]
     fn lexer_new_comment() {
-        let runtime = build_runtime();
-        let lexer = AstLexer::new("# this is a comment\na_ref\n", &runtime).unwrap();
+        let compiler = build_compiler();
+        let lexer = AstLexer::new("# this is a comment\na_ref\n", &compiler).unwrap();
 
         assert_token_match_eq!(lexer, Token::Reference, "a_ref", 1, 0);
         assert_token_match_eq!(lexer, Token::Eof, "", 1, 5);
@@ -198,8 +198,8 @@ mod tests {
 
     #[test]
     fn lexer_new_newlines() {
-        let runtime = build_runtime();
-        let lexer = AstLexer::new("\n foo \n bar", &runtime).unwrap();
+        let compiler = build_compiler();
+        let lexer = AstLexer::new("\n foo \n bar", &compiler).unwrap();
 
         assert_token_match_eq!(lexer, Token::Reference, "foo", 1, 1);
         assert_token_match_eq!(lexer, Token::Reference, "bar", 2, 1);
@@ -207,8 +207,8 @@ mod tests {
 
     #[test]
     fn lexer_peek() {
-        let runtime = build_runtime();
-        let lexer = AstLexer::new("foo (bar) + baz", &runtime).unwrap();
+        let compiler = build_compiler();
+        let lexer = AstLexer::new("foo (bar) + baz", &compiler).unwrap();
 
         assert_eq!(lexer.peek().token, Token::Reference);
         assert_eq!(lexer.peek().str_match, "foo");

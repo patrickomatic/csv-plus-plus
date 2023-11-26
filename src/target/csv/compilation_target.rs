@@ -3,12 +3,12 @@ use crate::{Module, Result};
 
 impl CompilationTarget for Csv<'_> {
     fn write_backup(&self) -> Result<()> {
-        file_backer_upper::backup_file(self.runtime, &self.path)?;
+        file_backer_upper::backup_file(self.compiler, &self.path)?;
         Ok(())
     }
 
     fn write(&self, module: &Module) -> Result<()> {
-        let existing_values = Self::read(&self.path, &self.runtime.output)?;
+        let existing_values = Self::read(&self.path, &self.compiler.output)?;
 
         let new_values = module.spreadsheet.borrow();
         let widest_row = new_values.widest_row();
@@ -17,7 +17,7 @@ impl CompilationTarget for Csv<'_> {
             .flexible(true)
             .from_path(&self.path)
             .map_err(|e| {
-                self.runtime
+                self.compiler
                     .output_error(format!("Unable to open output file for writing: {e:?}"))
             })?;
 
@@ -28,7 +28,7 @@ impl CompilationTarget for Csv<'_> {
                     .get(index)
                     .unwrap_or(&vec![].to_owned()),
                 &row.cells,
-                &self.runtime.options,
+                &self.compiler.options,
             )
             .iter()
             .map(|cell| match cell {
@@ -42,13 +42,13 @@ impl CompilationTarget for Csv<'_> {
             output_row.resize(widest_row, "".to_string());
 
             writer.write_record(output_row).map_err(|e| {
-                self.runtime
+                self.compiler
                     .output_error(format!("Unable to write row {index}: {e}"))
             })?;
         }
 
         writer.flush().map_err(|e| {
-            self.runtime
+            self.compiler
                 .output_error(format!("Unable to finish writing to output: {e}"))
         })?;
 
@@ -71,9 +71,9 @@ one,,two,,three
 ",
         );
         let output_file = test_file.output_file.clone();
-        let runtime: Runtime = test_file.into();
-        let module = runtime.compile().unwrap();
-        let csv = Csv::new(&runtime, output_file);
+        let compiler: Compiler = test_file.into();
+        let module = compiler.compile().unwrap();
+        let csv = Csv::new(&compiler, output_file);
 
         assert!(csv.write(&module).is_ok());
     }

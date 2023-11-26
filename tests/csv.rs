@@ -13,8 +13,8 @@ fn write_no_code_section() {
 foo,bar,baz
 "#,
     );
-    let module = s.runtime.compile().unwrap();
-    let target = s.runtime.target().unwrap();
+    let module = s.compiler.compile().unwrap();
+    let target = s.compiler.target().unwrap();
     target.write(&module).unwrap();
 
     assert_eq!(s.read_output(), "foo,bar,baz\n");
@@ -31,8 +31,8 @@ foo := 1
 foo,bar,baz,=foo
 "#,
     );
-    let module = s.runtime.compile().unwrap();
-    let target = s.runtime.target().unwrap();
+    let module = s.compiler.compile().unwrap();
+    let target = s.compiler.target().unwrap();
     target.write(&module).unwrap();
 
     assert_eq!(
@@ -59,8 +59,8 @@ profit := (B * C) - fees
 "#,
     );
 
-    let module = s.runtime.compile().unwrap();
-    let target = s.runtime.target().unwrap();
+    let module = s.compiler.compile().unwrap();
+    let target = s.compiler.target().unwrap();
     target.write(&module).unwrap();
 
     assert_eq!(
@@ -93,8 +93,8 @@ foo
 "#,
     );
 
-    let module = s.runtime.compile().unwrap();
-    let target = s.runtime.target().unwrap();
+    let module = s.compiler.compile().unwrap();
+    let target = s.compiler.target().unwrap();
     target.write(&module).unwrap();
 
     assert_eq!(

@@ -4,8 +4,8 @@ use crate::ast::Ast;
 use crate::parser::ast_parser::AstParser;
 use crate::parser::cell_parser::CellParser;
 use crate::{
-    BorderSide, BorderStyle, DataValidation, HorizontalAlign, NumberFormat, Result, Rgb, Row,
-    Runtime, TextFormat, VerticalAlign,
+    BorderSide, BorderStyle, Compiler, DataValidation, HorizontalAlign, NumberFormat, Result, Rgb,
+    Row, TextFormat, VerticalAlign,
 };
 use a1_notation::Address;
 use std::collections::HashSet;
@@ -33,18 +33,23 @@ pub struct Cell {
     pub vertical_align: Option<VerticalAlign>,
 }
 
-fn parse_ast(input: &str, runtime: &Runtime) -> Result<Option<Ast>> {
+fn parse_ast(input: &str, compiler: &Compiler) -> Result<Option<Ast>> {
     Ok(if let Some(without_equals) = input.strip_prefix('=') {
-        Some(AstParser::parse(without_equals, false, runtime)?)
+        Some(AstParser::parse(without_equals, false, compiler)?)
     } else {
         None
     })
 }
 
 impl Cell {
-    pub fn parse(input: &str, position: Address, row: &mut Row, runtime: &Runtime) -> Result<Self> {
-        let mut cell = CellParser::parse(input, position, row, runtime)?;
-        cell.ast = parse_ast(&cell.value, runtime)?;
+    pub fn parse(
+        input: &str,
+        position: Address,
+        row: &mut Row,
+        compiler: &Compiler,
+    ) -> Result<Self> {
+        let mut cell = CellParser::parse(input, position, row, compiler)?;
+        cell.ast = parse_ast(&cell.value, compiler)?;
 
         Ok(cell)
     }

@@ -1,8 +1,8 @@
 mod display;
 
 use crate::{
-    BorderSide, BorderStyle, Cell, DataValidation, Fill, HorizontalAlign, NumberFormat, Result,
-    Rgb, Runtime, TextFormat, VerticalAlign,
+    BorderSide, BorderStyle, Cell, Compiler, DataValidation, Fill, HorizontalAlign, NumberFormat,
+    Result, Rgb, TextFormat, VerticalAlign,
 };
 use std::collections::HashSet;
 
@@ -33,7 +33,7 @@ impl Row {
     pub(crate) fn parse(
         record_result: CsvRowResult,
         row_a1: a1_notation::Row,
-        runtime: &Runtime,
+        compiler: &Compiler,
     ) -> Result<Self> {
         let mut row = Self::default();
 
@@ -43,7 +43,7 @@ impl Row {
 
         for (cell_index, unparsed_value) in csv_parsed_row.into_iter().enumerate() {
             let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
-            let cell = Cell::parse(unparsed_value, cell_a1, &mut row, runtime)?;
+            let cell = Cell::parse(unparsed_value, cell_a1, &mut row, compiler)?;
             row.cells.push(cell);
         }
 

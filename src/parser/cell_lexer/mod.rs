@@ -5,7 +5,7 @@
 //!
 use super::TokenMatcher;
 use crate::error::{BadInput, ParseError, ParseResult};
-use crate::{CharOffset, Runtime};
+use crate::{CharOffset, Compiler};
 
 mod token;
 mod token_library;
@@ -22,20 +22,20 @@ pub(crate) struct CellLexer<'a> {
     cell_offset: CharOffset,
     pub(crate) input: &'a str,
     position: a1_notation::Address,
-    runtime: &'a Runtime,
+    compiler: &'a Compiler,
 }
 
 impl<'a> CellLexer<'a> {
     pub(super) fn new(
         input: &'a str,
         position: a1_notation::Address,
-        runtime: &'a Runtime,
+        compiler: &'a Compiler,
     ) -> Self {
         Self {
             cell_offset: 0,
             input,
             position,
-            runtime,
+            compiler,
         }
     }
 
@@ -68,7 +68,7 @@ impl<'a> CellLexer<'a> {
     }
 
     pub(super) fn maybe_take_date(&mut self) -> Option<TokenMatch> {
-        self.maybe_take_regex(&self.runtime.cell_token_library.date)
+        self.maybe_take_regex(&self.compiler.cell_token_library.date)
     }
 
     pub(super) fn maybe_take_equals(&mut self) -> Option<TokenMatch> {
@@ -76,23 +76,23 @@ impl<'a> CellLexer<'a> {
     }
 
     pub(super) fn maybe_take_number(&mut self) -> Option<TokenMatch> {
-        self.maybe_take_regex(&self.runtime.cell_token_library.number)
+        self.maybe_take_regex(&self.compiler.cell_token_library.number)
     }
 
     pub(super) fn maybe_take_identifier(&mut self) -> Option<TokenMatch> {
-        self.maybe_take_regex(&self.runtime.cell_token_library.identifier)
+        self.maybe_take_regex(&self.compiler.cell_token_library.identifier)
     }
 
     pub(super) fn maybe_take_single_quoted_string(&mut self) -> ParseResult<Option<TokenMatch>> {
         Ok(
             if self
-                .runtime
+                .compiler
                 .cell_token_library
                 .single_quoted_string
                 .try_match(self.input)
                 .is_some()
             {
-                // self.maybe_take_regex(&self.runtime.cell_token_library.single_quoted_string)
+                // self.maybe_take_regex(&self.compiler.cell_token_library.single_quoted_string)
                 Some(self.take_single_quoted_string()?)
             } else {
                 None
@@ -106,7 +106,7 @@ impl<'a> CellLexer<'a> {
 
     // is the next token to be consumed a `)`? (this will not consume it)
     pub(super) fn peek_close_parenthesis(&mut self) -> bool {
-        self.runtime
+        self.compiler
             .cell_token_library
             .close_parenthesis
             .try_match(self.input)
@@ -145,7 +145,7 @@ impl<'a> CellLexer<'a> {
     pub(super) fn take_date(&mut self) -> ParseResult<TokenMatch> {
         self.take_whitespace();
 
-        if let Some(m) = self.runtime.cell_token_library.date.try_match(self.input) {
+        if let Some(m) = self.compiler.cell_token_library.date.try_match(self.input) {
             let str_match = m.str_match;
 
             // move the offset past any observed whitespace, then build the token
@@ -169,7 +169,7 @@ impl<'a> CellLexer<'a> {
             str_match: str_match.to_string(),
             position: self.position,
             cell_offset: self.last_cell_offset(),
-            source_code: self.runtime.source_code.clone(),
+            source_code: self.compiler.source_code.clone(),
         }
     }
 
@@ -178,7 +178,7 @@ impl<'a> CellLexer<'a> {
             bad_input: self.input.to_string(),
             position: self.position,
             cell_offset: self.last_cell_offset(),
-            source_code: self.runtime.source_code.clone(),
+            source_code: self.compiler.source_code.clone(),
         }
         .into_parse_error(message)
     }
@@ -354,16 +354,16 @@ impl<'a> CellLexer<'a> {
 mod tests {
     use super::*;
     use crate::test_utils::*;
-    use crate::Runtime;
+    use crate::Compiler;
 
-    fn test_lexer<'a>(lexer_input: &'a str, runtime: &'a Runtime) -> CellLexer<'a> {
-        CellLexer::new(lexer_input, a1_notation::Address::new(0, 0), runtime)
+    fn test_lexer<'a>(lexer_input: &'a str, compiler: &'a Compiler) -> CellLexer<'a> {
+        CellLexer::new(lexer_input, a1_notation::Address::new(0, 0), compiler)
     }
 
     #[test]
     fn maybe_take_date() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("  11/2/2024, 1, 2", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("  11/2/2024, 1, 2", &compiler);
 
         assert_eq!(lexer.maybe_take_date().unwrap().token, Token::Date);
         assert_eq!(lexer.input, ", 1, 2");
@@ -372,8 +372,8 @@ mod tests {
 
     #[test]
     fn maybe_take_identifier() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("     foo bar baz", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("     foo bar baz", &compiler);
 
         assert_eq!(
             lexer.maybe_take_identifier().unwrap().token,
@@ -385,8 +385,8 @@ mod tests {
 
     #[test]
     fn maybe_take_single_quoted_string() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("     'foo bar' baz", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("     'foo bar' baz", &compiler);
 
         assert_eq!(
             lexer
@@ -402,8 +402,8 @@ mod tests {
 
     #[test]
     fn maybe_take_start_cell_options() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("[[", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("[[", &compiler);
 
         assert_eq!(
             Token::StartCellOptions,
@@ -413,8 +413,8 @@ mod tests {
 
     #[test]
     fn maybe_take_start_row_options() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("![[", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("![[", &compiler);
 
         assert_eq!(
             Token::StartRowOptions,
@@ -424,72 +424,72 @@ mod tests {
 
     #[test]
     fn maybe_take_start_options_none() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("foo", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("foo", &compiler);
 
         assert!(lexer.maybe_take_start_options().is_none());
     }
 
     #[test]
     fn take_option_right_side() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("=foo_bar", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("=foo_bar", &compiler);
 
         assert_eq!("foo_bar", lexer.take_option_right_side().unwrap().str_match);
     }
 
     #[test]
     fn take_option_right_side_invalid() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("foo", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("foo", &compiler);
 
         assert!(lexer.take_option_right_side().is_err());
     }
 
     #[test]
     fn maybe_take_equals() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("=", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("=", &compiler);
 
         assert!(lexer.maybe_take_equals().is_some());
     }
 
     #[test]
     fn maybe_take_slash() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("/", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("/", &compiler);
 
         assert!(lexer.maybe_take_slash().is_some());
     }
 
     #[test]
     fn take_token_color() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("#ABC123", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("#ABC123", &compiler);
 
         assert_eq!("#ABC123", lexer.take_token(Token::Color).unwrap().str_match);
     }
 
     #[test]
     fn take_token_color_shorthand() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("#ABC", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("#ABC", &compiler);
 
         assert_eq!("#ABC", lexer.take_token(Token::Color).unwrap().str_match);
     }
 
     #[test]
     fn take_token_color_no_hash() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("ABC123", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("ABC123", &compiler);
 
         assert_eq!("ABC123", lexer.take_token(Token::Color).unwrap().str_match);
     }
 
     #[test]
     fn take_token_date() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer(" 2022-01-02, foo", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer(" 2022-01-02, foo", &compiler);
 
         assert_eq!(
             "2022-01-02",
@@ -501,24 +501,24 @@ mod tests {
 
     #[test]
     fn take_token_end_options() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("]]", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("]]", &compiler);
 
         assert_eq!("]]", lexer.take_token(Token::EndOptions).unwrap().str_match);
     }
 
     #[test]
     fn take_token_equals() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer(" = ", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer(" = ", &compiler);
 
         assert_eq!("=", lexer.take_token(Token::Equals).unwrap().str_match);
     }
 
     #[test]
     fn take_token_option_name() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("foo", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("foo", &compiler);
 
         assert_eq!(
             "foo",
@@ -528,8 +528,8 @@ mod tests {
 
     #[test]
     fn take_token_positive_number() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("15", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("15", &compiler);
 
         assert_eq!(
             "15",
@@ -539,16 +539,16 @@ mod tests {
 
     #[test]
     fn take_token_string() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("string", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("string", &compiler);
 
         assert_eq!("string", lexer.take_token(Token::String).unwrap().str_match);
     }
 
     #[test]
     fn take_token_string_double_quoted() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("'this is \\' a quoted string\\''", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("'this is \\' a quoted string\\''", &compiler);
 
         assert_eq!(
             "this is ' a quoted string'",
@@ -560,24 +560,24 @@ mod tests {
 
     #[test]
     fn take_token_slash() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer(" / ", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer(" / ", &compiler);
 
         assert_eq!("/", lexer.take_token(Token::Slash).unwrap().str_match);
     }
 
     #[test]
     fn take_token_invalid() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer("foo", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer("foo", &compiler);
 
         assert!(lexer.take_token(Token::PositiveNumber).is_err());
     }
 
     #[test]
     fn rest() {
-        let runtime = build_runtime();
-        let mut lexer = test_lexer(" / = rest", &runtime);
+        let compiler = build_compiler();
+        let mut lexer = test_lexer(" / = rest", &compiler);
 
         lexer.take_token(Token::Slash).unwrap();
         lexer.take_token(Token::Equals).unwrap();

@@ -51,7 +51,7 @@ pub enum Error {
     /// it's very Google Sheets-specific.
     GoogleSetupError(String),
 
-    /// An error while building the runtime or reading the source code.  These are typically not
+    /// An error while building the compiler or reading the source code.  These are typically not
     /// due to user error.
     InitError(String),
 

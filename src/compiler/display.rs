@@ -1,7 +1,7 @@
-use super::Runtime;
+use super::Compiler;
 use std::fmt;
 
-impl fmt::Display for Runtime {
+impl fmt::Display for Compiler {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "# CLI Options")?;
         writeln!(f, "{}", self.options)?;
@@ -25,10 +25,10 @@ mod tests {
             google_sheet_id: Some("abc123".to_string()),
             ..Default::default()
         };
-        let runtime_str = Runtime::try_from(&cli_args).unwrap().to_string();
+        let compiler_str = Compiler::try_from(&cli_args).unwrap().to_string();
 
-        assert!(runtime_str.contains("CLI Options"));
-        assert!(runtime_str.contains("Parsed Source Code"));
-        assert!(runtime_str.contains("Output Target"));
+        assert!(compiler_str.contains("CLI Options"));
+        assert!(compiler_str.contains("Parsed Source Code"));
+        assert!(compiler_str.contains("Output Target"));
     }
 }

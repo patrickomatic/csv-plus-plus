@@ -1,4 +1,4 @@
-//! # Runtime
+//! # Compiler
 //!
 use crate::ast::{BuiltinFunctions, BuiltinVariables};
 use crate::parser::ast_lexer;
@@ -14,7 +14,7 @@ mod eval;
 mod try_from;
 
 #[derive(Debug)]
-pub struct Runtime {
+pub struct Compiler {
     pub(crate) builtin_functions: BuiltinFunctions,
     pub(crate) builtin_variables: BuiltinVariables,
     pub options: Options,
@@ -24,7 +24,7 @@ pub struct Runtime {
     pub(crate) cell_token_library: cell_lexer::TokenLibrary,
 }
 
-impl Runtime {
+impl Compiler {
     pub fn from_cli_args() -> Result<Self> {
         Self::try_from(&CliArgs::parse())
     }
