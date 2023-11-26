@@ -6,7 +6,7 @@ use crate::error::EvalResult;
 use std::collections;
 
 mod node;
-pub use node::{Node, VariableValue};
+pub(crate) use node::Node;
 
 /// traits that are implemented for `Node`
 mod display;
@@ -17,12 +17,14 @@ mod from;
 mod builtin_function;
 mod builtin_variable;
 mod references;
+mod variable_value;
 
 pub(crate) use builtin_function::BuiltinFunction;
 pub(crate) use builtin_variable::BuiltinVariable;
 pub(crate) use references::AstReferences;
+pub(crate) use variable_value::VariableValue;
 
-pub type Ast = Box<Node>;
+pub(crate) type Ast = Box<Node>;
 
 // TODO: make it a &[String]?
 type FunctionArgs = Vec<String>;

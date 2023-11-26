@@ -1,11 +1,8 @@
-use super::{Ast, FunctionArgs, FunctionName, VariableName};
-use crate::Fill;
-use a1_notation::{Address, Column, Row};
-use serde::{Deserialize, Serialize};
+use super::{Ast, FunctionArgs, FunctionName, VariableName, VariableValue};
 
 /// The most basic building block of our language AST.  The AST is made recursive by the fact that
 /// function calls and infix function calls can be composed.
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
 pub enum Node {
     /// A wrapper around a `bool`, in spreadsheets it will come out as TRUE or FALSE
     Boolean(bool),
@@ -60,25 +57,6 @@ pub enum Node {
         name: VariableName,
         value: VariableValue,
     },
-}
-
-/// Variables can be bound to a variety of different contexts.
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub enum VariableValue {
-    /// It's scoped to point at an absolute cell.
-    Absolute(Address),
-
-    /// If a variable is defined in the code section it will have an AST as a value.
-    Ast(Ast),
-
-    /// It's scoped as a column relative to a fill.
-    ColumnRelative { column: Column, scope: Fill },
-
-    /// It's scoped as a row.
-    Row(Row),
-
-    /// It's scoped as a row relative to a fill.
-    RowRelative { row: Row, scope: Fill },
 }
 
 /// Most of these just make testing easier to not have to call .to_string() constantly, but they're

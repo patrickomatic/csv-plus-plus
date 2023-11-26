@@ -10,13 +10,9 @@
 // * eval cells in parallel (rayon)
 // * make sure there is only one infinite fill in the docs (ones can follow it, but they have to
 //      be finite and subtract from it
-use crate::ast::{
-    Ast, AstReferences, BuiltinFunction, BuiltinVariable, Functions, Node, VariableValue, Variables,
-};
-use crate::error::{EvalError, EvalResult};
-use crate::parser::code_section_parser::{CodeSection, CodeSectionParser};
-use crate::{Cell, Result, Row, Runtime, Spreadsheet};
-use a1_notation::{Address, A1};
+use crate::ast::{Functions, Variables};
+use crate::parser::code_section_parser::CodeSection;
+use crate::{Result, Runtime, Spreadsheet};
 use std::cell;
 use std::cmp;
 use std::collections;
@@ -38,44 +34,6 @@ pub struct Module {
 }
 
 impl Module {
-    pub fn compile(runtime: &Runtime) -> Result<Self> {
-        Ok(if let Some(t) = Self::read_from_object_file(runtime)? {
-            runtime.progress("Read module from object file (not compiling)");
-            runtime.info(&t);
-            t
-        } else {
-            runtime.progress("Compiling module from source code");
-
-            let spreadsheet = Spreadsheet::parse(runtime)?;
-            runtime.progress("Parsed spreadsheet");
-
-            let code_section = if let Some(code_section_source) = &runtime.source_code.code_section
-            {
-                let cs = CodeSectionParser::parse(code_section_source, runtime)?;
-                runtime.progress("Parsed code section");
-                runtime.info(&cs);
-                Some(cs)
-            } else {
-                None
-            };
-
-            let compiled_module = Self::new(spreadsheet, code_section, runtime)?
-                .eval(runtime)
-                .map_err(|e| runtime.source_code.eval_error(&e.message, e.position))?;
-
-            runtime.progress("Compiled module");
-            runtime.info(&compiled_module);
-
-            runtime.progress(format!(
-                "Writing object file {}",
-                runtime.source_code.object_code_filename().display()
-            ));
-            compiled_module.write_object_file(runtime)?;
-
-            compiled_module
-        })
-    }
-
     /// Given a parsed code section and spreadsheet section, this function will assemble all of the
     /// available functions and variables.  There are some nuances here because there are a lot of
     /// sources of functions and variables and they're allowed to override each other.
@@ -101,10 +59,8 @@ impl Module {
     pub fn new(
         spreadsheet: Spreadsheet,
         code_section: Option<CodeSection>,
-        runtime: &Runtime,
-    ) -> Result<Self> {
-        // TODO: need to lift variable resultion (and therefore runtime.options.key_values out)
-        let cli_vars = &runtime.options.key_values;
+        module_name: ModuleName,
+    ) -> Self {
         let spreadsheet_vars = spreadsheet.variables();
         let (code_section_vars, code_section_fns) = if let Some(cs) = code_section {
             (cs.variables, cs.functions)
@@ -112,17 +68,17 @@ impl Module {
             (collections::HashMap::new(), collections::HashMap::new())
         };
 
-        Ok(Self {
+        Self {
             compiler_version: env!("CARGO_PKG_VERSION").to_string(),
             functions: code_section_fns,
-            module_name: runtime.source_code.filename.clone().try_into()?,
+            module_name,
             spreadsheet: cell::RefCell::new(spreadsheet),
             variables: code_section_vars
                 .into_iter()
                 .chain(spreadsheet_vars)
-                .chain(cli_vars.clone())
+                // .chain(cli_vars.clone())
                 .collect(),
-        })
+        }
     }
 
     pub(crate) fn write_object_file(&self, runtime: &Runtime) -> Result<path::PathBuf> {
@@ -147,7 +103,7 @@ impl Module {
         Ok(object_code_filename)
     }
 
-    fn read_from_object_file(runtime: &Runtime) -> Result<Option<Self>> {
+    pub(crate) fn read_from_object_file(runtime: &Runtime) -> Result<Option<Self>> {
         let sc = &runtime.source_code;
         let obj_file = sc.object_code_filename();
 
@@ -203,204 +159,11 @@ impl Module {
             cmp::Ordering::Less => None,
         })
     }
-    fn eval(self, runtime: &Runtime) -> EvalResult<Self> {
-        runtime.progress("Evaluating all cells");
-        self.eval_fills().eval_cells(runtime)
-    }
-
-    /// For each row of the spreadsheet, if it has a [[fill=]] then we need to actually fill it to
-    /// that many rows.  
-    ///
-    /// This has to happen before eval()ing the cells because that process depends on them being in
-    /// their final location.
-    // TODO: make sure there is only one infinite fill
-    fn eval_fills(self) -> Self {
-        let mut new_spreadsheet = Spreadsheet::default();
-        let s = self.spreadsheet.borrow_mut();
-        let mut row_num = 0;
-
-        for row in s.rows.iter() {
-            if let Some(e) = row.fill {
-                for _ in 0..e.fill_amount(row_num) {
-                    new_spreadsheet.rows.push(row.clone_to_row(row_num.into()));
-                    row_num += 1;
-                }
-            } else {
-                new_spreadsheet.rows.push(row.clone_to_row(row_num.into()));
-                row_num += 1;
-            }
-        }
-
-        Self {
-            spreadsheet: cell::RefCell::new(new_spreadsheet),
-            ..self
-        }
-    }
-
-    // TODO:
-    // * do this in parallel (thread for each cell)
-    fn eval_cells(&self, runtime: &Runtime) -> EvalResult<Self> {
-        let spreadsheet = self.spreadsheet.borrow();
-
-        let mut evaled_rows = vec![];
-        for (row_index, row) in spreadsheet.rows.iter().enumerate() {
-            evaled_rows.push(self.eval_row(runtime, row, row_index.into())?);
-        }
-
-        Ok(Self {
-            compiler_version: self.compiler_version.clone(),
-            functions: self.functions.clone(),
-            module_name: self.module_name.clone(),
-            spreadsheet: cell::RefCell::new(Spreadsheet { rows: evaled_rows }),
-            variables: self.variables.clone(),
-        })
-    }
-
-    /// The idea here is just to keep looping as long as we are making progress eval()ing.
-    /// Progress being defined as `.extract_references()` returning the same result twice in a row
-    fn eval_ast(&self, runtime: &Runtime, ast: &Ast, position: Address) -> EvalResult<Ast> {
-        let mut evaled_ast = *ast.clone();
-        let mut last_round_refs = AstReferences::default();
-
-        loop {
-            let refs = evaled_ast.extract_references(runtime, self);
-            if refs.is_empty() || refs == last_round_refs {
-                break;
-            }
-            last_round_refs = refs.clone();
-
-            evaled_ast = evaled_ast
-                .eval_variables(self.resolve_variables(runtime, &refs.variables, position)?)?
-                .eval_functions(&refs.functions, |fn_id, args| {
-                    if let Some(function) = self.functions.get(fn_id) {
-                        Ok(function.clone())
-                    } else if let Some(BuiltinFunction { eval, .. }) =
-                        runtime.builtin_functions.get(fn_id)
-                    {
-                        Ok(Box::new(eval(position, args)?))
-                    } else {
-                        Err(EvalError::new(position, "Undefined function: {fn_id}"))
-                    }
-                })?;
-        }
-
-        Ok(Box::new(evaled_ast))
-    }
-
-    fn eval_row(&self, runtime: &Runtime, row: &Row, row_a1: a1_notation::Row) -> EvalResult<Row> {
-        let mut cells = vec![];
-
-        for (cell_index, cell) in row.cells.iter().enumerate() {
-            let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
-            let evaled_ast = if let Some(ast) = &cell.ast {
-                Some(self.eval_ast(runtime, ast, cell_a1)?)
-            } else {
-                None
-            };
-
-            cells.push(Cell {
-                ast: evaled_ast,
-                ..cell.clone()
-            });
-        }
-
-        Ok(Row {
-            cells,
-            ..row.clone()
-        })
-    }
-
-    pub fn is_function_defined(&self, runtime: &Runtime, fn_name: &str) -> bool {
-        self.functions.contains_key(fn_name) || runtime.builtin_functions.contains_key(fn_name)
-    }
-
-    pub fn is_variable_defined(&self, runtime: &Runtime, var_name: &str) -> bool {
-        self.variables.contains_key(var_name) || runtime.builtin_variables.contains_key(var_name)
-    }
-
-    /// Variables can all be resolved in one go - we just loop them by name and resolve the ones
-    /// that we can and leave the rest alone.
-    fn resolve_variables(
-        &self,
-        runtime: &Runtime,
-        var_names: &[String],
-        position: Address,
-    ) -> EvalResult<collections::HashMap<String, Ast>> {
-        let mut resolved_vars = collections::HashMap::new();
-        for var_name in var_names {
-            if let Some(val) = self.resolve_variable(runtime, var_name, position)? {
-                resolved_vars.insert(var_name.to_string(), val);
-            }
-        }
-
-        Ok(resolved_vars)
-    }
-
-    fn resolve_variable(
-        &self,
-        runtime: &Runtime,
-        var_name: &str,
-        position: Address,
-    ) -> EvalResult<Option<Ast>> {
-        Ok(if let Some(value) = self.variables.get(var_name) {
-            let value_from_var = match &**value {
-                Node::Variable { value, .. } => {
-                    match value {
-                        // absolute value, just turn it into a Ast
-                        VariableValue::Absolute(address) => (*address).into(),
-
-                        // already an AST, just clone it
-                        VariableValue::Ast(ast) => *ast.clone(),
-
-                        // it's relative to an fill - so if it's referenced inside the
-                        // fill, it's the value at that location.  If it's outside the fill
-                        // it's the range that it represents
-                        VariableValue::ColumnRelative { scope, column } => {
-                            let scope_a1: A1 = (*scope).into();
-                            if scope_a1.contains(&position.into()) {
-                                position.with_x(column.x).into()
-                            } else {
-                                let row_range: A1 = (*scope).into();
-                                row_range.with_x(column.x).into()
-                            }
-                        }
-
-                        VariableValue::Row(row) => {
-                            let a1: a1_notation::A1 = (*row).into();
-                            a1.into()
-                        }
-
-                        VariableValue::RowRelative { scope, .. } => {
-                            let scope_a1: A1 = (*scope).into();
-                            if scope_a1.contains(&position.into()) {
-                                // we're within the scope (fill) so it's the row we're on
-                                let row_a1: A1 = position.row.into();
-                                row_a1.into()
-                            } else {
-                                // we're outside the scope (fill), so it represents the entire
-                                // range contained by it (the scope)
-                                let row_range: A1 = (*scope).into();
-                                row_range.into()
-                            }
-                        }
-                    }
-                }
-                n => n.clone(),
-            };
-
-            Some(Box::new(value_from_var))
-        } else if let Some(BuiltinVariable { eval, .. }) = runtime.builtin_variables.get(var_name) {
-            Some(Box::new(eval(position)?))
-        } else {
-            None
-        })
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::TestSourceCode;
     use std::cell;
 
     fn build_module() -> Module {
@@ -413,6 +176,7 @@ mod tests {
         }
     }
 
+    /*
     #[test]
     fn compile_empty() {
         let test_file = &TestSourceCode::new("csv", "");
@@ -526,11 +290,10 @@ mod tests {
 
         assert!(module.is_variable_defined(&runtime, "foo"));
     }
+    */
 
     #[test]
     fn new_with_code_section() {
-        let test_file = &TestSourceCode::new("csv", "");
-        let runtime = test_file.into();
         let mut functions = collections::HashMap::new();
         functions.insert("foo".to_string(), Box::new(1.into()));
         let mut variables = collections::HashMap::new();
@@ -540,7 +303,11 @@ mod tests {
             variables,
             ..Default::default()
         };
-        let module = Module::new(Spreadsheet::default(), Some(code_section), &runtime).unwrap();
+        let module = Module::new(
+            Spreadsheet::default(),
+            Some(code_section),
+            ModuleName::new("foo"),
+        );
 
         assert!(module.functions.contains_key("foo"));
         assert!(module.variables.contains_key("bar"));
@@ -548,9 +315,7 @@ mod tests {
 
     #[test]
     fn new_without_code_section() {
-        let test_file = &TestSourceCode::new("csv", "");
-        let runtime = test_file.into();
-        let module = Module::new(Spreadsheet::default(), None, &runtime).unwrap();
+        let module = Module::new(Spreadsheet::default(), None, ModuleName::new("foo"));
 
         assert!(module.functions.is_empty());
         assert!(module.variables.is_empty());

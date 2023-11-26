@@ -1,6 +1,5 @@
 use super::Node;
 use crate::DateTime;
-use a1_notation::{Address, RangeOrCell, A1};
 
 impl From<bool> for Node {
     fn from(value: bool) -> Self {
@@ -38,20 +37,20 @@ impl From<i32> for Node {
     }
 }
 
-impl From<A1> for Node {
-    fn from(value: A1) -> Self {
+impl From<a1_notation::A1> for Node {
+    fn from(value: a1_notation::A1) -> Self {
         Node::Reference(value.to_string())
     }
 }
 
-impl From<Address> for Node {
-    fn from(value: Address) -> Self {
+impl From<a1_notation::Address> for Node {
+    fn from(value: a1_notation::Address) -> Self {
         Node::Reference(value.to_string())
     }
 }
 
-impl From<RangeOrCell> for Node {
-    fn from(value: RangeOrCell) -> Self {
+impl From<a1_notation::RangeOrCell> for Node {
+    fn from(value: a1_notation::RangeOrCell) -> Self {
         Node::Reference(value.to_string())
     }
 }

@@ -6,17 +6,23 @@ use std::path;
 #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct ModuleName(pub String);
 
+impl ModuleName {
+    pub(crate) fn new<S: Into<String>>(name: S) -> Self {
+        Self(name.into())
+    }
+}
+
 impl TryFrom<path::PathBuf> for ModuleName {
     type Error = Error;
 
     fn try_from(p: path::PathBuf) -> Result<Self> {
         if let Some(f) = p.file_stem() {
-            Ok(ModuleName(f.to_string_lossy().to_string()))
+            Ok(ModuleName::new(f.to_string_lossy()))
         } else {
             // TODO: throw a different error
             Err(Error::ObjectCodeError {
                 filename: p.to_path_buf(),
-                message: "Unable to get base filename".to_string(),
+                message: format!("Unable to get base filename for file: {}", p.display()),
             })
         }
     }
@@ -26,7 +32,7 @@ impl TryFrom<TokenMatch<'_>> for ModuleName {
     type Error = Error;
 
     fn try_from(tm: TokenMatch) -> Result<Self> {
-        Ok(Self(tm.str_match.to_string()))
+        Ok(Self::new(tm.str_match))
     }
 }
 

@@ -45,7 +45,7 @@ fn extract_dfs(
     match &**ast {
         // `FunctionCall`s might be user-defined but we always need to recurse on them
         Node::FunctionCall { name, args } => {
-            if module.is_function_defined(runtime, name) {
+            if runtime.is_function_defined(module, name) {
                 fns.push(name.to_string());
             }
 
@@ -62,7 +62,7 @@ fn extract_dfs(
         }
 
         // take any references corresponding do a defined variable
-        Node::Reference(r) if module.is_variable_defined(runtime, r) => vars.push(r.to_string()),
+        Node::Reference(r) if runtime.is_variable_defined(module, r) => vars.push(r.to_string()),
 
         // anything else is terminal
         _ => (),
@@ -74,10 +74,11 @@ mod tests {
     use super::*;
     use crate::ast::BuiltinFunction;
     use crate::test_utils::*;
+    use crate::*;
     use crate::{Runtime, Spreadsheet};
 
-    fn build_module(runtime: &Runtime) -> Module {
-        Module::new(Spreadsheet::default(), None, runtime).unwrap()
+    fn build_module() -> Module {
+        Module::new(Spreadsheet::default(), None, ModuleName::new("foo"))
     }
 
     #[test]
@@ -85,8 +86,7 @@ mod tests {
         let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
 
-        let references =
-            Node::extract_references(&Box::new(5.into()), &runtime, &build_module(&runtime));
+        let references = Node::extract_references(&Box::new(5.into()), &runtime, &build_module());
 
         assert!(references.is_empty());
     }
@@ -102,7 +102,7 @@ mod tests {
                 name: "foo".to_string(),
             },
         );
-        let module = build_module(&runtime);
+        let module = build_module();
 
         let references = Node::extract_references(
             &Box::new(Node::fn_call(
@@ -121,7 +121,7 @@ mod tests {
     fn extract_references_fns_user_defined() {
         let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
-        let mut module = build_module(&runtime);
+        let mut module = build_module();
         module.functions.insert(
             "foo".to_string(),
             Box::new(Node::fn_def(
@@ -148,7 +148,7 @@ mod tests {
     fn extract_references_fns_infix() {
         let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
-        let mut module = build_module(&runtime);
+        let mut module = build_module();
         module.functions.insert(
             "foo".to_string(),
             Box::new(Node::fn_def(
@@ -176,7 +176,7 @@ mod tests {
     fn extract_references_fns_nested() {
         let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
-        let mut module = build_module(&runtime);
+        let mut module = build_module();
         module.functions.insert(
             "foo".to_string(),
             Box::new(Node::fn_def(
@@ -206,7 +206,7 @@ mod tests {
     fn extract_references_vars() {
         let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
-        let mut module = build_module(&runtime);
+        let mut module = build_module();
         module
             .variables
             .insert("foo".to_string(), Box::new(Node::reference("return value")));
@@ -222,7 +222,7 @@ mod tests {
     fn extract_references_vars_nested() {
         let test_file = &TestSourceCode::new("csv", "");
         let runtime = test_file.into();
-        let mut module = build_module(&runtime);
+        let mut module = build_module();
         module
             .variables
             .insert("bar".to_string(), Box::new(Node::reference("return value")));

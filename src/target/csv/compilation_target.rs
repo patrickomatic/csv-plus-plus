@@ -72,7 +72,7 @@ one,,two,,three
         );
         let output_file = test_file.output_file.clone();
         let runtime: Runtime = test_file.into();
-        let module = Module::compile(&runtime).unwrap();
+        let module = runtime.compile().unwrap();
         let csv = Csv::new(&runtime, output_file);
 
         assert!(csv.write(&module).is_ok());

@@ -1,4 +1,3 @@
-use csvpp::Module;
 mod common;
 
 #[test]
@@ -13,7 +12,7 @@ Foo,Bar,Baz,=SUM(test)
 ![[f=3]][[var=test]],=test*5,=bar,
 "#,
     );
-    let module = Module::compile(&s.runtime).unwrap();
+    let module = s.runtime.compile().unwrap();
     let target = s.runtime.target().unwrap();
     target.write(&module).unwrap();
 
@@ -38,7 +37,7 @@ fn row_variable_in_fill() {
 ![[f=3 / var=row]][[var=cell]],=cell,=row,
 "#,
     );
-    let module = Module::compile(&s.runtime).unwrap();
+    let module = s.runtime.compile().unwrap();
     let target = s.runtime.target().unwrap();
     target.write(&module).unwrap();
 

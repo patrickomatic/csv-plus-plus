@@ -1,6 +1,6 @@
-//! CSV is a particularly nice for testing because we can exihibit language features without yucky
-//! things like a binary format (excel) or an API (google sheets)
-use csvpp::Module;
+//! CSV is nice for testing certain language features because we can compare the output easily and
+//! don't have to deal with things like APIs or binary formats.
+//!
 mod common;
 
 #[test]
@@ -13,7 +13,7 @@ fn write_no_code_section() {
 foo,bar,baz
 "#,
     );
-    let module = Module::compile(&s.runtime).unwrap();
+    let module = s.runtime.compile().unwrap();
     let target = s.runtime.target().unwrap();
     target.write(&module).unwrap();
 
@@ -31,7 +31,7 @@ foo := 1
 foo,bar,baz,=foo
 "#,
     );
-    let module = Module::compile(&s.runtime).unwrap();
+    let module = s.runtime.compile().unwrap();
     let target = s.runtime.target().unwrap();
     target.write(&module).unwrap();
 
@@ -59,7 +59,7 @@ profit := (B * C) - fees
 "#,
     );
 
-    let module = Module::compile(&s.runtime).unwrap();
+    let module = s.runtime.compile().unwrap();
     let target = s.runtime.target().unwrap();
     target.write(&module).unwrap();
 
@@ -93,7 +93,7 @@ foo
 "#,
     );
 
-    let module = Module::compile(&s.runtime).unwrap();
+    let module = s.runtime.compile().unwrap();
     let target = s.runtime.target().unwrap();
     target.write(&module).unwrap();
 

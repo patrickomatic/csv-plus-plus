@@ -1,12 +1,12 @@
 //! # csv+++
 //!
 use colored::Colorize;
-use csvpp::{Module, Result, Runtime};
+use csvpp::{Result, Runtime};
 use std::process;
 
 fn compile_from_cli() -> Result<()> {
     let runtime = Runtime::from_cli_args()?;
-    let module = Module::compile(&runtime)?;
+    let module = runtime.compile()?;
 
     let target = runtime.target()?;
     if runtime.options.backup {

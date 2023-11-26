@@ -10,6 +10,7 @@ use std::fmt;
 use std::sync;
 
 mod display;
+mod eval;
 mod try_from;
 
 #[derive(Debug)]

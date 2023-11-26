@@ -42,7 +42,7 @@ mod tests {
         let test_file = &TestSourceCode::new("xlsx", "foo,bar,baz");
         let runtime = test_file.into();
         let target = Excel::new(&runtime, test_file.output_file.clone());
-        let module = Module::compile(&runtime).unwrap();
+        let module = runtime.compile().unwrap();
 
         assert!(target.write(&module).is_ok());
     }
