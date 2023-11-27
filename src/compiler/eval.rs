@@ -208,3 +208,132 @@ impl Compiler {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_utils::*;
+    use std::cell;
+
+    fn build_module() -> Module {
+        Module {
+            compiler_version: "v0.0.1".to_string(),
+            functions: collections::HashMap::new(),
+            module_name: ModuleName("main".to_string()),
+            spreadsheet: cell::RefCell::new(Spreadsheet::default()),
+            variables: collections::HashMap::new(),
+        }
+    }
+
+    #[test]
+    fn compile_empty() {
+        let test_file = &TestSourceCode::new("csv", "");
+        let compiler: Compiler = test_file.into();
+        let module = compiler.compile();
+
+        assert!(module.is_ok());
+    }
+
+    #[test]
+    fn compile_simple() {
+        let test_file = &TestSourceCode::new("csv", "---\nfoo,bar,baz\n1,2,3");
+        let compiler: Compiler = test_file.into();
+        let module = compiler.compile().unwrap();
+
+        assert_eq!(module.spreadsheet.borrow().rows.len(), 2);
+    }
+
+    #[test]
+    fn compile_with_fill_finite() {
+        let test_file = &TestSourceCode::new("xlsx", "![[fill=10]]foo,bar,baz");
+        let compiler: Compiler = test_file.into();
+        let module = compiler.compile().unwrap();
+
+        assert_eq!(module.spreadsheet.borrow().rows.len(), 10);
+    }
+
+    #[test]
+    fn compile_with_fill_infinite() {
+        let test_file = &TestSourceCode::new("xlsx", "![[fill]]foo,bar,baz");
+        let compiler: Compiler = test_file.into();
+        let module = compiler.compile().unwrap();
+
+        assert_eq!(module.spreadsheet.borrow().rows.len(), 1000);
+    }
+
+    #[test]
+    fn compile_with_fill_multiple() {
+        let test_file = &TestSourceCode::new("xlsx", "![[f=10]]foo,bar,baz\n![[f]]1,2,3");
+        let compiler: Compiler = test_file.into();
+        let module = compiler.compile().unwrap();
+
+        assert_eq!(module.spreadsheet.borrow().rows.len(), 1000);
+    }
+
+    #[test]
+    fn compile_with_fill_and_rows() {
+        let test_file =
+            &TestSourceCode::new("xlsx", "foo,bar,baz\n![[f=2]]foo,bar,baz\none,last,row\n");
+        let compiler: Compiler = test_file.into();
+        let module = compiler.compile().unwrap();
+        let spreadsheet = module.spreadsheet.borrow();
+
+        assert_eq!(spreadsheet.rows.len(), 4);
+    }
+
+    #[test]
+    fn is_function_defined_true() {
+        let test_file = &TestSourceCode::new("csv", "");
+        let compiler: Compiler = test_file.into();
+        let mut module = build_module();
+        module
+            .functions
+            .insert("foo".to_string(), Box::new(42.into()));
+
+        assert!(compiler.is_function_defined(&module, "foo"));
+    }
+
+    #[test]
+    fn is_function_defined_builtin_true() {
+        let test_file = &TestSourceCode::new("csv", "");
+        let mut compiler: Compiler = test_file.into();
+        compiler.builtin_functions.insert(
+            "foo".to_string(),
+            BuiltinFunction {
+                name: "foo".to_owned(),
+                eval: Box::new(|_a1, _args| Ok(42.into())),
+            },
+        );
+        let module = build_module();
+
+        assert!(compiler.is_function_defined(&module, "foo"));
+    }
+
+    #[test]
+    fn is_variable_defined_true() {
+        let test_file = &TestSourceCode::new("csv", "");
+        let compiler: Compiler = test_file.into();
+        let mut module = build_module();
+        module
+            .variables
+            .insert("foo".to_string(), Box::new(42.into()));
+
+        assert!(compiler.is_variable_defined(&module, "foo"));
+    }
+
+    #[test]
+    fn is_variable_defined_builtin_true() {
+        let test_file = &TestSourceCode::new("csv", "");
+        let mut compiler: Compiler = test_file.into();
+        compiler.builtin_variables.insert(
+            "foo".to_string(),
+            BuiltinVariable {
+                name: "foo".to_owned(),
+                eval: Box::new(|_a1| Ok(42.into())),
+            },
+        );
+        let module = build_module();
+
+        assert!(compiler.is_variable_defined(&module, "foo"));
+    }
+}
