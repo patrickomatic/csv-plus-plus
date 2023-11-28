@@ -1,5 +1,5 @@
-use super::{Ast, FunctionName, Node, VariableName};
-use crate::{Compiler, Module};
+use super::{Ast, FunctionName, Functions, Node, VariableName, Variables};
+use crate::Compiler;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct AstReferences {
@@ -16,14 +16,20 @@ impl AstReferences {
 impl Node {
     /// Does a depth first search on `ast` and parses out all identifiers that might be able to be
     /// eval()ed
-    pub(crate) fn extract_references(&self, compiler: &Compiler, module: &Module) -> AstReferences {
+    pub(crate) fn extract_references(
+        &self,
+        compiler: &Compiler,
+        module_fns: &Functions,
+        module_vars: &Variables,
+    ) -> AstReferences {
         let mut fns = vec![];
         let mut vars = vec![];
 
         extract_dfs(
             compiler,
             &Box::new(self.clone()),
-            module,
+            module_fns,
+            module_vars,
             &mut fns,
             &mut vars,
         );
@@ -38,31 +44,34 @@ impl Node {
 fn extract_dfs(
     compiler: &Compiler,
     ast: &Ast,
-    module: &Module,
+    module_fns: &Functions,
+    module_vars: &Variables,
     fns: &mut Vec<FunctionName>,
     vars: &mut Vec<VariableName>,
 ) {
     match &**ast {
         // `FunctionCall`s might be user-defined but we always need to recurse on them
         Node::FunctionCall { name, args } => {
-            if compiler.is_function_defined(module, name) {
+            if compiler.is_function_defined(module_fns, name) {
                 fns.push(name.to_string());
             }
 
             for arg in args {
-                extract_dfs(compiler, arg, module, fns, vars);
+                extract_dfs(compiler, arg, module_fns, module_vars, fns, vars);
             }
         }
 
         // `InfixFunctionCall`s can't be defined by the user but we need to recurse on the left and
         // right sides
         Node::InfixFunctionCall { left, right, .. } => {
-            extract_dfs(compiler, left, module, fns, vars);
-            extract_dfs(compiler, right, module, fns, vars);
+            extract_dfs(compiler, left, module_fns, module_vars, fns, vars);
+            extract_dfs(compiler, right, module_fns, module_vars, fns, vars);
         }
 
         // take any references corresponding do a defined variable
-        Node::Reference(r) if compiler.is_variable_defined(module, r) => vars.push(r.to_string()),
+        Node::Reference(r) if compiler.is_variable_defined(module_vars, r) => {
+            vars.push(r.to_string())
+        }
 
         // anything else is terminal
         _ => (),
@@ -85,8 +94,14 @@ mod tests {
     fn extract_references_empty() {
         let test_file = &TestSourceCode::new("csv", "");
         let compiler = test_file.into();
+        let module = build_module();
 
-        let references = Node::extract_references(&Box::new(5.into()), &compiler, &build_module());
+        let references = Node::extract_references(
+            &Box::new(5.into()),
+            &compiler,
+            &module.functions,
+            &module.variables,
+        );
 
         assert!(references.is_empty());
     }
@@ -110,7 +125,8 @@ mod tests {
                 &[Node::reference("bar"), Node::reference("baz")],
             )),
             &compiler,
-            &module,
+            &module.functions,
+            &module.variables,
         );
 
         assert_eq!(references.functions.len(), 1);
@@ -137,7 +153,8 @@ mod tests {
                 &[Node::reference("bar"), Node::reference("baz")],
             )),
             &compiler,
-            &module,
+            &module.functions,
+            &module.variables,
         );
 
         assert_eq!(references.functions.len(), 1);
@@ -165,7 +182,8 @@ mod tests {
                 Node::fn_call("bar", &[Node::reference("bar"), Node::reference("baz")]),
             )),
             &compiler,
-            &module,
+            &module.functions,
+            &module.variables,
         );
 
         assert_eq!(references.functions.len(), 1);
@@ -195,7 +213,8 @@ mod tests {
                 )],
             )),
             &compiler,
-            &module,
+            &module.functions,
+            &module.variables,
         );
 
         assert_eq!(references.functions.len(), 1);
@@ -211,8 +230,12 @@ mod tests {
             .variables
             .insert("foo".to_string(), Box::new(Node::reference("return value")));
 
-        let references =
-            Node::extract_references(&Box::new(Node::reference("foo")), &compiler, &module);
+        let references = Node::extract_references(
+            &Box::new(Node::reference("foo")),
+            &compiler,
+            &module.functions,
+            &module.variables,
+        );
 
         assert_eq!(references.variables.len(), 1);
         assert_eq!(&references.variables[0], "foo");
@@ -236,7 +259,8 @@ mod tests {
                 )],
             )),
             &compiler,
-            &module,
+            &module.functions,
+            &module.variables,
         );
 
         assert_eq!(references.variables.len(), 1);

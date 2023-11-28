@@ -1,4 +1,6 @@
-use crate::ast::{Ast, AstReferences, BuiltinFunction, BuiltinVariable, Node};
+use crate::ast::{
+    Ast, AstReferences, BuiltinFunction, BuiltinVariable, Functions, Node, Variables,
+};
 use crate::error::{EvalError, EvalResult};
 use crate::parser::code_section_parser::CodeSectionParser;
 use crate::{Cell, Compiler, Module, ModuleName, Result, Row, Spreadsheet};
@@ -80,14 +82,17 @@ impl Compiler {
 
     // TODO:
     // * do this in parallel (thread for each cell)
-    // * rather than calling `.spreadsheet.borrow()`, call `.spreadsheet.into_inner()` and consume
-    //   it so we don't have to clone the `row` later
     fn eval_cells(&self, module: Module) -> EvalResult<Module> {
-        let spreadsheet = module.spreadsheet.borrow();
+        let spreadsheet = module.spreadsheet.into_inner();
 
         let mut evaled_rows = vec![];
-        for (row_index, row) in spreadsheet.rows.iter().enumerate() {
-            evaled_rows.push(self.eval_row(&module, row.clone(), row_index.into())?);
+        for (row_index, row) in spreadsheet.rows.into_iter().enumerate() {
+            evaled_rows.push(self.eval_row(
+                &module.functions,
+                &module.variables,
+                row,
+                row_index.into(),
+            )?);
         }
 
         Ok(Module {
@@ -100,45 +105,58 @@ impl Compiler {
     /// Progress being defined as `.extract_references()` returning the same result twice in a row
     fn eval_ast(
         &self,
-        module: &Module,
+        module_fns: &Functions,
+        module_vars: &Variables,
         ast: &Ast,
         position: a1_notation::Address,
     ) -> EvalResult<Ast> {
-        let mut evaled_ast = *ast.clone();
+        let mut evaled_ast = ast.clone();
         let mut last_round_refs = AstReferences::default();
 
         loop {
-            let refs = evaled_ast.extract_references(self, module);
+            let refs = evaled_ast.extract_references(self, module_fns, module_vars);
             if refs.is_empty() || refs == last_round_refs {
                 break;
             }
             last_round_refs = refs.clone();
 
-            evaled_ast = evaled_ast
-                .eval_variables(self.resolve_variables(module, &refs.variables, position)?)?
-                .eval_functions(&refs.functions, |fn_id, args| {
-                    if let Some(function) = module.functions.get(fn_id) {
-                        Ok(function.clone())
-                    } else if let Some(BuiltinFunction { eval, .. }) =
-                        self.builtin_functions.get(fn_id)
-                    {
-                        Ok(Box::new(eval(position, args)?))
-                    } else {
-                        Err(EvalError::new(position, "Undefined function: {fn_id}"))
-                    }
-                })?;
+            evaled_ast = Box::new(
+                evaled_ast
+                    .eval_variables(self.resolve_variables(
+                        module_vars,
+                        &refs.variables,
+                        position,
+                    )?)?
+                    .eval_functions(&refs.functions, |fn_id, args| {
+                        if let Some(function) = module_fns.get(fn_id) {
+                            Ok(function.clone())
+                        } else if let Some(BuiltinFunction { eval, .. }) =
+                            self.builtin_functions.get(fn_id)
+                        {
+                            Ok(Box::new(eval(position, args)?))
+                        } else {
+                            Err(EvalError::new(position, "Undefined function: {fn_id}"))
+                        }
+                    })?,
+            );
         }
 
-        Ok(Box::new(evaled_ast))
+        Ok(evaled_ast)
     }
 
-    fn eval_row(&self, module: &Module, row: Row, row_a1: a1_notation::Row) -> EvalResult<Row> {
+    fn eval_row(
+        &self,
+        module_fns: &Functions,
+        module_vars: &Variables,
+        row: Row,
+        row_a1: a1_notation::Row,
+    ) -> EvalResult<Row> {
         let mut cells = vec![];
 
         for (cell_index, cell) in row.cells.into_iter().enumerate() {
             let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
             let evaled_ast = if let Some(ast) = &cell.ast {
-                Some(self.eval_ast(module, ast, cell_a1)?)
+                Some(self.eval_ast(module_fns, module_vars, ast, cell_a1)?)
             } else {
                 None
             };
@@ -152,25 +170,25 @@ impl Compiler {
         Ok(Row { cells, ..row })
     }
 
-    pub fn is_function_defined(&self, module: &Module, fn_name: &str) -> bool {
-        module.functions.contains_key(fn_name) || self.builtin_functions.contains_key(fn_name)
+    pub fn is_function_defined(&self, module_fns: &Functions, fn_name: &str) -> bool {
+        module_fns.contains_key(fn_name) || self.builtin_functions.contains_key(fn_name)
     }
 
-    pub fn is_variable_defined(&self, module: &Module, var_name: &str) -> bool {
-        module.variables.contains_key(var_name) || self.builtin_variables.contains_key(var_name)
+    pub fn is_variable_defined(&self, module_vars: &Variables, var_name: &str) -> bool {
+        module_vars.contains_key(var_name) || self.builtin_variables.contains_key(var_name)
     }
 
     /// Variables can all be resolved in one go - we just loop them by name and resolve the ones
     /// that we can and leave the rest alone.
     fn resolve_variables(
         &self,
-        module: &Module,
+        module_vars: &Variables,
         var_names: &[String],
         position: a1_notation::Address,
     ) -> EvalResult<collections::HashMap<String, Ast>> {
         let mut resolved_vars = collections::HashMap::new();
         for var_name in var_names {
-            if let Some(val) = self.resolve_variable(module, var_name, position)? {
+            if let Some(val) = self.resolve_variable(module_vars, var_name, position)? {
                 resolved_vars.insert(var_name.to_string(), val);
             }
         }
@@ -188,13 +206,13 @@ impl Compiler {
     ///
     fn resolve_variable(
         &self,
-        module: &Module,
+        module_vars: &Variables,
         var_name: &str,
         position: a1_notation::Address,
     ) -> EvalResult<Option<Ast>> {
         Ok(if let Some(value) = self.options.key_values.get(var_name) {
             Some(value.clone())
-        } else if let Some(value) = module.variables.get(var_name) {
+        } else if let Some(value) = module_vars.get(var_name) {
             let value_from_var = match &**value {
                 Node::Variable { value, .. } => value.clone().into_ast(position),
                 n => Box::new(n.clone()),
@@ -290,7 +308,7 @@ mod tests {
             .functions
             .insert("foo".to_string(), Box::new(42.into()));
 
-        assert!(compiler.is_function_defined(&module, "foo"));
+        assert!(compiler.is_function_defined(&module.functions, "foo"));
     }
 
     #[test]
@@ -306,7 +324,7 @@ mod tests {
         );
         let module = build_module();
 
-        assert!(compiler.is_function_defined(&module, "foo"));
+        assert!(compiler.is_function_defined(&module.functions, "foo"));
     }
 
     #[test]
@@ -318,7 +336,7 @@ mod tests {
             .variables
             .insert("foo".to_string(), Box::new(42.into()));
 
-        assert!(compiler.is_variable_defined(&module, "foo"));
+        assert!(compiler.is_variable_defined(&module.variables, "foo"));
     }
 
     #[test]
@@ -334,6 +352,6 @@ mod tests {
         );
         let module = build_module();
 
-        assert!(compiler.is_variable_defined(&module, "foo"));
+        assert!(compiler.is_variable_defined(&module.variables, "foo"));
     }
 }
