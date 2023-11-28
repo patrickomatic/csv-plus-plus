@@ -11,6 +11,7 @@ impl TryFrom<&CliArgs> for Options {
             offset: (cli_args.x_offset, cli_args.y_offset),
             overwrite_values: !cli_args.safe,
             sheet_name: Self::sheet_name(cli_args)?,
+            use_cache: !cli_args.no_cache,
             verbose: cli_args.verbose,
             ..Default::default()
         })

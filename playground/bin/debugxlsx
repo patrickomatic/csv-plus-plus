@@ -1,8 +1,11 @@
 #!/bin/sh
+# Useful for inspecting the relevant parts of an xlsx output.  An xlsx
+# file is essentially a zip file with a bunch of .xml files.  This extracts 
+# the zip and pretty prints one of the given xml files
 set -e
 
 if [ "X$1" = "X" ]; then
-  echo "$0: XLSX_FILE [SUB_XML_FILE]" >2
+  echo "Usage: $0 XLSX_FILE [SUB_XML_FILE]" >&2
   exit 1
 fi
 

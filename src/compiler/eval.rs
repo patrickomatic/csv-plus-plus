@@ -80,13 +80,13 @@ impl Compiler {
 
     // TODO:
     // * do this in parallel (thread for each cell)
+    // * rather than calling `.spreadsheet.borrow()`, call `.spreadsheet.into_inner()` and consume
+    //   it so we don't have to clone the `row` later
     fn eval_cells(&self, module: Module) -> EvalResult<Module> {
         let spreadsheet = module.spreadsheet.borrow();
 
         let mut evaled_rows = vec![];
         for (row_index, row) in spreadsheet.rows.iter().enumerate() {
-            // TODO: we own module so ideally this should be able to consume `rows` rather than
-            // cloning
             evaled_rows.push(self.eval_row(&module, row.clone(), row_index.into())?);
         }
 

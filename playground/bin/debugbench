@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# I had a benchmark which was failing with:
+#
+#   process didn't exit successfully: `/Users/patrick/csv-plus-plus/target/release/deps/eval_fill-e41476ce1c66b265 --profile-time=5 --bench` (signal: 11, SIGSEGV: invalid memory reference)
+#
+# which in order to debug we need to connect to the benchmark using gdb
+#
+if [ "X$1" = "X" ]; then
+  echo "Usage: $0 BENCHMARK" >&2
+  exit 1
+fi
+
+export RUSTFLAGS="-C debuginfo=2"
+export RUSTBACKTRACE=1
+
+if cargo bench --bench $1 -- --profile-time=5; then
+  echo "The benchmark ran successfully."
+else
+  binary=`ls -t target/release/deps/$1-* | fgrep -v '.d' | head -1`
+  # TODO: ugh sign gdb so I don't need to use sudo
+  # sudo rust-gdb -ex "set startup-with-shell off" -ex "run --profile-time=5 --bench" $binary
+  rust-lldb $binary -- --profile-time=5 --bench
+fi

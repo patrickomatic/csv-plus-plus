@@ -18,6 +18,7 @@ pub struct Options {
     pub offset: (u32, u32),
     pub overwrite_values: bool,
     pub sheet_name: String,
+    pub use_cache: bool,
     pub verbose: bool,
 }
 

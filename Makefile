@@ -11,9 +11,9 @@ all:
 
 .PHONY: bench
 bench:
-	cargo bench --bench expensive_fill -- --profile-time=5
+	cargo bench --bench eval_fill -- --profile-time=5
 	open $(bench_output)/report/index.html
-	open $(bench_output)/fill/profile/flamegraph.svg
+	open $(bench_output)/eval_fill/profile/flamegraph.svg
 
 .PHONY: cov
 cov:

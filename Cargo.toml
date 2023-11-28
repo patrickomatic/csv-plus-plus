@@ -37,9 +37,6 @@ pprof = { version = "0.13", features = ["criterion", "flamegraph"] }
 pretty_assertions = "1"
 rand = "^0.8"
 
-[profile.release]
-strip = "debuginfo"
-
 [[bench]]
-name = "expensive_fill"
+name = "eval_fill"
 harness = false

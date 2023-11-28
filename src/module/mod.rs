@@ -17,7 +17,6 @@ use std::cell;
 use std::cmp;
 use std::collections;
 use std::fs;
-use std::path;
 
 mod display;
 mod module_name;
@@ -76,17 +75,21 @@ impl Module {
             variables: code_section_vars
                 .into_iter()
                 .chain(spreadsheet_vars)
-                // .chain(cli_vars.clone())
                 .collect(),
         }
     }
 
-    pub(crate) fn write_object_file(&self, compiler: &Compiler) -> Result<path::PathBuf> {
-        compiler.progress("Writing object file");
+    pub(crate) fn write_object_file(&self, compiler: &Compiler) -> Result<()> {
+        if !compiler.options.use_cache {
+            compiler.info("Not writing object file");
+            return Ok(());
+        }
 
         let object_code_filename = compiler.source_code.object_code_filename();
 
-        let object_file = fs::File::create(&object_code_filename).map_err(|e| {
+        compiler.progress("Writing object file");
+
+        let object_file = fs::File::create(object_code_filename).map_err(|e| {
             compiler.error(format!("IO error: {e:?}"));
             compiler
                 .source_code
@@ -100,15 +103,21 @@ impl Module {
                 .object_code_error(format!("Error serializing object code for writing: {e}"))
         })?;
 
-        Ok(object_code_filename)
+        Ok(())
     }
 
     pub(crate) fn read_from_object_file(compiler: &Compiler) -> Result<Option<Self>> {
+        if !compiler.options.use_cache {
+            compiler.info("Not reading object file");
+            return Ok(None);
+        }
+
         let sc = &compiler.source_code;
         let obj_file = sc.object_code_filename();
 
         // does the object code file even exist?
         if !obj_file.exists() {
+            compiler.info("Attempted to read object file but it does not exist");
             return Ok(None);
         }
 

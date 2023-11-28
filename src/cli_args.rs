@@ -2,13 +2,13 @@ use std::path;
 
 #[derive(Debug, clap::Parser)]
 #[command(author = "Patrick Carroll")]
-#[command(version, about, long_about = None)]
+#[command(version, about)]
 pub struct CliArgs {
     #[arg(
         short,
         long,
         default_value_t = false,
-        help = "Create a backup of the spreadsheet before applying changes."
+        help = "Create a backup of the target spreadsheet before applying changes."
     )]
     pub backup: bool,
 
@@ -33,6 +33,13 @@ pub struct CliArgs {
         help = "`key=value` pairs where the right side will be parsed and made available as a variable",
     )]
     pub key_values: Vec<String>,
+
+    #[arg(
+        long,
+        default_value_t = false,
+        help = "Do not use any cached .csvpo files when compiling."
+    )]
+    pub no_cache: bool,
 
     #[arg(
         group = "output",
@@ -88,6 +95,7 @@ impl Default for CliArgs {
             google_sheet_id: None,
             input_filename: path::PathBuf::new(),
             key_values: vec![],
+            no_cache: false,
             output_filename: None,
             safe: false,
             sheet_name: None,

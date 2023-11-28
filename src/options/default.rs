@@ -10,6 +10,7 @@ impl Default for Options {
             offset: (0, 0),
             overwrite_values: true,
             sheet_name: "empty".to_string(),
+            use_cache: true,
             verbose: false,
         }
     }
