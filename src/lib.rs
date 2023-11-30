@@ -49,10 +49,6 @@ pub use vertical_align::VerticalAlign;
 #[cfg(test)]
 mod test_utils;
 
-// TODO: it's annoying to have to import pretty assertions for every module... this isn't enough
-// #[cfg(test)]
-// use pretty_assertions::assert_eq;
-
 pub(crate) fn csv_reader() -> csv::ReaderBuilder {
     let mut csv_reader = csv::ReaderBuilder::new();
     csv_reader.flexible(true).has_headers(false);

@@ -34,7 +34,6 @@ umya-spreadsheet = "^1.0.3"
 criterion = { version = "^0.5", features = ["html_reports"] }
 cross = "^0.2"
 pprof = { version = "0.13", features = ["criterion", "flamegraph"] }
-pretty_assertions = "1"
 rand = "^0.8"
 
 [[bench]]
