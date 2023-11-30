@@ -81,10 +81,9 @@ fn extract_dfs(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::BuiltinFunction;
     use crate::test_utils::*;
+    use crate::Spreadsheet;
     use crate::*;
-    use crate::{Compiler, Spreadsheet};
 
     fn build_module() -> Module {
         Module::new(Spreadsheet::default(), None, ModuleName::new("foo"))
@@ -104,33 +103,6 @@ mod tests {
         );
 
         assert!(references.is_empty());
-    }
-
-    #[test]
-    fn extract_references_fns_builtin() {
-        let test_file = &TestSourceCode::new("csv", "");
-        let mut compiler: Compiler = test_file.into();
-        compiler.builtin_functions.insert(
-            "foo".to_string(),
-            BuiltinFunction {
-                eval: Box::new(|_, _| Ok(Node::reference("return value"))),
-                name: "foo".to_string(),
-            },
-        );
-        let module = build_module();
-
-        let references = Node::extract_references(
-            &Box::new(Node::fn_call(
-                "foo",
-                &[Node::reference("bar"), Node::reference("baz")],
-            )),
-            &compiler,
-            &module.functions,
-            &module.variables,
-        );
-
-        assert_eq!(references.functions.len(), 1);
-        assert_eq!(&references.functions[0], "foo");
     }
 
     #[test]

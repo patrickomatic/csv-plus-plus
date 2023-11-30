@@ -29,18 +29,6 @@ impl SourceCode {
         }
     }
 
-    pub(crate) fn eval_error<S: Into<String>>(
-        &self,
-        message: S,
-        position: a1_notation::Address,
-    ) -> Error {
-        Error::EvalError {
-            message: message.into(),
-            filename: self.filename.clone(),
-            position,
-        }
-    }
-
     pub(crate) fn object_code_error<S: Into<String>>(&self, message: S) -> Error {
         Error::ObjectCodeError {
             message: message.into(),

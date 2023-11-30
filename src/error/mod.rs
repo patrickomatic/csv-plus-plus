@@ -8,7 +8,6 @@ use std::path;
 mod bad_input;
 mod cell_parse_error;
 mod display;
-mod eval_error;
 mod parse_error;
 
 pub use parse_error::ParseError;
@@ -16,10 +15,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 pub(crate) use bad_input::BadInput;
 pub(crate) use cell_parse_error::CellParseError;
-pub(crate) use eval_error::EvalError;
 
 pub(crate) type ParseResult<T> = std::result::Result<T, ParseError>;
-pub(crate) type EvalResult<T> = std::result::Result<T, EvalError>;
 
 /// The various kinds of errors that can occur during compilation and evaluation of a csv++
 /// module.
@@ -38,8 +35,7 @@ pub enum Error {
         parse_error: Box<ParseError>,
     },
 
-    /// An error encountered when evaluating the formulas in a cell.  For example if a builtin
-    /// funciton is called with the wrong number of arguments.
+    /// An error encountered when evaluating the formulas in a cell.
     EvalError {
         message: String,
         filename: path::PathBuf,

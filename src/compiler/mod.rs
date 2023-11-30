@@ -1,6 +1,5 @@
 //! # Compiler
 //!
-use crate::ast::{BuiltinFunctions, BuiltinVariables};
 use crate::parser::ast_lexer;
 use crate::parser::cell_lexer;
 use crate::{CliArgs, CompilationTarget, Error, Options, Output, Result, SourceCode};
@@ -15,8 +14,6 @@ mod try_from;
 
 #[derive(Debug)]
 pub struct Compiler {
-    pub(crate) builtin_functions: BuiltinFunctions,
-    pub(crate) builtin_variables: BuiltinVariables,
     pub options: Options,
     pub output: Output,
     pub source_code: sync::Arc<SourceCode>,

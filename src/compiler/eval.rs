@@ -1,7 +1,4 @@
-use crate::ast::{
-    Ast, AstReferences, BuiltinFunction, BuiltinVariable, Functions, Node, Variables,
-};
-use crate::error::{EvalError, EvalResult};
+use crate::ast::{Ast, AstReferences, Functions, Node, Variables};
 use crate::parser::code_section_parser::CodeSectionParser;
 use crate::{Cell, Compiler, Module, ModuleName, Result, Row, Spreadsheet};
 use std::cell;
@@ -29,9 +26,7 @@ impl Compiler {
             };
 
             let module_name: ModuleName = self.source_code.filename.clone().try_into()?;
-            let compiled_module = self
-                .eval(Module::new(spreadsheet, code_section, module_name))
-                .map_err(|e| self.source_code.eval_error(&e.message, e.position))?;
+            let compiled_module = self.eval(Module::new(spreadsheet, code_section, module_name));
 
             self.progress("Compiled module");
             self.info(&compiled_module);
@@ -46,7 +41,7 @@ impl Compiler {
         })
     }
 
-    fn eval(&self, module: Module) -> EvalResult<Module> {
+    fn eval(&self, module: Module) -> Module {
         self.progress("Evaluating all cells");
         self.eval_cells(self.eval_fills(module))
     }
@@ -82,7 +77,7 @@ impl Compiler {
 
     // TODO:
     // * do this in parallel (thread for each cell)
-    fn eval_cells(&self, module: Module) -> EvalResult<Module> {
+    fn eval_cells(&self, module: Module) -> Module {
         let spreadsheet = module.spreadsheet.into_inner();
 
         let mut evaled_rows = vec![];
@@ -92,13 +87,13 @@ impl Compiler {
                 &module.variables,
                 row,
                 row_index.into(),
-            )?);
+            ));
         }
 
-        Ok(Module {
+        Module {
             spreadsheet: cell::RefCell::new(Spreadsheet { rows: evaled_rows }),
             ..module
-        })
+        }
     }
 
     /// The idea here is just to keep looping as long as we are making progress eval()ing.
@@ -109,7 +104,7 @@ impl Compiler {
         module_vars: &Variables,
         ast: &Ast,
         position: a1_notation::Address,
-    ) -> EvalResult<Ast> {
+    ) -> Ast {
         let mut evaled_ast = ast.clone();
         let mut last_round_refs = AstReferences::default();
 
@@ -122,26 +117,12 @@ impl Compiler {
 
             evaled_ast = Box::new(
                 evaled_ast
-                    .eval_variables(self.resolve_variables(
-                        module_vars,
-                        &refs.variables,
-                        position,
-                    )?)?
-                    .eval_functions(&refs.functions, |fn_id, args| {
-                        if let Some(function) = module_fns.get(fn_id) {
-                            Ok(function.clone())
-                        } else if let Some(BuiltinFunction { eval, .. }) =
-                            self.builtin_functions.get(fn_id)
-                        {
-                            Ok(Box::new(eval(position, args)?))
-                        } else {
-                            Err(EvalError::new(position, "Undefined function: {fn_id}"))
-                        }
-                    })?,
+                    .eval_variables(self.resolve_variables(module_vars, &refs.variables, position))
+                    .eval_functions(&refs.functions, module_fns),
             );
         }
 
-        Ok(evaled_ast)
+        evaled_ast
     }
 
     fn eval_row(
@@ -150,32 +131,28 @@ impl Compiler {
         module_vars: &Variables,
         row: Row,
         row_a1: a1_notation::Row,
-    ) -> EvalResult<Row> {
+    ) -> Row {
         let mut cells = vec![];
-
         for (cell_index, cell) in row.cells.into_iter().enumerate() {
             let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
-            let evaled_ast = if let Some(ast) = &cell.ast {
-                Some(self.eval_ast(module_fns, module_vars, ast, cell_a1)?)
-            } else {
-                None
-            };
-
             cells.push(Cell {
-                ast: evaled_ast,
+                ast: cell
+                    .ast
+                    .as_ref()
+                    .map(|ast| self.eval_ast(module_fns, module_vars, ast, cell_a1)),
                 ..cell
             });
         }
 
-        Ok(Row { cells, ..row })
+        Row { cells, ..row }
     }
 
     pub fn is_function_defined(&self, module_fns: &Functions, fn_name: &str) -> bool {
-        module_fns.contains_key(fn_name) || self.builtin_functions.contains_key(fn_name)
+        module_fns.contains_key(fn_name)
     }
 
     pub fn is_variable_defined(&self, module_vars: &Variables, var_name: &str) -> bool {
-        module_vars.contains_key(var_name) || self.builtin_variables.contains_key(var_name)
+        module_vars.contains_key(var_name)
     }
 
     /// Variables can all be resolved in one go - we just loop them by name and resolve the ones
@@ -185,15 +162,15 @@ impl Compiler {
         module_vars: &Variables,
         var_names: &[String],
         position: a1_notation::Address,
-    ) -> EvalResult<collections::HashMap<String, Ast>> {
+    ) -> collections::HashMap<String, Ast> {
         let mut resolved_vars = collections::HashMap::new();
         for var_name in var_names {
-            if let Some(val) = self.resolve_variable(module_vars, var_name, position)? {
+            if let Some(val) = self.resolve_variable(module_vars, var_name, position) {
                 resolved_vars.insert(var_name.to_string(), val);
             }
         }
 
-        Ok(resolved_vars)
+        resolved_vars
     }
 
     /// Find the value (`Option<Ast>`) for a given variable.  The search order goes (where the
@@ -201,7 +178,6 @@ impl Compiler {
     ///
     /// * CLI-provided variables
     /// * User-defined (in the module source code)
-    /// * Builtins
     /// * Otherwise `None`
     ///
     fn resolve_variable(
@@ -209,8 +185,8 @@ impl Compiler {
         module_vars: &Variables,
         var_name: &str,
         position: a1_notation::Address,
-    ) -> EvalResult<Option<Ast>> {
-        Ok(if let Some(value) = self.options.key_values.get(var_name) {
+    ) -> Option<Ast> {
+        if let Some(value) = self.options.key_values.get(var_name) {
             Some(value.clone())
         } else if let Some(value) = module_vars.get(var_name) {
             let value_from_var = match &**value {
@@ -219,11 +195,9 @@ impl Compiler {
             };
 
             Some(value_from_var)
-        } else if let Some(BuiltinVariable { eval, .. }) = self.builtin_variables.get(var_name) {
-            Some(Box::new(eval(position)?))
         } else {
             None
-        })
+        }
     }
 }
 
@@ -312,22 +286,6 @@ mod tests {
     }
 
     #[test]
-    fn is_function_defined_builtin_true() {
-        let test_file = &TestSourceCode::new("csv", "");
-        let mut compiler: Compiler = test_file.into();
-        compiler.builtin_functions.insert(
-            "foo".to_string(),
-            BuiltinFunction {
-                name: "foo".to_owned(),
-                eval: Box::new(|_a1, _args| Ok(42.into())),
-            },
-        );
-        let module = build_module();
-
-        assert!(compiler.is_function_defined(&module.functions, "foo"));
-    }
-
-    #[test]
     fn is_variable_defined_true() {
         let test_file = &TestSourceCode::new("csv", "");
         let compiler: Compiler = test_file.into();
@@ -335,22 +293,6 @@ mod tests {
         module
             .variables
             .insert("foo".to_string(), Box::new(42.into()));
-
-        assert!(compiler.is_variable_defined(&module.variables, "foo"));
-    }
-
-    #[test]
-    fn is_variable_defined_builtin_true() {
-        let test_file = &TestSourceCode::new("csv", "");
-        let mut compiler: Compiler = test_file.into();
-        compiler.builtin_variables.insert(
-            "foo".to_string(),
-            BuiltinVariable {
-                name: "foo".to_owned(),
-                eval: Box::new(|_a1| Ok(42.into())),
-            },
-        );
-        let module = build_module();
 
         assert!(compiler.is_variable_defined(&module.variables, "foo"));
     }

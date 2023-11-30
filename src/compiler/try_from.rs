@@ -1,4 +1,3 @@
-use crate::ast::{BuiltinFunction, BuiltinVariable};
 use crate::parser::ast_lexer;
 use crate::parser::ast_parser::AstParser;
 use crate::parser::cell_lexer;
@@ -12,8 +11,6 @@ impl TryFrom<&CliArgs> for Compiler {
         let source_code = SourceCode::open(&cli_args.input_filename)?;
 
         let mut compiler = Self {
-            builtin_functions: BuiltinFunction::all(),
-            builtin_variables: BuiltinVariable::all(),
             options: Options::try_from(cli_args)?,
             output: Output::try_from(cli_args)?,
             source_code: sync::Arc::new(source_code),

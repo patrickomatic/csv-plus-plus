@@ -60,7 +60,7 @@ pub enum Node {
 }
 
 /// Most of these just make testing easier to not have to call .to_string() constantly, but they're
-/// also nice for some of the code that the builtins call and need to build ASTs.
+/// also nice for some of the code that needs to build ASTs.
 impl Node {
     #[cfg(test)]
     pub(crate) fn fn_def<S: Into<String>>(name: S, args: &[&str], body: Self) -> Self {

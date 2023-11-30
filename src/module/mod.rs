@@ -33,28 +33,6 @@ pub struct Module {
 }
 
 impl Module {
-    /// Given a parsed code section and spreadsheet section, this function will assemble all of the
-    /// available functions and variables.  There are some nuances here because there are a lot of
-    /// sources of functions and variables and they're allowed to override each other.
-    ///
-    /// ## Function Precedence
-    ///
-    /// Functions are just comprised of what is builtin and what the user puts in the code section.
-    /// The code section functions can override builtins so the precedence is (with the lowest
-    /// number being the one that is used):
-    ///
-    /// 1. Functions in the code section
-    /// 2. Builtin functions
-    ///
-    /// ## Variable Precedence
-    ///
-    /// There are a lot more sources of variables - here is their order of precedence:
-    ///
-    /// 1. Variables from the -k/--key-values CLI flag
-    /// 2. Variables defined in cells
-    /// 3. Variables defined in the code section
-    /// 4. Builtin variables
-    ///
     pub fn new(
         spreadsheet: Spreadsheet,
         code_section: Option<CodeSection>,

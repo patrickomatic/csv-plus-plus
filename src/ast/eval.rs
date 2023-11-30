@@ -2,66 +2,55 @@
 //!
 //! The main functions for evaluating a function or variable.
 //!
-use super::{Ast, Node};
-use crate::error::EvalResult;
+use super::{Ast, FunctionName, Functions, Node};
 use std::collections;
 
 impl Node {
     /// Evaluate the given `functions` calling `resolve_fn` upon each occurence to render a
     /// replacement.  Unlike variable resolution, we can't produce the values up front because the
     /// resolution function requires being called with the `arguments` at the call site.
+    // TODO: make this consume itself? (take a `self`) it's already cloning over and over
     pub(crate) fn eval_functions(
         &self,
-        functions: &[String],
-        resolve_fn: impl Fn(&str, &[Ast]) -> EvalResult<Ast>,
-    ) -> EvalResult<Node> {
+        fns_to_resolve: &[FunctionName],
+        functions: &Functions,
+    ) -> Node {
         let mut evaled_ast = self.clone();
-        for fn_name in functions {
-            evaled_ast = evaled_ast.call_function(fn_name, &resolve_fn)?;
+        for fn_name in fns_to_resolve {
+            if let Some(fn_ast) = functions.get(fn_name) {
+                evaled_ast = evaled_ast.call_function(fn_name, fn_ast);
+            } else {
+                // TODO: log a warning that we tried to resolve an unknown function
+                // this is one of those things that should never happen (since `fns_to_resolve`
+                // is only comprised of functions we know about)
+            }
         }
 
-        Ok(evaled_ast)
+        evaled_ast
     }
 
     /// Use the mapping in `variable_values` to replace each variable referenced in the AST with
     /// it's given replacement.
+    // TODO: make this consume itself? it's already cloning over and over
     pub(crate) fn eval_variables(
         &self,
         variable_values: collections::HashMap<String, Ast>,
-    ) -> EvalResult<Node> {
+    ) -> Node {
         let mut evaled_ast = self.clone();
         for (var_id, replacement) in variable_values {
             evaled_ast = evaled_ast.replace_variable(&var_id, replacement);
         }
 
-        Ok(evaled_ast)
+        evaled_ast
     }
 
     /// Do a depth-first-search on the AST, "calling" the function wherever we see a
     /// `Node::FunctionCall` with the matching name.  Calling a function can result in two main
     /// paths:
-    ///
-    /// * We get a `Node::Function` back.  This means we're calling a user defined function.  To
-    /// handle this take each of the args, find the corresponding arg in the calling site and
-    /// replace it in the `body`.  Then return that resulting body.
-    ///
-    /// * We get any other kind of `Node` back.  This will happen if a builtin function is called -
-    /// in this case just replace the calling site with that value.
-    ///
-    /// Anything else in the AST just gets left alone and included in the final output as-is.
-    fn call_function(
-        &self,
-        fn_id: &str,
-        resolve_fn: &impl Fn(&str, &[Ast]) -> EvalResult<Ast>,
-    ) -> EvalResult<Self> {
+    fn call_function(&self, fn_id: &str, fn_ast: &Ast) -> Self {
         match self {
-            // handle a function that we're calling
-            Self::FunctionCall { args, name } if name == fn_id =>
-            // call the resolve function which will either give us the result of a builtin
-            // (typically a terminal node) or a user-defined function (always a
-            // `Node::Function`)
-            {
-                match *resolve_fn(fn_id, args)? {
+            Self::FunctionCall { args, name } if name == fn_id => {
+                match (**fn_ast).clone() {
                     // when we get a `Node::Function`, take the body and replace each of it's
                     // arguments in the body.  For example:
                     //
@@ -85,13 +74,12 @@ impl Node {
                                 evaled_body.replace_variable(resolved_arg, args[i].clone());
                         }
 
-                        Ok(evaled_body)
+                        evaled_body
                     }
 
                     // otherwise the function resolved to a non-function.  just treat that as
-                    // terminal and return it.  typically when a builtin is called it will hit this
-                    // path because they (at least most of them) return `Node::Reference`s
-                    node => Ok(node),
+                    // terminal and return it.
+                    node => node,
                 }
             }
 
@@ -100,10 +88,10 @@ impl Node {
             Self::FunctionCall { args, name } => {
                 let mut called_args = vec![];
                 for arg in args {
-                    called_args.push(arg.call_function(fn_id, resolve_fn)?);
+                    called_args.push(arg.call_function(fn_id, fn_ast));
                 }
 
-                Ok(Node::fn_call(name, &called_args))
+                Node::fn_call(name, &called_args)
             }
 
             // also recurse for infix functions
@@ -111,14 +99,14 @@ impl Node {
                 left,
                 operator,
                 right,
-            } => Ok(Node::infix_fn_call(
-                left.call_function(fn_id, resolve_fn)?,
+            } => Node::infix_fn_call(
+                left.call_function(fn_id, fn_ast),
                 operator,
-                right.call_function(fn_id, resolve_fn)?,
-            )),
+                right.call_function(fn_id, fn_ast),
+            ),
 
             // otherwise just don't modify it
-            _ => Ok(self.clone()),
+            _ => self.clone(),
         }
     }
 
@@ -157,53 +145,35 @@ impl Node {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::*;
 
     #[test]
     fn eval_functions_nomatch() {
         let ast = Box::new(Node::reference("foo"));
+        let functions = HashMap::new();
 
         assert_eq!(
             ast,
-            Box::new(
-                ast.eval_functions(&["bar".to_owned(), "baz".to_owned()], |_fn_id, _args| {
-                    Ok(Box::new(42.into()))
-                })
-                .unwrap()
-            )
-        );
-    }
-
-    #[test]
-    fn eval_functions_builtin() {
-        let ast = Box::new(Node::fn_call("foo_builtin", &[]));
-
-        assert_eq!(
-            Box::new(42.into()),
-            Box::new(
-                ast.eval_functions(&["foo_builtin".to_owned()], |_fn_id, _args| {
-                    Ok(Box::new(42.into()))
-                })
-                .unwrap()
-            )
+            Box::new(ast.eval_functions(&["bar".to_owned(), "baz".to_owned()], &functions))
         );
     }
 
     #[test]
     fn eval_functions_user_defined() {
         let ast = Box::new(Node::fn_call("my_func", &[1.into(), 2.into()]));
+        let mut functions = HashMap::new();
+        functions.insert(
+            "my_func".to_string(),
+            Box::new(Node::fn_def(
+                "my_func",
+                &["a", "b"],
+                Node::infix_fn_call(Node::reference("a"), "+", Node::reference("b")),
+            )),
+        );
 
         assert_eq!(
             Box::new(Node::infix_fn_call(1.into(), "+", 2.into())),
-            Box::new(
-                ast.eval_functions(&["my_func".to_owned()], |_fn_id, _args| {
-                    Ok(Box::new(Node::fn_def(
-                        "my_func",
-                        &["a", "b"],
-                        Node::infix_fn_call(Node::reference("a"), "+", Node::reference("b")),
-                    )))
-                })
-                .unwrap()
-            )
+            Box::new(ast.eval_functions(&["my_func".to_owned()], &functions))
         );
     }
 
@@ -213,7 +183,7 @@ mod tests {
         let mut values = collections::HashMap::new();
         values.insert("bar".to_string(), Box::new(1.into()));
 
-        assert_eq!(Box::new(ast.eval_variables(values).unwrap()), ast);
+        assert_eq!(Box::new(ast.eval_variables(values)), ast);
     }
 
     #[test]
@@ -222,10 +192,7 @@ mod tests {
         let mut values = collections::HashMap::new();
         values.insert("foo".to_string(), Box::new(1.into()));
 
-        assert_eq!(
-            Box::new(ast.eval_variables(values).unwrap()),
-            Box::new(1.into())
-        );
+        assert_eq!(Box::new(ast.eval_variables(values)), Box::new(1.into()));
     }
 
     #[test]
@@ -239,7 +206,7 @@ mod tests {
         values.insert("bar".to_string(), Box::new(2.into()));
 
         assert_eq!(
-            Box::new(ast.eval_variables(values).unwrap()),
+            Box::new(ast.eval_variables(values)),
             Box::new(Node::fn_call("my_func", &[1.into(), 2.into()]))
         );
     }
@@ -258,7 +225,7 @@ mod tests {
         values.insert("bar".to_string(), Box::new(2.into()));
 
         assert_eq!(
-            Box::new(ast.eval_variables(values).unwrap()),
+            Box::new(ast.eval_variables(values)),
             Box::new(Node::fn_call(
                 "outer_func",
                 &[Node::fn_call("my_func", &[1.into(), 2.into()])]
@@ -279,7 +246,7 @@ mod tests {
         values.insert("bar".to_string(), Box::new(4.into()));
 
         assert_eq!(
-            Box::new(ast.eval_variables(values).unwrap()),
+            Box::new(ast.eval_variables(values)),
             Box::new(Node::infix_fn_call(
                 Node::fn_call("my_func", &[3.into(), 4.into()]),
                 "*",
