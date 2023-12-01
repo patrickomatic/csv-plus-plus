@@ -67,7 +67,7 @@ impl TokenLibrary {
             fn_def: TokenMatcher::new(r"fn", Token::FunctionDefinition)?,
             newline: TokenMatcher::new(r"\n", Token::Newline)?,
             open_paren: TokenMatcher::new(r"\(", Token::OpenParen)?,
-            reference: TokenMatcher::new(r"[$!\w:]+", Token::Reference)?,
+            reference: TokenMatcher::new(r"[$!\w:]+[$!\w:.]?", Token::Reference)?,
             use_module: TokenMatcher::new(r"use", Token::UseModule)?,
             var_assign: TokenMatcher::new(r":=", Token::VarAssign)?,
         })
@@ -152,6 +152,10 @@ mod tests {
         assert!(token_library().reference.1.is_match("Foo!A1:B2"));
 
         assert!(!token_library().reference.1.is_match("*"));
+
+        // it can contain a `.` but it can't start with one
+        assert!(token_library().reference.1.is_match("foo.bar"));
+        assert!(!token_library().reference.1.is_match(".foo"));
     }
 
     #[test]

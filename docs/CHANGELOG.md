@@ -3,6 +3,7 @@
 ### Features
 
 * Using object code files (.csvpo) during compilation
+* Allow for `.` characters in a function name
 * Code coverage reporting
 * Tooling to run benchmarks
 
