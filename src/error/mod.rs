@@ -1,7 +1,7 @@
 //! # Error
 //!
 //! Error handling structs.
-use crate::Output;
+use crate::{ModuleName, Output};
 use std::error;
 use std::path;
 
@@ -50,6 +50,11 @@ pub enum Error {
     /// An error while building the compiler or reading the source code.  These are typically not
     /// due to user error.
     InitError(String),
+
+    ModuleLoadError {
+        module_name: ModuleName,
+        message: String,
+    },
 
     /// An error encountered while serializing the compiled module to an object file.
     ObjectCodeError {

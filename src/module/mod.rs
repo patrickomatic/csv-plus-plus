@@ -1,7 +1,6 @@
 //! # Module
 //!
-//! A `module` holds the final compiled state for a single csv++ source file, as well as managing
-//! evaluation and scope resolution.
+//! A `module` holds the final compiled state for a single csv++ source file
 //!
 // TODO:
 // * we need more unit tests around the various eval phases
@@ -11,16 +10,16 @@
 // * make sure there is only one infinite fill in the docs (ones can follow it, but they have to
 //      be finite and subtract from it
 use crate::ast::{Functions, Variables};
-use crate::parser::code_section_parser::CodeSection;
-use crate::{Compiler, Result, Spreadsheet};
+use crate::{CodeSection, Compiler, Result, Spreadsheet};
 use std::cell;
 use std::cmp;
-use std::collections;
 use std::fs;
 
 mod display;
+mod module_loader;
 mod module_name;
 
+use module_loader::ModuleLoader;
 pub use module_name::ModuleName;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
@@ -33,24 +32,43 @@ pub struct Module {
 }
 
 impl Module {
+    // TODO: rename to load... like we're loading a module which means loading all it's
+    // dependencies
+    //
     pub fn new(
         spreadsheet: Spreadsheet,
-        code_section: Option<CodeSection>,
+        code_section: CodeSection,
         module_name: ModuleName,
     ) -> Self {
         let spreadsheet_vars = spreadsheet.variables();
-        let (code_section_vars, code_section_fns) = if let Some(cs) = code_section {
-            (cs.variables, cs.functions)
-        } else {
-            (collections::HashMap::new(), collections::HashMap::new())
-        };
+
+        // XXX remove unwrap
+        let _module_loader = ModuleLoader::default().load(&code_section).unwrap();
+        // XXX show errors if it has errors
+        // XXX
+        /*
+        let mut loaded_modules: collections::HashMap<ModuleName, CodeSection> =
+            collections::HashMap::new();
+        for module_name in code_section.required_modules {
+            // TODO: do each one in a thread
+            // TODO: if one of them fails don't stop compiling - try to do the others and
+            // aggregate all the results together
+            if !loaded_modules.contains_key(&module_name) {
+                loaded_modules.insert(
+                    module_name.clone(),
+                    Self::load_required_module(&module_name).unwrap(),
+                );
+            }
+        }
+        */
 
         Self {
             compiler_version: env!("CARGO_PKG_VERSION").to_string(),
-            functions: code_section_fns,
+            functions: code_section.functions,
             module_name,
             spreadsheet: cell::RefCell::new(spreadsheet),
-            variables: code_section_vars
+            variables: code_section
+                .variables
                 .into_iter()
                 .chain(spreadsheet_vars)
                 .collect(),
@@ -151,6 +169,7 @@ impl Module {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections;
 
     #[test]
     fn new_with_code_section() {
@@ -163,11 +182,7 @@ mod tests {
             variables,
             ..Default::default()
         };
-        let module = Module::new(
-            Spreadsheet::default(),
-            Some(code_section),
-            ModuleName::new("foo"),
-        );
+        let module = Module::new(Spreadsheet::default(), code_section, ModuleName::new("foo"));
 
         assert!(module.functions.contains_key("foo"));
         assert!(module.variables.contains_key("bar"));
@@ -175,7 +190,11 @@ mod tests {
 
     #[test]
     fn new_without_code_section() {
-        let module = Module::new(Spreadsheet::default(), None, ModuleName::new("foo"));
+        let module = Module::new(
+            Spreadsheet::default(),
+            CodeSection::default(),
+            ModuleName::new("foo"),
+        );
 
         assert!(module.functions.is_empty());
         assert!(module.variables.is_empty());

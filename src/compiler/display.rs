@@ -6,7 +6,7 @@ impl fmt::Display for Compiler {
         writeln!(f, "# CLI Options")?;
         writeln!(f, "{}", self.options)?;
         writeln!(f, "\n# Parsed Source Code")?;
-        writeln!(f, "{}", self.source_code)?;
+        writeln!(f, "{}", *self.source_code)?;
         writeln!(f, "\n# Output Target")?;
         writeln!(f, "{}", self.output)
     }

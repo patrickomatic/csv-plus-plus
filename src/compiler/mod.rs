@@ -1,12 +1,9 @@
 //! # Compiler
 //!
-use crate::parser::ast_lexer;
-use crate::parser::cell_lexer;
-use crate::{CliArgs, CompilationTarget, Error, Options, Output, Result, SourceCode};
+use crate::{ArcSourceCode, CliArgs, CompilationTarget, Error, Options, Output, Result};
 use clap::Parser;
 use colored::Colorize;
 use std::fmt;
-use std::sync;
 
 mod display;
 mod eval;
@@ -16,9 +13,7 @@ mod try_from;
 pub struct Compiler {
     pub options: Options,
     pub output: Output,
-    pub source_code: sync::Arc<SourceCode>,
-    pub(crate) ast_token_library: ast_lexer::TokenLibrary,
-    pub(crate) cell_token_library: cell_lexer::TokenLibrary,
+    pub(crate) source_code: ArcSourceCode,
 }
 
 impl Compiler {

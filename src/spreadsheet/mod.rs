@@ -2,7 +2,7 @@
 //!
 //!
 use crate::ast::{Node, VariableValue, Variables};
-use crate::{csv_reader, Compiler, Result, Row};
+use crate::{csv_reader, ArcSourceCode, Result, Row};
 use serde::{Deserialize, Serialize};
 use std::collections;
 
@@ -15,16 +15,14 @@ pub struct Spreadsheet {
 
 impl Spreadsheet {
     /// Parse the spreadsheet section of a csv++ source file.
-    pub(crate) fn parse(compiler: &Compiler) -> Result<Spreadsheet> {
-        compiler.progress("Parsing spreadsheet");
-
+    pub(crate) fn parse(source_code: ArcSourceCode) -> Result<Spreadsheet> {
         let mut csv_reader = csv_reader()
             .trim(csv::Trim::All)
-            .from_reader(compiler.source_code.csv_section.as_bytes());
+            .from_reader(source_code.csv_section.as_bytes());
 
         let mut rows: Vec<Row> = vec![];
         for (row_index, result) in csv_reader.records().enumerate() {
-            rows.push(Row::parse(result, row_index.into(), compiler)?);
+            rows.push(Row::parse(result, row_index.into(), source_code.clone())?);
         }
 
         Ok(Spreadsheet { rows })
@@ -102,14 +100,14 @@ mod tests {
     use crate::*;
     use a1_notation::Address;
 
-    fn build_compiler(input: &str) -> Compiler {
-        (&TestSourceCode::new("csv", input)).into()
+    fn build_source_code(input: &str) -> ArcSourceCode {
+        ArcSourceCode::new((&TestSourceCode::new("csv", input)).into())
     }
 
     #[test]
     fn parse_simple() {
-        let compiler = build_compiler("foo,bar,baz\n1,2,3\n");
-        let spreadsheet = Spreadsheet::parse(&compiler).unwrap();
+        let source_code = build_source_code("foo,bar,baz\n1,2,3\n");
+        let spreadsheet = Spreadsheet::parse(source_code).unwrap();
 
         // 2 rows
         assert_eq!(spreadsheet.rows.len(), 2);
@@ -137,8 +135,8 @@ mod tests {
 
     #[test]
     fn parse_with_asts() {
-        let compiler = build_compiler("=1,=2 * 3,=foo\n");
-        let spreadsheet = Spreadsheet::parse(&compiler).unwrap();
+        let source_code = build_source_code("=1,=2 * 3,=foo\n");
+        let spreadsheet = Spreadsheet::parse(source_code).unwrap();
 
         assert!(spreadsheet.rows[0].cells[0].ast.is_some());
         assert!(spreadsheet.rows[0].cells[1].ast.is_some());
@@ -147,8 +145,8 @@ mod tests {
 
     #[test]
     fn parse_trim_spaces() {
-        let compiler = build_compiler("   foo   , bar\n");
-        let spreadsheet = Spreadsheet::parse(&compiler).unwrap();
+        let source_code = build_source_code("   foo   , bar\n");
+        let spreadsheet = Spreadsheet::parse(source_code).unwrap();
 
         assert_eq!(spreadsheet.rows[0].cells[0].value, "foo");
         assert_eq!(spreadsheet.rows[0].cells[1].value, "bar");
@@ -156,8 +154,8 @@ mod tests {
 
     #[test]
     fn parse_with_options() {
-        let compiler = build_compiler("[[t=b / fs=20]]foo");
-        let spreadsheet = Spreadsheet::parse(&compiler).unwrap();
+        let source_code = build_source_code("[[t=b / fs=20]]foo");
+        let spreadsheet = Spreadsheet::parse(source_code).unwrap();
 
         assert!(spreadsheet.rows[0].cells[0]
             .text_formats
@@ -167,8 +165,8 @@ mod tests {
 
     #[test]
     fn parse_with_row_option() {
-        let compiler = build_compiler("![[t=b]]foo,bar,baz");
-        let spreadsheet = Spreadsheet::parse(&compiler).unwrap();
+        let source_code = build_source_code("![[t=b]]foo,bar,baz");
+        let spreadsheet = Spreadsheet::parse(source_code).unwrap();
 
         assert!(spreadsheet.rows[0].cells[0]
             .text_formats

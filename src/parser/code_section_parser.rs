@@ -17,42 +17,14 @@
 //!
 use super::ast_lexer::{AstLexer, Token, TokenMatch};
 use super::ast_parser::AstParser;
-use crate::ast::{Ast, Functions, Node, VariableValue, Variables};
+use crate::ast::{Ast, Node, VariableValue};
 use crate::module::ModuleName;
-use crate::{Compiler, Result};
+use crate::{ArcSourceCode, CodeSection, Result};
 use std::collections::HashMap;
-use std::fmt;
-
-#[derive(Debug, Default)]
-pub struct CodeSection {
-    pub(crate) functions: Functions,
-    pub(crate) required_modules: Vec<ModuleName>,
-    pub(crate) variables: Variables,
-}
-
-impl fmt::Display for CodeSection {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "# Required Modules")?;
-        for m in &self.required_modules {
-            writeln!(f, "{m}")?;
-        }
-
-        writeln!(f, "\n# Variables")?;
-        for ast in self.variables.values() {
-            writeln!(f, "{ast}")?;
-        }
-
-        writeln!(f, "\n# Functions")?;
-        for ast in self.functions.values() {
-            writeln!(f, "fn {ast}")?;
-        }
-        Ok(())
-    }
-}
 
 pub(crate) struct CodeSectionParser<'a> {
     lexer: AstLexer<'a>,
-    compiler: &'a Compiler,
+    source_code: ArcSourceCode,
 }
 
 /// A recursive descent parser which relies on `AstParser` for individual expressions.  As
@@ -60,13 +32,11 @@ pub(crate) struct CodeSectionParser<'a> {
 /// function, use statements and variable assignments and delegates to `AstParser` for handling
 /// expressions
 impl<'a> CodeSectionParser<'a> {
-    pub(crate) fn parse(input: &'a str, compiler: &'a Compiler) -> Result<CodeSection> {
-        compiler.progress("Parsing code section");
-
+    pub(crate) fn parse(input: &'a str, source_code: ArcSourceCode) -> Result<CodeSection> {
         CodeSectionParser {
-            lexer: AstLexer::new(input, compiler)
-                .map_err(|e| compiler.source_code.code_syntax_error(e))?,
-            compiler,
+            lexer: AstLexer::new(input, source_code.clone())
+                .map_err(|e| source_code.code_syntax_error(e))?,
+            source_code,
         }
         .parse_code_section()
     }
@@ -183,7 +153,7 @@ impl<'a> CodeSectionParser<'a> {
         // same stream of tokens
         AstParser::new(&self.lexer)
             .expr_bp(true, 0)
-            .map_err(|e| self.compiler.source_code.code_syntax_error(e))
+            .map_err(|e| self.source_code.code_syntax_error(e))
     }
 }
 
@@ -192,10 +162,11 @@ mod tests {
     use super::*;
     use crate::ast::Ast;
     use crate::test_utils::*;
+    use crate::*;
 
     fn test(input: &str) -> CodeSection {
-        let compiler: Compiler = (&TestSourceCode::new("csv", input)).into();
-        CodeSectionParser::parse(input, &compiler).unwrap()
+        let source_code: SourceCode = (&TestSourceCode::new("csv", input)).into();
+        CodeSectionParser::parse(input, ArcSourceCode::new(source_code)).unwrap()
     }
 
     #[test]

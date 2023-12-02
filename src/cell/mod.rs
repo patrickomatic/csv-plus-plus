@@ -4,8 +4,8 @@ use crate::ast::Ast;
 use crate::parser::ast_parser::AstParser;
 use crate::parser::cell_parser::CellParser;
 use crate::{
-    BorderSide, BorderStyle, Compiler, DataValidation, HorizontalAlign, NumberFormat, Result, Rgb,
-    Row, TextFormat, VerticalAlign,
+    ArcSourceCode, BorderSide, BorderStyle, DataValidation, HorizontalAlign, NumberFormat, Result,
+    Rgb, Row, TextFormat, VerticalAlign,
 };
 use a1_notation::Address;
 use std::collections::HashSet;
@@ -33,23 +33,23 @@ pub struct Cell {
     pub vertical_align: Option<VerticalAlign>,
 }
 
-fn parse_ast(input: &str, compiler: &Compiler) -> Result<Option<Ast>> {
+fn parse_ast(input: &str, source_code: ArcSourceCode) -> Result<Option<Ast>> {
     Ok(if let Some(without_equals) = input.strip_prefix('=') {
-        Some(AstParser::parse(without_equals, false, compiler)?)
+        Some(AstParser::parse(without_equals, false, source_code)?)
     } else {
         None
     })
 }
 
 impl Cell {
-    pub fn parse(
+    pub(crate) fn parse(
         input: &str,
         position: Address,
         row: &mut Row,
-        compiler: &Compiler,
+        source_code: ArcSourceCode,
     ) -> Result<Self> {
-        let mut cell = CellParser::parse(input, position, row, compiler)?;
-        cell.ast = parse_ast(&cell.value, compiler)?;
+        let mut cell = CellParser::parse(input, position, row, source_code.clone())?;
+        cell.ast = parse_ast(&cell.value, source_code.clone())?;
 
         Ok(cell)
     }
@@ -86,8 +86,13 @@ mod tests {
     fn parse_no_ast() {
         let test_file = &TestSourceCode::new("csv", "foo,bar,baz\n1,2,3\n");
         let source_code = test_file.into();
-        let cell =
-            Cell::parse("foo", Address::new(0, 4), &mut Row::default(), &source_code).unwrap();
+        let cell = Cell::parse(
+            "foo",
+            Address::new(0, 4),
+            &mut Row::default(),
+            ArcSourceCode::new(source_code),
+        )
+        .unwrap();
 
         assert_eq!(cell.value, "foo");
         assert_eq!(cell.ast, None);
@@ -101,7 +106,7 @@ mod tests {
             "=1 + foo",
             Address::new(0, 4),
             &mut Row::default(),
-            &source_code,
+            ArcSourceCode::new(source_code),
         )
         .unwrap();
 

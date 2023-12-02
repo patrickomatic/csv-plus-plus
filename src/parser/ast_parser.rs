@@ -14,7 +14,7 @@
 use super::ast_lexer::*;
 use crate::ast::{Ast, Node, Variables};
 use crate::error::{BadInput, Error, ParseResult, Result};
-use crate::Compiler;
+use crate::ArcSourceCode;
 use std::collections;
 
 pub(crate) struct AstParser<'a> {
@@ -27,13 +27,17 @@ impl<'a> AstParser<'a> {
     }
 
     /// Parse `input` from a `SourceCode`.
-    pub(crate) fn parse(input: &'a str, single_expr: bool, compiler: &'a Compiler) -> Result<Ast> {
-        let lexer = AstLexer::new(input, compiler)
-            .map_err(|e| compiler.source_code.code_syntax_error(e))?;
+    pub(crate) fn parse(
+        input: &'a str,
+        single_expr: bool,
+        source_code: ArcSourceCode,
+    ) -> Result<Ast> {
+        let lexer = AstLexer::new(input, source_code.clone())
+            .map_err(|e| source_code.code_syntax_error(e))?;
 
         AstParser::new(&lexer)
             .expr_bp(single_expr, 0)
-            .map_err(|e| compiler.source_code.code_syntax_error(e))
+            .map_err(|e| source_code.code_syntax_error(e))
     }
 
     /// Parse `input` from the command line, specified as a simple key/value string like
@@ -42,13 +46,16 @@ impl<'a> AstParser<'a> {
     // TODO: take multiple key values via the same flag.  similar to awk -v foo1=bar -v foo2=bar
     pub(crate) fn parse_key_value_str(
         key_values: &'a [String],
-        compiler: &'a Compiler,
+        source_code: ArcSourceCode,
     ) -> Result<Variables> {
         let mut variables = collections::HashMap::new();
 
         for kv in key_values.iter() {
             if let Some((key, value)) = kv.split_once('=') {
-                variables.insert(key.to_string(), Self::parse(value, false, compiler)?);
+                variables.insert(
+                    key.to_string(),
+                    Self::parse(value, false, source_code.clone())?,
+                );
             } else {
                 return Err(Error::InitError(format!(
                     "Invalid key/value variables: {kv}"
@@ -68,16 +75,10 @@ impl<'a> AstParser<'a> {
             // the close paren
             Token::OpenParen => {
                 let expr = self.expr_bp(single_expr, 0)?;
-                match self.lexer.next() {
-                    TokenMatch {
-                        token: Token::CloseParen,
-                        ..
-                    } => expr,
-                    token => {
-                        return Err(token.into_parse_error(format!(
-                            "Expected close parenthesis (`)`), received ({token})"
-                        )))
-                    }
+                let t = self.lexer.next();
+                match t.token {
+                    Token::CloseParen => expr,
+                    _ => return Err(t.into_parse_error("Expected close parenthesis (`)`)")),
                 }
             }
 
@@ -205,10 +206,11 @@ impl<'a> AstParser<'a> {
 mod tests {
     use super::*;
     use crate::test_utils::*;
+    use crate::*;
 
     fn test_parse(input: &str) -> Ast {
-        let compiler: Compiler = (&TestSourceCode::new("xlsx", input)).into();
-        AstParser::parse(input, false, &compiler).unwrap()
+        let source_code: SourceCode = (&TestSourceCode::new("xlsx", input)).into();
+        AstParser::parse(input, false, ArcSourceCode::new(source_code)).unwrap()
     }
 
     #[test]
@@ -286,10 +288,10 @@ mod tests {
 
     #[test]
     fn parse_key_value_str() {
-        let compiler: Compiler = (&TestSourceCode::new("csv", "foo,bar")).into();
+        let source_code: SourceCode = (&TestSourceCode::new("csv", "foo,bar")).into();
         let parsed_vars = AstParser::parse_key_value_str(
             &["foo=bar".to_string(), "baz=1".to_string()],
-            &compiler,
+            ArcSourceCode::new(source_code),
         )
         .unwrap();
 
@@ -298,8 +300,9 @@ mod tests {
 
     #[test]
     fn parse_key_value_str_empty() {
-        let compiler: Compiler = (&TestSourceCode::new("csv", "foo,bar")).into();
-        let parsed_vars = AstParser::parse_key_value_str(&[], &compiler).unwrap();
+        let source_code: SourceCode = (&TestSourceCode::new("csv", "foo,bar")).into();
+        let parsed_vars =
+            AstParser::parse_key_value_str(&[], ArcSourceCode::new(source_code)).unwrap();
 
         assert_eq!(parsed_vars.len(), 0);
     }

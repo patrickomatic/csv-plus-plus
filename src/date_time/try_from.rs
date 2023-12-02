@@ -78,7 +78,7 @@ mod tests {
     use crate::test_utils::*;
     use crate::*;
 
-    fn build_input<'a>(s: &'a str, source_code: &'a SourceCode) -> ast_lexer::TokenMatch<'a> {
+    fn build_input<'a>(s: &'a str, source_code: ArcSourceCode) -> ast_lexer::TokenMatch<'a> {
         build_ast_token_match(s, source_code)
     }
 
@@ -87,22 +87,20 @@ mod tests {
         let source_code = build_source_code();
 
         assert_eq!(
-            DateTime::try_from(build_input("10/22/2012", &source_code)).unwrap(),
+            DateTime::try_from(build_input("10/22/2012", source_code.clone())).unwrap(),
             DateTime::Date(chrono::NaiveDate::from_ymd_opt(2012, 10, 22).unwrap()),
         );
 
         assert_eq!(
-            DateTime::try_from(build_input("2012-10-22", &source_code)).unwrap(),
+            DateTime::try_from(build_input("2012-10-22", source_code.clone())).unwrap(),
             DateTime::Date(chrono::NaiveDate::from_ymd_opt(2012, 10, 22).unwrap()),
         );
     }
 
     #[test]
     fn date_and_time() {
-        let source_code = build_source_code();
-
         assert_eq!(
-            DateTime::try_from(build_input("10/22/2012 1:00", &source_code)).unwrap(),
+            DateTime::try_from(build_input("10/22/2012 1:00", build_source_code())).unwrap(),
             DateTime::DateAndTime(
                 chrono::NaiveDate::from_ymd_opt(2012, 10, 22)
                     .unwrap()
@@ -118,10 +116,8 @@ mod tests {
     #[ignore]
     #[test]
     fn date_and_time_and_timezone() {
-        let source_code = build_source_code();
-
         assert_eq!(
-            DateTime::try_from(build_input("10/22/2012 1:00 0800", &source_code)).unwrap(),
+            DateTime::try_from(build_input("10/22/2012 1:00 0800", build_source_code())).unwrap(),
             DateTime::DateAndTime(
                 chrono::NaiveDate::from_ymd_opt(2012, 10, 22)
                     .unwrap()
@@ -135,10 +131,8 @@ mod tests {
 
     #[test]
     fn time() {
-        let source_code = build_source_code();
-
         assert_eq!(
-            DateTime::try_from(build_input("1:00", &source_code)).unwrap(),
+            DateTime::try_from(build_input("1:00", build_source_code())).unwrap(),
             DateTime::Time(chrono::NaiveTime::from_hms_opt(1, 0, 0).unwrap()),
         );
     }

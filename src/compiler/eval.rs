@@ -1,6 +1,6 @@
 use crate::ast::{Ast, AstReferences, Functions, Node, Variables};
 use crate::parser::code_section_parser::CodeSectionParser;
-use crate::{Cell, Compiler, Module, ModuleName, Result, Row, Spreadsheet};
+use crate::{Cell, CodeSection, Compiler, Module, ModuleName, Result, Row, Spreadsheet};
 use std::cell;
 use std::collections;
 
@@ -13,16 +13,16 @@ impl Compiler {
         } else {
             self.progress("Compiling module from source code");
 
-            let spreadsheet = Spreadsheet::parse(self)?;
+            let spreadsheet = Spreadsheet::parse(self.source_code.clone())?;
             self.progress("Parsed spreadsheet");
 
             let code_section = if let Some(code_section_source) = &self.source_code.code_section {
-                let cs = CodeSectionParser::parse(code_section_source, self)?;
+                let cs = CodeSectionParser::parse(code_section_source, self.source_code.clone())?;
                 self.progress("Parsed code section");
                 self.info(&cs);
-                Some(cs)
+                cs
             } else {
-                None
+                CodeSection::default()
             };
 
             let module_name: ModuleName = self.source_code.filename.clone().try_into()?;

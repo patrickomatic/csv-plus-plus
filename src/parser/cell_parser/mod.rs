@@ -5,21 +5,17 @@ mod validate;
 use super::cell_lexer::{CellLexer, Token, TokenMatch};
 use crate::error::{BadInput, ParseResult, Result};
 use crate::{
-    BorderSide, BorderStyle, Cell, Compiler, Fill, HorizontalAlign, NumberFormat, Rgb, Row,
+    ArcSourceCode, BorderSide, BorderStyle, Cell, Fill, HorizontalAlign, NumberFormat, Rgb, Row,
     TextFormat, VerticalAlign,
 };
 
 pub(crate) struct CellParser<'a, 'b: 'a> {
     cell: Cell,
-
     is_row_options: bool,
-
     /// We re-use the lexer in some contexts so take a reference to an existing one (with it's own
     /// lifetime)
     lexer: &'a mut CellLexer<'b>,
-
     row: &'a mut Row,
-
     row_a1: a1_notation::Address,
 }
 
@@ -55,10 +51,10 @@ where
         input: &'b str,
         position: a1_notation::Address,
         row: &'b mut Row,
-        compiler: &'b Compiler,
+        source_code: ArcSourceCode,
     ) -> Result<Cell> {
-        Self::parse_cell(input, position, row, compiler)
-            .map_err(move |e| compiler.source_code.cell_syntax_error(e, position))
+        Self::parse_cell(input, position, row, source_code.clone())
+            .map_err(move |e| source_code.cell_syntax_error(e, position))
     }
 
     // TODO just merge this into the above function?
@@ -66,9 +62,9 @@ where
         input: &'b str,
         position: a1_notation::Address,
         row: &'b mut Row,
-        compiler: &'b Compiler,
+        source_code: ArcSourceCode,
     ) -> ParseResult<Cell> {
-        let mut lexer = CellLexer::new(input, position, compiler);
+        let mut lexer = CellLexer::new(input, position, source_code);
         let mut parsed_cell = None;
 
         while let Some(start_token) = lexer.maybe_take_start_options() {
@@ -268,7 +264,7 @@ mod tests {
             input,
             a1_notation::Address::new(0, 0),
             row,
-            &build_compiler(),
+            build_source_code(),
         )
         .unwrap()
     }

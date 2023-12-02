@@ -1,26 +1,22 @@
-use crate::parser::ast_lexer;
 use crate::parser::ast_parser::AstParser;
-use crate::parser::cell_lexer;
-use crate::{CliArgs, Compiler, Options, Output, SourceCode};
-use std::sync;
+use crate::{ArcSourceCode, CliArgs, Compiler, Options, Output, SourceCode};
 
 impl TryFrom<&CliArgs> for Compiler {
     type Error = crate::Error;
 
     fn try_from(cli_args: &CliArgs) -> std::result::Result<Self, Self::Error> {
-        let source_code = SourceCode::open(&cli_args.input_filename)?;
-
-        let mut compiler = Self {
-            options: Options::try_from(cli_args)?,
+        let source_code = ArcSourceCode::new(SourceCode::open(&cli_args.input_filename)?);
+        let compiler = Self {
+            options: Options {
+                key_values: AstParser::parse_key_value_str(
+                    &cli_args.key_values,
+                    source_code.clone(),
+                )?,
+                ..Options::try_from(cli_args)?
+            },
             output: Output::try_from(cli_args)?,
-            source_code: sync::Arc::new(source_code),
-            ast_token_library: ast_lexer::TokenLibrary::build()?,
-            cell_token_library: cell_lexer::TokenLibrary::build()?,
+            source_code,
         };
-
-        // we have to parse key/values afterwards, because we need an initialized `Compiler` to do so
-        compiler.options.key_values =
-            AstParser::parse_key_value_str(&cli_args.key_values, &compiler)?;
 
         compiler.info(&compiler);
 

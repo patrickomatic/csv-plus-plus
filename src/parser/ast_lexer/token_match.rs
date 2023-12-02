@@ -2,21 +2,22 @@ use super::Token;
 use crate::ast::{Ast, Node};
 use crate::error::{BadInput, Error, ParseError, ParseResult};
 use crate::parser::TokenInput;
-use crate::{CharOffset, DateTime, LineNumber, SourceCode};
+use crate::{ArcSourceCode, CharOffset, DateTime, LineNumber};
 use std::fmt;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct TokenMatch<'a> {
     pub(crate) token: Token,
     pub(crate) str_match: &'a str,
     pub(crate) line_number: LineNumber,
     pub(crate) line_offset: CharOffset,
-    pub(crate) source_code: &'a SourceCode,
+    pub(crate) source_code: ArcSourceCode,
 }
 
 impl TokenMatch<'_> {
     pub(crate) fn into_error<S: Into<String>>(self, message: S) -> Error {
         self.source_code
+            .clone()
             .code_syntax_error(self.into_parse_error(message))
     }
 }
@@ -31,7 +32,7 @@ impl BadInput for TokenMatch<'_> {
     }
 
     fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError {
-        self.source_code.parse_error(self, message)
+        self.source_code.parse_error(self.clone(), message)
     }
 }
 
@@ -86,9 +87,9 @@ impl TryFrom<TokenMatch<'_>> for Ast {
             Token::DoubleQuotedString => Ok(Box::new(Node::text(tm.str_match))),
 
             // TODO: create a new error type for these kinds of things... Error::InternalError
-            _ => {
-                Err(tm.into_parse_error(format!("Unable to convert non-terminal token: {:?}", tm)))
-            }
+            _ => Err(tm
+                .clone()
+                .into_parse_error(format!("Unable to convert non-terminal token: {tm:?}"))),
         }
     }
 }
@@ -101,7 +102,7 @@ mod tests {
     fn build_token_match<'a>(
         token: Token,
         str_match: &'a str,
-        source_code: &'a SourceCode,
+        source_code: ArcSourceCode,
     ) -> TokenMatch<'a> {
         let mut tm = build_ast_token_match(str_match, source_code);
         tm.token = token;
@@ -114,32 +115,52 @@ mod tests {
 
         assert_eq!(
             Node::Boolean(false),
-            *(Ast::try_from(build_token_match(Token::Boolean, "false", &source_code)).unwrap())
+            *(Ast::try_from(build_token_match(
+                Token::Boolean,
+                "false",
+                source_code.clone()
+            ))
+            .unwrap())
         );
         assert_eq!(
             Node::Boolean(false),
-            *(Ast::try_from(build_token_match(Token::Boolean, "FALSE", &source_code)).unwrap())
+            *(Ast::try_from(build_token_match(
+                Token::Boolean,
+                "FALSE",
+                source_code.clone()
+            ))
+            .unwrap())
         );
 
         assert_eq!(
             Node::Boolean(true),
-            *(Ast::try_from(build_token_match(Token::Boolean, "true", &source_code)).unwrap())
+            *(Ast::try_from(build_token_match(
+                Token::Boolean,
+                "true",
+                source_code.clone()
+            ))
+            .unwrap())
         );
         assert_eq!(
             Node::Boolean(true),
-            *(Ast::try_from(build_token_match(Token::Boolean, "TRUE", &source_code)).unwrap())
+            *(Ast::try_from(build_token_match(
+                Token::Boolean,
+                "TRUE",
+                source_code.clone()
+            ))
+            .unwrap())
         );
     }
 
     #[test]
     fn try_from_invalid() {
-        let source_code = build_source_code();
-        assert!(Ast::try_from(build_token_match(Token::Comma, "bar", &source_code)).is_err());
+        assert!(
+            Ast::try_from(build_token_match(Token::Comma, "bar", build_source_code())).is_err()
+        );
     }
 
     #[test]
     fn try_from_datetime() {
-        let source_code = build_source_code();
         let date = build_date_time_ymd(2022, 10, 12);
 
         assert_eq!(
@@ -147,7 +168,7 @@ mod tests {
             *(Ast::try_from(build_token_match(
                 Token::DateTime,
                 "2022-10-12",
-                &source_code
+                build_source_code()
             ))
             .unwrap())
         );
@@ -155,40 +176,51 @@ mod tests {
 
     #[test]
     fn try_from_float() {
-        let source_code = build_source_code();
         assert_eq!(
             Node::Float(123.45),
-            *(Ast::try_from(build_token_match(Token::Float, "123.45", &source_code)).unwrap())
+            *(Ast::try_from(build_token_match(
+                Token::Float,
+                "123.45",
+                build_source_code()
+            ))
+            .unwrap())
         );
     }
 
     #[test]
     fn try_from_integer() {
-        let source_code = build_source_code();
         assert_eq!(
             Node::Integer(123),
-            *(Ast::try_from(build_token_match(Token::Integer, "123", &source_code)).unwrap())
+            *(Ast::try_from(build_token_match(
+                Token::Integer,
+                "123",
+                build_source_code()
+            ))
+            .unwrap())
         );
     }
 
     #[test]
     fn try_from_reference() {
-        let source_code = build_source_code();
         assert_eq!(
             Node::reference("bar"),
-            *(Ast::try_from(build_token_match(Token::Reference, "bar", &source_code)).unwrap())
+            *(Ast::try_from(build_token_match(
+                Token::Reference,
+                "bar",
+                build_source_code()
+            ))
+            .unwrap())
         );
     }
 
     #[test]
     fn try_from_text() {
-        let source_code = build_source_code();
         assert_eq!(
             Node::text("foo"),
             *(Ast::try_from(build_token_match(
                 Token::DoubleQuotedString,
                 "foo",
-                &source_code
+                build_source_code()
             ))
             .unwrap())
         );

@@ -3,8 +3,7 @@
 //!
 use crate::parser::ast_lexer;
 use crate::parser::cell_lexer;
-use crate::{Compiler, DateTime, SourceCode};
-use std::sync;
+use crate::{ArcSourceCode, Compiler, DateTime};
 
 mod test_file;
 mod test_source_code;
@@ -14,7 +13,7 @@ pub(crate) use test_source_code::TestSourceCode;
 
 pub(crate) fn build_ast_token_match<'a>(
     str_match: &'a str,
-    source_code: &'a SourceCode,
+    source_code: ArcSourceCode,
 ) -> ast_lexer::TokenMatch<'a> {
     ast_lexer::TokenMatch {
         token: ast_lexer::Token::Reference,
@@ -26,13 +25,12 @@ pub(crate) fn build_ast_token_match<'a>(
 }
 
 pub(crate) fn build_cell_token_match(str_match: &str) -> cell_lexer::TokenMatch {
-    let source_code = build_source_code();
     cell_lexer::TokenMatch {
         token: cell_lexer::Token::Identifier,
         str_match: str_match.to_string(),
         position: a1_notation::Address::new(0, 0),
         cell_offset: 0,
-        source_code: sync::Arc::new(source_code),
+        source_code: build_source_code(),
     }
 }
 
@@ -46,6 +44,6 @@ pub(crate) fn build_compiler() -> Compiler {
 }
 
 /// If the test just needs a source code but doesn't care about it at all
-pub(crate) fn build_source_code() -> SourceCode {
-    (&TestSourceCode::new("bar.xlsx", "foo,bar,baz")).into()
+pub(crate) fn build_source_code() -> ArcSourceCode {
+    ArcSourceCode::new((&TestSourceCode::new("bar.xlsx", "foo,bar,baz")).into())
 }

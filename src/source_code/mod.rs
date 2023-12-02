@@ -12,8 +12,11 @@ use crate::{csv_reader, Error, Result};
 use std::fs;
 use std::path;
 
+mod arc_source_code;
 mod display;
 mod errors;
+
+pub(crate) use arc_source_code::ArcSourceCode;
 
 /// the line number - counts from `0` but renders the first line as `"1"`
 pub type LineNumber = usize;

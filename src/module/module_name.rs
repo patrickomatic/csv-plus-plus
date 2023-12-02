@@ -3,12 +3,20 @@ use crate::parser::ast_lexer::TokenMatch;
 use std::fmt;
 use std::path;
 
-#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct ModuleName(pub String);
 
 impl ModuleName {
     pub(crate) fn new<S: Into<String>>(name: S) -> Self {
         Self(name.into())
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<path::PathBuf> for ModuleName {
+    fn into(self) -> path::PathBuf {
+        // XXX replace '.' with '/'
+        todo!()
     }
 }
 
@@ -49,8 +57,7 @@ mod tests {
 
     #[test]
     fn try_from_token_match() {
-        let source_code = build_source_code();
-        let token_match = build_ast_token_match("foo", &source_code);
+        let token_match = build_ast_token_match("foo", build_source_code());
 
         assert_eq!(
             ModuleName::try_from(token_match).unwrap(),

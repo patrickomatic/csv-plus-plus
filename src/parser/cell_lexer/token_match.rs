@@ -4,18 +4,16 @@ use super::Token;
 use crate::ast::{Ast, Node};
 use crate::error::{BadInput, ParseError, ParseResult};
 use crate::parser::TokenInput;
-use crate::{CharOffset, DateTime, LineNumber, SourceCode};
+use crate::{ArcSourceCode, CharOffset, DateTime, LineNumber};
 use std::fmt;
-use std::sync;
 
 #[derive(Clone, Debug)]
 pub(crate) struct TokenMatch {
     pub(crate) token: Token,
-    // TODO: turn into a &'a str
     pub(crate) str_match: String,
     pub(crate) position: a1_notation::Address,
     pub(crate) cell_offset: CharOffset,
-    pub(crate) source_code: sync::Arc<SourceCode>,
+    pub(crate) source_code: ArcSourceCode,
 }
 
 impl TokenMatch {
@@ -98,7 +96,7 @@ mod tests {
             str_match: str_match.to_string(),
             position: a1_notation::Address::new(0, 0),
             cell_offset: 0,
-            source_code: std::sync::Arc::new(build_source_code()),
+            source_code: build_source_code(),
         }
     }
 

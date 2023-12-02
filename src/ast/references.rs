@@ -86,7 +86,11 @@ mod tests {
     use crate::*;
 
     fn build_module() -> Module {
-        Module::new(Spreadsheet::default(), None, ModuleName::new("foo"))
+        Module::new(
+            Spreadsheet::default(),
+            CodeSection::default(),
+            ModuleName::new("foo"),
+        )
     }
 
     #[test]

@@ -5,7 +5,7 @@
 //! boundaries/spacing but neither of those will work very well for us when handling complex types
 //! like double-quotes strings.
 use super::{Token, TokenMatcher};
-use crate::Error;
+use std::sync;
 
 pub(crate) const CODE_SECTION_SEPARATOR: &str = "---";
 
@@ -33,14 +33,19 @@ pub(crate) struct TokenLibrary {
 }
 
 impl TokenLibrary {
-    pub(crate) fn build() -> Result<Self, Error> {
-        Ok(Self {
-            boolean_true: TokenMatcher::new(r"true", Token::Boolean)?,
-            boolean_false: TokenMatcher::new(r"false", Token::Boolean)?,
-            comma: TokenMatcher::new(r",", Token::Comma)?,
-            comment: TokenMatcher::new(r"(?m)#.*", Token::Comment)?,
-            code_section_eof: TokenMatcher::new(r"---", Token::CodeSectionEof)?,
-            close_paren: TokenMatcher::new(r"\)", Token::CloseParen)?,
+    // once this lands I can get get rid of the unwraps and return a real error
+    // https://github.com/rust-lang/rust/issues/109737
+    // pub(crate) fn library() -> Result<&'static Self, Error> {
+    pub(crate) fn library() -> &'static Self {
+        static TOKEN_LIBRARY: sync::OnceLock<TokenLibrary> = sync::OnceLock::new();
+
+        TOKEN_LIBRARY.get_or_init(|| Self {
+            boolean_true: TokenMatcher::new(r"true", Token::Boolean).unwrap(),
+            boolean_false: TokenMatcher::new(r"false", Token::Boolean).unwrap(),
+            comma: TokenMatcher::new(r",", Token::Comma).unwrap(),
+            comment: TokenMatcher::new(r"(?m)#.*", Token::Comment).unwrap(),
+            code_section_eof: TokenMatcher::new(r"---", Token::CodeSectionEof).unwrap(),
+            close_paren: TokenMatcher::new(r"\)", Token::CloseParen).unwrap(),
             date_time: TokenMatcher::new(
                 r"(?x)
                  # just a date (and optional TZ)
@@ -53,23 +58,26 @@ impl TokenLibrary {
                  (?<date2>\d{2,4}-\d{1,2}-\d{1,2})\s+(?<time2>\d+:\d{1,2}(\d+)?)\s*(?<tz2>\w+)?
                 ",
                 Token::DateTime,
-            )?,
+            )
+            .unwrap(),
             double_quoted_string: TokenMatcher::new(
                 r#""(?:[^"\\]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*""#,
                 Token::DoubleQuotedString,
-            )?,
+            )
+            .unwrap(),
             infix_operator: TokenMatcher::new(
                 r"(\^|\+|-|\*|/|&|<|>|<=|>=|<>)",
                 Token::InfixOperator,
-            )?,
-            integer: TokenMatcher::new(r"-?\d+", Token::Integer)?,
-            float: TokenMatcher::new(r"-?\d+\.\d*", Token::Float)?,
-            fn_def: TokenMatcher::new(r"fn", Token::FunctionDefinition)?,
-            newline: TokenMatcher::new(r"\n", Token::Newline)?,
-            open_paren: TokenMatcher::new(r"\(", Token::OpenParen)?,
-            reference: TokenMatcher::new(r"[$!\w:]+[$!\w:.]?", Token::Reference)?,
-            use_module: TokenMatcher::new(r"use", Token::UseModule)?,
-            var_assign: TokenMatcher::new(r":=", Token::VarAssign)?,
+            )
+            .unwrap(),
+            integer: TokenMatcher::new(r"-?\d+", Token::Integer).unwrap(),
+            float: TokenMatcher::new(r"-?\d+\.\d*", Token::Float).unwrap(),
+            fn_def: TokenMatcher::new(r"fn", Token::FunctionDefinition).unwrap(),
+            newline: TokenMatcher::new(r"\n", Token::Newline).unwrap(),
+            open_paren: TokenMatcher::new(r"\(", Token::OpenParen).unwrap(),
+            reference: TokenMatcher::new(r"[$!\w:]+[$!\w:.]?", Token::Reference).unwrap(),
+            use_module: TokenMatcher::new(r"use", Token::UseModule).unwrap(),
+            var_assign: TokenMatcher::new(r":=", Token::VarAssign).unwrap(),
         })
     }
 }
@@ -80,12 +88,12 @@ mod tests {
     use super::*;
     use crate::test_utils::*;
 
-    fn token_library() -> TokenLibrary {
-        TokenLibrary::build().unwrap()
+    fn token_library() -> &'static TokenLibrary {
+        TokenLibrary::library()
     }
 
     #[test]
-    fn build_boolean() {
+    fn library_boolean() {
         assert!(token_library().boolean_true.1.is_match("true"));
         assert!(token_library().boolean_false.1.is_match("false"));
 
@@ -94,17 +102,17 @@ mod tests {
     }
 
     #[test]
-    fn build_code_section_eof() {
+    fn library_code_section_eof() {
         assert!(token_library().code_section_eof.1.is_match("---"));
     }
 
     #[test]
-    fn build_comment() {
+    fn library_comment() {
         assert!(token_library().comment.1.is_match("# this is a comment"));
     }
 
     #[test]
-    fn build_date_time() {
+    fn library_date_time() {
         assert!(token_library().date_time.1.is_match("2022-01-12"));
         assert!(token_library().date_time.1.is_match("2022-01-12 EST"));
         assert!(token_library().date_time.1.is_match("2022-01-12 11:00"));
@@ -112,7 +120,7 @@ mod tests {
     }
 
     #[test]
-    fn build_double_quoted_string() {
+    fn library_double_quoted_string() {
         assert!(token_library()
             .double_quoted_string
             .1
@@ -130,7 +138,7 @@ mod tests {
     }
 
     #[test]
-    fn build_integer() {
+    fn library_integer() {
         assert!(token_library().integer.1.is_match("555"));
         assert!(token_library().integer.1.is_match("-555"));
 
@@ -138,7 +146,7 @@ mod tests {
     }
 
     #[test]
-    fn build_float() {
+    fn library_float() {
         assert!(token_library().float.1.is_match("555.55"));
         assert!(token_library().float.1.is_match("-555.55"));
 
@@ -146,7 +154,7 @@ mod tests {
     }
 
     #[test]
-    fn build_reference() {
+    fn library_reference() {
         assert!(token_library().reference.1.is_match("foo"));
         assert!(token_library().reference.1.is_match("A1:B2"));
         assert!(token_library().reference.1.is_match("Foo!A1:B2"));
@@ -165,7 +173,7 @@ mod tests {
             str_match: ",",
             line_number: 22,
             line_offset: 3,
-            source_code: &build_source_code(),
+            source_code: build_source_code(),
         };
 
         assert_eq!("`,`", token_match.to_string());

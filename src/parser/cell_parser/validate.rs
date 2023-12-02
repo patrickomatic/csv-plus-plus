@@ -280,7 +280,7 @@ mod tests {
             input,
             a1_notation::Address::new(0, 0),
             &mut row,
-            &build_compiler(),
+            build_source_code(),
         )
         .unwrap()
     }
@@ -375,7 +375,7 @@ mod tests {
             "[[validate=foo_bar(12/1/23)]]abc123",
             a1_notation::Address::new(0, 0),
             &mut Row::default(),
-            &build_compiler(),
+            build_source_code(),
         );
         assert!(res.is_err());
     }

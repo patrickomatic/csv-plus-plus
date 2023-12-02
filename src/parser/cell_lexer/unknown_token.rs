@@ -1,16 +1,15 @@
 //! # UnknownToken
 //!
 use crate::error::{BadInput, ParseError};
-use crate::{CharOffset, LineNumber, SourceCode};
+use crate::{ArcSourceCode, CharOffset, LineNumber};
 use std::fmt;
-use std::sync;
 
 #[derive(Debug)]
 pub(crate) struct UnknownToken {
     pub(crate) bad_input: String,
     pub(crate) position: a1_notation::Address,
     pub(crate) cell_offset: CharOffset,
-    pub(crate) source_code: sync::Arc<SourceCode>,
+    pub(crate) source_code: ArcSourceCode,
 }
 
 impl fmt::Display for UnknownToken {
