@@ -67,22 +67,22 @@ impl Node {
         Self::Function {
             name: name.into(),
             args: args.iter().map(|a| a.to_string()).collect(),
-            body: Box::new(body),
+            body: Ast::new(body),
         }
     }
 
     pub(crate) fn fn_call<S: Into<String>>(name: S, args: &[Self]) -> Self {
         Self::FunctionCall {
             name: name.into(),
-            args: args.iter().map(|a| Box::new(a.to_owned())).collect(),
+            args: args.iter().map(|a| Ast::new(a.to_owned())).collect(),
         }
     }
 
     pub(crate) fn infix_fn_call<S: Into<String>>(left: Self, operator: S, right: Self) -> Self {
         Self::InfixFunctionCall {
-            left: Box::new(left),
+            left: Ast::new(left),
             operator: operator.into(),
-            right: Box::new(right),
+            right: Ast::new(right),
         }
     }
 

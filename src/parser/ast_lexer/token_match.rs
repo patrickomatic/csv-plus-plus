@@ -56,9 +56,9 @@ impl TryFrom<TokenMatch<'_>> for Ast {
             Token::Boolean => {
                 let input_lower = tm.str_match.to_lowercase();
                 if input_lower == "true" {
-                    Ok(Box::new(true.into()))
+                    Ok(Ast::new(true.into()))
                 } else if input_lower == "false" {
-                    Ok(Box::new(false.into()))
+                    Ok(Ast::new(false.into()))
                 } else {
                     Err(tm.into_parse_error(
                         "Error parsing boolean value: expected `true` or `false`",
@@ -66,25 +66,25 @@ impl TryFrom<TokenMatch<'_>> for Ast {
                 }
             }
 
-            Token::DateTime => Ok(Box::new(Node::DateTime(DateTime::try_from(tm)?))),
+            Token::DateTime => Ok(Ast::new(Node::DateTime(DateTime::try_from(tm)?))),
 
-            Token::Float => Ok(Box::new(
+            Token::Float => Ok(Ast::new(
                 tm.str_match
                     .parse::<f64>()
                     .map_err(|e| tm.into_parse_error(format!("Error parsing float value: {e}")))?
                     .into(),
             )),
 
-            Token::Integer => Ok(Box::new(
+            Token::Integer => Ok(Ast::new(
                 tm.str_match
                     .parse::<i64>()
                     .map_err(|e| tm.into_parse_error(format!("Error parsing integer value: {e}")))?
                     .into(),
             )),
 
-            Token::Reference => Ok(Box::new(Node::reference(tm.str_match))),
+            Token::Reference => Ok(Ast::new(Node::reference(tm.str_match))),
 
-            Token::DoubleQuotedString => Ok(Box::new(Node::text(tm.str_match))),
+            Token::DoubleQuotedString => Ok(Ast::new(Node::text(tm.str_match))),
 
             // TODO: create a new error type for these kinds of things... Error::InternalError
             _ => Err(tm

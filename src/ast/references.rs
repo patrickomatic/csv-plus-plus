@@ -27,7 +27,7 @@ impl Node {
 
         extract_dfs(
             compiler,
-            &Box::new(self.clone()),
+            &Ast::new(self.clone()),
             module_fns,
             module_vars,
             &mut fns,
@@ -100,7 +100,7 @@ mod tests {
         let module = build_module();
 
         let references = Node::extract_references(
-            &Box::new(5.into()),
+            &Ast::new(5.into()),
             &compiler,
             &module.functions,
             &module.variables,
@@ -116,7 +116,7 @@ mod tests {
         let mut module = build_module();
         module.functions.insert(
             "foo".to_string(),
-            Box::new(Node::fn_def(
+            Ast::new(Node::fn_def(
                 "foo",
                 &["a", "b"],
                 Node::reference("return value"),
@@ -124,7 +124,7 @@ mod tests {
         );
 
         let references = Node::extract_references(
-            &Box::new(Node::fn_call(
+            &Ast::new(Node::fn_call(
                 "foo",
                 &[Node::reference("bar"), Node::reference("baz")],
             )),
@@ -144,7 +144,7 @@ mod tests {
         let mut module = build_module();
         module.functions.insert(
             "foo".to_string(),
-            Box::new(Node::fn_def(
+            Ast::new(Node::fn_def(
                 "foo",
                 &["a", "b"],
                 Node::reference("return value"),
@@ -152,7 +152,7 @@ mod tests {
         );
 
         let references = Node::extract_references(
-            &Box::new(Node::infix_fn_call(
+            &Ast::new(Node::infix_fn_call(
                 Node::fn_call("foo", &[Node::reference("bar"), Node::reference("baz")]),
                 "+",
                 Node::fn_call("bar", &[Node::reference("bar"), Node::reference("baz")]),
@@ -173,7 +173,7 @@ mod tests {
         let mut module = build_module();
         module.functions.insert(
             "foo".to_string(),
-            Box::new(Node::fn_def(
+            Ast::new(Node::fn_def(
                 "foo",
                 &["a", "b"],
                 Node::reference("return value"),
@@ -181,7 +181,7 @@ mod tests {
         );
 
         let references = Node::extract_references(
-            &Box::new(Node::fn_call(
+            &Ast::new(Node::fn_call(
                 "foo_outer",
                 &[Node::fn_call(
                     "foo",
@@ -204,10 +204,10 @@ mod tests {
         let mut module = build_module();
         module
             .variables
-            .insert("foo".to_string(), Box::new(Node::reference("return value")));
+            .insert("foo".to_string(), Ast::new(Node::reference("return value")));
 
         let references = Node::extract_references(
-            &Box::new(Node::reference("foo")),
+            &Ast::new(Node::reference("foo")),
             &compiler,
             &module.functions,
             &module.variables,
@@ -224,10 +224,10 @@ mod tests {
         let mut module = build_module();
         module
             .variables
-            .insert("bar".to_string(), Box::new(Node::reference("return value")));
+            .insert("bar".to_string(), Ast::new(Node::reference("return value")));
 
         let references = Node::extract_references(
-            &Box::new(Node::fn_call(
+            &Ast::new(Node::fn_call(
                 "foo_outer",
                 &[Node::fn_call(
                     "foo",

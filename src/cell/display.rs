@@ -22,7 +22,7 @@ mod tests {
     #[test]
     fn display_function_call() {
         let cell = Cell {
-            ast: Some(Box::new(Node::fn_call("foo", &[1.into(), 2.into()]))),
+            ast: Some(Ast::new(Node::fn_call("foo", &[1.into(), 2.into()]))),
             value: "foo".to_string(),
             ..Default::default()
         };
@@ -32,7 +32,7 @@ mod tests {
     #[test]
     fn display_infix_function_call() {
         let cell = Cell {
-            ast: Some(Box::new(Node::infix_fn_call(1.into(), "*", 2.into()))),
+            ast: Some(Ast::new(Node::infix_fn_call(1.into(), "*", 2.into()))),
             value: "foo".to_string(),
             ..Default::default()
         };
@@ -42,7 +42,7 @@ mod tests {
     #[test]
     fn display_number() {
         let cell = Cell {
-            ast: Some(Box::new(1.into())),
+            ast: Some(Ast::new(1.into())),
             value: "foo".to_string(),
             ..Default::default()
         };

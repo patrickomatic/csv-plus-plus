@@ -107,7 +107,7 @@ impl<'a> BatchUpdateBuilder<'a> {
 
     fn user_entered_value(&self, cell: &Cell) -> Option<api::ExtendedValue> {
         if let Some(ast) = &cell.ast {
-            Some(match *ast.clone() {
+            Some(match ast.clone().into_inner() {
                 Node::Boolean(b) => api::ExtendedValue {
                     bool_value: Some(b),
                     ..Default::default()

@@ -115,7 +115,7 @@ impl Compiler {
             }
             last_round_refs = refs.clone();
 
-            evaled_ast = Box::new(
+            evaled_ast = Ast::new(
                 evaled_ast
                     .eval_variables(self.resolve_variables(module_vars, &refs.variables, position))
                     .eval_functions(&refs.functions, module_fns),
@@ -191,7 +191,7 @@ impl Compiler {
         } else if let Some(value) = module_vars.get(var_name) {
             let value_from_var = match &**value {
                 Node::Variable { value, .. } => value.clone().into_ast(position),
-                n => Box::new(n.clone()),
+                n => Ast::new(n.clone()),
             };
 
             Some(value_from_var)
@@ -280,7 +280,7 @@ mod tests {
         let mut module = build_module();
         module
             .functions
-            .insert("foo".to_string(), Box::new(42.into()));
+            .insert("foo".to_string(), Ast::new(42.into()));
 
         assert!(compiler.is_function_defined(&module.functions, "foo"));
     }
@@ -292,7 +292,7 @@ mod tests {
         let mut module = build_module();
         module
             .variables
-            .insert("foo".to_string(), Box::new(42.into()));
+            .insert("foo".to_string(), Ast::new(42.into()));
 
         assert!(compiler.is_variable_defined(&module.variables, "foo"));
     }

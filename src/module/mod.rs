@@ -169,14 +169,16 @@ impl Module {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ast::*;
+    use crate::*;
     use std::collections;
 
     #[test]
     fn new_with_code_section() {
         let mut functions = collections::HashMap::new();
-        functions.insert("foo".to_string(), Box::new(1.into()));
+        functions.insert("foo".to_string(), Ast::new(1.into()));
         let mut variables = collections::HashMap::new();
-        variables.insert("bar".to_string(), Box::new(2.into()));
+        variables.insert("bar".to_string(), Ast::new(2.into()));
         let code_section = CodeSection {
             functions,
             variables,

@@ -52,7 +52,7 @@ impl<'a> CodeSectionParser<'a> {
                 Token::Eof => break,
                 Token::FunctionDefinition => {
                     let (fn_name, function) = self.parse_fn_definition()?;
-                    functions.insert(fn_name, Box::new(function));
+                    functions.insert(fn_name, Ast::new(function));
                 }
                 Token::UseModule => {
                     required_modules.push(self.parse_use_module()?);
@@ -60,7 +60,7 @@ impl<'a> CodeSectionParser<'a> {
                 Token::Reference => {
                     variables.insert(
                         next.str_match.to_string(),
-                        Box::new(Node::var(
+                        Ast::new(Node::var(
                             next.str_match,
                             VariableValue::Ast(self.parse_variable_assign()?),
                         )),
@@ -174,7 +174,7 @@ mod tests {
         let cs = test("fn foo(a, b) a + b");
         let foo = cs.functions.get("foo").unwrap();
 
-        let expected: Ast = Box::new(Node::fn_def(
+        let expected: Ast = Ast::new(Node::fn_def(
             "foo",
             &["a", "b"],
             Node::infix_fn_call(Node::reference("a"), "+", Node::reference("b")),
@@ -188,7 +188,7 @@ mod tests {
         let cs = test("fn foo() 1 * 2");
         let foo = cs.functions.get("foo").unwrap();
 
-        let expected: Ast = Box::new(Node::fn_def(
+        let expected: Ast = Ast::new(Node::fn_def(
             "foo",
             &[],
             Node::infix_fn_call(1.into(), "*", 2.into()),

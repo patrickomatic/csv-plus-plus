@@ -122,7 +122,7 @@ impl<'a> Excel<'a> {
     // TODO: turn into an impl (from/into)? the problem is we're mutating existing_cell...
     fn set_value(&self, existing_cell: &mut u::Cell, cell: &Cell) {
         if let Some(ast) = &cell.ast {
-            match *ast.clone() {
+            match ast.clone().into_inner() {
                 Node::Boolean(b) => existing_cell.set_value_bool(b),
                 Node::Text(t) => existing_cell.set_value_string(t),
                 Node::Float(f) => existing_cell.set_value_number(f),

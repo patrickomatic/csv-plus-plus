@@ -1,4 +1,4 @@
-use super::{Node, VariableValue};
+use super::{Ast, Node, VariableValue};
 use a1_notation::A1;
 use std::fmt;
 
@@ -39,6 +39,12 @@ impl fmt::Display for Node {
 
             Self::Variable { name, value } => write!(f, "{name} := {value}"),
         }
+    }
+}
+
+impl fmt::Display for Ast {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -137,7 +143,7 @@ mod tests {
     fn display_var() {
         assert_eq!(
             "foo := 1",
-            Node::var("foo", VariableValue::Ast(Box::new(1.into()))).to_string()
+            Node::var("foo", VariableValue::Ast(Ast::new(1.into()))).to_string()
         );
     }
 }

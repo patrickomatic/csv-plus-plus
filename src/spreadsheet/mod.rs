@@ -1,7 +1,7 @@
 //! # Spreadsheet
 //!
 //!
-use crate::ast::{Node, VariableValue, Variables};
+use crate::ast::{Ast, Node, VariableValue, Variables};
 use crate::{csv_reader, ArcSourceCode, Result, Row};
 use serde::{Deserialize, Serialize};
 use std::collections;
@@ -54,7 +54,7 @@ impl Spreadsheet {
                     }
                 };
 
-                vars.insert(var_id.to_owned(), Box::new(reference));
+                vars.insert(var_id.to_owned(), Ast::new(reference));
             };
 
             for (cell_index, cell) in row.cells.iter().enumerate() {
@@ -76,7 +76,7 @@ impl Spreadsheet {
                         }
                     };
 
-                    vars.insert(var_id.to_owned(), Box::new(reference));
+                    vars.insert(var_id.to_owned(), Ast::new(reference));
                 }
             }
         }

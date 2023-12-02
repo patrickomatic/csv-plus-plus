@@ -68,7 +68,7 @@ impl TryFrom<TokenMatch> for Ast {
         // TODO: ideally we could use the AST parser here to take the value and produce an Ast
         // but it would take some additional work and we already know (based on the `Token`)
         // exactly what we're trying to convert into
-        Ok(Box::new(match tm.token {
+        Ok(Ast::new(match tm.token {
             Token::Date => Node::DateTime(DateTime::try_from(tm)?),
             Token::A1 | Token::Identifier => Node::Reference(tm.str_match),
             Token::String => Node::Text(tm.str_match),
@@ -124,7 +124,7 @@ mod tests {
     fn try_from_a1() {
         assert_eq!(
             Ast::try_from(build_token_match(Token::A1, "B3")).unwrap(),
-            Box::new(Node::Reference("B3".to_string()))
+            Ast::new(Node::Reference("B3".to_string()))
         );
     }
 
@@ -132,7 +132,7 @@ mod tests {
     fn try_from_date() {
         assert_eq!(
             Ast::try_from(build_token_match(Token::Date, "11/22/2023")).unwrap(),
-            Box::new(Node::DateTime(DateTime::Date(
+            Ast::new(Node::DateTime(DateTime::Date(
                 chrono::NaiveDate::from_ymd_opt(2023, 11, 22).unwrap()
             ))),
         );
@@ -142,7 +142,7 @@ mod tests {
     fn try_from_identifier() {
         assert_eq!(
             Ast::try_from(build_token_match(Token::Identifier, "foo")).unwrap(),
-            Box::new(Node::Reference("foo".to_string()))
+            Ast::new(Node::Reference("foo".to_string()))
         );
     }
 
@@ -150,7 +150,7 @@ mod tests {
     fn try_from_string() {
         assert_eq!(
             Ast::try_from(build_token_match(Token::String, "foo")).unwrap(),
-            Box::new(Node::Text("foo".to_string()))
+            Ast::new(Node::Text("foo".to_string()))
         );
     }
 
@@ -158,7 +158,7 @@ mod tests {
     fn try_from_number() {
         assert_eq!(
             Ast::try_from(build_token_match(Token::Number, "-123")).unwrap(),
-            Box::new(Node::Integer(-123))
+            Ast::new(Node::Integer(-123))
         );
     }
 
@@ -166,7 +166,7 @@ mod tests {
     fn try_from_positive_number() {
         assert_eq!(
             Ast::try_from(build_token_match(Token::Number, "123")).unwrap(),
-            Box::new(Node::Integer(123))
+            Ast::new(Node::Integer(123))
         );
     }
 }

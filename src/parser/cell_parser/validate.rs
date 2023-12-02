@@ -397,10 +397,10 @@ mod tests {
         assert_eq!(
             cell.data_validation.unwrap(),
             DataValidation::ValueInList(vec![
-                Box::new(Node::Text("foo".to_string())),
-                Box::new(Node::Reference("bar".to_string())),
-                Box::new(Node::Integer(123)),
-                Box::new(Node::DateTime(DateTime::Date(
+                Ast::new(Node::Text("foo".to_string())),
+                Ast::new(Node::Reference("bar".to_string())),
+                Ast::new(Node::Integer(123)),
+                Ast::new(Node::DateTime(DateTime::Date(
                     chrono::NaiveDate::from_ymd_opt(2024, 11, 22).unwrap()
                 ))),
             ])
