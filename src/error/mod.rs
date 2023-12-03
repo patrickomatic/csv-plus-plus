@@ -9,6 +9,7 @@ use std::path;
 mod bad_input;
 mod cell_parse_error;
 mod display;
+mod from;
 mod parse_error;
 
 pub type Result<T> = std::result::Result<T, Error>;

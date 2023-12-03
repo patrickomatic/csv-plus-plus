@@ -40,7 +40,7 @@ impl Module {
         let spreadsheet_vars = spreadsheet.variables();
 
         let module_loader = ModuleLoader::default();
-        module_loader.load(&code_section);
+        module_loader.load(&code_section)?;
         let _loaded_modules = module_loader.into_modules_loaded()?;
 
         Ok(Self {
