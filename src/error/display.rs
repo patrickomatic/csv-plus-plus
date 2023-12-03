@@ -66,12 +66,16 @@ csv++ with `GOOGLE_APPLICATION_CREDENTIALS` or the `--google-account-credentials
                 writeln!(f, "{message}")
             }
 
-            Self::ModuleLoadError {
-                module_name,
-                message,
-            } => {
-                writeln!(f, "Error loading module {module_name}")?;
+            Self::ModuleLoadError(message) => {
                 writeln!(f, "{message}")
+            }
+
+            Self::ModuleLoadErrors(errors) => {
+                for (m, e) in errors {
+                    writeln!(f, "Error loading module {m}")?;
+                    writeln!(f, "{e}")?;
+                }
+                Ok(())
             }
 
             Self::ObjectCodeError { filename, message } => {

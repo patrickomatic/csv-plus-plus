@@ -1,8 +1,11 @@
 //! # ModuleLoader
 //!
+//! A multithreaded module loader that will resursively load the dependencies for a given
+//! `CodeSection`.
+//!
 use super::ModuleName;
-// use crate::parser::code_section_parser::CodeSectionParser;
-use crate::{CodeSection, Error, Result, SourceCode};
+use crate::parser::code_section_parser::CodeSectionParser;
+use crate::{ArcSourceCode, CodeSection, Error, Result, SourceCode};
 use std::collections;
 use std::path;
 use std::sync;
@@ -14,38 +17,19 @@ type Failed = sync::Arc<sync::RwLock<collections::HashMap<ModuleName, Error>>>;
 
 #[derive(Debug, Default)]
 pub(super) struct ModuleLoader {
-    pub(super) attempted: Attempted,
-    pub(super) loaded: Loaded,
-    pub(super) failed: Failed,
+    attempted: Attempted,
+    loaded: Loaded,
+    failed: Failed,
 }
 
-fn loader_thread(module_name: ModuleName, _loaded: Loaded, failed: Failed) {
-    let p: path::PathBuf = module_name.clone().into();
-
-    let _source_code = match SourceCode::open(&p) {
-        Ok(s) => s,
-        Err(e) => {
-            let mut failed = failed.write().expect("attempted write");
-            failed.insert(module_name, e);
-            return;
-        }
-    };
-
-    /*
-    let code_section = if let Some(code_section_source) = &self.source_code.code_section {
-        match CodeSectionParser::parse(code_section_source, self) {
-        cs
-    } else {
-        // XXX insert an error into failed
-    };
-    */
-    todo!()
-}
-
+// TODO: get rid of unwrap/expects
 impl ModuleLoader {
-    /// Recursively and concurrently loads all of the `required_modules` for the given `code_section`.
-    // TODO: get rid of expects
-    pub(super) fn load(&self, code_section: &CodeSection) -> Result<&Self> {
+    /// Recursively load the dependencies from the given `code_section`. This function does not
+    /// return any `Result` and instead collects errors into `failed` and successes into `loaded`.
+    /// The idea being that we want to show as many errors as possible to the user (otherwise it's
+    /// annoying to have them fix and re-compile one-by-one), so we accumulate and keep going.  But
+    /// in the end fail if there are any errors at all.
+    pub(super) fn load(&self, code_section: &CodeSection) {
         // only try the ones which we haven't.  it's possible another module could have already
         // loaded the ones we want
         let mut to_attempt = vec![];
@@ -62,23 +46,63 @@ impl ModuleLoader {
         }
         drop(attempted);
 
-        let threads: Vec<thread::JoinHandle<_>> = to_attempt
-            .into_iter()
-            .map(|module_name| {
-                let loaded = sync::Arc::clone(&self.loaded);
-                let failed = sync::Arc::clone(&self.failed);
-                thread::spawn(move || loader_thread(module_name, loaded, failed))
-            })
-            .collect();
-
-        for t in threads {
-            t.join().expect("thread join");
-        }
-
-        Ok(self)
+        thread::scope(|s| {
+            for module_name in to_attempt {
+                s.spawn(|| self.load_module(module_name));
+            }
+        });
     }
 
-    // pub(super) fn into_loaded(&self) -> collections::HashMap<ModuleName, CodeSection> {
+    fn load_module(&self, module_name: ModuleName) {
+        let p: path::PathBuf = module_name.clone().into();
 
-    // }
+        let source_code = match SourceCode::open(&p) {
+            Ok(s) => ArcSourceCode::new(s),
+            Err(e) => {
+                let mut failed = self.failed.write().expect("attempted write");
+                failed.insert(module_name, e);
+                return;
+            }
+        };
+
+        if let Some(code_section_source) = &source_code.code_section {
+            match CodeSectionParser::parse(code_section_source, source_code.clone()) {
+                Ok(cs) => {
+                    // recursively load the newly loaded code section's dependencies
+                    self.load(&cs);
+
+                    let mut loaded = self.loaded.write().expect("attempted write");
+                    loaded.insert(module_name, cs);
+                }
+                Err(e) => {
+                    let mut failed = self.failed.write().expect("attempted write");
+                    failed.insert(module_name, e);
+                }
+            }
+        } else {
+            let mut failed = self.failed.write().expect("attempted write");
+            failed.insert(
+                module_name.clone(),
+                Error::ModuleLoadError("This module does not have a code section".to_string()),
+            );
+        }
+    }
+
+    pub(super) fn into_modules_loaded(
+        self,
+    ) -> Result<collections::HashMap<ModuleName, CodeSection>> {
+        let failed = sync::Arc::try_unwrap(self.failed)
+            .unwrap()
+            .into_inner()
+            .unwrap();
+
+        if failed.is_empty() {
+            Ok(sync::Arc::try_unwrap(self.loaded)
+                .unwrap()
+                .into_inner()
+                .unwrap())
+        } else {
+            Err(Error::ModuleLoadErrors(failed))
+        }
+    }
 }

@@ -159,7 +159,8 @@ mod tests {
             ..Default::default()
         });
 
-        let module = Module::new(spreadsheet, CodeSection::default(), ModuleName::new("foo"));
+        let module =
+            Module::load_main(spreadsheet, CodeSection::default(), ModuleName::new("foo")).unwrap();
         let existing_values = ExistingValues { cells: vec![] };
         let builder = BatchUpdateBuilder::new(&compiler, &module, &existing_values).build();
 

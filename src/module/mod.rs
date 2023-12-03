@@ -32,37 +32,18 @@ pub struct Module {
 }
 
 impl Module {
-    // TODO: rename to load... like we're loading a module which means loading all it's
-    // dependencies
-    //
-    pub fn new(
+    pub(crate) fn load_main(
         spreadsheet: Spreadsheet,
         code_section: CodeSection,
         module_name: ModuleName,
-    ) -> Self {
+    ) -> Result<Self> {
         let spreadsheet_vars = spreadsheet.variables();
 
-        // XXX remove unwrap
-        let _module_loader = ModuleLoader::default().load(&code_section).unwrap();
-        // XXX show errors if it has errors
-        // XXX
-        /*
-        let mut loaded_modules: collections::HashMap<ModuleName, CodeSection> =
-            collections::HashMap::new();
-        for module_name in code_section.required_modules {
-            // TODO: do each one in a thread
-            // TODO: if one of them fails don't stop compiling - try to do the others and
-            // aggregate all the results together
-            if !loaded_modules.contains_key(&module_name) {
-                loaded_modules.insert(
-                    module_name.clone(),
-                    Self::load_required_module(&module_name).unwrap(),
-                );
-            }
-        }
-        */
+        let module_loader = ModuleLoader::default();
+        module_loader.load(&code_section);
+        let _loaded_modules = module_loader.into_modules_loaded()?;
 
-        Self {
+        Ok(Self {
             compiler_version: env!("CARGO_PKG_VERSION").to_string(),
             functions: code_section.functions,
             module_name,
@@ -72,7 +53,7 @@ impl Module {
                 .into_iter()
                 .chain(spreadsheet_vars)
                 .collect(),
-        }
+        })
     }
 
     pub(crate) fn write_object_file(&self, compiler: &Compiler) -> Result<()> {
@@ -174,7 +155,7 @@ mod tests {
     use std::collections;
 
     #[test]
-    fn new_with_code_section() {
+    fn load_main_with_code_section() {
         let mut functions = collections::HashMap::new();
         functions.insert("foo".to_string(), Ast::new(1.into()));
         let mut variables = collections::HashMap::new();
@@ -184,19 +165,22 @@ mod tests {
             variables,
             ..Default::default()
         };
-        let module = Module::new(Spreadsheet::default(), code_section, ModuleName::new("foo"));
+        let module =
+            Module::load_main(Spreadsheet::default(), code_section, ModuleName::new("foo"))
+                .unwrap();
 
         assert!(module.functions.contains_key("foo"));
         assert!(module.variables.contains_key("bar"));
     }
 
     #[test]
-    fn new_without_code_section() {
-        let module = Module::new(
+    fn load_main_without_code_section() {
+        let module = Module::load_main(
             Spreadsheet::default(),
             CodeSection::default(),
             ModuleName::new("foo"),
-        );
+        )
+        .unwrap();
 
         assert!(module.functions.is_empty());
         assert!(module.variables.is_empty());

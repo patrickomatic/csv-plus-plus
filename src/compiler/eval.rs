@@ -26,7 +26,8 @@ impl Compiler {
             };
 
             let module_name: ModuleName = self.source_code.filename.clone().try_into()?;
-            let compiled_module = self.eval(Module::new(spreadsheet, code_section, module_name));
+            let compiled_module =
+                self.eval(Module::load_main(spreadsheet, code_section, module_name)?);
 
             self.progress("Compiled module");
             self.info(&compiled_module);

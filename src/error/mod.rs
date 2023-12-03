@@ -2,6 +2,7 @@
 //!
 //! Error handling structs.
 use crate::{ModuleName, Output};
+use std::collections;
 use std::error;
 use std::path;
 
@@ -10,12 +11,12 @@ mod cell_parse_error;
 mod display;
 mod parse_error;
 
-pub use parse_error::ParseError;
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub(crate) use bad_input::BadInput;
 pub(crate) use cell_parse_error::CellParseError;
 
+pub use parse_error::ParseError;
 pub(crate) type ParseResult<T> = std::result::Result<T, ParseError>;
 
 /// The various kinds of errors that can occur during compilation and evaluation of a csv++
@@ -51,10 +52,9 @@ pub enum Error {
     /// due to user error.
     InitError(String),
 
-    ModuleLoadError {
-        module_name: ModuleName,
-        message: String,
-    },
+    ModuleLoadError(String),
+
+    ModuleLoadErrors(collections::HashMap<ModuleName, Error>),
 
     /// An error encountered while serializing the compiled module to an object file.
     ObjectCodeError {
@@ -69,7 +69,10 @@ pub enum Error {
     },
 
     /// An error encountered while writing to the target.
-    TargetWriteError { message: String, output: Output },
+    TargetWriteError {
+        message: String,
+        output: Output,
+    },
 }
 
 impl error::Error for Error {}

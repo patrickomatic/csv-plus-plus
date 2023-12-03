@@ -86,11 +86,12 @@ mod tests {
     use crate::*;
 
     fn build_module() -> Module {
-        Module::new(
+        Module::load_main(
             Spreadsheet::default(),
             CodeSection::default(),
             ModuleName::new("foo"),
         )
+        .unwrap()
     }
 
     #[test]
