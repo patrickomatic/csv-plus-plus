@@ -1,7 +1,7 @@
 //! # Error
 //!
 //! Error handling structs.
-use crate::{ModuleName, Output};
+use crate::{ModulePath, Output};
 use std::collections;
 use std::error;
 use std::path;
@@ -55,7 +55,7 @@ pub enum Error {
 
     ModuleLoadError(String),
 
-    ModuleLoadErrors(collections::HashMap<ModuleName, Error>),
+    ModuleLoadErrors(collections::HashMap<ModulePath, Error>),
 
     /// An error encountered while serializing the compiled module to an object file.
     ObjectCodeError {

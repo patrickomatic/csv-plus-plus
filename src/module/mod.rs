@@ -10,22 +10,20 @@
 // * make sure there is only one infinite fill in the docs (ones can follow it, but they have to
 //      be finite and subtract from it
 use crate::ast::{Functions, Variables};
-use crate::{CodeSection, Compiler, Result, Spreadsheet};
+use crate::{CodeSection, Compiler, ModulePath, Result, Spreadsheet};
 use std::cell;
 use std::cmp;
 use std::fs;
 
 mod display;
 mod module_loader;
-mod module_name;
 
 use module_loader::ModuleLoader;
-pub use module_name::ModuleName;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct Module {
     pub functions: Functions,
-    pub module_name: ModuleName,
+    pub module_path: ModulePath,
     pub spreadsheet: cell::RefCell<Spreadsheet>,
     pub variables: Variables,
     pub compiler_version: String,
@@ -35,7 +33,7 @@ impl Module {
     pub(crate) fn load_main(
         spreadsheet: Spreadsheet,
         code_section: CodeSection,
-        module_name: ModuleName,
+        module_path: ModulePath,
     ) -> Result<Self> {
         let spreadsheet_vars = spreadsheet.variables();
 
@@ -46,7 +44,7 @@ impl Module {
         Ok(Self {
             compiler_version: env!("CARGO_PKG_VERSION").to_string(),
             functions: code_section.functions,
-            module_name,
+            module_path,
             spreadsheet: cell::RefCell::new(spreadsheet),
             variables: code_section
                 .variables
@@ -165,9 +163,12 @@ mod tests {
             variables,
             ..Default::default()
         };
-        let module =
-            Module::load_main(Spreadsheet::default(), code_section, ModuleName::new("foo"))
-                .unwrap();
+        let module = Module::load_main(
+            Spreadsheet::default(),
+            code_section,
+            ModulePath(vec!["foo".to_string()]),
+        )
+        .unwrap();
 
         assert!(module.functions.contains_key("foo"));
         assert!(module.variables.contains_key("bar"));
@@ -178,7 +179,7 @@ mod tests {
         let module = Module::load_main(
             Spreadsheet::default(),
             CodeSection::default(),
-            ModuleName::new("foo"),
+            ModulePath(vec!["foo".to_string()]),
         )
         .unwrap();
 

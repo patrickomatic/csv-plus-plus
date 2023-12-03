@@ -89,7 +89,7 @@ mod tests {
         Module::load_main(
             Spreadsheet::default(),
             CodeSection::default(),
-            ModuleName::new("foo"),
+            ModulePath(vec!["foo".to_string()]),
         )
         .unwrap()
     }

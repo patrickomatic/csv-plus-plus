@@ -3,9 +3,8 @@
 //! A multithreaded module loader that will resursively load the dependencies for a given
 //! `CodeSection`.
 //!
-use super::ModuleName;
 use crate::parser::code_section_parser::CodeSectionParser;
-use crate::{ArcSourceCode, CodeSection, Error, Result, SourceCode};
+use crate::{ArcSourceCode, CodeSection, Error, ModulePath, Result, SourceCode};
 use std::collections;
 use std::path;
 use std::sync;
@@ -13,9 +12,9 @@ use std::thread;
 
 type ArcRwLock<T> = sync::Arc<sync::RwLock<T>>;
 
-type Attempted = ArcRwLock<collections::HashSet<ModuleName>>;
-type Loaded = ArcRwLock<collections::HashMap<ModuleName, CodeSection>>;
-type Failed = ArcRwLock<collections::HashMap<ModuleName, Error>>;
+type Attempted = ArcRwLock<collections::HashSet<ModulePath>>;
+type Loaded = ArcRwLock<collections::HashMap<ModulePath, CodeSection>>;
+type Failed = ArcRwLock<collections::HashMap<ModulePath, Error>>;
 
 #[derive(Debug, Default)]
 pub(super) struct ModuleLoader {
@@ -31,39 +30,38 @@ impl ModuleLoader {
     /// annoying to have them fix and re-compile one-by-one), so we accumulate and keep going.  But
     /// in the end fail if there are any errors at all.
     pub(super) fn load(&self, code_section: &CodeSection) -> Result<()> {
-        // only try the ones which we haven't.  it's possible another module could have already
-        // loaded the ones we want
         let mut to_attempt = vec![];
-        let attempted_borrow = sync::Arc::clone(&self.attempted);
-        let mut attempted = attempted_borrow.write()?;
-        for module_name in &code_section.required_modules {
-            if attempted.contains(module_name) {
-                continue;
-            } else {
-                // insert into `attempted` pre-emptively so none of the other threads attempt it
-                attempted.insert(module_name.clone());
-                to_attempt.push(module_name.clone());
+        // hold a lock while we reserve all of the dependencies we're going to resolve (by marking
+        // them in `attempted`)
+        {
+            let mut attempted = self.attempted.write()?;
+            for module_path in &code_section.required_modules {
+                if attempted.contains(module_path) {
+                    // another modules has already loaded it
+                    continue;
+                } else {
+                    attempted.insert(module_path.clone());
+                    to_attempt.push(module_path.clone());
+                }
             }
         }
-        drop(attempted);
 
         thread::scope(|s| {
-            for module_name in to_attempt {
-                s.spawn(|| self.load_module(module_name));
+            for module_path in to_attempt {
+                s.spawn(|| self.load_module(module_path));
             }
         });
 
         Ok(())
     }
 
-    fn load_module(&self, module_name: ModuleName) -> Result<()> {
-        let p: path::PathBuf = module_name.clone().into();
+    fn load_module(&self, module_path: ModulePath) -> Result<()> {
+        let p: path::PathBuf = module_path.clone().into();
 
         let source_code = match SourceCode::open(&p) {
             Ok(s) => ArcSourceCode::new(s),
             Err(e) => {
-                let mut failed = self.failed.write()?;
-                failed.insert(module_name, e);
+                self.failed.write()?.insert(module_path, e);
                 return Ok(());
             }
         };
@@ -73,19 +71,15 @@ impl ModuleLoader {
                 Ok(cs) => {
                     // recursively load the newly loaded code section's dependencies
                     self.load(&cs)?;
-
-                    let mut loaded = self.loaded.write()?;
-                    loaded.insert(module_name, cs);
+                    self.loaded.write()?.insert(module_path, cs);
                 }
                 Err(e) => {
-                    let mut failed = self.failed.write()?;
-                    failed.insert(module_name, e);
+                    self.failed.write()?.insert(module_path, e);
                 }
             }
         } else {
-            let mut failed = self.failed.write()?;
-            failed.insert(
-                module_name.clone(),
+            self.failed.write()?.insert(
+                module_path.clone(),
                 Error::ModuleLoadError("This module does not have a code section".to_string()),
             );
         }
@@ -95,7 +89,7 @@ impl ModuleLoader {
 
     pub(super) fn into_modules_loaded(
         self,
-    ) -> Result<collections::HashMap<ModuleName, CodeSection>> {
+    ) -> Result<collections::HashMap<ModulePath, CodeSection>> {
         // TODO: get rid of the unwraps
         let failed = sync::Arc::try_unwrap(self.failed).unwrap().into_inner()?;
 
@@ -104,5 +98,42 @@ impl ModuleLoader {
         } else {
             Err(Error::ModuleLoadErrors(failed))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::*;
+
+    #[test]
+    fn load_empty() {
+        assert!(ModuleLoader::default()
+            .load(&CodeSection::default())
+            .is_ok());
+    }
+
+    #[test]
+    fn load_multiple() {
+        let code_section = CodeSection {
+            required_modules: vec![ModulePath(vec!["foo".to_string()])],
+            ..Default::default()
+        };
+        assert!(ModuleLoader::default().load(&code_section).is_ok());
+    }
+
+    #[test]
+    fn load_circular() {
+        // XXX
+    }
+
+    #[test]
+    fn into_modules_loaded_failed_empty() {
+        // XXX
+    }
+
+    #[test]
+    fn into_modules_loaded_failed_not_empty() {
+        // XXX
     }
 }

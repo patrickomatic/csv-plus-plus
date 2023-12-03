@@ -1,6 +1,6 @@
 use crate::ast::{Ast, AstReferences, Functions, Node, Variables};
 use crate::parser::code_section_parser::CodeSectionParser;
-use crate::{Cell, CodeSection, Compiler, Module, ModuleName, Result, Row, Spreadsheet};
+use crate::{Cell, CodeSection, Compiler, Module, ModulePath, Result, Row, Spreadsheet};
 use std::cell;
 use std::collections;
 
@@ -25,9 +25,9 @@ impl Compiler {
                 CodeSection::default()
             };
 
-            let module_name: ModuleName = self.source_code.filename.clone().try_into()?;
+            let module_path: ModulePath = self.source_code.filename.clone().try_into()?;
             let compiled_module =
-                self.eval(Module::load_main(spreadsheet, code_section, module_name)?);
+                self.eval(Module::load_main(spreadsheet, code_section, module_path)?);
 
             self.progress("Compiled module");
             self.info(&compiled_module);
@@ -212,7 +212,7 @@ mod tests {
         Module {
             compiler_version: "v0.0.1".to_string(),
             functions: collections::HashMap::new(),
-            module_name: ModuleName("main".to_string()),
+            module_path: ModulePath(vec!["main".to_string()]),
             spreadsheet: cell::RefCell::new(Spreadsheet::default()),
             variables: collections::HashMap::new(),
         }

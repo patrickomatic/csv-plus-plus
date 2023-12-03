@@ -20,7 +20,7 @@ impl fmt::Display for Module {
 
 #[cfg(test)]
 mod tests {
-    use super::super::ModuleName;
+    use super::super::ModulePath;
     use crate::{Module, Spreadsheet};
     use std::cell;
     use std::collections;
@@ -29,7 +29,7 @@ mod tests {
         Module {
             compiler_version: "v0.0.1".to_string(),
             functions: collections::HashMap::new(),
-            module_name: ModuleName("main".to_string()),
+            module_path: ModulePath(vec!["main".to_string()]),
             spreadsheet: cell::RefCell::new(Spreadsheet::default()),
             variables: collections::HashMap::new(),
         }

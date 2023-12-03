@@ -7,6 +7,7 @@ pub(crate) struct Setup {
     pub(crate) input_path: path::PathBuf,
     pub(crate) output_path: path::PathBuf,
     cleanup_input: bool,
+    #[allow(dead_code)]
     pub(crate) compiler: Compiler,
 }
 

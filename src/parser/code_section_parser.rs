@@ -18,8 +18,7 @@
 use super::ast_lexer::{AstLexer, Token, TokenMatch};
 use super::ast_parser::AstParser;
 use crate::ast::{Ast, Node, VariableValue};
-use crate::module::ModuleName;
-use crate::{ArcSourceCode, CodeSection, Result};
+use crate::{ArcSourceCode, CodeSection, ModulePath, Result};
 use std::collections::HashMap;
 
 pub(crate) struct CodeSectionParser<'a> {
@@ -82,7 +81,7 @@ impl<'a> CodeSectionParser<'a> {
     }
 
     /// parses `use` followed by a module name
-    fn parse_use_module(&self) -> Result<ModuleName> {
+    fn parse_use_module(&self) -> Result<ModulePath> {
         self.lexer.next().try_into()
     }
 
@@ -245,7 +244,7 @@ use foo
         );
 
         assert_eq!(cs.required_modules.len(), 1);
-        assert_eq!(cs.required_modules[0].0, "foo");
+        assert_eq!(cs.required_modules[0], ModulePath(vec!["foo".to_string()]));
     }
 
     #[test]
@@ -258,7 +257,7 @@ use bar
         );
 
         assert_eq!(cs.required_modules.len(), 2);
-        assert_eq!(cs.required_modules[0].0, "foo");
-        assert_eq!(cs.required_modules[1].0, "bar");
+        assert_eq!(cs.required_modules[0], ModulePath(vec!["foo".to_string()]));
+        assert_eq!(cs.required_modules[1], ModulePath(vec!["bar".to_string()]));
     }
 }
