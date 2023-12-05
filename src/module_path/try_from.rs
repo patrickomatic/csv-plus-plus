@@ -4,9 +4,10 @@ use crate::parser::ast_lexer::TokenMatch;
 use std::path;
 
 impl From<ModulePath> for path::PathBuf {
-    fn from(_mn: ModulePath) -> path::PathBuf {
-        // XXX replace '.' with '/'
-        path::Path::new("foo").to_path_buf()
+    fn from(mn: ModulePath) -> path::PathBuf {
+        let mut p: path::PathBuf = mn.0.iter().collect();
+        p.set_extension("csvpp");
+        p
     }
 }
 
@@ -41,6 +42,19 @@ impl TryFrom<TokenMatch<'_>> for ModulePath {
 mod tests {
     use super::*;
     use crate::test_utils::*;
+    use std::path;
+
+    #[test]
+    fn path_buf_from_module_path() {
+        assert_eq!(
+            path::PathBuf::from(ModulePath(vec![
+                "foo".to_string(),
+                "bar".to_string(),
+                "baz".to_string()
+            ])),
+            path::Path::new("foo/bar/baz.csvpp").to_path_buf()
+        );
+    }
 
     #[test]
     fn try_from_token_match() {

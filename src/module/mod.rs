@@ -10,15 +10,12 @@
 // * make sure there is only one infinite fill in the docs (ones can follow it, but they have to
 //      be finite and subtract from it
 use crate::ast::{Functions, Variables};
-use crate::{CodeSection, Compiler, ModulePath, Result, Spreadsheet};
+use crate::{Scope, Compiler, ModuleLoader, ModulePath, Result, Spreadsheet};
 use std::cell;
 use std::cmp;
 use std::fs;
 
 mod display;
-mod module_loader;
-
-use module_loader::ModuleLoader;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct Module {
@@ -32,23 +29,29 @@ pub struct Module {
 impl Module {
     pub(crate) fn load_main(
         spreadsheet: Spreadsheet,
-        code_section: CodeSection,
+        scope: Scope,
         module_path: ModulePath,
     ) -> Result<Self> {
         let spreadsheet_vars = spreadsheet.variables();
 
-        let module_loader = ModuleLoader::default();
-        module_loader.load(&code_section)?;
-        let _loaded_modules = module_loader.into_modules_loaded()?;
+        let module_loader = ModuleLoader::load_main(&module_path, &scope)?;
+        let dependencies = module_loader.into_dependencies()?;
 
+        // TODO: this approach of merging everything together won't really work as far as saving the
+        // computed object file... we need to separate out the spreadsheet vars
         Ok(Self {
             compiler_version: env!("CARGO_PKG_VERSION").to_string(),
-            functions: code_section.functions,
+            functions: dependencies
+                .functions
+                .into_iter()
+                .chain(scope.functions)
+                .collect(),
             module_path,
             spreadsheet: cell::RefCell::new(spreadsheet),
-            variables: code_section
+            variables: dependencies
                 .variables
                 .into_iter()
+                .chain(scope.variables)
                 .chain(spreadsheet_vars)
                 .collect(),
         })
@@ -153,19 +156,19 @@ mod tests {
     use std::collections;
 
     #[test]
-    fn load_main_with_code_section() {
+    fn load_main_with_scope() {
         let mut functions = collections::HashMap::new();
         functions.insert("foo".to_string(), Ast::new(1.into()));
         let mut variables = collections::HashMap::new();
         variables.insert("bar".to_string(), Ast::new(2.into()));
-        let code_section = CodeSection {
+        let scope = Scope {
             functions,
             variables,
             ..Default::default()
         };
         let module = Module::load_main(
             Spreadsheet::default(),
-            code_section,
+            scope,
             ModulePath(vec!["foo".to_string()]),
         )
         .unwrap();
@@ -175,10 +178,10 @@ mod tests {
     }
 
     #[test]
-    fn load_main_without_code_section() {
+    fn load_main_without_scope() {
         let module = Module::load_main(
             Spreadsheet::default(),
-            CodeSection::default(),
+            Scope::default(),
             ModulePath(vec!["foo".to_string()]),
         )
         .unwrap();

@@ -13,6 +13,7 @@
 * Rename `![[expand]]` to `![[fill]]` and all related code references
 * Rename `[[format]]`  to `[[text]]` 
 * Rename `Template` to `Module`
+* Rename `CodeSection` to `Scope`
 * Rename `Error::ObjectWriteError` to `Error::ObjectCodeError`
 * `Template.write_object_file` made crate-private
 

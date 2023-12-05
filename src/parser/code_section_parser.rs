@@ -18,7 +18,7 @@
 use super::ast_lexer::{AstLexer, Token, TokenMatch};
 use super::ast_parser::AstParser;
 use crate::ast::{Ast, Node, VariableValue};
-use crate::{ArcSourceCode, CodeSection, ModulePath, Result};
+use crate::{ArcSourceCode, Scope, ModulePath, Result};
 use std::collections::HashMap;
 
 pub(crate) struct CodeSectionParser<'a> {
@@ -31,16 +31,16 @@ pub(crate) struct CodeSectionParser<'a> {
 /// function, use statements and variable assignments and delegates to `AstParser` for handling
 /// expressions
 impl<'a> CodeSectionParser<'a> {
-    pub(crate) fn parse(input: &'a str, source_code: ArcSourceCode) -> Result<CodeSection> {
+    pub(crate) fn parse(input: &'a str, source_code: ArcSourceCode) -> Result<Scope> {
         CodeSectionParser {
             lexer: AstLexer::new(input, source_code.clone())
                 .map_err(|e| source_code.code_syntax_error(e))?,
             source_code,
         }
-        .parse_code_section()
+        .parse_scope()
     }
 
-    fn parse_code_section(&'a self) -> Result<CodeSection> {
+    fn parse_scope(&'a self) -> Result<Scope> {
         let mut variables = HashMap::new();
         let mut functions = HashMap::new();
         let mut required_modules = Vec::new();
@@ -73,7 +73,7 @@ impl<'a> CodeSectionParser<'a> {
             }
         }
 
-        Ok(CodeSection {
+        Ok(Scope {
             functions,
             required_modules,
             variables,
@@ -163,7 +163,7 @@ mod tests {
     use crate::test_utils::*;
     use crate::*;
 
-    fn test(input: &str) -> CodeSection {
+    fn test(input: &str) -> Scope {
         let source_code: SourceCode = (&TestSourceCode::new("csv", input)).into();
         CodeSectionParser::parse(input, ArcSourceCode::new(source_code)).unwrap()
     }

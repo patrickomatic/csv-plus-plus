@@ -1,7 +1,7 @@
-use super::CodeSection;
+use super::Scope;
 use std::fmt;
 
-impl fmt::Display for CodeSection {
+impl fmt::Display for Scope {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "# Required Modules")?;
         for m in &self.required_modules {

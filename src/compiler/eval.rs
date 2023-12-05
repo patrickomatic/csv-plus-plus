@@ -1,6 +1,6 @@
 use crate::ast::{Ast, AstReferences, Functions, Node, Variables};
 use crate::parser::code_section_parser::CodeSectionParser;
-use crate::{Cell, CodeSection, Compiler, Module, ModulePath, Result, Row, Spreadsheet};
+use crate::{Cell, Scope, Compiler, Module, ModulePath, Result, Row, Spreadsheet};
 use std::cell;
 use std::collections;
 
@@ -16,18 +16,18 @@ impl Compiler {
             let spreadsheet = Spreadsheet::parse(self.source_code.clone())?;
             self.progress("Parsed spreadsheet");
 
-            let code_section = if let Some(code_section_source) = &self.source_code.code_section {
-                let cs = CodeSectionParser::parse(code_section_source, self.source_code.clone())?;
+            let scope = if let Some(scope_source) = &self.source_code.scope {
+                let cs = CodeSectionParser::parse(scope_source, self.source_code.clone())?;
                 self.progress("Parsed code section");
                 self.info(&cs);
                 cs
             } else {
-                CodeSection::default()
+                Scope::default()
             };
 
             let module_path: ModulePath = self.source_code.filename.clone().try_into()?;
             let compiled_module =
-                self.eval(Module::load_main(spreadsheet, code_section, module_path)?);
+                self.eval(Module::load_main(spreadsheet, scope, module_path)?);
 
             self.progress("Compiled module");
             self.info(&compiled_module);
@@ -103,14 +103,14 @@ impl Compiler {
         &self,
         module_fns: &Functions,
         module_vars: &Variables,
-        ast: &Ast,
+        ast: Ast,
         position: a1_notation::Address,
     ) -> Ast {
-        let mut evaled_ast = ast.clone();
+        let mut evaled_ast = ast;
         let mut last_round_refs = AstReferences::default();
 
         loop {
-            let refs = evaled_ast.extract_references(self, module_fns, module_vars);
+            let refs = evaled_ast.extract_references(module_fns, module_vars);
             if refs.is_empty() || refs == last_round_refs {
                 break;
             }
@@ -118,6 +118,7 @@ impl Compiler {
 
             evaled_ast = Ast::new(
                 evaled_ast
+                    .into_inner()
                     .eval_variables(self.resolve_variables(module_vars, &refs.variables, position))
                     .eval_functions(&refs.functions, module_fns),
             );
@@ -133,27 +134,23 @@ impl Compiler {
         row: Row,
         row_a1: a1_notation::Row,
     ) -> Row {
-        let mut cells = vec![];
-        for (cell_index, cell) in row.cells.into_iter().enumerate() {
-            let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
-            cells.push(Cell {
-                ast: cell
-                    .ast
-                    .as_ref()
-                    .map(|ast| self.eval_ast(module_fns, module_vars, ast, cell_a1)),
-                ..cell
-            });
+        Row {
+            cells: row
+                .cells
+                .into_iter()
+                .enumerate()
+                .map(|(cell_index, cell)| {
+                    let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
+                    Cell {
+                        ast: cell
+                            .ast
+                            .map(|ast| self.eval_ast(module_fns, module_vars, ast, cell_a1)),
+                        ..cell
+                    }
+                })
+                .collect(),
+            ..row
         }
-
-        Row { cells, ..row }
-    }
-
-    pub fn is_function_defined(&self, module_fns: &Functions, fn_name: &str) -> bool {
-        module_fns.contains_key(fn_name)
-    }
-
-    pub fn is_variable_defined(&self, module_vars: &Variables, var_name: &str) -> bool {
-        module_vars.contains_key(var_name)
     }
 
     /// Variables can all be resolved in one go - we just loop them by name and resolve the ones
@@ -272,29 +269,5 @@ mod tests {
         let spreadsheet = module.spreadsheet.borrow();
 
         assert_eq!(spreadsheet.rows.len(), 4);
-    }
-
-    #[test]
-    fn is_function_defined_true() {
-        let test_file = &TestSourceCode::new("csv", "");
-        let compiler: Compiler = test_file.into();
-        let mut module = build_module();
-        module
-            .functions
-            .insert("foo".to_string(), Ast::new(42.into()));
-
-        assert!(compiler.is_function_defined(&module.functions, "foo"));
-    }
-
-    #[test]
-    fn is_variable_defined_true() {
-        let test_file = &TestSourceCode::new("csv", "");
-        let compiler: Compiler = test_file.into();
-        let mut module = build_module();
-        module
-            .variables
-            .insert("foo".to_string(), Ast::new(42.into()));
-
-        assert!(compiler.is_variable_defined(&module.variables, "foo"));
     }
 }

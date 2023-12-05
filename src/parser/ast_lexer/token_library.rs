@@ -15,7 +15,7 @@ type Matcher = TokenMatcher<Token>;
 pub(crate) struct TokenLibrary {
     pub(crate) boolean_true: Matcher,
     pub(crate) boolean_false: Matcher,
-    pub(crate) code_section_eof: Matcher,
+    pub(crate) scope_eof: Matcher,
     pub(crate) comma: Matcher,
     pub(crate) comment: Matcher,
     pub(crate) close_paren: Matcher,
@@ -44,7 +44,7 @@ impl TokenLibrary {
             boolean_false: TokenMatcher::new(r"false", Token::Boolean).unwrap(),
             comma: TokenMatcher::new(r",", Token::Comma).unwrap(),
             comment: TokenMatcher::new(r"(?m)#.*", Token::Comment).unwrap(),
-            code_section_eof: TokenMatcher::new(r"---", Token::CodeSectionEof).unwrap(),
+            scope_eof: TokenMatcher::new(r"---", Token::ScopeEof).unwrap(),
             close_paren: TokenMatcher::new(r"\)", Token::CloseParen).unwrap(),
             date_time: TokenMatcher::new(
                 r"(?x)
@@ -102,8 +102,8 @@ mod tests {
     }
 
     #[test]
-    fn library_code_section_eof() {
-        assert!(token_library().code_section_eof.1.is_match("---"));
+    fn library_scope_eof() {
+        assert!(token_library().scope_eof.1.is_match("---"));
     }
 
     #[test]

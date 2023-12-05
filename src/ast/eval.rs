@@ -9,13 +9,12 @@ impl Node {
     /// Evaluate the given `functions` calling `resolve_fn` upon each occurence to render a
     /// replacement.  Unlike variable resolution, we can't produce the values up front because the
     /// resolution function requires being called with the `arguments` at the call site.
-    // TODO: make this consume itself? (take a `self`) it's already cloning over and over
     pub(crate) fn eval_functions(
-        &self,
+        self,
         fns_to_resolve: &[FunctionName],
         functions: &Functions,
     ) -> Node {
-        let mut evaled_ast = self.clone();
+        let mut evaled_ast = self;
         for fn_name in fns_to_resolve {
             if let Some(fn_ast) = functions.get(fn_name) {
                 evaled_ast = evaled_ast.call_function(fn_name, fn_ast);
@@ -31,12 +30,8 @@ impl Node {
 
     /// Use the mapping in `variable_values` to replace each variable referenced in the AST with
     /// it's given replacement.
-    // TODO: make this consume itself? it's already cloning over and over
-    pub(crate) fn eval_variables(
-        &self,
-        variable_values: collections::HashMap<String, Ast>,
-    ) -> Node {
-        let mut evaled_ast = self.clone();
+    pub(crate) fn eval_variables(self, variable_values: collections::HashMap<String, Ast>) -> Node {
+        let mut evaled_ast = self;
         for (var_id, replacement) in variable_values {
             evaled_ast = evaled_ast.replace_variable(&var_id, replacement);
         }
@@ -154,7 +149,11 @@ mod tests {
 
         assert_eq!(
             ast,
-            Ast::new(ast.eval_functions(&["bar".to_owned(), "baz".to_owned()], &functions))
+            Ast::new(
+                ast.clone()
+                    .into_inner()
+                    .eval_functions(&["bar".to_owned(), "baz".to_owned()], &functions)
+            )
         );
     }
 
@@ -173,7 +172,10 @@ mod tests {
 
         assert_eq!(
             Ast::new(Node::infix_fn_call(1.into(), "+", 2.into())),
-            Ast::new(ast.eval_functions(&["my_func".to_owned()], &functions))
+            Ast::new(
+                ast.into_inner()
+                    .eval_functions(&["my_func".to_owned()], &functions)
+            )
         );
     }
 
@@ -183,7 +185,10 @@ mod tests {
         let mut values = collections::HashMap::new();
         values.insert("bar".to_string(), Ast::new(1.into()));
 
-        assert_eq!(Ast::new(ast.eval_variables(values)), ast);
+        assert_eq!(
+            Ast::new(ast.clone().into_inner().eval_variables(values)),
+            ast
+        );
     }
 
     #[test]
@@ -192,7 +197,10 @@ mod tests {
         let mut values = collections::HashMap::new();
         values.insert("foo".to_string(), Ast::new(1.into()));
 
-        assert_eq!(Ast::new(ast.eval_variables(values)), Ast::new(1.into()));
+        assert_eq!(
+            Ast::new(ast.into_inner().eval_variables(values)),
+            Ast::new(1.into())
+        );
     }
 
     #[test]
@@ -206,7 +214,7 @@ mod tests {
         values.insert("bar".to_string(), Ast::new(2.into()));
 
         assert_eq!(
-            Ast::new(ast.eval_variables(values)),
+            Ast::new(ast.into_inner().eval_variables(values)),
             Ast::new(Node::fn_call("my_func", &[1.into(), 2.into()]))
         );
     }
@@ -225,7 +233,7 @@ mod tests {
         values.insert("bar".to_string(), Ast::new(2.into()));
 
         assert_eq!(
-            Ast::new(ast.eval_variables(values)),
+            Ast::new(ast.into_inner().eval_variables(values)),
             Ast::new(Node::fn_call(
                 "outer_func",
                 &[Node::fn_call("my_func", &[1.into(), 2.into()])]
@@ -246,7 +254,7 @@ mod tests {
         values.insert("bar".to_string(), Ast::new(4.into()));
 
         assert_eq!(
-            Ast::new(ast.eval_variables(values)),
+            Ast::new(ast.into_inner().eval_variables(values)),
             Ast::new(Node::infix_fn_call(
                 Node::fn_call("my_func", &[3.into(), 4.into()]),
                 "*",

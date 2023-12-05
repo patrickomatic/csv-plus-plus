@@ -56,6 +56,8 @@ impl Row {
             ..self.clone()
         }
     }
+
+    // pub(crate) fn eval(self,
 }
 
 #[cfg(test)]

@@ -39,7 +39,7 @@ fn matchers_ordered(tl: &TokenLibrary) -> [&TokenMatcher<Token>; 17] {
         &tl.close_paren,
         &tl.open_paren,
         &tl.infix_operator,
-        &tl.code_section_eof,
+        &tl.scope_eof,
         &tl.date_time,
         // float has to be happen before integer!  it needs to greedy match 1.5, where integer will
         // also match the first part 1, but not the rest

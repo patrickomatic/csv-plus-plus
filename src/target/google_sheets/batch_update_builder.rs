@@ -161,7 +161,7 @@ mod tests {
 
         let module = Module::load_main(
             spreadsheet,
-            CodeSection::default(),
+            Scope::default(),
             ModulePath(vec!["foo".to_string()]),
         )
         .unwrap();

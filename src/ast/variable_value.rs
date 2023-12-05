@@ -55,8 +55,8 @@ impl VariableValue {
             // absolute value, just turn it into a Ast
             VariableValue::Absolute(address) => Ast::new(address.into()),
 
-            // already an AST, just clone it
-            VariableValue::Ast(ast) => ast.clone(),
+            // already an AST, just return it
+            VariableValue::Ast(ast) => ast,
 
             // it's relative to an fill - so if it's referenced inside the
             // fill, it's the value at that location.  If it's outside the fill
@@ -92,5 +92,15 @@ impl VariableValue {
                 })
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn into_ast_absolute() {
+        // XXX
     }
 }
