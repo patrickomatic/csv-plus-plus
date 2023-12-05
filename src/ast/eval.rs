@@ -2,21 +2,18 @@
 //!
 //! The main functions for evaluating a function or variable.
 //!
-use super::{Ast, FunctionName, Functions, Node};
+use super::{Ast, FunctionName, Node};
+use crate::Scope;
 use std::collections;
 
 impl Node {
     /// Evaluate the given `functions` calling `resolve_fn` upon each occurence to render a
     /// replacement.  Unlike variable resolution, we can't produce the values up front because the
     /// resolution function requires being called with the `arguments` at the call site.
-    pub(crate) fn eval_functions(
-        self,
-        fns_to_resolve: &[FunctionName],
-        functions: &Functions,
-    ) -> Node {
+    pub(crate) fn eval_functions(self, fns_to_resolve: &[FunctionName], scope: &Scope) -> Node {
         let mut evaled_ast = self;
         for fn_name in fns_to_resolve {
-            if let Some(fn_ast) = functions.get(fn_name) {
+            if let Some(fn_ast) = scope.functions.get(fn_name) {
                 evaled_ast = evaled_ast.call_function(fn_name, fn_ast);
             } else {
                 // TODO: log a warning that we tried to resolve an unknown function
@@ -140,19 +137,18 @@ impl Node {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::*;
 
     #[test]
     fn eval_functions_nomatch() {
         let ast = Ast::new(Node::reference("foo"));
-        let functions = HashMap::new();
+        let scope = Scope::default();
 
         assert_eq!(
             ast,
             Ast::new(
                 ast.clone()
                     .into_inner()
-                    .eval_functions(&["bar".to_owned(), "baz".to_owned()], &functions)
+                    .eval_functions(&["bar".to_owned(), "baz".to_owned()], &scope)
             )
         );
     }
@@ -160,8 +156,8 @@ mod tests {
     #[test]
     fn eval_functions_user_defined() {
         let ast = Ast::new(Node::fn_call("my_func", &[1.into(), 2.into()]));
-        let mut functions = HashMap::new();
-        functions.insert(
+        let mut scope = Scope::default();
+        scope.functions.insert(
             "my_func".to_string(),
             Ast::new(Node::fn_def(
                 "my_func",
@@ -174,7 +170,7 @@ mod tests {
             Ast::new(Node::infix_fn_call(1.into(), "+", 2.into())),
             Ast::new(
                 ast.into_inner()
-                    .eval_functions(&["my_func".to_owned()], &functions)
+                    .eval_functions(&["my_func".to_owned()], &scope)
             )
         );
     }

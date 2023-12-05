@@ -9,8 +9,7 @@
 // * eval cells in parallel (rayon)
 // * make sure there is only one infinite fill in the docs (ones can follow it, but they have to
 //      be finite and subtract from it
-use crate::ast::{Functions, Variables};
-use crate::{Scope, Compiler, ModuleLoader, ModulePath, Result, Spreadsheet};
+use crate::{Compiler, ModuleLoader, ModulePath, Result, Scope, Spreadsheet};
 use std::cell;
 use std::cmp;
 use std::fs;
@@ -19,10 +18,9 @@ mod display;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct Module {
-    pub functions: Functions,
     pub module_path: ModulePath,
+    pub scope: Scope,
     pub spreadsheet: cell::RefCell<Spreadsheet>,
-    pub variables: Variables,
     pub compiler_version: String,
 }
 
@@ -35,25 +33,15 @@ impl Module {
         let spreadsheet_vars = spreadsheet.variables();
 
         let module_loader = ModuleLoader::load_main(&module_path, &scope)?;
-        let dependencies = module_loader.into_dependencies()?;
+        let dependencies = module_loader.into_direct_dependencies()?;
 
         // TODO: this approach of merging everything together won't really work as far as saving the
         // computed object file... we need to separate out the spreadsheet vars
         Ok(Self {
             compiler_version: env!("CARGO_PKG_VERSION").to_string(),
-            functions: dependencies
-                .functions
-                .into_iter()
-                .chain(scope.functions)
-                .collect(),
+            scope: scope.merge(dependencies),
             module_path,
             spreadsheet: cell::RefCell::new(spreadsheet),
-            variables: dependencies
-                .variables
-                .into_iter()
-                .chain(scope.variables)
-                .chain(spreadsheet_vars)
-                .collect(),
         })
     }
 
@@ -173,8 +161,8 @@ mod tests {
         )
         .unwrap();
 
-        assert!(module.functions.contains_key("foo"));
-        assert!(module.variables.contains_key("bar"));
+        assert!(module.scope.functions.contains_key("foo"));
+        assert!(module.scope.variables.contains_key("bar"));
     }
 
     #[test]
@@ -186,7 +174,7 @@ mod tests {
         )
         .unwrap();
 
-        assert!(module.functions.is_empty());
-        assert!(module.variables.is_empty());
+        assert!(module.scope.functions.is_empty());
+        assert!(module.scope.variables.is_empty());
     }
 }

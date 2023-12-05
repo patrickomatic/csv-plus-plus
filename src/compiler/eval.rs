@@ -1,6 +1,6 @@
-use crate::ast::{Ast, AstReferences, Functions, Node, Variables};
+use crate::ast::{Ast, AstReferences, Node};
 use crate::parser::code_section_parser::CodeSectionParser;
-use crate::{Cell, Scope, Compiler, Module, ModulePath, Result, Row, Spreadsheet};
+use crate::{Cell, Compiler, Module, ModulePath, Result, Row, Scope, Spreadsheet};
 use std::cell;
 use std::collections;
 
@@ -26,8 +26,7 @@ impl Compiler {
             };
 
             let module_path: ModulePath = self.source_code.filename.clone().try_into()?;
-            let compiled_module =
-                self.eval(Module::load_main(spreadsheet, scope, module_path)?);
+            let compiled_module = self.eval(Module::load_main(spreadsheet, scope, module_path)?);
 
             self.progress("Compiled module");
             self.info(&compiled_module);
@@ -83,12 +82,7 @@ impl Compiler {
 
         let mut evaled_rows = vec![];
         for (row_index, row) in spreadsheet.rows.into_iter().enumerate() {
-            evaled_rows.push(self.eval_row(
-                &module.functions,
-                &module.variables,
-                row,
-                row_index.into(),
-            ));
+            evaled_rows.push(self.eval_row(&module.scope, row, row_index.into()));
         }
 
         Module {
@@ -99,18 +93,12 @@ impl Compiler {
 
     /// The idea here is just to keep looping as long as we are making progress eval()ing.
     /// Progress being defined as `.extract_references()` returning the same result twice in a row
-    fn eval_ast(
-        &self,
-        module_fns: &Functions,
-        module_vars: &Variables,
-        ast: Ast,
-        position: a1_notation::Address,
-    ) -> Ast {
+    fn eval_ast(&self, scope: &Scope, ast: Ast, position: a1_notation::Address) -> Ast {
         let mut evaled_ast = ast;
         let mut last_round_refs = AstReferences::default();
 
         loop {
-            let refs = evaled_ast.extract_references(module_fns, module_vars);
+            let refs = evaled_ast.extract_references(scope);
             if refs.is_empty() || refs == last_round_refs {
                 break;
             }
@@ -119,21 +107,15 @@ impl Compiler {
             evaled_ast = Ast::new(
                 evaled_ast
                     .into_inner()
-                    .eval_variables(self.resolve_variables(module_vars, &refs.variables, position))
-                    .eval_functions(&refs.functions, module_fns),
+                    .eval_variables(self.resolve_variables(scope, &refs.variables, position))
+                    .eval_functions(&refs.functions, scope),
             );
         }
 
         evaled_ast
     }
 
-    fn eval_row(
-        &self,
-        module_fns: &Functions,
-        module_vars: &Variables,
-        row: Row,
-        row_a1: a1_notation::Row,
-    ) -> Row {
+    fn eval_row(&self, scope: &Scope, row: Row, row_a1: a1_notation::Row) -> Row {
         Row {
             cells: row
                 .cells
@@ -142,9 +124,7 @@ impl Compiler {
                 .map(|(cell_index, cell)| {
                     let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
                     Cell {
-                        ast: cell
-                            .ast
-                            .map(|ast| self.eval_ast(module_fns, module_vars, ast, cell_a1)),
+                        ast: cell.ast.map(|ast| self.eval_ast(scope, ast, cell_a1)),
                         ..cell
                     }
                 })
@@ -157,13 +137,13 @@ impl Compiler {
     /// that we can and leave the rest alone.
     fn resolve_variables(
         &self,
-        module_vars: &Variables,
+        scope: &Scope,
         var_names: &[String],
         position: a1_notation::Address,
     ) -> collections::HashMap<String, Ast> {
         let mut resolved_vars = collections::HashMap::new();
         for var_name in var_names {
-            if let Some(val) = self.resolve_variable(module_vars, var_name, position) {
+            if let Some(val) = self.resolve_variable(scope, var_name, position) {
                 resolved_vars.insert(var_name.to_string(), val);
             }
         }
@@ -180,13 +160,14 @@ impl Compiler {
     ///
     fn resolve_variable(
         &self,
-        module_vars: &Variables,
+        scope: &Scope,
         var_name: &str,
         position: a1_notation::Address,
     ) -> Option<Ast> {
+        // XXX merge options.key_values earlier
         if let Some(value) = self.options.key_values.get(var_name) {
             Some(value.clone())
-        } else if let Some(value) = module_vars.get(var_name) {
+        } else if let Some(value) = scope.variables.get(var_name) {
             let value_from_var = match &**value {
                 Node::Variable { value, .. } => value.clone().into_ast(position),
                 n => Ast::new(n.clone()),
@@ -208,10 +189,9 @@ mod tests {
     fn build_module() -> Module {
         Module {
             compiler_version: "v0.0.1".to_string(),
-            functions: collections::HashMap::new(),
+            scope: Default::default(),
             module_path: ModulePath(vec!["main".to_string()]),
             spreadsheet: cell::RefCell::new(Spreadsheet::default()),
-            variables: collections::HashMap::new(),
         }
     }
 

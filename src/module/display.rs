@@ -4,12 +4,12 @@ use std::fmt;
 impl fmt::Display for Module {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "\n# Variables")?;
-        for ast in self.variables.values() {
+        for ast in self.scope.variables.values() {
             writeln!(f, "{ast}")?;
         }
 
         writeln!(f, "\n# Functions")?;
-        for ast in self.functions.values() {
+        for ast in self.scope.functions.values() {
             writeln!(f, "fn {ast}")?;
         }
 
@@ -21,17 +21,15 @@ impl fmt::Display for Module {
 #[cfg(test)]
 mod tests {
     use super::super::ModulePath;
-    use crate::{Module, Spreadsheet};
+    use crate::*;
     use std::cell;
-    use std::collections;
 
     fn build_module() -> Module {
         Module {
             compiler_version: "v0.0.1".to_string(),
-            functions: collections::HashMap::new(),
+            scope: Scope::default(),
             module_path: ModulePath(vec!["main".to_string()]),
             spreadsheet: cell::RefCell::new(Spreadsheet::default()),
-            variables: collections::HashMap::new(),
         }
     }
 
