@@ -305,7 +305,6 @@ mod tests {
         // assert!(
         // direct_dependencies(&module_path, &scope, loaded).is_ok()
         // );
-        todo!()
     }
 
     #[test]

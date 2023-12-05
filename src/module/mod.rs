@@ -30,13 +30,9 @@ impl Module {
         scope: Scope,
         module_path: ModulePath,
     ) -> Result<Self> {
-        let spreadsheet_vars = spreadsheet.variables();
-
         let module_loader = ModuleLoader::load_main(&module_path, &scope)?;
         let dependencies = module_loader.into_direct_dependencies()?;
 
-        // TODO: this approach of merging everything together won't really work as far as saving the
-        // computed object file... we need to separate out the spreadsheet vars
         Ok(Self {
             compiler_version: env!("CARGO_PKG_VERSION").to_string(),
             scope: scope.merge(dependencies),

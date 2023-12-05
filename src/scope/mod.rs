@@ -11,6 +11,13 @@ pub struct Scope {
 }
 
 impl Scope {
+    pub(crate) fn merge_variables(self, vars: Variables) -> Self {
+        Self {
+            variables: self.variables.into_iter().chain(vars).collect(),
+            ..self
+        }
+    }
+
     pub(crate) fn merge(self, other: Self) -> Self {
         Self {
             functions: self.functions.into_iter().chain(other.functions).collect(),

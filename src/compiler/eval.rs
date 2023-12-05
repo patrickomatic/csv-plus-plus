@@ -79,13 +79,18 @@ impl Compiler {
     // * do this in parallel (thread for each cell)
     fn eval_cells(&self, module: Module) -> Module {
         let spreadsheet = module.spreadsheet.into_inner();
+        let scope = module
+            .scope
+            .merge_variables(spreadsheet.variables())
+            .merge_variables(self.options.key_values.clone());
 
         let mut evaled_rows = vec![];
         for (row_index, row) in spreadsheet.rows.into_iter().enumerate() {
-            evaled_rows.push(self.eval_row(&module.scope, row, row_index.into()));
+            evaled_rows.push(self.eval_row(&scope, row, row_index.into()));
         }
 
         Module {
+            scope,
             spreadsheet: cell::RefCell::new(Spreadsheet { rows: evaled_rows }),
             ..module
         }
@@ -143,40 +148,17 @@ impl Compiler {
     ) -> collections::HashMap<String, Ast> {
         let mut resolved_vars = collections::HashMap::new();
         for var_name in var_names {
-            if let Some(val) = self.resolve_variable(scope, var_name, position) {
-                resolved_vars.insert(var_name.to_string(), val);
+            if let Some(value) = scope.variables.get(var_name) {
+                let value_from_var = match &**value {
+                    Node::Variable { value, .. } => value.clone().into_ast(position),
+                    n => Ast::new(n.clone()),
+                };
+
+                resolved_vars.insert(var_name.to_string(), value_from_var);
             }
         }
 
         resolved_vars
-    }
-
-    /// Find the value (`Option<Ast>`) for a given variable.  The search order goes (where the
-    /// first one is the winner):
-    ///
-    /// * CLI-provided variables
-    /// * User-defined (in the module source code)
-    /// * Otherwise `None`
-    ///
-    fn resolve_variable(
-        &self,
-        scope: &Scope,
-        var_name: &str,
-        position: a1_notation::Address,
-    ) -> Option<Ast> {
-        // XXX merge options.key_values earlier
-        if let Some(value) = self.options.key_values.get(var_name) {
-            Some(value.clone())
-        } else if let Some(value) = scope.variables.get(var_name) {
-            let value_from_var = match &**value {
-                Node::Variable { value, .. } => value.clone().into_ast(position),
-                n => Ast::new(n.clone()),
-            };
-
-            Some(value_from_var)
-        } else {
-            None
-        }
     }
 }
 
@@ -184,16 +166,6 @@ impl Compiler {
 mod tests {
     use super::*;
     use crate::test_utils::*;
-    use std::cell;
-
-    fn build_module() -> Module {
-        Module {
-            compiler_version: "v0.0.1".to_string(),
-            scope: Default::default(),
-            module_path: ModulePath(vec!["main".to_string()]),
-            spreadsheet: cell::RefCell::new(Spreadsheet::default()),
-        }
-    }
 
     #[test]
     fn compile_empty() {
