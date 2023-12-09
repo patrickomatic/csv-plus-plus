@@ -18,7 +18,7 @@
 use super::ast_lexer::{AstLexer, Token, TokenMatch};
 use super::ast_parser::AstParser;
 use crate::ast::{Ast, Node, VariableValue};
-use crate::{ArcSourceCode, Scope, ModulePath, Result};
+use crate::{ArcSourceCode, ModulePath, Result, Scope};
 use std::collections::HashMap;
 
 pub(crate) struct CodeSectionParser<'a> {
@@ -51,7 +51,7 @@ impl<'a> CodeSectionParser<'a> {
                 Token::Eof => break,
                 Token::FunctionDefinition => {
                     let (fn_name, function) = self.parse_fn_definition()?;
-                    functions.insert(fn_name, Ast::new(function));
+                    functions.insert(fn_name, function.into());
                 }
                 Token::UseModule => {
                     required_modules.push(self.parse_use_module()?);
@@ -59,10 +59,11 @@ impl<'a> CodeSectionParser<'a> {
                 Token::Reference => {
                     variables.insert(
                         next.str_match.to_string(),
-                        Ast::new(Node::var(
+                        Node::var(
                             next.str_match,
                             VariableValue::Ast(self.parse_variable_assign()?),
-                        )),
+                        )
+                        .into(),
                     );
                 }
                 _ => {
@@ -178,7 +179,6 @@ mod tests {
             &["a", "b"],
             Node::infix_fn_call(Node::reference("a"), "+", Node::reference("b")),
         ));
-
         assert_eq!(foo, &expected);
     }
 
@@ -187,12 +187,7 @@ mod tests {
         let cs = test("fn foo() 1 * 2");
         let foo = cs.functions.get("foo").unwrap();
 
-        let expected: Ast = Ast::new(Node::fn_def(
-            "foo",
-            &[],
-            Node::infix_fn_call(1.into(), "*", 2.into()),
-        ));
-
+        let expected: Ast = Ast::new(Node::fn_def("foo", &[], Node::infix_fn_call(1, "*", 2)));
         assert_eq!(foo, &expected);
     }
 

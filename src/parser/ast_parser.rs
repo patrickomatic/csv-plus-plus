@@ -151,7 +151,7 @@ impl<'a> AstParser<'a> {
                         }
                     }
 
-                    Ast::new(Node::FunctionCall { name: id, args })
+                    Node::FunctionCall { name: id, args }.into()
                 } else {
                     return Err(op_token.into_parse_error("Unexpected infix operator"));
                 };
@@ -168,11 +168,12 @@ impl<'a> AstParser<'a> {
                 self.lexer.next();
 
                 let rhs = self.expr_bp(single_expr, r_bp)?;
-                lhs = Ast::new(Node::InfixFunctionCall {
+                lhs = Node::InfixFunctionCall {
                     left: lhs,
                     operator: op.to_owned(),
                     right: rhs,
-                });
+                }
+                .into();
 
                 continue;
             }
@@ -215,31 +216,25 @@ mod tests {
 
     #[test]
     fn parse_float() {
-        assert_eq!(test_parse("1.50"), Ast::new(1.50.into()));
-        assert_eq!(test_parse("0.65"), Ast::new(0.65.into()));
+        assert_eq!(test_parse("1.50"), 1.50.into());
+        assert_eq!(test_parse("0.65"), 0.65.into());
     }
 
     #[test]
     fn parse_integer() {
-        assert_eq!(test_parse("1"), Ast::new(1.into()));
+        assert_eq!(test_parse("1"), 1.into());
     }
 
     #[test]
     fn parse_infix_function() {
-        assert_eq!(
-            test_parse("1 * 2"),
-            Ast::new(Node::infix_fn_call(1.into(), "*", 2.into()))
-        );
+        assert_eq!(test_parse("1 * 2"), Node::infix_fn_call(1, "*", 2).into());
     }
 
     #[test]
     fn parse_function_call() {
         assert_eq!(
             test_parse("foo(bar, 1, 2)"),
-            Ast::new(Node::fn_call(
-                "foo",
-                &[Node::reference("bar"), 1.into(), 2.into()],
-            ))
+            Node::fn_call("foo", &[Node::reference("bar"), 1.into(), 2.into()],).into()
         );
     }
 
@@ -247,10 +242,7 @@ mod tests {
     fn parse_nested_function_call() {
         assert_eq!(
             test_parse("foo(1, 2 * 3)"),
-            Ast::new(Node::fn_call(
-                "foo",
-                &[1.into(), Node::infix_fn_call(2.into(), "*", 3.into()),],
-            ))
+            Node::fn_call("foo", &[1.into(), Node::infix_fn_call(2, "*", 3)]).into()
         );
     }
 
@@ -258,19 +250,16 @@ mod tests {
     fn parse_explicit_precedence() {
         assert_eq!(
             test_parse("1 * ((2 + 3) - 4) / 5"),
-            Ast::new(Node::infix_fn_call(
+            Node::infix_fn_call(
                 Node::infix_fn_call(
                     1.into(),
                     "*",
-                    Node::infix_fn_call(
-                        Node::infix_fn_call(2.into(), "+", 3.into()),
-                        "-",
-                        4.into()
-                    )
+                    Node::infix_fn_call(Node::infix_fn_call(2, "+", 3), "-", 4.into())
                 ),
                 "/",
                 5.into()
-            ))
+            )
+            .into()
         );
     }
 
@@ -278,11 +267,12 @@ mod tests {
     fn parse_infix_precedence() {
         assert_eq!(
             test_parse("1 * 2 + 3 - 4 / 5"),
-            Ast::new(Node::infix_fn_call(
-                Node::infix_fn_call(Node::infix_fn_call(1.into(), "*", 2.into()), "+", 3.into(),),
+            Node::infix_fn_call(
+                Node::infix_fn_call(Node::infix_fn_call(1, "*", 2), "+", 3.into(),),
                 "-",
-                Node::infix_fn_call(4.into(), "/", 5.into(),),
-            ))
+                Node::infix_fn_call(4, "/", 5),
+            )
+            .into()
         );
     }
 

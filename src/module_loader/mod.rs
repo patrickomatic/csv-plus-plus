@@ -16,7 +16,7 @@ use dependency::{Dependency, DependencyRelation};
 
 type ArcRwLock<T> = sync::Arc<sync::RwLock<T>>;
 
-pub(super) type LoadedModules = collections::HashMap<ModulePath, Dependency>;
+type LoadedModules = collections::HashMap<ModulePath, Dependency>;
 
 type Attempted = ArcRwLock<collections::HashSet<ModulePath>>;
 type Loaded = ArcRwLock<LoadedModules>;
@@ -33,6 +33,8 @@ pub(super) struct ModuleLoader<'a> {
 
 /// Extract all direct dependencies on `scope`.  
 fn direct_dependencies(module_path: &ModulePath, scope: &Scope, loaded: LoadedModules) -> Scope {
+    // TODO: this whole thing could probably be cleaned up if we built the adjacency list in an
+    // array and managed it ourselves and got rid of the `nodes` HashMap
     let mut nodes = collections::HashMap::new();
 
     let mut dep_graph: graph::Graph<_, ()> = graph::Graph::new();
@@ -174,7 +176,7 @@ impl<'a> ModuleLoader<'a> {
         };
 
         // parse the code section out
-        if let Some(scope_source) = &source_code.scope {
+        if let Some(scope_source) = &source_code.code_section {
             // TODO: this should use the csvpo cache if there is one
             match CodeSectionParser::parse(scope_source, source_code.clone()) {
                 Ok(cs) => {

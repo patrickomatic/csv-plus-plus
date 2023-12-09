@@ -40,11 +40,11 @@ impl Spreadsheet {
 
             // does the row itself have a var?
             if let Some(var_id) = &row.var {
-                let reference = if let Some(scope) = row.fill {
+                let reference = if let Some(fill) = row.fill {
                     // if there's also an fill it's relative to that
                     Node::Variable {
                         name: var_id.clone(),
-                        value: VariableValue::RowRelative { scope, row: row_a1 },
+                        value: VariableValue::RowRelative { fill, row: row_a1 },
                     }
                 } else {
                     // otherwise it's just relative to the single row where it was defined
@@ -61,11 +61,11 @@ impl Spreadsheet {
                 let cell_a1 = a1_notation::Address::new(cell_index, row_index);
 
                 if let Some(var_id) = &cell.var {
-                    let reference = if let Some(scope) = row.fill {
+                    let reference = if let Some(fill) = row.fill {
                         Node::Variable {
                             name: var_id.clone(),
                             value: VariableValue::ColumnRelative {
-                                scope,
+                                fill,
                                 column: cell_a1.column,
                             },
                         }
@@ -234,7 +234,7 @@ mod tests {
             Node::var(
                 "foo",
                 VariableValue::ColumnRelative {
-                    scope: Fill {
+                    fill: Fill {
                         amount: Some(10),
                         start_row: 0.into()
                     },
@@ -247,7 +247,7 @@ mod tests {
             Node::var(
                 "bar",
                 VariableValue::RowRelative {
-                    scope: Fill {
+                    fill: Fill {
                         amount: Some(100),
                         start_row: 10.into()
                     },

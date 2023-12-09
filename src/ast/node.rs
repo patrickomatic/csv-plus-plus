@@ -63,26 +63,30 @@ pub enum Node {
 /// also nice for some of the code that needs to build ASTs.
 impl Node {
     #[cfg(test)]
-    pub(crate) fn fn_def<S: Into<String>>(name: S, args: &[&str], body: Self) -> Self {
+    pub(crate) fn fn_def<S: Into<String>, A: Into<Ast>>(name: S, args: &[&str], body: A) -> Self {
         Self::Function {
             name: name.into(),
             args: args.iter().map(|a| a.to_string()).collect(),
-            body: Ast::new(body),
+            body: body.into(),
         }
     }
 
-    pub(crate) fn fn_call<S: Into<String>>(name: S, args: &[Self]) -> Self {
+    pub(crate) fn fn_call<S: Into<String>, A: Into<Ast> + Clone>(name: S, args: &[A]) -> Self {
         Self::FunctionCall {
             name: name.into(),
-            args: args.iter().map(|a| Ast::new(a.to_owned())).collect(),
+            args: args.iter().map(|a| (*a).clone().into()).collect(),
         }
     }
 
-    pub(crate) fn infix_fn_call<S: Into<String>>(left: Self, operator: S, right: Self) -> Self {
+    pub(crate) fn infix_fn_call<S: Into<String>, A: Into<Ast>>(
+        left: A,
+        operator: S,
+        right: A,
+    ) -> Self {
         Self::InfixFunctionCall {
-            left: Ast::new(left),
+            left: left.into(),
             operator: operator.into(),
-            right: Ast::new(right),
+            right: right.into(),
         }
     }
 

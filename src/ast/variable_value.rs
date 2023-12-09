@@ -29,7 +29,7 @@ pub enum VariableValue {
     /// ```
     ColumnRelative {
         column: a1_notation::Column,
-        scope: Fill,
+        fill: Fill,
     },
 
     /// References a row (outside of a fill)
@@ -46,7 +46,7 @@ pub enum VariableValue {
     /// ---
     /// ![[var=foo / fill=20]]foo,bar,baz
     /// ```
-    RowRelative { row: a1_notation::Row, scope: Fill },
+    RowRelative { row: a1_notation::Row, fill: Fill },
 }
 
 impl VariableValue {
@@ -58,16 +58,16 @@ impl VariableValue {
             // already an AST, just return it
             VariableValue::Ast(ast) => ast,
 
-            // it's relative to an fill - so if it's referenced inside the
+            // it's relative to a fill - so if it's referenced inside the
             // fill, it's the value at that location.  If it's outside the fill
             // it's the range that it represents
-            VariableValue::ColumnRelative { scope, column } => {
-                let scope_a1: a1_notation::A1 = scope.into();
+            VariableValue::ColumnRelative { fill, column } => {
+                let fill_a1: a1_notation::A1 = fill.into();
 
-                Ast::new(if scope_a1.contains(&position.into()) {
+                Ast::new(if fill_a1.contains(&position.into()) {
                     position.with_x(column.x).into()
                 } else {
-                    let row_range: a1_notation::A1 = scope.into();
+                    let row_range: a1_notation::A1 = fill.into();
                     row_range.with_x(column.x).into()
                 })
             }
@@ -77,17 +77,17 @@ impl VariableValue {
                 Ast::new(a1.into())
             }
 
-            VariableValue::RowRelative { scope, .. } => {
-                let scope_a1: a1_notation::A1 = scope.into();
+            VariableValue::RowRelative { fill, .. } => {
+                let fill_a1: a1_notation::A1 = fill.into();
 
-                Ast::new(if scope_a1.contains(&position.into()) {
+                Ast::new(if fill_a1.contains(&position.into()) {
                     // we're within the scope (fill) so it's the row we're on
                     let row_a1: a1_notation::A1 = position.row.into();
                     row_a1.into()
                 } else {
                     // we're outside the scope (fill), so it represents the entire
                     // range contained by it (the scope)
-                    let row_range: a1_notation::A1 = scope.into();
+                    let row_range: a1_notation::A1 = fill.into();
                     row_range.into()
                 })
             }

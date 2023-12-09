@@ -55,15 +55,15 @@ impl fmt::Display for VariableValue {
 
             Self::Ast(ast) => write!(f, "{ast}"),
 
-            Self::ColumnRelative { scope, column } => {
-                let row_range: A1 = (*scope).into();
+            Self::ColumnRelative { fill, column } => {
+                let row_range: A1 = (*fill).into();
                 write!(f, "{}", row_range.with_x(column.x))
             }
 
             Self::Row(row) => write!(f, "{row}"),
 
-            Self::RowRelative { scope, .. } => {
-                let row_range: A1 = (*scope).into();
+            Self::RowRelative { fill, .. } => {
+                let row_range: A1 = (*fill).into();
                 write!(f, "{row_range}")
             }
         }
@@ -103,7 +103,7 @@ mod tests {
     fn display_function() {
         assert_eq!(
             "foo(a, b, c) 1",
-            Node::fn_def("foo", &["a", "b", "c"], 1.into()).to_string()
+            Node::fn_def("foo", &["a", "b", "c"], 1).to_string()
         );
     }
 
@@ -111,16 +111,13 @@ mod tests {
     fn display_function_call() {
         assert_eq!(
             "bar(1, \"foo\")",
-            Node::fn_call("bar", &[1.into(), Node::text("foo")],).to_string()
+            Node::fn_call("bar", &[1.into(), Node::text("foo")]).to_string()
         );
     }
 
     #[test]
     fn display_infix_function() {
-        assert_eq!(
-            "(1 * 2)",
-            Node::infix_fn_call(1.into(), "*", 2.into()).to_string()
-        );
+        assert_eq!("(1 * 2)", Node::infix_fn_call(1, "*", 2).to_string());
     }
 
     #[test]

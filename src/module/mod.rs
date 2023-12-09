@@ -9,7 +9,8 @@
 // * eval cells in parallel (rayon)
 // * make sure there is only one infinite fill in the docs (ones can follow it, but they have to
 //      be finite and subtract from it
-use crate::{Compiler, ModuleLoader, ModulePath, Result, Scope, Spreadsheet};
+use crate::ast::Variables;
+use crate::{Compiler, ModuleLoader, ModulePath, Result, Row, Scope, Spreadsheet};
 use std::cell;
 use std::cmp;
 use std::fs;
@@ -25,6 +26,61 @@ pub struct Module {
 }
 
 impl Module {
+    /// For each row of the spreadsheet, if it has a [[fill=]] then we need to actually fill it to
+    /// that many rows.  
+    ///
+    /// This has to happen before eval()ing the cells because that process depends on them being in
+    /// their final location.
+    // TODO: make sure there is only one infinite fill
+    pub(crate) fn eval_fills(self) -> Self {
+        let mut new_spreadsheet = Spreadsheet::default();
+        let s = self.spreadsheet.into_inner();
+        let mut row_num = 0;
+
+        // XXX add test
+        // XXX into_iter()
+        for row in s.rows.iter() {
+            if let Some(f) = row.fill {
+                let new_fill = f.clone_to_row(row_num);
+                for _ in 0..new_fill.fill_amount(row_num) {
+                    new_spreadsheet.rows.push(Row {
+                        fill: Some(new_fill),
+                        ..row.clone()
+                    });
+                    row_num += 1;
+                }
+            } else {
+                new_spreadsheet.rows.push(row.clone());
+                row_num += 1;
+            }
+        }
+
+        Self {
+            spreadsheet: cell::RefCell::new(new_spreadsheet),
+            ..self
+        }
+    }
+
+    // TODO: do this in parallel (thread for each cell)
+    pub(crate) fn eval_spreadsheet(self, external_vars: Variables) -> Self {
+        let spreadsheet = self.spreadsheet.into_inner();
+        let scope = self
+            .scope
+            .merge_variables(spreadsheet.variables())
+            .merge_variables(external_vars);
+
+        let mut evaled_rows = vec![];
+        for (row_index, row) in spreadsheet.rows.into_iter().enumerate() {
+            evaled_rows.push(row.eval(&scope, row_index.into()));
+        }
+
+        Self {
+            scope,
+            spreadsheet: cell::RefCell::new(Spreadsheet { rows: evaled_rows }),
+            ..self
+        }
+    }
+
     pub(crate) fn load_main(
         spreadsheet: Spreadsheet,
         scope: Scope,

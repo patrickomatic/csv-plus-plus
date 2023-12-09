@@ -25,7 +25,7 @@ mod tests {
             lines: 25,
             length_of_scope: 10,
             length_of_csv_section: 15,
-            scope: Some("\n".repeat(10)),
+            code_section: Some("\n".repeat(10)),
             csv_section: "foo,bar,baz".to_string(),
             original: "\n\n\n\n\n\n\n\n\n\n---\nfoo,bar,baz".to_string(),
         }

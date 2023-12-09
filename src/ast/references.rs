@@ -90,18 +90,11 @@ mod tests {
         let mut module = build_module();
         module.scope.functions.insert(
             "foo".to_string(),
-            Ast::new(Node::fn_def(
-                "foo",
-                &["a", "b"],
-                Node::reference("return value"),
-            )),
+            Node::fn_def("foo", &["a", "b"], Node::reference("return value")).into(),
         );
 
         let references = Node::extract_references(
-            &Ast::new(Node::fn_call(
-                "foo",
-                &[Node::reference("bar"), Node::reference("baz")],
-            )),
+            &Node::fn_call("foo", &[Node::reference("bar"), Node::reference("baz")]),
             &module.scope,
         );
 
@@ -114,19 +107,15 @@ mod tests {
         let mut module = build_module();
         module.scope.functions.insert(
             "foo".to_string(),
-            Ast::new(Node::fn_def(
-                "foo",
-                &["a", "b"],
-                Node::reference("return value"),
-            )),
+            Node::fn_def("foo", &["a", "b"], Node::reference("return value")).into(),
         );
 
         let references = Node::extract_references(
-            &Ast::new(Node::infix_fn_call(
+            &Node::infix_fn_call(
                 Node::fn_call("foo", &[Node::reference("bar"), Node::reference("baz")]),
                 "+",
                 Node::fn_call("bar", &[Node::reference("bar"), Node::reference("baz")]),
-            )),
+            ),
             &module.scope,
         );
 
@@ -139,21 +128,17 @@ mod tests {
         let mut module = build_module();
         module.scope.functions.insert(
             "foo".to_string(),
-            Ast::new(Node::fn_def(
-                "foo",
-                &["a", "b"],
-                Node::reference("return value"),
-            )),
+            Node::fn_def("foo", &["a", "b"], Node::reference("return value")).into(),
         );
 
         let references = Node::extract_references(
-            &Ast::new(Node::fn_call(
+            &Node::fn_call(
                 "foo_outer",
                 &[Node::fn_call(
                     "foo",
                     &[Node::reference("bar"), Node::reference("baz")],
                 )],
-            )),
+            ),
             &module.scope,
         );
 
@@ -167,9 +152,9 @@ mod tests {
         module
             .scope
             .variables
-            .insert("foo".to_string(), Ast::new(Node::reference("return value")));
+            .insert("foo".to_string(), Node::reference("return value").into());
 
-        let references = Node::extract_references(&Ast::new(Node::reference("foo")), &module.scope);
+        let references = Node::extract_references(&Node::reference("foo"), &module.scope);
 
         assert_eq!(references.variables.len(), 1);
         assert_eq!(&references.variables[0], "foo");
@@ -181,16 +166,16 @@ mod tests {
         module
             .scope
             .variables
-            .insert("bar".to_string(), Ast::new(Node::reference("return value")));
+            .insert("bar".to_string(), Node::reference("return value").into());
 
         let references = Node::extract_references(
-            &Ast::new(Node::fn_call(
+            &Node::fn_call(
                 "foo_outer",
                 &[Node::fn_call(
                     "foo",
                     &[Node::reference("bar"), Node::reference("baz")],
                 )],
-            )),
+            ),
             &module.scope,
         );
 

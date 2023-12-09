@@ -2,7 +2,7 @@ mod display;
 
 use crate::{
     ArcSourceCode, BorderSide, BorderStyle, Cell, DataValidation, Fill, HorizontalAlign,
-    NumberFormat, Result, Rgb, TextFormat, VerticalAlign,
+    NumberFormat, Result, Rgb, Scope, TextFormat, VerticalAlign,
 };
 use std::collections::HashSet;
 
@@ -30,6 +30,24 @@ pub struct Row {
 }
 
 impl Row {
+    pub(crate) fn eval(self, scope: &Scope, row_a1: a1_notation::Row) -> Row {
+        Row {
+            cells: self
+                .cells
+                .into_iter()
+                .enumerate()
+                .map(|(cell_index, cell)| {
+                    let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
+                    Cell {
+                        ast: cell.ast.map(|ast| ast.eval(scope, cell_a1)),
+                        ..cell
+                    }
+                })
+                .collect(),
+            ..self
+        }
+    }
+
     pub(crate) fn parse(
         record_result: CsvRowResult,
         row_a1: a1_notation::Row,
@@ -49,15 +67,6 @@ impl Row {
 
         Ok(row)
     }
-
-    pub(crate) fn clone_to_row(&self, new_row: a1_notation::Row) -> Self {
-        Self {
-            fill: self.fill.map(|f| f.clone_to_row(new_row)),
-            ..self.clone()
-        }
-    }
-
-    // pub(crate) fn eval(self,
 }
 
 #[cfg(test)]
@@ -70,6 +79,7 @@ mod tests {
         // TODO
     }
 
+    /*
     #[test]
     fn clone_to_row() {
         let row = Row {
@@ -93,4 +103,5 @@ mod tests {
             }
         );
     }
+    */
 }
