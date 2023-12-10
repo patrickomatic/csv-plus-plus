@@ -3,7 +3,6 @@ mod border_side;
 mod border_style;
 mod cell;
 mod cli_args;
-mod scope;
 mod compiler;
 mod data_validation;
 mod date_time;
@@ -19,6 +18,7 @@ mod output;
 mod parser;
 mod rgb;
 mod row;
+mod scope;
 mod source_code;
 mod spreadsheet;
 mod target;
@@ -29,7 +29,6 @@ pub use border_side::BorderSide;
 pub use border_style::BorderStyle;
 pub use cell::Cell;
 pub use cli_args::CliArgs;
-pub use scope::Scope;
 pub use compiler::Compiler;
 pub(crate) use data_validation::DataValidation;
 pub use date_time::DateTime;
@@ -44,6 +43,7 @@ pub use options::Options;
 pub use output::Output;
 pub use rgb::Rgb;
 pub use row::Row;
+pub use scope::Scope;
 pub(crate) use source_code::ArcSourceCode;
 pub use source_code::{CharOffset, LineNumber, SourceCode};
 pub use spreadsheet::Spreadsheet;
@@ -60,4 +60,12 @@ pub(crate) fn csv_reader() -> csv::ReaderBuilder {
     let mut csv_reader = csv::ReaderBuilder::new();
     csv_reader.flexible(true).has_headers(false);
     csv_reader
+}
+
+pub(crate) fn compiler_error<S: Into<String>>(message: S) -> ! {
+    eprintln!(
+        "csv++ ran into a non-recoverable error while compiling.  Please report this at:
+        https://github.com/patrickomatic/csv-plus-plus/issues"
+    );
+    panic!("{}", message.into())
 }

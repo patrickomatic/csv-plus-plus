@@ -1,4 +1,4 @@
-use crate::Error;
+use crate::compiler_error;
 use regex::Regex;
 
 #[derive(Debug)]
@@ -19,14 +19,14 @@ fn whitespace_start(input: &str) -> usize {
 }
 
 impl<T> TokenMatcher<T> {
-    pub(crate) fn new(regex_str: &str, token: T) -> Result<Self, Error> {
-        Ok(TokenMatcher(
+    pub(crate) fn new(regex_str: &str, token: T) -> Self {
+        TokenMatcher(
             token,
             // this regex is kinda tricky but it's "all spaces but not newlines"
-            Regex::new(format!(r"^[^\S\r\n]*{regex_str}").as_str()).map_err(|m| {
-                Error::InitError(format!("Error compiling regex /{regex_str}/: {m}"))
-            })?,
-        ))
+            Regex::new(format!(r"^[^\S\r\n]*{regex_str}").as_str()).unwrap_or_else(|m| {
+                compiler_error(format!("Error compiling regex /{regex_str}/: {m}"))
+            }),
+        )
     }
 
     pub(super) fn try_match<'a>(&self, input: &'a str) -> Option<StrMatch<'a>> {
@@ -50,7 +50,7 @@ mod tests {
 
     #[test]
     fn try_match_some() {
-        let token_matcher = TokenMatcher::new(r"\w+", Token::Identifier).unwrap();
+        let token_matcher = TokenMatcher::new(r"\w+", Token::Identifier);
         assert_eq!(
             token_matcher.try_match("  foo"),
             Some(StrMatch {
@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn try_match_none() {
-        let token_matcher = TokenMatcher::new(r"\w+", Token::Identifier).unwrap();
+        let token_matcher = TokenMatcher::new(r"\w+", Token::Identifier);
         assert_eq!(token_matcher.try_match("  !!!"), None);
     }
 }

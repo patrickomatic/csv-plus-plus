@@ -40,12 +40,12 @@ impl TokenLibrary {
         static TOKEN_LIBRARY: sync::OnceLock<TokenLibrary> = sync::OnceLock::new();
 
         TOKEN_LIBRARY.get_or_init(|| Self {
-            boolean_true: TokenMatcher::new(r"true", Token::Boolean).unwrap(),
-            boolean_false: TokenMatcher::new(r"false", Token::Boolean).unwrap(),
-            comma: TokenMatcher::new(r",", Token::Comma).unwrap(),
-            comment: TokenMatcher::new(r"(?m)#.*", Token::Comment).unwrap(),
-            scope_eof: TokenMatcher::new(r"---", Token::ScopeEof).unwrap(),
-            close_paren: TokenMatcher::new(r"\)", Token::CloseParen).unwrap(),
+            boolean_true: TokenMatcher::new(r"true", Token::Boolean),
+            boolean_false: TokenMatcher::new(r"false", Token::Boolean),
+            comma: TokenMatcher::new(r",", Token::Comma),
+            comment: TokenMatcher::new(r"(?m)#.*", Token::Comment),
+            scope_eof: TokenMatcher::new(r"---", Token::ScopeEof),
+            close_paren: TokenMatcher::new(r"\)", Token::CloseParen),
             date_time: TokenMatcher::new(
                 r"(?x)
                  # just a date (and optional TZ)
@@ -58,26 +58,23 @@ impl TokenLibrary {
                  (?<date2>\d{2,4}-\d{1,2}-\d{1,2})\s+(?<time2>\d+:\d{1,2}(\d+)?)\s*(?<tz2>\w+)?
                 ",
                 Token::DateTime,
-            )
-            .unwrap(),
+            ),
             double_quoted_string: TokenMatcher::new(
                 r#""(?:[^"\\]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*""#,
                 Token::DoubleQuotedString,
-            )
-            .unwrap(),
+            ),
             infix_operator: TokenMatcher::new(
                 r"(\^|\+|-|\*|/|&|<|>|<=|>=|<>)",
                 Token::InfixOperator,
-            )
-            .unwrap(),
-            integer: TokenMatcher::new(r"-?\d+", Token::Integer).unwrap(),
-            float: TokenMatcher::new(r"-?\d+\.\d*", Token::Float).unwrap(),
-            fn_def: TokenMatcher::new(r"fn", Token::FunctionDefinition).unwrap(),
-            newline: TokenMatcher::new(r"\n", Token::Newline).unwrap(),
-            open_paren: TokenMatcher::new(r"\(", Token::OpenParen).unwrap(),
-            reference: TokenMatcher::new(r"[$!\w:]+[$!\w:.]?", Token::Reference).unwrap(),
-            use_module: TokenMatcher::new(r"use", Token::UseModule).unwrap(),
-            var_assign: TokenMatcher::new(r":=", Token::VarAssign).unwrap(),
+            ),
+            integer: TokenMatcher::new(r"-?\d+", Token::Integer),
+            float: TokenMatcher::new(r"-?\d+\.\d*", Token::Float),
+            fn_def: TokenMatcher::new(r"fn", Token::FunctionDefinition),
+            newline: TokenMatcher::new(r"\n", Token::Newline),
+            open_paren: TokenMatcher::new(r"\(", Token::OpenParen),
+            reference: TokenMatcher::new(r"[$!\w:]+[$!\w:.]?", Token::Reference),
+            use_module: TokenMatcher::new(r"use", Token::UseModule),
+            var_assign: TokenMatcher::new(r":=", Token::VarAssign),
         })
     }
 }

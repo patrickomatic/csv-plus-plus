@@ -39,7 +39,7 @@ impl Row {
                 .map(|(cell_index, cell)| {
                     let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
                     Cell {
-                        ast: cell.ast.map(|ast| ast.eval(scope, cell_a1)),
+                        ast: cell.ast.map(|ast| ast.eval(scope, Some(cell_a1))),
                         ..cell
                     }
                 })

@@ -31,7 +31,24 @@ pub(super) struct ModuleLoader<'a> {
     failed: Failed,
 }
 
+macro_rules! merge_scopes {
+    ($scope_a:expr, $scope_b:expr) => {
+        for (var_name, ast) in $scope_b.variables.clone().into_iter() {
+            $scope_a
+                .variables
+                .insert(var_name, ast.eval(&$scope_b, None));
+        }
+        for (fn_name, ast) in $scope_b.functions.clone().into_iter() {
+            $scope_a
+                .functions
+                .insert(fn_name, ast.eval(&$scope_b, None));
+        }
+    };
+}
+
 /// Extract all direct dependencies on `scope`.  
+// TODO:
+// * see if we can cut down on `clone()`s throughout
 fn direct_dependencies(module_path: &ModulePath, scope: &Scope, loaded: LoadedModules) -> Scope {
     // TODO: this whole thing could probably be cleaned up if we built the adjacency list in an
     // array and managed it ourselves and got rid of the `nodes` HashMap
@@ -77,29 +94,29 @@ fn direct_dependencies(module_path: &ModulePath, scope: &Scope, loaded: LoadedMo
     let mut dep_scope = Scope::default();
     let mut tmp_scope = Scope::default();
 
-    for dep in resolution_order {
+    // TODO: can I get rid of some of the clones in here? (the merge_scopes! macro has some too)
+    for dep in resolution_order.into_iter() {
         match dep.relation {
             DependencyRelation::Direct => {
-                // we're on the last one -
-                for (var_name, ast) in dep.scope.variables.clone().into_iter() {
-                    // XXX eval it
-                    dep_scope.variables.insert(var_name, ast);
-                }
-                for (fn_name, ast) in dep.scope.functions.clone().into_iter() {
-                    // XXX eval it
-                    dep_scope.functions.insert(fn_name, ast);
-                }
+                // for direct dependencies, we want the names to be exposed to the module
+                // requiring them.  so merge into `dep_scope` instead of `tmp_scope` (which we'll
+                // be abandoning after this function runs)
+                merge_scopes!(dep_scope, dep.scope);
             }
 
             DependencyRelation::Transitive => {
-                // TODO: we could optimize this by not evaling if required_modules.is_empty()
-                for (var_name, ast) in dep.scope.variables.clone().into_iter() {
-                    // XXX eval it
-                    tmp_scope.variables.insert(var_name, ast);
-                }
-                for (fn_name, ast) in dep.scope.functions.clone().into_iter() {
-                    // XXX eval it
-                    tmp_scope.functions.insert(fn_name, ast);
+                // build up transitive dependencies in a global "tmp" namespace, but we'll *not* be
+                // exposing this namespace to the main module since it should only get the direct
+                // dependencies
+                if dep.scope.required_modules.is_empty() {
+                    tmp_scope
+                        .functions
+                        .extend(dep.scope.functions.clone().into_iter());
+                    tmp_scope
+                        .variables
+                        .extend(dep.scope.variables.clone().into_iter());
+                } else {
+                    merge_scopes!(tmp_scope, dep.scope);
                 }
             }
         }

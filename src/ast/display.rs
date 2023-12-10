@@ -140,7 +140,7 @@ mod tests {
     fn display_var() {
         assert_eq!(
             "foo := 1",
-            Node::var("foo", VariableValue::Ast(Ast::new(1.into()))).to_string()
+            Node::var("foo", VariableValue::Ast(1.into())).to_string()
         );
     }
 }

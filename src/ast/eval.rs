@@ -10,7 +10,7 @@ impl Ast {
     /// The idea here is just to keep looping as long as we are making progress eval()ing. Where
     /// progress means that `.extract_references()` returns a different, non-empty result each
     /// time.
-    pub(crate) fn eval(self, scope: &Scope, position: a1_notation::Address) -> Ast {
+    pub(crate) fn eval(self, scope: &Scope, position: Option<a1_notation::Address>) -> Ast {
         let mut evaled_ast = self;
         let mut last_round_refs = AstReferences::default();
 
@@ -35,7 +35,7 @@ impl Ast {
         &self,
         scope: &Scope,
         var_names: &[String],
-        position: a1_notation::Address,
+        position: Option<a1_notation::Address>,
     ) -> collections::HashMap<String, Ast> {
         let mut resolved_vars = collections::HashMap::new();
         for var_name in var_names {

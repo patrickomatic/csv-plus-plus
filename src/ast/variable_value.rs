@@ -1,5 +1,5 @@
 use super::Ast;
-use crate::Fill;
+use crate::{compiler_error, Fill};
 
 /// The variable a value can have will depend on a variety of contexts
 #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
@@ -50,46 +50,60 @@ pub enum VariableValue {
 }
 
 impl VariableValue {
-    pub(crate) fn into_ast(self, position: a1_notation::Address) -> Ast {
-        match self {
-            // absolute value, just turn it into a Ast
-            VariableValue::Absolute(address) => Ast::new(address.into()),
+    pub(crate) fn into_ast(self, position: Option<a1_notation::Address>) -> Ast {
+        if let Some(position) = position {
+            match self {
+                // absolute value, just turn it into a Ast
+                VariableValue::Absolute(address) => Ast::new(address.into()),
 
-            // already an AST, just return it
-            VariableValue::Ast(ast) => ast,
+                // already an AST, just return it
+                VariableValue::Ast(ast) => ast,
 
-            // it's relative to a fill - so if it's referenced inside the
-            // fill, it's the value at that location.  If it's outside the fill
-            // it's the range that it represents
-            VariableValue::ColumnRelative { fill, column } => {
-                let fill_a1: a1_notation::A1 = fill.into();
+                // it's relative to a fill - so if it's referenced inside the
+                // fill, it's the value at that location.  If it's outside the fill
+                // it's the range that it represents
+                VariableValue::ColumnRelative { fill, column } => {
+                    let fill_a1: a1_notation::A1 = fill.into();
 
-                Ast::new(if fill_a1.contains(&position.into()) {
-                    position.with_x(column.x).into()
-                } else {
-                    let row_range: a1_notation::A1 = fill.into();
-                    row_range.with_x(column.x).into()
-                })
+                    Ast::new(if fill_a1.contains(&position.into()) {
+                        position.with_x(column.x).into()
+                    } else {
+                        let row_range: a1_notation::A1 = fill.into();
+                        row_range.with_x(column.x).into()
+                    })
+                }
+
+                VariableValue::Row(row) => {
+                    let a1: a1_notation::A1 = row.into();
+                    Ast::new(a1.into())
+                }
+
+                VariableValue::RowRelative { fill, .. } => {
+                    let fill_a1: a1_notation::A1 = fill.into();
+
+                    Ast::new(if fill_a1.contains(&position.into()) {
+                        // we're within the scope (fill) so it's the row we're on
+                        let row_a1: a1_notation::A1 = position.row.into();
+                        row_a1.into()
+                    } else {
+                        // we're outside the scope (fill), so it represents the entire
+                        // range contained by it (the scope)
+                        let row_range: a1_notation::A1 = fill.into();
+                        row_range.into()
+                    })
+                }
             }
-
-            VariableValue::Row(row) => {
-                let a1: a1_notation::A1 = row.into();
-                Ast::new(a1.into())
-            }
-
-            VariableValue::RowRelative { fill, .. } => {
-                let fill_a1: a1_notation::A1 = fill.into();
-
-                Ast::new(if fill_a1.contains(&position.into()) {
-                    // we're within the scope (fill) so it's the row we're on
-                    let row_a1: a1_notation::A1 = position.row.into();
-                    row_a1.into()
-                } else {
-                    // we're outside the scope (fill), so it represents the entire
-                    // range contained by it (the scope)
-                    let row_range: a1_notation::A1 = fill.into();
-                    row_range.into()
-                })
+        } else {
+            match self {
+                VariableValue::Absolute(address) => Ast::new(address.into()),
+                VariableValue::Ast(ast) => ast,
+                VariableValue::Row(row) => {
+                    let a1: a1_notation::A1 = row.into();
+                    Ast::new(a1.into())
+                }
+                _ => compiler_error(
+                    "Attempted to load a spreadsheet-relative value in a non-spreadsheet context",
+                ),
             }
         }
     }

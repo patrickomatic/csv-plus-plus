@@ -22,27 +22,22 @@ pub(crate) struct TokenLibrary {
 
 // TODO: re-use the regexes with the AST one
 impl TokenLibrary {
-    // once this lands I can get get rid of the unwraps and return a real error
-    // https://github.com/rust-lang/rust/issues/109737
-    // pub(crate) fn library() -> Result<&'static Self, Error> {
     pub(crate) fn library() -> &'static Self {
         static TOKEN_LIBRARY: sync::OnceLock<TokenLibrary> = sync::OnceLock::new();
 
         TOKEN_LIBRARY.get_or_init(|| Self {
             // a1_reference: TokenMatcher::new(r"[$!\w:]+", Token::A1)?,
-            close_parenthesis: TokenMatcher::new(r"\)", Token::CloseParenthesis).unwrap(),
+            close_parenthesis: TokenMatcher::new(r"\)", Token::CloseParenthesis),
             date: TokenMatcher::new(
                 r"(?:(?:\d\d\d\d\-\d\d\-\d\d)|(?:\d{1,2}\/\d{1,2}\/\d{2,4}))",
                 Token::Date,
-            )
-            .unwrap(),
-            identifier: TokenMatcher::new(r"\w+", Token::Identifier).unwrap(),
-            number: TokenMatcher::new(r"-?\d+(\.\d+)?", Token::Number).unwrap(),
+            ),
+            identifier: TokenMatcher::new(r"\w+", Token::Identifier),
+            number: TokenMatcher::new(r"-?\d+(\.\d+)?", Token::Number),
             single_quoted_string: TokenMatcher::new(
                 r"'(?:[^'\\]|\\(?:['\\/bfnrt]|u[0-9a-fA-F]{4}))*'",
                 Token::String,
-            )
-            .unwrap(),
+            ),
         })
     }
 }
