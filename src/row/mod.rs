@@ -77,36 +77,31 @@ impl Row {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::*;
     use crate::*;
 
     #[test]
-    fn parse() {
-        // TODO
-    }
-
-    /*
-    #[test]
-    fn clone_to_row() {
-        let row = Row {
+    fn eval_simple_ast() {
+        assert!(Row {
             cells: vec![Cell {
-                value: "foo".to_string(),
+                ast: Some(1.into()),
                 ..Default::default()
             }],
-            fill: Some(Fill::new(22, Some(100))),
             ..Default::default()
-        };
-
-        assert_eq!(
-            row.clone_to_row(5.into()),
-            Row {
-                cells: vec![Cell {
-                    value: "foo".to_string(),
-                    ..Default::default()
-                }],
-                fill: Some(Fill::new(5, Some(100))),
-                ..Default::default()
-            }
-        );
+        }
+        .eval(build_source_code(), &Scope::default(), 0.into())
+        .is_ok());
     }
-    */
+
+    #[test]
+    fn parse() {
+        let row = Row::parse(
+            Ok(csv::StringRecord::from(vec!["a", "b", "c"])),
+            0.into(),
+            build_source_code(),
+        )
+        .unwrap();
+
+        assert_eq!(row.cells.len(), 3);
+    }
 }

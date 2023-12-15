@@ -37,7 +37,7 @@ impl Module {
         let s = self.spreadsheet.into_inner();
         let mut row_num = 0;
 
-        // XXX into_iter()
+        // TODO into_iter()
         for row in s.rows.iter() {
             if let Some(f) = row.fill {
                 let new_fill = f.clone_to_row(row_num);

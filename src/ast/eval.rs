@@ -232,89 +232,15 @@ mod tests {
         assert!(ast.clone().eval(&scope, None).is_err());
     }
 
-    /*
     #[test]
-    fn eval_variables_nomatch() {
+    fn eval_variable() {
         let ast = Ast::new(Node::reference("foo"));
-        let mut values = collections::HashMap::new();
-        values.insert("bar".to_string(), Ast::new(1.into()));
-
-        assert_eq!(
-            Ast::new(ast.clone().into_inner().eval_variables(values)),
-            ast
+        let mut scope = Scope::default();
+        scope.variables.insert(
+            "foo".to_string(),
+            Node::var("foo", VariableValue::Ast(1.into())).into(),
         );
+
+        assert_eq!(ast.clone().eval(&scope, None).unwrap(), 1.into());
     }
-
-    #[test]
-    fn eval_variables_replaced() {
-        let ast = Ast::new(Node::reference("foo"));
-        let mut values = collections::HashMap::new();
-        values.insert("foo".to_string(), Ast::new(1.into()));
-
-        assert_eq!(
-            Ast::new(ast.into_inner().eval_variables(values)),
-            Ast::new(1.into())
-        );
-    }
-
-    #[test]
-    fn eval_variables_multiple() {
-        let ast = Ast::new(Node::fn_call(
-            "my_func",
-            &[Node::reference("foo"), Node::reference("bar")],
-        ));
-        let mut values = collections::HashMap::new();
-        values.insert("foo".to_string(), Ast::new(1.into()));
-        values.insert("bar".to_string(), Ast::new(2.into()));
-
-        assert_eq!(
-            Ast::new(ast.into_inner().eval_variables(values)),
-            Ast::new(Node::fn_call("my_func", &[1.into(), 2.into()]))
-        );
-    }
-
-    #[test]
-    fn eval_variables_nested_fn_call() {
-        let ast = Ast::new(Node::fn_call(
-            "outer_func",
-            &[Node::fn_call(
-                "my_func",
-                &[Node::reference("foo"), Node::reference("bar")],
-            )],
-        ));
-        let mut values = collections::HashMap::new();
-        values.insert("foo".to_string(), Ast::new(1.into()));
-        values.insert("bar".to_string(), Ast::new(2.into()));
-
-        assert_eq!(
-            Ast::new(ast.into_inner().eval_variables(values)),
-            Ast::new(Node::fn_call(
-                "outer_func",
-                &[Node::fn_call("my_func", &[1.into(), 2.into()])]
-            ))
-        );
-    }
-
-    #[test]
-    fn eval_variables_nested_infix_fn_call() {
-        let ast = Ast::new(Node::infix_fn_call(
-            Node::fn_call("my_func", &[Node::reference("foo"), Node::reference("bar")]),
-            "*",
-            5.into(),
-        ));
-
-        let mut values = collections::HashMap::new();
-        values.insert("foo".to_string(), Ast::new(3.into()));
-        values.insert("bar".to_string(), Ast::new(4.into()));
-
-        assert_eq!(
-            Ast::new(ast.into_inner().eval_variables(values)),
-            Ast::new(Node::infix_fn_call(
-                Node::fn_call("my_func", &[3.into(), 4.into()]),
-                "*",
-                5.into()
-            ))
-        );
-    }
-    */
 }

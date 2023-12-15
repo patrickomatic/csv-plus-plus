@@ -98,7 +98,7 @@ mod tests {
     fn is_authorized_user_true() {
         let test_file = TestFile::new("json", "{\"type\": \"authorized_user\"}");
         let creds = Credentials {
-            file: test_file.0.clone(),
+            file: test_file.path.clone(),
         };
         assert!(creds.is_authorized_user().unwrap());
     }
@@ -107,7 +107,7 @@ mod tests {
     fn is_authorized_user_false() {
         let test_file = TestFile::new("json", "{}");
         let creds = Credentials {
-            file: test_file.0.clone(),
+            file: test_file.path.clone(),
         };
         assert!(!creds.is_authorized_user().unwrap());
     }
@@ -116,7 +116,7 @@ mod tests {
     fn is_service_account_true() {
         let test_file = TestFile::new("json", "{\"type\": \"service_account\"}");
         let creds = Credentials {
-            file: test_file.0.clone(),
+            file: test_file.path.clone(),
         };
         assert!(creds.is_service_account().unwrap());
     }
@@ -125,7 +125,7 @@ mod tests {
     fn is_service_account_false() {
         let test_file = TestFile::new("json", "{}");
         let creds = Credentials {
-            file: test_file.0.clone(),
+            file: test_file.path.clone(),
         };
         assert!(!creds.is_service_account().unwrap());
     }
@@ -142,7 +142,7 @@ mod tests {
         let test_file = TestFile::new("json", "{\"type\": \"service_account\"}");
         env::set_var(
             "GOOGLE_APPLICATION_CREDENTIALS",
-            test_file.0.to_string_lossy().to_string(),
+            test_file.path.to_string_lossy().to_string(),
         );
         let compiler = build_compiler();
 
@@ -153,8 +153,14 @@ mod tests {
     fn try_from_options() {
         let test_file = TestFile::new("json", "{\"type\": \"service_account\"}");
         let mut compiler = build_compiler();
-        compiler.options.google_account_credentials =
-            Some(test_file.0.clone().into_os_string().into_string().unwrap());
+        compiler.options.google_account_credentials = Some(
+            test_file
+                .path
+                .clone()
+                .into_os_string()
+                .into_string()
+                .unwrap(),
+        );
 
         assert!(Credentials::try_from(&compiler).is_ok());
     }

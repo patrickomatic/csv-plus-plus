@@ -3,6 +3,8 @@
 //! A multithreaded module loader that will resursively load the dependencies for a given
 //! `Scope`.
 //!
+// TODO:
+// * make it so that `---` is not required
 use crate::parser::code_section_parser::CodeSectionParser;
 use crate::{ArcSourceCode, Error, ModulePath, Result, Scope, SourceCode};
 use petgraph::graph;
@@ -31,18 +33,11 @@ pub(super) struct ModuleLoader<'a> {
     failed: Failed,
 }
 
-macro_rules! merge_scopes {
-    ($scope:expr, $dep:expr) => {
-        for (var_name, ast) in $dep.scope.variables.clone().into_iter() {
-            $scope.variables.insert(
+macro_rules! merge {
+    ($scope:expr, $dep:expr, $functions_or_variables:ident) => {
+        for (var_name, ast) in $dep.scope.$functions_or_variables.clone().into_iter() {
+            $scope.$functions_or_variables.insert(
                 var_name,
-                ast.eval(&$dep.scope, None)
-                    .map_err(|e| $dep.source_code.eval_error(e, None))?,
-            );
-        }
-        for (fn_name, ast) in $dep.scope.functions.clone().into_iter() {
-            $scope.functions.insert(
-                fn_name,
                 ast.eval(&$dep.scope, None)
                     .map_err(|e| $dep.source_code.eval_error(e, None))?,
             );
@@ -50,15 +45,21 @@ macro_rules! merge_scopes {
     };
 }
 
+macro_rules! merge_scopes {
+    ($scope:expr, $dep:expr) => {
+        merge!($scope, $dep, variables);
+        merge!($scope, $dep, functions);
+    };
+}
+
 // TODO:
 // * get rid of unwrap()s
 // * see if I can reduce the clone()s
 impl<'a> ModuleLoader<'a> {
-    /// Recursively load the dependencies from the given `scope`. This function does not
-    /// return any `Result` and instead collects errors into `failed` and successes into `loaded`.
-    /// The idea being that we want to show as many errors as possible to the user (otherwise it's
-    /// annoying to have them fix and re-compile one-by-one), so we accumulate and keep going.  But
-    /// in the end fail if there are any errors at all.
+    /// Recursively load the dependencies from the given `scope` while collecting any errors into
+    /// `failed` and sucesses into `loaded`. The idea being that we want to show as many errors as
+    /// possible to the user (otherwise it's annoying to have them fix and re-compile one-by-one),
+    /// so we accumulate and keep going.  But in the end fail if there are any errors at all.
     pub(super) fn load_main(
         module_path: &'a ModulePath,
         scope: &'a Scope,
@@ -138,7 +139,7 @@ impl<'a> ModuleLoader<'a> {
             match dep.relation {
                 DependencyRelation::Direct => {
                     // for direct dependencies, we want the names to be exposed to the module
-                    // requiring them.  so merge into `dep.scope` instead of `tmp_scope` (which we'll
+                    // requiring them.  so merge into `dep_scope` instead of `tmp_scope` (which we'll
                     // be abandoning after this function runs)
                     merge_scopes!(dep_scope, dep);
                 }
@@ -201,7 +202,6 @@ impl<'a> ModuleLoader<'a> {
         module_path: ModulePath,
         dependency_relation: DependencyRelation,
     ) -> Result<()> {
-        // TODO: I think each thread needs to cd into the directory...
         let p: path::PathBuf = module_path.clone().into();
 
         // load the source code
@@ -213,7 +213,7 @@ impl<'a> ModuleLoader<'a> {
             }
         };
 
-        // parse the code section out
+        // parse the code section
         if let Some(scope_source) = &source_code.code_section {
             // TODO: this should use the csvpo cache if there is one
             match CodeSectionParser::parse(scope_source, source_code.clone()) {
@@ -238,7 +238,9 @@ impl<'a> ModuleLoader<'a> {
         } else {
             self.failed.write()?.insert(
                 module_path.clone(),
-                Error::ModuleLoadError("This module does not have a code section".to_string()),
+                Error::ModuleLoadError(
+                    "This module does not have a code section (but you imported it)".to_string(),
+                ),
             );
         }
 
@@ -249,29 +251,136 @@ impl<'a> ModuleLoader<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ast::*;
+    use crate::test_utils::*;
     use crate::*;
 
     #[test]
     fn load_main_empty() {
-        let module_path = ModulePath(vec!["foo".to_string()]);
+        let module_path = ModulePath::new("foo");
 
         assert!(ModuleLoader::load_main(&module_path, &Scope::default()).is_ok());
     }
 
     #[test]
     fn load_main_require_does_not_exist() {
-        let module_path = ModulePath(vec!["foo".to_string()]);
+        let module_path = ModulePath::new("foo");
         let scope = Scope {
             required_modules: vec![module_path.clone()],
             ..Default::default()
         };
         let module_loader = ModuleLoader::load_main(&module_path, &scope).unwrap();
-        assert!(!module_loader.failed.read().unwrap().is_empty());
+
+        assert_eq!(module_loader.failed.read().unwrap().len(), 1);
+        assert_eq!(module_loader.attempted.read().unwrap().len(), 1);
+        assert_eq!(module_loader.loaded.read().unwrap().len(), 0);
     }
 
     #[test]
-    fn load_main_circular() {
-        // XXX
+    fn load_main_valid_files() {
+        let mod1 = TestFile::new(
+            "csvpp",
+            "
+a := 42
+---
+        ",
+        );
+        let mod2 = TestFile::new(
+            "csvpp",
+            "
+b := 24
+---
+        ",
+        );
+        let mod1_path: ModulePath = (&mod1).into();
+        let mod2_path: ModulePath = (&mod2).into();
+        let scope = Scope {
+            required_modules: vec![mod1_path.clone(), mod2_path.clone()],
+            ..Default::default()
+        };
+        let module_path = ModulePath::new("main");
+        let module_loader = ModuleLoader::load_main(&module_path, &scope).unwrap();
+        let loaded = module_loader.loaded.read().unwrap();
+
+        assert_eq!(loaded.len(), 2);
+        assert_eq!(module_loader.attempted.read().unwrap().len(), 2);
+        assert_eq!(module_loader.failed.read().unwrap().len(), 0);
+        assert_eq!(
+            loaded
+                .get(&mod1_path)
+                .unwrap()
+                .scope
+                .variables
+                .get("a")
+                .unwrap(),
+            &Ast::new(Node::var("a", VariableValue::Ast(42.into()))),
+        );
+        assert_eq!(
+            loaded
+                .get(&mod2_path)
+                .unwrap()
+                .scope
+                .variables
+                .get("b")
+                .unwrap(),
+            &Ast::new(Node::var("b", VariableValue::Ast(24.into()))),
+        );
+    }
+
+    #[test]
+    fn load_in_directory() {
+        let module = TestFile::new_in_dir(
+            "csvpp",
+            "
+a := 42
+---
+        ",
+        );
+        let module_path: ModulePath = (&module).into();
+        let scope = Scope {
+            required_modules: vec![module_path.clone()],
+            ..Default::default()
+        };
+        let module_path = ModulePath::new("main");
+        let module_loader = ModuleLoader::load_main(&module_path, &scope).unwrap();
+
+        assert_eq!(module_loader.loaded.read().unwrap().len(), 1);
+        assert_eq!(module_loader.attempted.read().unwrap().len(), 1);
+        assert_eq!(module_loader.failed.read().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn load_main_double_load() {
+        let mod1 = TestFile::new(
+            "csvpp",
+            "
+a := 42
+---
+        ",
+        );
+        let mod1_path: ModulePath = (&mod1).into();
+        let mod2 = TestFile::new(
+            "csvpp",
+            &format!(
+                "
+use {mod1_path}
+b := 24
+---
+        "
+            ),
+        );
+        let mod2_path: ModulePath = (&mod2).into();
+        let scope = Scope {
+            required_modules: vec![mod1_path.clone(), mod2_path.clone()],
+            ..Default::default()
+        };
+        let module_path = ModulePath::new("main");
+        let module_loader = ModuleLoader::load_main(&module_path, &scope).unwrap();
+        let loaded = module_loader.loaded.read().unwrap();
+
+        assert_eq!(loaded.len(), 2);
+        assert_eq!(module_loader.attempted.read().unwrap().len(), 2);
+        assert_eq!(module_loader.failed.read().unwrap().len(), 0);
     }
 
     /*
