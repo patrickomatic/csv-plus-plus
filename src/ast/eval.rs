@@ -3,14 +3,18 @@
 //! The main functions for evaluating a function or variable.
 //!
 use super::{Ast, AstReferences, FunctionName, Node};
-use crate::Scope;
+use crate::{EvalError, EvalResult, Scope};
 use std::collections;
 
 impl Ast {
     /// The idea here is just to keep looping as long as we are making progress eval()ing. Where
     /// progress means that `.extract_references()` returns a different, non-empty result each
     /// time.
-    pub(crate) fn eval(self, scope: &Scope, position: Option<a1_notation::Address>) -> Ast {
+    pub(crate) fn eval(
+        self,
+        scope: &Scope,
+        position: Option<a1_notation::Address>,
+    ) -> EvalResult<Ast> {
         let mut evaled_ast = self;
         let mut last_round_refs = AstReferences::default();
 
@@ -23,10 +27,10 @@ impl Ast {
 
             evaled_ast = evaled_ast
                 .eval_variables(evaled_ast.resolve_variables(scope, &refs.variables, position))
-                .eval_functions(&refs.functions, scope);
+                .eval_functions(&refs.functions, scope)?;
         }
 
-        evaled_ast
+        Ok(evaled_ast)
     }
 
     /// Variables can all be resolved in one go - we just loop them by name and resolve the ones
@@ -55,11 +59,11 @@ impl Ast {
     /// Evaluate the given `functions` calling `resolve_fn` upon each occurence to render a
     /// replacement.  Unlike variable resolution, we can't produce the values up front because the
     /// resolution function requires being called with the `arguments` at the call site.
-    fn eval_functions(self, fns_to_resolve: &[FunctionName], scope: &Scope) -> Ast {
+    fn eval_functions(self, fns_to_resolve: &[FunctionName], scope: &Scope) -> EvalResult<Ast> {
         let mut evaled_ast = self;
         for fn_name in fns_to_resolve {
             if let Some(fn_ast) = scope.functions.get(fn_name) {
-                evaled_ast = evaled_ast.call_function(fn_name, fn_ast);
+                evaled_ast = evaled_ast.call_function(fn_name, fn_ast)?;
             } else {
                 // TODO: log a warning that we tried to resolve an unknown function
                 // this is one of those things that should never happen (since `fns_to_resolve`
@@ -67,7 +71,7 @@ impl Ast {
             }
         }
 
-        evaled_ast
+        Ok(evaled_ast)
     }
 
     /// Use the mapping in `variable_values` to replace each variable referenced in the AST with
@@ -84,9 +88,9 @@ impl Ast {
     /// Do a depth-first-search on the AST, "calling" the function wherever we see a
     /// `Node::FunctionCall` with the matching name.  Calling a function can result in two main
     /// paths:
-    fn call_function(self, fn_id: &str, fn_ast: &Ast) -> Self {
+    fn call_function(self, fn_id: &str, fn_ast: &Ast) -> EvalResult<Self> {
         let inner = self.into_inner();
-        match inner {
+        Ok(match inner {
             Node::FunctionCall { args, name } if name == fn_id => {
                 match (*fn_ast).clone().into_inner() {
                     // when we get a `Node::Function`, take the body and replace each of it's
@@ -106,6 +110,17 @@ impl Ast {
                         body,
                         ..
                     } => {
+                        if args.len() != resolved_args.len() {
+                            return Err(EvalError::new(
+                                fn_ast.to_string(),
+                                format!(
+                                    "Expected {} arguments but received {}",
+                                    args.len(),
+                                    resolved_args.len()
+                                ),
+                            ));
+                        }
+
                         let mut evaled_body = body;
                         for (i, resolved_arg) in resolved_args.iter().enumerate() {
                             evaled_body =
@@ -126,7 +141,7 @@ impl Ast {
             Node::FunctionCall { args, name } => {
                 let mut called_args = vec![];
                 for arg in args {
-                    called_args.push(arg.call_function(fn_id, fn_ast));
+                    called_args.push(arg.call_function(fn_id, fn_ast)?);
                 }
 
                 Node::fn_call(name, &called_args).into()
@@ -138,15 +153,15 @@ impl Ast {
                 operator,
                 right,
             } => Node::infix_fn_call(
-                left.call_function(fn_id, fn_ast),
+                left.call_function(fn_id, fn_ast)?,
                 operator,
-                right.call_function(fn_id, fn_ast),
+                right.call_function(fn_id, fn_ast)?,
             )
             .into(),
 
             // otherwise just don't modify it
             _ => inner.clone().into(),
-        }
+        })
     }
 
     /// Depth-first-search replacing `Node::Reference`s of `var_id` with `replacement`.
@@ -185,45 +200,39 @@ impl Ast {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ast::*;
 
-    /*
     #[test]
-    fn eval_functions_nomatch() {
-        let ast = Ast::new(Node::reference("foo"));
-        let scope = Scope::default();
-
-        assert_eq!(
-            ast,
-            Ast::new(
-                ast.clone()
-                    .into_inner()
-                    .eval_functions(&["bar".to_owned(), "baz".to_owned()], &scope)
-            )
-        );
+    fn eval_unknown_function() {
+        let ast = Ast::new(Node::fn_call("foo", &[Ast::from(1)]));
+        assert_eq!(ast.clone().eval(&Scope::default(), None).unwrap(), ast);
     }
 
     #[test]
-    fn eval_functions_user_defined() {
-        let ast = Ast::new(Node::fn_call("my_func", &[1.into(), 2.into()]));
+    fn eval_known_function() {
+        let ast = Ast::new(Node::fn_call("foo", &[Ast::from(1), 2.into()]));
         let mut scope = Scope::default();
         scope.functions.insert(
-            "my_func".to_string(),
-            Ast::new(Node::fn_def(
-                "my_func",
-                &["a", "b"],
-                Node::infix_fn_call(Node::reference("a"), "+", Node::reference("b")),
-            )),
+            "foo".to_string(),
+            Node::fn_def("foo", &["a", "b"], Ast::from(1)).into(),
         );
 
-        assert_eq!(
-            Ast::new(Node::infix_fn_call(1.into(), "+", 2.into())),
-            Ast::new(
-                ast.into_inner()
-                    .eval_functions(&["my_func".to_owned()], &scope)
-            )
-        );
+        assert_eq!(ast.clone().eval(&scope, None).unwrap(), 1.into());
     }
 
+    #[test]
+    fn eval_known_function_wrong_number_of_args() {
+        let ast = Ast::new(Node::fn_call("foo", &[Ast::from(1)]));
+        let mut scope = Scope::default();
+        scope.functions.insert(
+            "foo".to_string(),
+            Node::fn_def("foo", &["a", "b"], Ast::from(1)).into(),
+        );
+
+        assert!(ast.clone().eval(&scope, None).is_err());
+    }
+
+    /*
     #[test]
     fn eval_variables_nomatch() {
         let ast = Ast::new(Node::reference("foo"));

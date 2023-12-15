@@ -32,99 +32,27 @@ pub(super) struct ModuleLoader<'a> {
 }
 
 macro_rules! merge_scopes {
-    ($scope_a:expr, $scope_b:expr) => {
-        for (var_name, ast) in $scope_b.variables.clone().into_iter() {
-            $scope_a
-                .variables
-                .insert(var_name, ast.eval(&$scope_b, None));
+    ($scope:expr, $dep:expr) => {
+        for (var_name, ast) in $dep.scope.variables.clone().into_iter() {
+            $scope.variables.insert(
+                var_name,
+                ast.eval(&$dep.scope, None)
+                    .map_err(|e| $dep.source_code.eval_error(e, None))?,
+            );
         }
-        for (fn_name, ast) in $scope_b.functions.clone().into_iter() {
-            $scope_a
-                .functions
-                .insert(fn_name, ast.eval(&$scope_b, None));
+        for (fn_name, ast) in $dep.scope.functions.clone().into_iter() {
+            $scope.functions.insert(
+                fn_name,
+                ast.eval(&$dep.scope, None)
+                    .map_err(|e| $dep.source_code.eval_error(e, None))?,
+            );
         }
     };
 }
 
-/// Extract all direct dependencies on `scope`.  
 // TODO:
-// * see if we can cut down on `clone()`s throughout
-fn direct_dependencies(module_path: &ModulePath, scope: &Scope, loaded: LoadedModules) -> Scope {
-    // TODO: this whole thing could probably be cleaned up if we built the adjacency list in an
-    // array and managed it ourselves and got rid of the `nodes` HashMap
-    let mut nodes = collections::HashMap::new();
-
-    let mut dep_graph: graph::Graph<_, ()> = graph::Graph::new();
-    let main_node = dep_graph.add_node(module_path);
-    nodes.insert(module_path, main_node);
-
-    // load all of the direct dependencies
-    for p in &scope.required_modules {
-        let n = dep_graph.add_node(p);
-        nodes.insert(p, n);
-        dep_graph.add_edge(main_node, n, ());
-    }
-
-    // and now all of the transitive dependencies (that have already been flattened out into a
-    // HashMap).  this code is a little awkward because we need to consult with `added` to see
-    // if we've already added the node
-    // TODO: consume loaded so we don't have to clone below
-    for (p, dep) in &loaded {
-        let path_node = if let Some(pn) = nodes.get(p) {
-            *pn
-        } else {
-            let pn = dep_graph.add_node(p);
-            nodes.insert(p, pn);
-            pn
-        };
-
-        for dep in &dep.scope.required_modules {
-            let n = nodes.entry(dep).or_insert_with(|| dep_graph.add_node(dep));
-            dep_graph.add_edge(path_node, *n, ());
-        }
-    }
-
-    // now that we have a graph, use Tarjan's algo to give us a topological sort which will
-    // represent the dependencies in the order they need to be resolved.
-    let resolution_order = petgraph::algo::tarjan_scc(&dep_graph)
-        .into_iter()
-        .flatten()
-        .filter_map(|n| loaded.get(dep_graph[n]));
-
-    let mut dep_scope = Scope::default();
-    let mut tmp_scope = Scope::default();
-
-    // TODO: can I get rid of some of the clones in here? (the merge_scopes! macro has some too)
-    for dep in resolution_order.into_iter() {
-        match dep.relation {
-            DependencyRelation::Direct => {
-                // for direct dependencies, we want the names to be exposed to the module
-                // requiring them.  so merge into `dep_scope` instead of `tmp_scope` (which we'll
-                // be abandoning after this function runs)
-                merge_scopes!(dep_scope, dep.scope);
-            }
-
-            DependencyRelation::Transitive => {
-                // build up transitive dependencies in a global "tmp" namespace, but we'll *not* be
-                // exposing this namespace to the main module since it should only get the direct
-                // dependencies
-                if dep.scope.required_modules.is_empty() {
-                    tmp_scope
-                        .functions
-                        .extend(dep.scope.functions.clone().into_iter());
-                    tmp_scope
-                        .variables
-                        .extend(dep.scope.variables.clone().into_iter());
-                } else {
-                    merge_scopes!(tmp_scope, dep.scope);
-                }
-            }
-        }
-    }
-
-    dep_scope
-}
-
+// * get rid of unwrap()s
+// * see if I can reduce the clone()s
 impl<'a> ModuleLoader<'a> {
     /// Recursively load the dependencies from the given `scope`. This function does not
     /// return any `Result` and instead collects errors into `failed` and successes into `loaded`.
@@ -145,6 +73,99 @@ impl<'a> ModuleLoader<'a> {
         module_loader.load(scope, DependencyRelation::Direct)?;
 
         Ok(module_loader)
+    }
+
+    /// Returns only the direct dependencies for this module graph.  For example if our Module A
+    /// requires Module B which in turn requires Module C, we will only get vars & functions from
+    /// Module B, not from Module C (or any other indirect dependencies)
+    pub(super) fn into_direct_dependencies(self) -> Result<Scope> {
+        if self.has_failures() {
+            let failed = sync::Arc::try_unwrap(self.failed).unwrap().into_inner()?;
+            Err(Error::ModuleLoadErrors(failed))
+        } else {
+            self.direct_dependencies()
+        }
+    }
+
+    /// Extract all direct dependencies on `scope`.  
+    fn direct_dependencies(self) -> Result<Scope> {
+        let loaded = sync::Arc::try_unwrap(self.loaded).unwrap().into_inner()?;
+        // TODO: this whole thing could probably be cleaned up if we built the adjacency list in an
+        // array and managed it ourselves and got rid of the `nodes` HashMap
+        let mut nodes = collections::HashMap::new();
+
+        let mut dep_graph: graph::Graph<_, ()> = graph::Graph::new();
+        let main_node = dep_graph.add_node(self.main_module_path);
+        nodes.insert(self.main_module_path, main_node);
+
+        // load all of the direct dependencies
+        for p in &self.main_scope.required_modules {
+            let n = dep_graph.add_node(p);
+            nodes.insert(p, n);
+            dep_graph.add_edge(main_node, n, ());
+        }
+
+        // and now all of the transitive dependencies (that have already been flattened out into a
+        // HashMap).  this code is a little awkward because we need to consult with `added` to see
+        // if we've already added the node
+        // TODO: consume loaded so we don't have to clone below
+        for (p, dep) in &loaded {
+            let path_node = if let Some(pn) = nodes.get(p) {
+                *pn
+            } else {
+                let pn = dep_graph.add_node(p);
+                nodes.insert(p, pn);
+                pn
+            };
+
+            for dep in &dep.scope.required_modules {
+                let n = nodes.entry(dep).or_insert_with(|| dep_graph.add_node(dep));
+                dep_graph.add_edge(path_node, *n, ());
+            }
+        }
+
+        // now that we have a graph, use Tarjan's algo to give us a topological sort which will
+        // represent the dependencies in the order they need to be resolved.
+        let resolution_order = petgraph::algo::tarjan_scc(&dep_graph)
+            .into_iter()
+            .flatten()
+            .filter_map(|n| loaded.get(dep_graph[n]));
+
+        let mut dep_scope = Scope::default();
+        let mut tmp_scope = Scope::default();
+
+        for dep in resolution_order.into_iter() {
+            match dep.relation {
+                DependencyRelation::Direct => {
+                    // for direct dependencies, we want the names to be exposed to the module
+                    // requiring them.  so merge into `dep.scope` instead of `tmp_scope` (which we'll
+                    // be abandoning after this function runs)
+                    merge_scopes!(dep_scope, dep);
+                }
+
+                DependencyRelation::Transitive => {
+                    // build up transitive dependencies in a global "tmp" namespace, but we'll *not* be
+                    // exposing this namespace to the main module since it should only get the direct
+                    // dependencies
+                    if dep.scope.required_modules.is_empty() {
+                        tmp_scope
+                            .functions
+                            .extend(dep.scope.functions.clone().into_iter());
+                        tmp_scope
+                            .variables
+                            .extend(dep.scope.variables.clone().into_iter());
+                    } else {
+                        merge_scopes!(tmp_scope, dep);
+                    }
+                }
+            }
+        }
+
+        Ok(dep_scope)
+    }
+
+    fn has_failures(&self) -> bool {
+        !self.failed.try_read().unwrap().is_empty()
     }
 
     fn load(&self, scope: &Scope, dependency_relation: DependencyRelation) -> Result<()> {
@@ -206,6 +227,7 @@ impl<'a> ModuleLoader<'a> {
                         Dependency {
                             relation: dependency_relation,
                             scope: cs,
+                            source_code: source_code.clone(),
                         },
                     );
                 }
@@ -222,25 +244,6 @@ impl<'a> ModuleLoader<'a> {
 
         Ok(())
     }
-
-    /// Returns only the direct dependencies for this module graph.  For example if our Module A
-    /// requires Module B which in turn requires Module C, we will only get vars & functions from
-    /// Module B, not from Module C (or any other indirect dependencies)
-    pub(super) fn into_direct_dependencies(self) -> Result<Scope> {
-        // TODO: get rid of the unwraps
-        let failed = sync::Arc::try_unwrap(self.failed).unwrap().into_inner()?;
-
-        if failed.is_empty() {
-            let loaded = sync::Arc::try_unwrap(self.loaded).unwrap().into_inner()?;
-            Ok(direct_dependencies(
-                self.main_module_path,
-                self.main_scope,
-                loaded,
-            ))
-        } else {
-            Err(Error::ModuleLoadErrors(failed))
-        }
-    }
 }
 
 #[cfg(test)]
@@ -251,17 +254,19 @@ mod tests {
     #[test]
     fn load_main_empty() {
         let module_path = ModulePath(vec!["foo".to_string()]);
+
         assert!(ModuleLoader::load_main(&module_path, &Scope::default()).is_ok());
     }
 
     #[test]
-    fn load_main_multiple() {
+    fn load_main_require_does_not_exist() {
         let module_path = ModulePath(vec!["foo".to_string()]);
         let scope = Scope {
             required_modules: vec![module_path.clone()],
             ..Default::default()
         };
-        assert!(ModuleLoader::load_main(&module_path, &scope).is_ok());
+        let module_loader = ModuleLoader::load_main(&module_path, &scope).unwrap();
+        assert!(!module_loader.failed.read().unwrap().is_empty());
     }
 
     #[test]
@@ -269,18 +274,9 @@ mod tests {
         // XXX
     }
 
+    /*
     #[test]
-    fn into_dependencies() {
-        // XXX
-    }
-
-    #[test]
-    fn into_dependencies_failed_not_empty() {
-        // XXX
-    }
-
-    #[test]
-    fn direct_dependencies_empty() {
+    fn into_direct_dependencies_empty() {
         let scope = Scope::default();
         let module_path = ModulePath(vec!["main".to_string()]);
         let loaded = collections::HashMap::new();
@@ -291,7 +287,7 @@ mod tests {
     }
 
     #[test]
-    fn direct_dependencies_dag() {
+    fn into_direct_dependencies_dag() {
         // main -> a -> b -> c
         let scope = Scope {
             required_modules: vec![ModulePath(vec!["a".to_string()])],
@@ -321,9 +317,7 @@ mod tests {
             }),
         );
 
-        // assert!(
-        // direct_dependencies(&module_path, &scope, loaded).is_ok()
-        // );
+        assert!(direct_dependencies(&module_path, &scope, loaded).is_ok());
     }
 
     #[test]
@@ -337,4 +331,5 @@ mod tests {
         // direct_dependencies(&module_path, &scope, loaded).is_ok()
         // );
     }
+    */
 }

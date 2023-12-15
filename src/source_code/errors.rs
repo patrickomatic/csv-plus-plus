@@ -1,7 +1,7 @@
 //! It's common that we want to create errors with references to data that the `SourceCode` owns.
 //! In which case it makes sense to add some helper functions to do that
 use super::{CharOffset, LineNumber, SourceCode};
-use crate::error::{BadInput, ParseError};
+use crate::error::{BadInput, EvalError, ParseError};
 use crate::Error;
 use colored::Colorize;
 use std::cmp;
@@ -25,6 +25,18 @@ impl SourceCode {
         Error::CellSyntaxError {
             filename: self.filename.clone(),
             parse_error: Box::new(parse_error),
+            position,
+        }
+    }
+
+    pub(crate) fn eval_error(
+        &self,
+        eval_error: EvalError,
+        position: Option<a1_notation::Address>,
+    ) -> Error {
+        Error::EvalError {
+            filename: self.filename.clone(),
+            eval_error: Box::new(eval_error),
             position,
         }
     }

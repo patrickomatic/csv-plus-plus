@@ -26,18 +26,22 @@ impl fmt::Display for Error {
             }
 
             Self::EvalError {
-                message,
+                eval_error,
                 position,
                 filename,
             } => {
-                writeln!(
-                    f,
-                    "Error evaluating formula in cell {position} ({}, {}) of {}",
-                    position.column.x,
-                    position.row.y,
-                    filename.display()
-                )?;
-                writeln!(f, "{message}")
+                if let Some(position) = position {
+                    writeln!(
+                        f,
+                        "Error evaluating formula in cell {position} ({}, {}) of {}",
+                        position.column.x,
+                        position.row.y,
+                        filename.display()
+                    )?;
+                } else {
+                    writeln!(f, "Error evaluating formula in {}", filename.display())?;
+                }
+                writeln!(f, "{eval_error}")
             }
 
             Self::GoogleSetupError(message) => {
@@ -98,7 +102,7 @@ csv++ with `GOOGLE_APPLICATION_CREDENTIALS` or the `--google-account-credentials
 
 #[cfg(test)]
 mod tests {
-    use super::super::{Output, ParseError};
+    use super::super::{EvalError, Output, ParseError};
     use super::*;
     use std::path;
 
@@ -158,14 +162,17 @@ baz
     fn display_eval_error() {
         let message = Error::EvalError {
             filename: path::PathBuf::from("a_file.csvpp"),
-            message: "foo".to_string(),
-            position: a1_notation::Address::new(2, 2),
+            eval_error: Box::new(EvalError {
+                message: "Error".to_string(),
+                bad_input: "foo".to_string(),
+            }),
+            position: Some(a1_notation::Address::new(2, 2)),
         };
 
         assert_eq!(
             message.to_string(),
             "Error evaluating formula in cell C3 (2, 2) of a_file.csvpp
-foo
+Error: foo
 "
         );
     }

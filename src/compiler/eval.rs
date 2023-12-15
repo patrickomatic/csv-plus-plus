@@ -23,7 +23,7 @@ impl Compiler {
             };
 
             let module_path: ModulePath = self.source_code.filename.clone().try_into()?;
-            let compiled_module = self.eval(Module::load_main(spreadsheet, scope, module_path)?);
+            let compiled_module = self.eval(Module::load_main(spreadsheet, scope, module_path)?)?;
 
             self.progress("Compiled module");
             self.info(&compiled_module);
@@ -38,12 +38,12 @@ impl Compiler {
         })
     }
 
-    fn eval(&self, module: Module) -> Module {
+    fn eval(&self, module: Module) -> Result<Module> {
         self.progress("Evaluating module");
 
         module
             .eval_fills()
-            .eval_spreadsheet(self.options.key_values.clone())
+            .eval_spreadsheet(self.source_code.clone(), self.options.key_values.clone())
     }
 }
 

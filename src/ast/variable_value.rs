@@ -112,9 +112,128 @@ impl VariableValue {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ast::*;
+    use crate::*;
+    use std::panic;
+
+    fn build_position() -> a1_notation::Address {
+        a1_notation::Address::new(0, 0)
+    }
 
     #[test]
-    fn into_ast_absolute() {
-        // XXX
+    fn into_ast_absolute_some_position() {
+        assert_eq!(
+            VariableValue::Absolute(build_position()).into_ast(Some(build_position())),
+            a1_notation::cell(0, 0).into()
+        );
+    }
+
+    #[test]
+    fn into_ast_absolute_none_position() {
+        assert_eq!(
+            VariableValue::Absolute(a1_notation::Address::new(0, 0)).into_ast(None),
+            a1_notation::cell(0, 0).into()
+        );
+    }
+
+    #[test]
+    fn into_ast_ast_some_position() {
+        assert_eq!(
+            VariableValue::Ast(1.into()).into_ast(Some(build_position())),
+            1.into()
+        );
+    }
+
+    #[test]
+    fn into_ast_ast_none_position() {
+        assert_eq!(VariableValue::Ast(1.into()).into_ast(None), 1.into());
+    }
+
+    #[test]
+    fn into_ast_column_relative_none_position() {
+        assert!(panic::catch_unwind(|| {
+            VariableValue::ColumnRelative {
+                column: 5.into(),
+                fill: Fill::new(0, Some(20)),
+            }
+            .into_ast(None)
+        })
+        .is_err());
+    }
+
+    #[test]
+    fn into_ast_column_relative_some_position_in_fill() {
+        assert_eq!(
+            VariableValue::ColumnRelative {
+                column: 5.into(),
+                fill: Fill::new(0, Some(20)),
+            }
+            .into_ast(Some(build_position())),
+            Node::reference("F1").into()
+        );
+    }
+
+    #[test]
+    fn into_ast_column_relative_some_position_outside_fill() {
+        assert_eq!(
+            VariableValue::ColumnRelative {
+                column: 5.into(),
+                fill: Fill::new(20, Some(20)),
+            }
+            .into_ast(Some(build_position())),
+            Node::reference("F21:F40").into()
+        );
+    }
+
+    #[test]
+    fn into_ast_row_none_position() {
+        assert_eq!(
+            VariableValue::Row(1.into()).into_ast(None),
+            Node::reference("2:2").into()
+        );
+    }
+
+    #[test]
+    fn into_ast_row_some_position() {
+        assert_eq!(
+            VariableValue::Row(1.into()).into_ast(Some(build_position())),
+            Node::reference("2:2").into()
+        );
+    }
+
+    #[test]
+    fn into_ast_row_relative_none_position() {
+        assert!(panic::catch_unwind(|| {
+            VariableValue::RowRelative {
+                row: 5.into(),
+                fill: Fill::new(0, Some(20)),
+            }
+            .into_ast(None)
+        })
+        .is_err());
+    }
+
+    #[test]
+    fn into_ast_row_relative_some_position_in_fill() {
+        assert_eq!(
+            VariableValue::RowRelative {
+                row: 5.into(),
+                fill: Fill::new(0, Some(20)),
+            }
+            .into_ast(Some(build_position())),
+            Node::reference("1:1").into()
+        );
+    }
+
+    #[test]
+    fn into_ast_row_relative_some_position_outside_fill() {
+        assert_eq!(
+            VariableValue::RowRelative {
+                row: 5.into(),
+                fill: Fill::new(20, Some(20)),
+            }
+            .into_ast(Some(build_position())),
+            Node::reference("21:40").into()
+        );
     }
 }

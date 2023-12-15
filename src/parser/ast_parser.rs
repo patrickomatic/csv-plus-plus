@@ -252,12 +252,12 @@ mod tests {
             test_parse("1 * ((2 + 3) - 4) / 5"),
             Node::infix_fn_call(
                 Node::infix_fn_call(
-                    1.into(),
+                    1,
                     "*",
-                    Node::infix_fn_call(Node::infix_fn_call(2, "+", 3), "-", 4.into())
+                    Node::infix_fn_call(Node::infix_fn_call(2, "+", 3), "-", 4)
                 ),
                 "/",
-                5.into()
+                5
             )
             .into()
         );
@@ -268,7 +268,7 @@ mod tests {
         assert_eq!(
             test_parse("1 * 2 + 3 - 4 / 5"),
             Node::infix_fn_call(
-                Node::infix_fn_call(Node::infix_fn_call(1, "*", 2), "+", 3.into(),),
+                Node::infix_fn_call(Node::infix_fn_call(1, "*", 2), "+", 3),
                 "-",
                 Node::infix_fn_call(4, "/", 5),
             )

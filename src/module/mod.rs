@@ -10,7 +10,7 @@
 // * make sure there is only one infinite fill in the docs (ones can follow it, but they have to
 //      be finite and subtract from it
 use crate::ast::Variables;
-use crate::{Compiler, ModuleLoader, ModulePath, Result, Row, Scope, Spreadsheet};
+use crate::{ArcSourceCode, Compiler, ModuleLoader, ModulePath, Result, Row, Scope, Spreadsheet};
 use std::cell;
 use std::cmp;
 use std::fs;
@@ -37,7 +37,6 @@ impl Module {
         let s = self.spreadsheet.into_inner();
         let mut row_num = 0;
 
-        // XXX add test
         // XXX into_iter()
         for row in s.rows.iter() {
             if let Some(f) = row.fill {
@@ -62,7 +61,11 @@ impl Module {
     }
 
     // TODO: do this in parallel (thread for each cell)
-    pub(crate) fn eval_spreadsheet(self, external_vars: Variables) -> Self {
+    pub(crate) fn eval_spreadsheet(
+        self,
+        source_code: ArcSourceCode,
+        external_vars: Variables,
+    ) -> Result<Self> {
         let spreadsheet = self.spreadsheet.into_inner();
         let scope = self
             .scope
@@ -71,14 +74,14 @@ impl Module {
 
         let mut evaled_rows = vec![];
         for (row_index, row) in spreadsheet.rows.into_iter().enumerate() {
-            evaled_rows.push(row.eval(&scope, row_index.into()));
+            evaled_rows.push(row.eval(source_code.clone(), &scope, row_index.into())?);
         }
 
-        Self {
+        Ok(Self {
             scope,
             spreadsheet: cell::RefCell::new(Spreadsheet { rows: evaled_rows }),
             ..self
-        }
+        })
     }
 
     pub(crate) fn load_main(
@@ -194,6 +197,11 @@ mod tests {
     use crate::ast::*;
     use crate::*;
     use std::collections;
+
+    #[test]
+    fn eval_fills() {
+        // XXX
+    }
 
     #[test]
     fn load_main_with_scope() {

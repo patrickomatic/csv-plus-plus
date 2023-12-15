@@ -30,22 +30,27 @@ pub struct Row {
 }
 
 impl Row {
-    pub(crate) fn eval(self, scope: &Scope, row_a1: a1_notation::Row) -> Row {
-        Row {
-            cells: self
-                .cells
-                .into_iter()
-                .enumerate()
-                .map(|(cell_index, cell)| {
-                    let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
-                    Cell {
-                        ast: cell.ast.map(|ast| ast.eval(scope, Some(cell_a1))),
-                        ..cell
-                    }
-                })
-                .collect(),
-            ..self
+    pub(crate) fn eval(
+        self,
+        source_code: ArcSourceCode,
+        scope: &Scope,
+        row_a1: a1_notation::Row,
+    ) -> Result<Row> {
+        let mut cells = vec![];
+        for (cell_index, cell) in self.cells.into_iter().enumerate() {
+            let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
+            let ast = if let Some(a) = cell.ast {
+                Some(
+                    a.eval(scope, Some(cell_a1))
+                        .map_err(|e| source_code.eval_error(e, Some(cell_a1)))?,
+                )
+            } else {
+                None
+            };
+            cells.push(Cell { ast, ..cell });
         }
+
+        Ok(Row { cells, ..self })
     }
 
     pub(crate) fn parse(
