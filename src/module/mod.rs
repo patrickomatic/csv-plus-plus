@@ -37,8 +37,7 @@ impl Module {
         let s = self.spreadsheet.into_inner();
         let mut row_num = 0;
 
-        // TODO into_iter()
-        for row in s.rows.iter() {
+        for row in s.rows.into_iter() {
             if let Some(f) = row.fill {
                 let new_fill = f.clone_to_row(row_num);
                 for _ in 0..new_fill.fill_amount(row_num) {
@@ -49,7 +48,7 @@ impl Module {
                     row_num += 1;
                 }
             } else {
-                new_spreadsheet.rows.push(row.clone());
+                new_spreadsheet.rows.push(row);
                 row_num += 1;
             }
         }
@@ -60,7 +59,7 @@ impl Module {
         }
     }
 
-    // TODO: do this in parallel (thread for each cell)
+    // TODO: do this in parallel (thread for each row (maybe cell? with a threadpool))
     pub(crate) fn eval_spreadsheet(
         self,
         source_code: ArcSourceCode,
@@ -199,8 +198,59 @@ mod tests {
     use std::collections;
 
     #[test]
-    fn eval_fills() {
-        // XXX
+    fn eval_fills_finite() {
+        let spreadsheet = Spreadsheet {
+            rows: vec![
+                Row {
+                    fill: Some(Fill::new(0, Some(10))),
+                    ..Default::default()
+                },
+                Row {
+                    fill: Some(Fill::new(10, Some(30))),
+                    ..Default::default()
+                },
+            ],
+        };
+        let module = Module::load_main(spreadsheet, Scope::default(), ModulePath::new("foo"))
+            .unwrap()
+            .eval_fills();
+        let spreadsheet = module.spreadsheet.borrow();
+
+        assert_eq!(spreadsheet.rows.len(), 40);
+        // 0-9 should be Fill { amount: 10, start_row: 0 }
+        assert_eq!(spreadsheet.rows[0].fill.unwrap().start_row, 0.into());
+        assert_eq!(spreadsheet.rows[9].fill.unwrap().start_row, 0.into());
+        // and 10-39 should be Fill { amount: 30, start_row: 10 }
+        assert_eq!(spreadsheet.rows[10].fill.unwrap().start_row, 10.into());
+        assert_eq!(spreadsheet.rows[39].fill.unwrap().start_row, 10.into());
+    }
+
+    #[test]
+    fn eval_fills_infinite() {
+        let spreadsheet = Spreadsheet {
+            rows: vec![
+                Row {
+                    fill: Some(Fill::new(0, Some(10))),
+                    ..Default::default()
+                },
+                Row {
+                    fill: Some(Fill::new(10, None)),
+                    ..Default::default()
+                },
+            ],
+        };
+        let module = Module::load_main(spreadsheet, Scope::default(), ModulePath::new("foo"))
+            .unwrap()
+            .eval_fills();
+        let spreadsheet = module.spreadsheet.borrow();
+
+        assert_eq!(spreadsheet.rows.len(), 1000);
+        // 0-9 should be Fill { amount: 10, start_row: 0 }
+        assert_eq!(spreadsheet.rows[0].fill.unwrap().start_row, 0.into());
+        assert_eq!(spreadsheet.rows[9].fill.unwrap().start_row, 0.into());
+        // and 10-999 should be Fill { amount: None, start_row: 10 }
+        assert_eq!(spreadsheet.rows[10].fill.unwrap().start_row, 10.into());
+        assert_eq!(spreadsheet.rows[999].fill.unwrap().start_row, 10.into());
     }
 
     #[test]
@@ -214,12 +264,8 @@ mod tests {
             variables,
             ..Default::default()
         };
-        let module = Module::load_main(
-            Spreadsheet::default(),
-            scope,
-            ModulePath(vec!["foo".to_string()]),
-        )
-        .unwrap();
+        let module =
+            Module::load_main(Spreadsheet::default(), scope, ModulePath::new("foo")).unwrap();
 
         assert!(module.scope.functions.contains_key("foo"));
         assert!(module.scope.variables.contains_key("bar"));
@@ -230,7 +276,7 @@ mod tests {
         let module = Module::load_main(
             Spreadsheet::default(),
             Scope::default(),
-            ModulePath(vec!["foo".to_string()]),
+            ModulePath::new("foo"),
         )
         .unwrap();
 

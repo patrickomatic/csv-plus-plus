@@ -35,10 +35,10 @@ pub(super) struct ModuleLoader<'a> {
 
 macro_rules! merge {
     ($scope:expr, $dep:expr, $functions_or_variables:ident) => {
-        for (var_name, ast) in $dep.scope.$functions_or_variables.clone().into_iter() {
+        for (name, ast) in $dep.scope.$functions_or_variables.clone().into_iter() {
             $scope.$functions_or_variables.insert(
-                var_name,
-                ast.eval(&$dep.scope, None)
+                name,
+                ast.eval(&$scope, None)
                     .map_err(|e| $dep.source_code.eval_error(e, None))?,
             );
         }
@@ -106,8 +106,8 @@ impl<'a> ModuleLoader<'a> {
             dep_graph.add_edge(main_node, n, ());
         }
 
-        // and now all of the transitive dependencies (that have already been flattened out into a
-        // HashMap).  this code is a little awkward because we need to consult with `added` to see
+        // and now all of the transitive dependencies that have already been flattened out into a
+        // HashMap.  this code is a little awkward because we need to consult with `nodes` to see
         // if we've already added the node
         // TODO: consume loaded so we don't have to clone below
         for (p, dep) in &loaded {
@@ -254,6 +254,7 @@ mod tests {
     use crate::ast::*;
     use crate::test_utils::*;
     use crate::*;
+    use std::sync;
 
     #[test]
     fn load_main_empty() {
@@ -376,69 +377,112 @@ b := 24
         };
         let module_path = ModulePath::new("main");
         let module_loader = ModuleLoader::load_main(&module_path, &scope).unwrap();
-        let loaded = module_loader.loaded.read().unwrap();
 
-        assert_eq!(loaded.len(), 2);
+        assert_eq!(module_loader.loaded.read().unwrap().len(), 2);
         assert_eq!(module_loader.attempted.read().unwrap().len(), 2);
         assert_eq!(module_loader.failed.read().unwrap().len(), 0);
     }
 
-    /*
     #[test]
     fn into_direct_dependencies_empty() {
-        let scope = Scope::default();
-        let module_path = ModulePath(vec!["main".to_string()]);
-        let loaded = collections::HashMap::new();
-        let deps = direct_dependencies(&module_path, &scope, loaded);
+        let module_loader = ModuleLoader {
+            main_scope: &Scope::default(),
+            main_module_path: &ModulePath::new("foo"),
+            attempted: Default::default(),
+            loaded: Default::default(),
+            failed: Default::default(),
+        };
 
-        assert!(deps.functions.is_empty());
-        assert!(deps.variables.is_empty());
+        assert!(module_loader.into_direct_dependencies().is_ok());
     }
 
     #[test]
-    fn into_direct_dependencies_dag() {
-        // main -> a -> b -> c
-        let scope = Scope {
-            required_modules: vec![ModulePath(vec!["a".to_string()])],
-            ..Default::default()
+    fn into_direct_dependencies_error() {
+        let module_loader = ModuleLoader {
+            main_scope: &Scope::default(),
+            main_module_path: &ModulePath::new("foo"),
+            attempted: Default::default(),
+            loaded: Default::default(),
+            failed: Default::default(),
         };
-        let module_path = ModulePath(vec!["main".to_string()]);
-        let mut loaded = collections::HashMap::new();
-        loaded.insert(
-            ModulePath(vec!["a".to_string()]),
-            Dependency::direct(Scope {
-                required_modules: vec![ModulePath(vec!["b".to_string()])],
-                ..Default::default()
-            }),
-        );
-        loaded.insert(
-            ModulePath(vec!["b".to_string()]),
-            Dependency::transitive(Scope {
-                required_modules: vec![ModulePath(vec!["c".to_string()])],
-                ..Default::default()
-            }),
-        );
-        loaded.insert(
-            ModulePath(vec!["c".to_string()]),
-            Dependency::transitive(Scope {
-                required_modules: vec![],
-                ..Default::default()
-            }),
+        module_loader.failed.write().unwrap().insert(
+            ModulePath::new("foo"),
+            Error::InitError("failed".to_string()),
         );
 
-        assert!(direct_dependencies(&module_path, &scope, loaded).is_ok());
+        assert!(module_loader.into_direct_dependencies().is_err());
+    }
+
+    #[ignore]
+    #[test]
+    fn into_direct_dependencies_variable() {
+        // main -> a -> b -> c
+        let mut loaded = collections::HashMap::new();
+
+        // var_from_a depends on var_from_b
+        let mut a_scope = Scope {
+            required_modules: vec![ModulePath::new("b")],
+            ..Default::default()
+        };
+        a_scope.variables.insert(
+            "var_from_a".to_string(),
+            Ast::new(Node::reference("var_from_b")),
+        );
+        loaded.insert(
+            ModulePath::new("a"),
+            Dependency::direct(a_scope, build_source_code()),
+        );
+
+        // var_from_b depends on var_from_c
+        let mut b_scope = Scope {
+            required_modules: vec![ModulePath::new("c")],
+            ..Default::default()
+        };
+        b_scope.variables.insert(
+            "var_from_b".to_string(),
+            Ast::new(Node::reference("var_from_c")),
+        );
+        loaded.insert(
+            ModulePath::new("b"),
+            Dependency::transitive(b_scope, build_source_code()),
+        );
+
+        // var_from_c resolves to 420
+        let mut c_scope = Scope {
+            required_modules: vec![],
+            ..Default::default()
+        };
+        c_scope
+            .variables
+            .insert("var_from_c".to_string(), Ast::new(420.into()));
+        loaded.insert(
+            ModulePath::new("c"),
+            Dependency::transitive(c_scope, build_source_code()),
+        );
+
+        let module_loader = ModuleLoader {
+            main_scope: &Scope::default(),
+            main_module_path: &ModulePath::new("main"),
+            attempted: Default::default(),
+            loaded: sync::Arc::new(sync::RwLock::new(loaded)),
+            failed: Default::default(),
+        };
+
+        let dependencies = module_loader.into_direct_dependencies().unwrap();
+        dbg!(&dependencies);
+        assert_eq!(
+            dependencies.variables.get("var_from_a").unwrap(),
+            &Ast::new(420.into())
+        );
+    }
+
+    #[test]
+    fn into_direct_dependencies_function() {
+        // TODO
     }
 
     #[test]
     fn direct_dependencies_cyclic() {
-        // XXX
-        let scope = Scope::default();
-        let module_path = ModulePath(vec!["main".to_string()]);
-        // let loaded = collections::HashMap::new();
-
-        // assert!(
-        // direct_dependencies(&module_path, &scope, loaded).is_ok()
-        // );
+        // TODO
     }
-    */
 }

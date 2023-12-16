@@ -52,20 +52,5 @@ impl Compiler {
 
 #[cfg(test)]
 mod tests {
-    // use super::*;
-
-    #[test]
-    fn info_verbose() {
-        // TODO
-    }
-
-    #[test]
-    fn info_not_verbose() {
-        // TODO
-    }
-
-    #[test]
-    fn warn() {
-        // TODO
-    }
+    // todo
 }
