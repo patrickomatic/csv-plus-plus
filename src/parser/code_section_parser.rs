@@ -43,7 +43,7 @@ impl<'a> CodeSectionParser<'a> {
     fn parse_scope(&'a self) -> Result<Scope> {
         let mut variables = HashMap::new();
         let mut functions = HashMap::new();
-        let mut required_modules = Vec::new();
+        let mut required_modules = vec![];
 
         loop {
             let next = self.lexer.next();
@@ -122,18 +122,17 @@ impl<'a> CodeSectionParser<'a> {
             token => return Err(token.into_error("Expected `(`")),
         };
 
-        let mut args = vec![];
-
         // here we're looking for zero or more References representing the function arguments.
         // this is different than a `FunctionCall` where the arguments to the function can be
         // expressions themselves.
+        let mut fn_args = vec![];
         loop {
             let next = self.lexer.next();
             match next.token {
                 Token::CloseParen => break,
                 Token::Comma => (),
                 Token::Reference => {
-                    args.push(next.str_match.to_string());
+                    fn_args.push(next.str_match.to_string());
                 }
                 _ => return Err(next.into_error("Expected `(`")),
             }
@@ -141,7 +140,7 @@ impl<'a> CodeSectionParser<'a> {
 
         let function = Node::Function {
             name: name.to_owned(),
-            args,
+            args: fn_args,
             body: self.parse_expr()?,
         };
 
@@ -151,8 +150,8 @@ impl<'a> CodeSectionParser<'a> {
     fn parse_expr(&'a self) -> Result<Ast> {
         // create an `AstParser` with a reference to our lexer so it can continue consuming the
         // same stream of tokens
-        AstParser::new(&self.lexer)
-            .expr_bp(true, 0)
+        AstParser::new(&self.lexer, true)
+            .expr_bp(0)
             .map_err(|e| self.source_code.code_syntax_error(e))
     }
 }

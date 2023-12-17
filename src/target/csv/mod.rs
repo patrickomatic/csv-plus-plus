@@ -17,16 +17,19 @@ pub(crate) struct Csv<'a> {
 }
 
 impl<'a> Csv<'a> {
-    pub fn new(compiler: &'a Compiler, path: path::PathBuf) -> Self {
-        Self { path, compiler }
+    pub fn new<P: Into<path::PathBuf>>(compiler: &'a Compiler, path: P) -> Self {
+        Self {
+            path: path.into(),
+            compiler,
+        }
     }
 
     pub fn supports_extension(os_str: &ffi::OsStr) -> bool {
         os_str.eq_ignore_ascii_case("csv")
     }
 
-    fn read(path: &path::PathBuf, output: &Output) -> Result<ExistingValues<String>> {
-        let file = match fs::File::open(path) {
+    fn read<P: AsRef<path::Path>>(path: P, output: &Output) -> Result<ExistingValues<String>> {
+        let file = match fs::File::open(path.as_ref()) {
             Ok(f) => f,
             Err(e) => {
                 return match e.kind() {
@@ -115,7 +118,7 @@ one,,two,,three
     #[test]
     fn read_does_not_exist() {
         let csv_file = path::Path::new("foo.csv").to_path_buf();
-        let ev = Csv::read(&csv_file, &Output::Csv(csv_file.clone())).unwrap();
+        let ev = Csv::read(csv_file.clone(), &Output::Csv(csv_file)).unwrap();
 
         assert_eq!(ev.cells.len(), 0);
     }

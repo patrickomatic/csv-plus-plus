@@ -14,16 +14,18 @@
 use super::ast_lexer::*;
 use crate::ast::{Ast, Node, Variables};
 use crate::error::{BadInput, Error, ParseResult, Result};
-use crate::ArcSourceCode;
+use crate::{ArcSourceCode, SourceCode};
 use std::collections;
+use std::path;
 
 pub(crate) struct AstParser<'a> {
     lexer: &'a AstLexer<'a>,
+    single_expr: bool,
 }
 
 impl<'a> AstParser<'a> {
-    pub(crate) fn new(lexer: &'a AstLexer<'a>) -> Self {
-        AstParser { lexer }
+    pub(crate) fn new(lexer: &'a AstLexer<'a>, single_expr: bool) -> Self {
+        AstParser { lexer, single_expr }
     }
 
     /// Parse `input` from a `SourceCode`.
@@ -35,8 +37,8 @@ impl<'a> AstParser<'a> {
         let lexer = AstLexer::new(input, source_code.clone())
             .map_err(|e| source_code.code_syntax_error(e))?;
 
-        AstParser::new(&lexer)
-            .expr_bp(single_expr, 0)
+        AstParser::new(&lexer, single_expr)
+            .expr_bp(0)
             .map_err(|e| source_code.code_syntax_error(e))
     }
 
@@ -44,14 +46,21 @@ impl<'a> AstParser<'a> {
     /// "foo=1,bar=baz"
     ///
     // TODO: take multiple key values via the same flag.  similar to awk -v foo1=bar -v foo2=bar
-    pub(crate) fn parse_key_value_str(
+    pub(crate) fn parse_key_value_str<P: Into<path::PathBuf> + Clone>(
         key_values: &'a [String],
-        source_code: ArcSourceCode,
+        input_filename: P,
     ) -> Result<Variables> {
         let mut variables = collections::HashMap::new();
+        let input_filename = input_filename.into();
 
         for kv in key_values.iter() {
             if let Some((key, value)) = kv.split_once('=') {
+                // the lexer requires that we have a `SourceCode`, but we're trying to parse something that
+                // came from the CLI. so we kinda need to fudge together a SourceCode here:
+                let source_input = format!("{key} := {value}");
+                let source_code =
+                    ArcSourceCode::new(SourceCode::new(source_input, input_filename.clone())?);
+
                 variables.insert(
                     key.to_string(),
                     Self::parse(value, false, source_code.clone())?,
@@ -67,14 +76,14 @@ impl<'a> AstParser<'a> {
     }
 
     /// The core pratt parser logic for parsing an expression of our AST.  
-    pub(super) fn expr_bp(&self, single_expr: bool, min_bp: u8) -> ParseResult<Ast> {
+    pub(super) fn expr_bp(&self, min_bp: u8) -> ParseResult<Ast> {
         let lhs_token = self.lexer.next();
 
         let mut lhs = match lhs_token.token {
             // a starting parenthesis means we just need to recurse and consume (expect)
             // the close paren
             Token::OpenParen => {
-                let expr = self.expr_bp(single_expr, 0)?;
+                let expr = self.expr_bp(0)?;
                 let t = self.lexer.next();
                 match t.token {
                     Token::CloseParen => expr,
@@ -97,7 +106,7 @@ impl<'a> AstParser<'a> {
         };
 
         loop {
-            if single_expr {
+            if self.single_expr {
                 // in the case where we're just looking for a single expr, we can terminate
                 // iteration when we see a reference (beginning of `foo := ...`) or `fn`.
                 match self.lexer.peek().token {
@@ -147,7 +156,7 @@ impl<'a> AstParser<'a> {
                             Token::Comma => {
                                 self.lexer.next();
                             }
-                            _ => args.push(self.expr_bp(single_expr, 0)?),
+                            _ => args.push(self.expr_bp(0)?),
                         }
                     }
 
@@ -167,7 +176,7 @@ impl<'a> AstParser<'a> {
                 // consume the token we peeked
                 self.lexer.next();
 
-                let rhs = self.expr_bp(single_expr, r_bp)?;
+                let rhs = self.expr_bp(r_bp)?;
                 lhs = Node::InfixFunctionCall {
                     left: lhs,
                     operator: op.to_owned(),
@@ -278,10 +287,9 @@ mod tests {
 
     #[test]
     fn parse_key_value_str() {
-        let source_code: SourceCode = (&TestSourceCode::new("csv", "foo,bar")).into();
         let parsed_vars = AstParser::parse_key_value_str(
             &["foo=bar".to_string(), "baz=1".to_string()],
-            ArcSourceCode::new(source_code),
+            "foo.csvpp",
         )
         .unwrap();
 
@@ -290,9 +298,7 @@ mod tests {
 
     #[test]
     fn parse_key_value_str_empty() {
-        let source_code: SourceCode = (&TestSourceCode::new("csv", "foo,bar")).into();
-        let parsed_vars =
-            AstParser::parse_key_value_str(&[], ArcSourceCode::new(source_code)).unwrap();
+        let parsed_vars = AstParser::parse_key_value_str(&[], "foo.csvpp").unwrap();
 
         assert_eq!(parsed_vars.len(), 0);
     }

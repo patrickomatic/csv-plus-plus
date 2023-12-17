@@ -5,10 +5,10 @@
 use super::file_backer_upper;
 use super::CompilationTarget;
 use crate::{Compiler, Module, Result};
-use std::path::PathBuf;
+use std::path;
 
 pub struct OpenDocument<'a> {
-    path: PathBuf,
+    path: path::PathBuf,
     compiler: &'a Compiler,
 }
 
@@ -24,8 +24,11 @@ impl CompilationTarget for OpenDocument<'_> {
 }
 
 impl<'a> OpenDocument<'a> {
-    pub fn new(compiler: &'a Compiler, path: PathBuf) -> OpenDocument<'a> {
-        Self { path, compiler }
+    pub fn new<P: Into<path::PathBuf>>(compiler: &'a Compiler, path: P) -> OpenDocument<'a> {
+        Self {
+            path: path.into(),
+            compiler,
+        }
     }
 
     pub(crate) fn supports_extension(os_str: &std::ffi::OsStr) -> bool {

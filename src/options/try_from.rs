@@ -1,6 +1,7 @@
 use super::Options;
 use crate::CliArgs;
 
+// TODO: take ownership instead of a ref?
 impl TryFrom<&CliArgs> for Options {
     type Error = crate::Error;
 

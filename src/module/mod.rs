@@ -12,10 +12,10 @@
 use crate::ast::Variables;
 use crate::{ArcSourceCode, Compiler, ModuleLoader, ModulePath, Result, Row, Scope, Spreadsheet};
 use std::cell;
-use std::cmp;
 use std::fs;
 
 mod display;
+mod try_from;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct Module {
@@ -23,15 +23,32 @@ pub struct Module {
     pub scope: Scope,
     pub spreadsheet: cell::RefCell<Spreadsheet>,
     pub compiler_version: String,
+    pub(crate) source_code: ArcSourceCode,
 }
 
 impl Module {
+    pub(crate) fn new(
+        source_code: ArcSourceCode,
+        module_path: ModulePath,
+        scope: Scope,
+        spreadsheet: Spreadsheet,
+    ) -> Self {
+        Self {
+            compiler_version: env!("CARGO_PKG_VERSION").to_string(),
+            scope,
+            module_path,
+            spreadsheet: cell::RefCell::new(spreadsheet),
+            source_code,
+        }
+    }
+
     /// For each row of the spreadsheet, if it has a [[fill=]] then we need to actually fill it to
     /// that many rows.  
     ///
     /// This has to happen before eval()ing the cells because that process depends on them being in
     /// their final location.
     // TODO: make sure there is only one infinite fill
+    // TODO: move this into spreadsheet?
     pub(crate) fn eval_fills(self) -> Self {
         let mut new_spreadsheet = Spreadsheet::default();
         let s = self.spreadsheet.into_inner();
@@ -60,11 +77,7 @@ impl Module {
     }
 
     // TODO: do this in parallel (thread for each row (maybe cell? with a threadpool))
-    pub(crate) fn eval_spreadsheet(
-        self,
-        source_code: ArcSourceCode,
-        external_vars: Variables,
-    ) -> Result<Self> {
+    pub(crate) fn eval_spreadsheet(self, external_vars: Variables) -> Result<Self> {
         let spreadsheet = self.spreadsheet.into_inner();
         let scope = self
             .scope
@@ -73,7 +86,7 @@ impl Module {
 
         let mut evaled_rows = vec![];
         for (row_index, row) in spreadsheet.rows.into_iter().enumerate() {
-            evaled_rows.push(row.eval(source_code.clone(), &scope, row_index.into())?);
+            evaled_rows.push(row.eval(self.source_code.clone(), &scope, row_index.into())?);
         }
 
         Ok(Self {
@@ -83,19 +96,13 @@ impl Module {
         })
     }
 
-    pub(crate) fn load_main(
-        spreadsheet: Spreadsheet,
-        scope: Scope,
-        module_path: ModulePath,
-    ) -> Result<Self> {
-        let module_loader = ModuleLoader::load_main(&module_path, &scope)?;
+    pub(crate) fn load_dependencies(self) -> Result<Self> {
+        let module_loader = ModuleLoader::load_main(&self.module_path, &self.scope)?;
         let dependencies = module_loader.into_direct_dependencies()?;
 
         Ok(Self {
-            compiler_version: env!("CARGO_PKG_VERSION").to_string(),
-            scope: scope.merge(dependencies),
-            module_path,
-            spreadsheet: cell::RefCell::new(spreadsheet),
+            scope: self.scope.merge(dependencies),
+            ..self
         })
     }
 
@@ -105,27 +112,26 @@ impl Module {
             return Ok(());
         }
 
-        let object_code_filename = compiler.source_code.object_code_filename();
+        let object_code_filename = self.source_code.object_code_filename();
 
         compiler.progress("Writing object file");
 
         let object_file = fs::File::create(object_code_filename).map_err(|e| {
             compiler.error(format!("IO error: {e:?}"));
-            compiler
-                .source_code
+            self.source_code
                 .object_code_error(format!("Error opening object code for writing: {e}"))
         })?;
 
         serde_cbor::to_writer(object_file, self).map_err(|e| {
             compiler.error(format!("CBOR write error: {e:?}"));
-            compiler
-                .source_code
+            self.source_code
                 .object_code_error(format!("Error serializing object code for writing: {e}"))
         })?;
 
         Ok(())
     }
 
+    /* TODO: bring back object codes (but in a way that works with the module loader)
     pub(crate) fn read_from_object_file(compiler: &Compiler) -> Result<Option<Self>> {
         if !compiler.options.use_cache {
             compiler.info("Not reading object file");
@@ -144,7 +150,7 @@ impl Module {
         let obj_file_modified = fs::metadata(&obj_file)
             .and_then(|s| s.modified())
             .map_err(|e| sc.object_code_error(format!("Unable to stat object code: {e}")))?;
-        let source_file_modified = fs::metadata(&compiler.source_code.filename)
+        let source_file_modified = fs::metadata(&sc.filename)
             .and_then(|s| s.modified())
             .map_err(|e| sc.object_code_error(format!("Unable to stat source code: {e}")))?;
 
@@ -188,32 +194,35 @@ impl Module {
             cmp::Ordering::Less => None,
         })
     }
+        */
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::ast::*;
+    use crate::test_utils::*;
     use crate::*;
-    use std::collections;
+    use std::cell;
 
     #[test]
     fn eval_fills_finite() {
-        let spreadsheet = Spreadsheet {
-            rows: vec![
-                Row {
-                    fill: Some(Fill::new(0, Some(10))),
-                    ..Default::default()
-                },
-                Row {
-                    fill: Some(Fill::new(10, Some(30))),
-                    ..Default::default()
-                },
-            ],
-        };
-        let module = Module::load_main(spreadsheet, Scope::default(), ModulePath::new("foo"))
-            .unwrap()
-            .eval_fills();
+        let module = Module {
+            spreadsheet: cell::RefCell::new(Spreadsheet {
+                rows: vec![
+                    Row {
+                        fill: Some(Fill::new(0, Some(10))),
+                        ..Default::default()
+                    },
+                    Row {
+                        fill: Some(Fill::new(10, Some(30))),
+                        ..Default::default()
+                    },
+                ],
+            }),
+            ..build_module()
+        }
+        .eval_fills();
         let spreadsheet = module.spreadsheet.borrow();
 
         assert_eq!(spreadsheet.rows.len(), 40);
@@ -227,21 +236,22 @@ mod tests {
 
     #[test]
     fn eval_fills_infinite() {
-        let spreadsheet = Spreadsheet {
-            rows: vec![
-                Row {
-                    fill: Some(Fill::new(0, Some(10))),
-                    ..Default::default()
-                },
-                Row {
-                    fill: Some(Fill::new(10, None)),
-                    ..Default::default()
-                },
-            ],
-        };
-        let module = Module::load_main(spreadsheet, Scope::default(), ModulePath::new("foo"))
-            .unwrap()
-            .eval_fills();
+        let module = Module {
+            spreadsheet: cell::RefCell::new(Spreadsheet {
+                rows: vec![
+                    Row {
+                        fill: Some(Fill::new(0, Some(10))),
+                        ..Default::default()
+                    },
+                    Row {
+                        fill: Some(Fill::new(10, None)),
+                        ..Default::default()
+                    },
+                ],
+            }),
+            ..build_module()
+        }
+        .eval_fills();
         let spreadsheet = module.spreadsheet.borrow();
 
         assert_eq!(spreadsheet.rows.len(), 1000);
@@ -254,31 +264,25 @@ mod tests {
     }
 
     #[test]
-    fn load_main_with_scope() {
-        let mut functions = collections::HashMap::new();
-        functions.insert("foo".to_string(), Ast::new(1.into()));
-        let mut variables = collections::HashMap::new();
-        variables.insert("bar".to_string(), Ast::new(2.into()));
-        let scope = Scope {
-            functions,
-            variables,
-            ..Default::default()
-        };
-        let module =
-            Module::load_main(Spreadsheet::default(), scope, ModulePath::new("foo")).unwrap();
+    fn load_dependencies_with_scope() {
+        let mut module = build_module();
+        module
+            .scope
+            .functions
+            .insert("foo".to_string(), Ast::new(1.into()));
+        module
+            .scope
+            .variables
+            .insert("bar".to_string(), Ast::new(2.into()));
+        let module = module.load_dependencies().unwrap();
 
         assert!(module.scope.functions.contains_key("foo"));
         assert!(module.scope.variables.contains_key("bar"));
     }
 
     #[test]
-    fn load_main_without_scope() {
-        let module = Module::load_main(
-            Spreadsheet::default(),
-            Scope::default(),
-            ModulePath::new("foo"),
-        )
-        .unwrap();
+    fn load_depdencies_without_scope() {
+        let module = build_module();
 
         assert!(module.scope.functions.is_empty());
         assert!(module.scope.variables.is_empty());

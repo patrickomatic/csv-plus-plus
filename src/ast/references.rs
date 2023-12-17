@@ -65,17 +65,7 @@ fn extract_dfs(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Spreadsheet;
-    use crate::*;
-
-    fn build_module() -> Module {
-        Module::load_main(
-            Spreadsheet::default(),
-            Scope::default(),
-            ModulePath(vec!["foo".to_string()]),
-        )
-        .unwrap()
-    }
+    use crate::test_utils::*;
 
     #[test]
     fn extract_references_empty() {

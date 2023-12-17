@@ -55,6 +55,7 @@ impl Cell {
     }
 
     /// Copy all of the values from `row` which are relevant for a `Cell` to inherit
+    // TODO: take ownership and clone in the caller
     pub(crate) fn default_from(row: &Row) -> Self {
         Self {
             border_color: row.border_color.clone(),

@@ -205,7 +205,7 @@ impl<'a> ModuleLoader<'a> {
         let p: path::PathBuf = module_path.clone().into();
 
         // load the source code
-        let source_code = match SourceCode::open(&p) {
+        let source_code = match SourceCode::try_from(p) {
             Ok(s) => ArcSourceCode::new(s),
             Err(e) => {
                 self.failed.write()?.insert(module_path, e);

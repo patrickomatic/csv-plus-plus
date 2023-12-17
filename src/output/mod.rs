@@ -23,10 +23,10 @@ impl Output {
         compiler: &'a Compiler,
     ) -> Result<Box<dyn CompilationTarget + 'a>> {
         Ok(match self {
-            Self::Csv(path) => Box::new(Csv::new(compiler, path.to_path_buf())),
-            Self::Excel(path) => Box::new(Excel::new(compiler, path.to_path_buf())),
+            Self::Csv(path) => Box::new(Csv::new(compiler, path)),
+            Self::Excel(path) => Box::new(Excel::new(compiler, path)),
             Self::GoogleSheets(sheet_id) => Box::new(GoogleSheets::new(compiler, sheet_id)?),
-            Self::OpenDocument(path) => Box::new(OpenDocument::new(compiler, path.to_path_buf())),
+            Self::OpenDocument(path) => Box::new(OpenDocument::new(compiler, path)),
         })
     }
 
@@ -37,11 +37,16 @@ impl Output {
         }
     }
 
-    fn from_filename(path: path::PathBuf) -> Result<Self> {
+    fn from_filename<P>(path: P) -> Result<Self>
+    where
+        P: AsRef<path::Path> + Into<path::PathBuf>,
+    {
+        let path = path.as_ref();
         let ext = path.extension().ok_or(Error::InitError(
             "Output filename must end with .csv, .xlsx or .ods".to_string(),
         ))?;
 
+        let path = path.into();
         if Csv::supports_extension(ext) {
             Ok(Self::Csv(path))
         } else if Excel::supports_extension(ext) {

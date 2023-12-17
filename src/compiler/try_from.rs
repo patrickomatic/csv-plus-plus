@@ -1,21 +1,20 @@
 use crate::parser::ast_parser::AstParser;
-use crate::{ArcSourceCode, CliArgs, Compiler, Options, Output, SourceCode};
+use crate::{CliArgs, Compiler, Options, Output};
 
 impl TryFrom<&CliArgs> for Compiler {
     type Error = crate::Error;
 
     fn try_from(cli_args: &CliArgs) -> std::result::Result<Self, Self::Error> {
-        let source_code = ArcSourceCode::new(SourceCode::open(&cli_args.input_filename)?);
         let compiler = Self {
             options: Options {
                 key_values: AstParser::parse_key_value_str(
                     &cli_args.key_values,
-                    source_code.clone(),
+                    &cli_args.input_filename,
                 )?,
                 ..Options::try_from(cli_args)?
             },
             output: Output::try_from(cli_args)?,
-            source_code,
+            input_filename: cli_args.input_filename.clone(),
         };
 
         compiler.info(&compiler);

@@ -3,7 +3,7 @@
 //!
 use crate::parser::ast_lexer;
 use crate::parser::cell_lexer;
-use crate::{ArcSourceCode, Compiler, DateTime};
+use crate::{ArcSourceCode, Compiler, DateTime, Module, ModulePath, Scope, Spreadsheet};
 
 mod test_file;
 mod test_source_code;
@@ -41,6 +41,15 @@ pub(crate) fn build_date_time_ymd(y: i32, m: u32, d: u32) -> DateTime {
 /// If the test just needs a compiler but doesn't care about it at all
 pub(crate) fn build_compiler() -> Compiler {
     (&TestSourceCode::new("foo.xlsx", "foo,bar,baz")).into()
+}
+
+pub(crate) fn build_module() -> Module {
+    Module::new(
+        build_source_code(),
+        ModulePath::new("foo"),
+        Scope::default(),
+        Spreadsheet::default(),
+    )
 }
 
 /// If the test just needs a source code but doesn't care about it at all

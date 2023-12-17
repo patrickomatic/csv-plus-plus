@@ -19,7 +19,12 @@ const BACKUP_FORMATS: &[&str] = &[
 // NOTE:
 // this operation is not atomic - to do so we'd need to create a tempfile, write to it
 // then move it in place.  (but for this use case I don't think it matters)
-pub(crate) fn backup_file(compiler: &Compiler, filename: &path::PathBuf) -> Result<path::PathBuf> {
+pub(crate) fn backup_file<P: AsRef<path::Path>>(
+    compiler: &Compiler,
+    filename: P,
+) -> Result<path::PathBuf> {
+    let filename = filename.as_ref();
+
     compiler.progress(format!("Backing up file: {}", filename.display()));
 
     let filename_str = filename

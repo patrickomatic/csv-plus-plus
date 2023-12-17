@@ -1,20 +1,17 @@
 //! # SourceCode
 //!
-//! The original source code being compiled.  When csv++ is first initialized the source code will
-//! be read and a very rough parse will be done which reads line-by-line and splits the CSV section
-//! from the code section by looking for the `---` token.
-//!
-//! After this both the code section and CSV section will be lexed and parsed using separate
-//! algorithms.
-//!
+// TODO:
+// * don't serialize the `code_section`, `csv_section` & `original` - these are all potentially
+//   large. instead we could not serialize them and lazy load when needed
+//
 use crate::parser::ast_lexer::CODE_SECTION_SEPARATOR;
-use crate::{csv_reader, Error, Result};
-use std::fs;
+use crate::{csv_reader, Result};
 use std::path;
 
 mod arc_source_code;
 mod display;
 mod errors;
+mod try_from;
 
 pub(crate) use arc_source_code::ArcSourceCode;
 
@@ -24,7 +21,7 @@ pub type LineNumber = usize;
 /// the amount of characters offset from the beginning of the line
 pub type CharOffset = usize;
 
-#[derive(Debug)]
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct SourceCode {
     pub filename: path::PathBuf,
     pub(crate) lines: LineNumber,
@@ -38,16 +35,13 @@ pub struct SourceCode {
 impl SourceCode {
     /// Open the source code and do a rough first pass where we split the code section from the CSV
     /// section by looking for `---`.
-    pub fn open(filename: &path::PathBuf) -> Result<SourceCode> {
-        let input = fs::read_to_string(filename).map_err(|e| Error::SourceCodeError {
-            filename: filename.clone(),
-            message: format!("Error reading source code {}: {e}", filename.display()),
-        })?;
-
-        Self::new(input.as_str(), filename.clone())
-    }
-
-    pub fn new<S: Into<String>>(input: S, filename: path::PathBuf) -> Result<SourceCode> {
+    // TODO: make `filename` optional - we don't have it when reading from CLI key/values.  or if
+    // we were ever to support from stdin
+    pub(crate) fn new<S, P>(input: S, filename: P) -> Result<SourceCode>
+    where
+        S: Into<String>,
+        P: Into<path::PathBuf>,
+    {
         let str_input: String = input.into();
 
         if let Some((code_section, csv_section)) = str_input.split_once(CODE_SECTION_SEPARATOR) {
@@ -55,7 +49,7 @@ impl SourceCode {
             let code_lines = code_section.lines().count();
 
             Ok(SourceCode {
-                filename,
+                filename: filename.into(),
                 lines: csv_lines + code_lines,
                 length_of_scope: code_lines,
                 length_of_csv_section: csv_lines,
@@ -67,7 +61,7 @@ impl SourceCode {
             let csv_lines = str_input.lines().count();
 
             Ok(SourceCode {
-                filename,
+                filename: filename.into(),
                 lines: csv_lines,
                 length_of_scope: 0,
                 length_of_csv_section: csv_lines,
@@ -88,6 +82,12 @@ impl SourceCode {
             .map(|s| s.to_string())
     }
 
+    /*
+    pub(crate) fn is_object_code_outdated(&self) -> bool {
+        unimplemented!()
+    }
+    */
+
     pub(crate) fn object_code_filename(&self) -> path::PathBuf {
         let mut f = self.filename.clone();
         f.set_extension("csvpo");
@@ -102,7 +102,11 @@ impl SourceCode {
     pub(crate) fn line_offset_for_cell(&self, position: a1_notation::Address) -> CharOffset {
         let line_number = self.csv_line_number(position);
         let Some(line) = self.get_line(line_number) else {
-            // TODO: Err
+            /* TODO
+            compiler_error(format!(
+                "Unable to find line for `line_number` = {line_number}"
+            ));
+            */
             return 0;
         };
 
@@ -113,7 +117,12 @@ impl SourceCode {
             let x = position.column.x;
 
             if x > record.len() || x == 0 {
-                // TODO: err
+                /* TODO
+                compiler_error(format!(
+                    "CSV contained more cells than expected: `x` = {x}, `record.len()` = {}",
+                    record.len()
+                ));
+                */
                 return 0;
             }
 
@@ -123,7 +132,8 @@ impl SourceCode {
             // the length of all the cells (since spaces is preserved), plus how many commas would have joined them
             (0..x).fold(0, |acc, i| acc + record[i].len()) + x
         } else {
-            // TODO: Err instead?
+            // TODO
+            // compiler_error("Unable to read CSV results to generate error");
             0
         }
     }
@@ -132,7 +142,6 @@ impl SourceCode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::*;
     use std::path;
 
     fn build_source_code() -> SourceCode {
@@ -237,7 +246,7 @@ foo1,bar1,baz1
     }
 
     #[test]
-    fn open_no_scope() {
+    fn new_no_scope() {
         let source_code =
             SourceCode::new("foo,bar,baz", std::path::PathBuf::from("foo.csvpp")).unwrap();
 
@@ -246,25 +255,5 @@ foo1,bar1,baz1
         assert_eq!(source_code.length_of_scope, 0);
         assert_eq!(source_code.code_section, None);
         assert_eq!(source_code.csv_section, "foo,bar,baz".to_string());
-    }
-
-    #[test]
-    fn open_scope() {
-        let s = TestSourceCode::new(
-            "csv",
-            "
-foo := 1
-
----
-foo,bar,baz,=foo
-",
-        );
-        let source_code = SourceCode::open(&s.input_file).unwrap();
-
-        assert_eq!(source_code.lines, 5);
-        assert_eq!(source_code.length_of_csv_section, 2);
-        assert_eq!(source_code.length_of_scope, 3);
-        assert_eq!(source_code.code_section, Some("\nfoo := 1\n\n".to_string()));
-        assert_eq!(source_code.csv_section, "\nfoo,bar,baz,=foo\n".to_string());
     }
 }

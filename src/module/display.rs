@@ -20,18 +20,7 @@ impl fmt::Display for Module {
 
 #[cfg(test)]
 mod tests {
-    use super::super::ModulePath;
-    use crate::*;
-    use std::cell;
-
-    fn build_module() -> Module {
-        Module {
-            compiler_version: "v0.0.1".to_string(),
-            scope: Scope::default(),
-            module_path: ModulePath(vec!["main".to_string()]),
-            spreadsheet: cell::RefCell::new(Spreadsheet::default()),
-        }
-    }
+    use crate::test_utils::*;
 
     #[test]
     fn display() {

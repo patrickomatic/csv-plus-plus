@@ -25,8 +25,11 @@ pub(crate) struct Excel<'a> {
 }
 
 impl<'a> Excel<'a> {
-    pub(crate) fn new(compiler: &'a Compiler, path: path::PathBuf) -> Self {
-        Self { path, compiler }
+    pub(crate) fn new<P: Into<path::PathBuf>>(compiler: &'a Compiler, path: P) -> Self {
+        Self {
+            path: path.into(),
+            compiler,
+        }
     }
 
     pub(crate) fn supports_extension(os_str: &ffi::OsStr) -> bool {

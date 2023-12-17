@@ -2,7 +2,7 @@ use super::SourceCode;
 use std::ops;
 use std::sync;
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub(crate) struct ArcSourceCode(sync::Arc<SourceCode>);
 
 impl ArcSourceCode {

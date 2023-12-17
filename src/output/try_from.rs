@@ -7,7 +7,7 @@ impl TryFrom<&CliArgs> for Output {
         if let Some(sheet_id) = &cli_args.google_sheet_id {
             Ok(Self::from_google_sheet_id(sheet_id.to_string())?)
         } else if let Some(filename) = &cli_args.output_filename {
-            Ok(Self::from_filename(filename.to_path_buf())?)
+            Ok(Self::from_filename(filename)?)
         } else {
             Err(crate::Error::InitError(
                 "Must specify either -g/--google-sheet-id or -o/--output-filename".to_string(),

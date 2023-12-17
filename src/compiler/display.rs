@@ -5,8 +5,6 @@ impl fmt::Display for Compiler {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "# CLI Options")?;
         writeln!(f, "{}", self.options)?;
-        writeln!(f, "\n# Parsed Source Code")?;
-        writeln!(f, "{}", *self.source_code)?;
         writeln!(f, "\n# Output Target")?;
         writeln!(f, "{}", self.output)
     }
@@ -28,7 +26,6 @@ mod tests {
         let compiler_str = Compiler::try_from(&cli_args).unwrap().to_string();
 
         assert!(compiler_str.contains("CLI Options"));
-        assert!(compiler_str.contains("Parsed Source Code"));
         assert!(compiler_str.contains("Output Target"));
     }
 }
