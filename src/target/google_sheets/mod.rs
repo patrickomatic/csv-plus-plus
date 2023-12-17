@@ -15,6 +15,7 @@ use credentials::Credentials;
 use google_sheets4::hyper;
 use google_sheets4::hyper_rustls;
 use google_sheets4::oauth2;
+use log::{error, warn};
 
 type SheetsHub = google_sheets4::Sheets<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>;
 
@@ -75,8 +76,7 @@ impl<'a> GoogleSheets<'a> {
                         return Ok(ExistingValues::default());
                     }
                     _ => {
-                        self.compiler
-                            .warn(format!("Google Sheets API error response: {e}"));
+                        warn!("Google Sheets API error response: {e}");
 
                         // TODO: show just the message
                         return Err(Error::GoogleSetupError(format!(
@@ -186,7 +186,7 @@ impl<'a> GoogleSheets<'a> {
             .await
             .map(|_i| ())
             .map_err(|e| {
-                self.compiler.error(format!("{e:?}"));
+                error!("Error writing to Google Sheets API: {e:?}");
                 self.compiler
                     .output_error(format!("Error writing to Google Sheets: {e}"))
             })

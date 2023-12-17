@@ -9,6 +9,7 @@ mod date_time;
 mod error;
 mod fill;
 mod horizontal_align;
+mod logger;
 mod module;
 mod module_loader;
 mod module_path;
@@ -36,6 +37,7 @@ pub(crate) use error::EvalResult;
 pub use error::{Error, EvalError, ParseError, Result};
 pub use fill::Fill;
 pub use horizontal_align::HorizontalAlign;
+use log::error;
 pub use module::Module;
 pub(crate) use module_loader::ModuleLoader;
 pub use module_path::ModulePath;
@@ -64,7 +66,7 @@ pub(crate) fn csv_reader() -> csv::ReaderBuilder {
 }
 
 pub(crate) fn compiler_error<S: Into<String>>(message: S) -> ! {
-    eprintln!(
+    error!(
         "csv++ ran into a non-recoverable error while compiling.  Please report this at:
         https://github.com/patrickomatic/csv-plus-plus/issues"
     );

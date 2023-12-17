@@ -57,7 +57,6 @@ where
             .map_err(move |e| source_code.cell_syntax_error(e, position))
     }
 
-    // TODO just merge this into the above function?
     fn parse_cell(
         input: &'b str,
         position: a1_notation::Address,

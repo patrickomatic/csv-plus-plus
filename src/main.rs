@@ -1,7 +1,7 @@
 //! # csv+++
 //!
-use colored::Colorize;
 use csvpp::{Compiler, Result};
+use log::error;
 use std::process;
 
 fn compile_from_cli() -> Result<()> {
@@ -19,7 +19,7 @@ fn compile_from_cli() -> Result<()> {
 
 fn main() {
     if let Err(e) = compile_from_cli() {
-        eprintln!("{}", e.to_string().red());
+        error!("{e}");
         process::exit(1)
     }
 }

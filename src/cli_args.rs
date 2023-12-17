@@ -64,8 +64,8 @@ pub struct CliArgs {
     )]
     pub sheet_name: Option<String>,
 
-    #[arg(short, long, default_value_t = false)]
-    pub verbose: bool,
+    #[arg(action = clap::ArgAction::Count, short = 'v', long, default_value_t = 0)]
+    pub verbose: u8,
 
     #[arg(
         short,
@@ -99,7 +99,7 @@ impl Default for CliArgs {
             output_filename: None,
             safe: false,
             sheet_name: None,
-            verbose: false,
+            verbose: 0,
             x_offset: 0,
             y_offset: 0,
         }

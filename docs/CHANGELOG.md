@@ -4,6 +4,8 @@
 
 * Using object code files (.csvpo) during compilation
 * Allow for `.` characters in a function name
+* Support various levels of verbosity by repeating -v (i.e., -vvvv)
+* Use a proper logger (env\_logger)
 * Code coverage reporting
 * Tooling to run benchmarks
 

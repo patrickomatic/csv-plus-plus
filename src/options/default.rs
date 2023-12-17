@@ -11,7 +11,7 @@ impl Default for Options {
             overwrite_values: true,
             sheet_name: "empty".to_string(),
             use_cache: true,
-            verbose: false,
+            verbosity: log::LevelFilter::Info,
         }
     }
 }
@@ -26,7 +26,7 @@ mod tests {
 
         assert!(!options.backup);
         assert!(options.overwrite_values);
-        assert!(!options.verbose);
+        assert_eq!(options.verbosity, log::LevelFilter::Info);
         assert_eq!(options.google_account_credentials, None);
         assert_eq!(options.key_values, collections::HashMap::new());
         assert_eq!(options.offset, (0, 0));

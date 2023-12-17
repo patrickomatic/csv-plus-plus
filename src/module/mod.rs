@@ -11,6 +11,7 @@
 //      be finite and subtract from it
 use crate::ast::Variables;
 use crate::{ArcSourceCode, Compiler, ModuleLoader, ModulePath, Result, Row, Scope, Spreadsheet};
+use log::{debug, error, info};
 use std::cell;
 use std::fs;
 
@@ -108,22 +109,22 @@ impl Module {
 
     pub(crate) fn write_object_file(&self, compiler: &Compiler) -> Result<()> {
         if !compiler.options.use_cache {
-            compiler.info("Not writing object file");
+            info!("Not writing object file because --no-cache flag is set");
             return Ok(());
         }
 
         let object_code_filename = self.source_code.object_code_filename();
 
-        compiler.progress("Writing object file");
+        debug!("Writing object file");
 
         let object_file = fs::File::create(object_code_filename).map_err(|e| {
-            compiler.error(format!("IO error: {e:?}"));
+            error!("IO error: {e:?}");
             self.source_code
                 .object_code_error(format!("Error opening object code for writing: {e}"))
         })?;
 
         serde_cbor::to_writer(object_file, self).map_err(|e| {
-            compiler.error(format!("CBOR write error: {e:?}"));
+            error!("CBOR write error: {e:?}");
             self.source_code
                 .object_code_error(format!("Error serializing object code for writing: {e}"))
         })?;

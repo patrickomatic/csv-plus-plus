@@ -13,7 +13,7 @@ impl fmt::Display for Options {
         writeln!(f, "offset: ({}, {})", self.offset.0, self.offset.1)?;
         writeln!(f, "overwrite_values: {}", self.overwrite_values)?;
         writeln!(f, "sheet_name: {}", self.sheet_name)?;
-        write!(f, "verbose: {}", self.verbose)
+        write!(f, "verbosity: {}", self.verbosity)
     }
 }
 
@@ -32,7 +32,7 @@ key_values: {}
 offset: (0, 0)
 overwrite_values: true
 sheet_name: empty
-verbose: false"#,
+verbosity: INFO"#,
             options.to_string()
         );
     }

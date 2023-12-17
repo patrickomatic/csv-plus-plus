@@ -1,5 +1,6 @@
 use crate::{Compiler, Result};
 use chrono::prelude::Local;
+use log::info;
 use std::fs;
 use std::path;
 
@@ -25,7 +26,7 @@ pub(crate) fn backup_file<P: AsRef<path::Path>>(
 ) -> Result<path::PathBuf> {
     let filename = filename.as_ref();
 
-    compiler.progress(format!("Backing up file: {}", filename.display()));
+    info!("Backing up file: {}", filename.display());
 
     let filename_str = filename
         .to_str()

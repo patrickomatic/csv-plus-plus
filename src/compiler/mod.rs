@@ -2,8 +2,7 @@
 //!
 use crate::{CliArgs, CompilationTarget, Error, Module, Options, Output, Result};
 use clap::Parser;
-use colored::Colorize;
-use std::fmt;
+use log::{debug, info};
 use std::path;
 
 mod display;
@@ -16,7 +15,6 @@ pub struct Compiler {
     pub(crate) input_filename: path::PathBuf,
 }
 
-// TODO: use an actual logger
 impl Compiler {
     pub fn compile(&self) -> Result<Module> {
         /* TODO bring back object file usage
@@ -26,18 +24,18 @@ impl Compiler {
             t
         } else {
         */
-        self.progress("Compiling module from source code");
+        debug!("Compiling module from source code");
 
         let main_module =
             self.eval(Module::try_from(self.input_filename.clone())?.load_dependencies()?)?;
 
-        self.progress("Compiled module");
-        self.info(&main_module);
+        debug!("Compiled module");
+        info!("{}", &main_module);
 
-        self.progress(format!(
+        debug!(
             "Writing object file {}",
             main_module.source_code.object_code_filename().display()
-        ));
+        );
         main_module.write_object_file(self)?;
 
         Ok(main_module)
@@ -52,32 +50,12 @@ impl Compiler {
         self.output.compilation_target(self)
     }
 
-    pub(crate) fn error<M: Into<String>>(&self, message: M) {
-        eprintln!("{}", message.into().red());
-    }
-
-    pub(crate) fn info<M: fmt::Display>(&self, message: M) {
-        if self.options.verbose {
-            eprintln!("{message}");
-        }
-    }
-
     pub(crate) fn output_error<M: Into<String>>(&self, message: M) -> Error {
         self.output.clone().into_error(message)
     }
 
-    pub(crate) fn progress<M: fmt::Display>(&self, message: M) {
-        if self.options.verbose {
-            eprintln!("{}", message.to_string().green());
-        }
-    }
-
-    pub(crate) fn warn<M: Into<String>>(&self, message: M) {
-        eprintln!("{}", message.into().yellow());
-    }
-
     fn eval(&self, module: Module) -> Result<Module> {
-        self.progress("Evaluating module");
+        debug!("Evaluating module");
 
         module
             .eval_fills()

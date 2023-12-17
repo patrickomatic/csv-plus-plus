@@ -1,4 +1,5 @@
 use crate::{Compiler, Error, Result};
+use log::info;
 use std::env;
 use std::fs;
 use std::path;
@@ -39,16 +40,13 @@ impl TryFrom<&Compiler> for Credentials {
         let adc_path = adc_path()?;
 
         let creds_file = if let Some(creds) = &compiler.options.google_account_credentials {
-            compiler.info("Using credentials from --google-account-credentials flag");
+            info!("Using credentials from --google-account-credentials flag");
             path::PathBuf::from(creds)
         } else if let Some(env_var) = env::var_os("GOOGLE_APPLICATION_CREDENTIALS") {
-            compiler.info("Using credentials from GOOGLE_APPLICATION_CREDENTIALS env var");
+            info!("Using credentials from GOOGLE_APPLICATION_CREDENTIALS env var");
             path::PathBuf::from(env_var)
         } else if adc_path.exists() {
-            compiler.info(format!(
-                "Using credentials from ADC path: {}",
-                adc_path.display()
-            ));
+            info!("Using credentials from ADC path: {}", adc_path.display());
             adc_path
         } else {
             // TODO: more words in this error
