@@ -83,7 +83,7 @@ where
             };
 
             let mut parser = CellParser {
-                cell: Cell::default_from(row),
+                cell: Cell::default_from(row.clone()),
                 is_row_options,
                 lexer: &mut lexer,
                 row,
@@ -96,7 +96,7 @@ where
             }
         }
 
-        let mut cell = parsed_cell.unwrap_or_else(|| Cell::default_from(row));
+        let mut cell = parsed_cell.unwrap_or_else(|| Cell::default_from(row.clone()));
         cell.value = lexer.rest().to_string();
 
         Ok(cell)

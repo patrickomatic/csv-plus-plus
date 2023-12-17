@@ -55,22 +55,21 @@ impl Cell {
     }
 
     /// Copy all of the values from `row` which are relevant for a `Cell` to inherit
-    // TODO: take ownership and clone in the caller
-    pub(crate) fn default_from(row: &Row) -> Self {
+    pub(crate) fn default_from(row: Row) -> Self {
         Self {
-            border_color: row.border_color.clone(),
+            border_color: row.border_color,
             border_style: row.border_style,
-            borders: row.borders.clone(),
-            color: row.color.clone(),
-            data_validation: row.data_validation.clone(),
-            font_color: row.font_color.clone(),
-            font_family: row.font_family.clone(),
+            borders: row.borders,
+            color: row.color,
+            data_validation: row.data_validation,
+            font_color: row.font_color,
+            font_family: row.font_family,
             font_size: row.font_size,
             horizontal_align: row.horizontal_align,
             lock: row.lock,
-            note: row.note.clone(),
+            note: row.note,
             number_format: row.number_format,
-            text_formats: row.text_formats.clone(),
+            text_formats: row.text_formats,
             vertical_align: row.vertical_align,
             ..Default::default()
         }
