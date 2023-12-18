@@ -12,7 +12,6 @@
 use crate::ast::Variables;
 use crate::{ArcSourceCode, Compiler, ModuleLoader, ModulePath, Result, Row, Scope, Spreadsheet};
 use log::{debug, error, info};
-use std::cell;
 use std::fs;
 
 mod display;
@@ -22,7 +21,7 @@ mod try_from;
 pub struct Module {
     pub module_path: ModulePath,
     pub scope: Scope,
-    pub spreadsheet: cell::RefCell<Spreadsheet>,
+    pub spreadsheet: Spreadsheet,
     pub compiler_version: String,
     pub(crate) source_code: ArcSourceCode,
 }
@@ -38,7 +37,7 @@ impl Module {
             compiler_version: env!("CARGO_PKG_VERSION").to_string(),
             scope,
             module_path,
-            spreadsheet: cell::RefCell::new(spreadsheet),
+            spreadsheet,
             source_code,
         }
     }
@@ -52,7 +51,7 @@ impl Module {
     // TODO: move this into spreadsheet?
     pub(crate) fn eval_fills(self) -> Self {
         let mut new_spreadsheet = Spreadsheet::default();
-        let s = self.spreadsheet.into_inner();
+        let s = self.spreadsheet;
         let mut row_num = 0;
 
         for row in s.rows.into_iter() {
@@ -72,14 +71,14 @@ impl Module {
         }
 
         Self {
-            spreadsheet: cell::RefCell::new(new_spreadsheet),
+            spreadsheet: new_spreadsheet,
             ..self
         }
     }
 
     // TODO: do this in parallel (thread for each row (maybe cell? with a threadpool))
     pub(crate) fn eval_spreadsheet(self, external_vars: Variables) -> Result<Self> {
-        let spreadsheet = self.spreadsheet.into_inner();
+        let spreadsheet = self.spreadsheet;
         let scope = self
             .scope
             .merge_variables(spreadsheet.variables())
@@ -92,7 +91,7 @@ impl Module {
 
         Ok(Self {
             scope,
-            spreadsheet: cell::RefCell::new(Spreadsheet { rows: evaled_rows }),
+            spreadsheet: Spreadsheet { rows: evaled_rows },
             ..self
         })
     }
@@ -204,12 +203,11 @@ mod tests {
     use crate::ast::*;
     use crate::test_utils::*;
     use crate::*;
-    use std::cell;
 
     #[test]
     fn eval_fills_finite() {
         let module = Module {
-            spreadsheet: cell::RefCell::new(Spreadsheet {
+            spreadsheet: Spreadsheet {
                 rows: vec![
                     Row {
                         fill: Some(Fill::new(0, Some(10))),
@@ -220,11 +218,11 @@ mod tests {
                         ..Default::default()
                     },
                 ],
-            }),
+            },
             ..build_module()
         }
         .eval_fills();
-        let spreadsheet = module.spreadsheet.borrow();
+        let spreadsheet = module.spreadsheet;
 
         assert_eq!(spreadsheet.rows.len(), 40);
         // 0-9 should be Fill { amount: 10, start_row: 0 }
@@ -238,7 +236,7 @@ mod tests {
     #[test]
     fn eval_fills_infinite() {
         let module = Module {
-            spreadsheet: cell::RefCell::new(Spreadsheet {
+            spreadsheet: Spreadsheet {
                 rows: vec![
                     Row {
                         fill: Some(Fill::new(0, Some(10))),
@@ -249,11 +247,11 @@ mod tests {
                         ..Default::default()
                     },
                 ],
-            }),
+            },
             ..build_module()
         }
         .eval_fills();
-        let spreadsheet = module.spreadsheet.borrow();
+        let spreadsheet = module.spreadsheet;
 
         assert_eq!(spreadsheet.rows.len(), 1000);
         // 0-9 should be Fill { amount: 10, start_row: 0 }

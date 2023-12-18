@@ -74,9 +74,8 @@ impl<'a> BatchUpdateBuilder<'a> {
     }
 
     fn row_data(&self) -> Vec<api::RowData> {
-        let spreadsheet = self.module.spreadsheet.borrow();
-
-        spreadsheet
+        self.module
+            .spreadsheet
             .rows
             .iter()
             .enumerate()

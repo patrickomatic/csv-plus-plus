@@ -10,8 +10,7 @@ impl CompilationTarget for Csv<'_> {
     fn write(&self, module: &Module) -> Result<()> {
         let existing_values = Self::read(&self.path, &self.compiler.output)?;
 
-        let new_values = module.spreadsheet.borrow();
-        let widest_row = new_values.widest_row();
+        let widest_row = module.spreadsheet.widest_row();
 
         let mut writer = csv::WriterBuilder::new()
             .flexible(true)
@@ -21,7 +20,7 @@ impl CompilationTarget for Csv<'_> {
                     .output_error(format!("Unable to open output file for writing: {e:?}"))
             })?;
 
-        for (index, row) in new_values.rows.iter().enumerate() {
+        for (index, row) in module.spreadsheet.rows.iter().enumerate() {
             let mut output_row: Vec<String> = merge_rows(
                 existing_values
                     .cells

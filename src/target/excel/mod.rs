@@ -43,10 +43,9 @@ impl<'a> Excel<'a> {
     /// to be as light-touch as possible and just loop through our values and set them (or not
     /// depending on the merge strategy).
     fn build_worksheet(&self, module: &Module, worksheet: &mut u::Worksheet) -> Result<()> {
-        let s = module.spreadsheet.borrow();
         let mut cell_validations = vec![];
 
-        for (row_index, row) in s.rows.iter().enumerate() {
+        for (row_index, row) in module.spreadsheet.rows.iter().enumerate() {
             for (cell_index, cell) in row.cells.iter().enumerate() {
                 let position = a1_notation::Address::new(cell_index, row_index);
 

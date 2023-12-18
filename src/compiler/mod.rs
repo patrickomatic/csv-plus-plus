@@ -82,7 +82,7 @@ mod tests {
         let compiler: Compiler = test_file.into();
         let module = compiler.compile().unwrap();
 
-        assert_eq!(module.spreadsheet.borrow().rows.len(), 2);
+        assert_eq!(module.spreadsheet.rows.len(), 2);
     }
 
     #[test]
@@ -91,7 +91,7 @@ mod tests {
         let compiler: Compiler = test_file.into();
         let module = compiler.compile().unwrap();
 
-        assert_eq!(module.spreadsheet.borrow().rows.len(), 10);
+        assert_eq!(module.spreadsheet.rows.len(), 10);
     }
 
     #[test]
@@ -100,7 +100,7 @@ mod tests {
         let compiler: Compiler = test_file.into();
         let module = compiler.compile().unwrap();
 
-        assert_eq!(module.spreadsheet.borrow().rows.len(), 1000);
+        assert_eq!(module.spreadsheet.rows.len(), 1000);
     }
 
     #[test]
@@ -109,7 +109,7 @@ mod tests {
         let compiler: Compiler = test_file.into();
         let module = compiler.compile().unwrap();
 
-        assert_eq!(module.spreadsheet.borrow().rows.len(), 1000);
+        assert_eq!(module.spreadsheet.rows.len(), 1000);
     }
 
     #[test]
@@ -118,8 +118,7 @@ mod tests {
             &TestSourceCode::new("xlsx", "foo,bar,baz\n![[f=2]]foo,bar,baz\none,last,row\n");
         let compiler: Compiler = test_file.into();
         let module = compiler.compile().unwrap();
-        let spreadsheet = module.spreadsheet.borrow();
 
-        assert_eq!(spreadsheet.rows.len(), 4);
+        assert_eq!(module.spreadsheet.rows.len(), 4);
     }
 }

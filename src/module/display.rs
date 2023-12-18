@@ -14,7 +14,7 @@ impl fmt::Display for Module {
         }
 
         writeln!(f, "\n# Spreadsheet")?;
-        write!(f, "{}", self.spreadsheet.borrow())
+        write!(f, "{}", self.spreadsheet)
     }
 }
 
