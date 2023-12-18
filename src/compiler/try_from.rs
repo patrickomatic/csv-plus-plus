@@ -1,7 +1,7 @@
 use crate::logger;
 use crate::parser::ast_parser::AstParser;
 use crate::{CliArgs, Compiler, Options, Output};
-use log::info;
+use log::debug;
 
 impl TryFrom<&CliArgs> for Compiler {
     type Error = crate::Error;
@@ -14,6 +14,7 @@ impl TryFrom<&CliArgs> for Compiler {
             )?,
             ..Options::try_from(cli_args)?
         };
+
         logger::init(options.verbosity);
 
         let compiler = Self {
@@ -22,7 +23,7 @@ impl TryFrom<&CliArgs> for Compiler {
             input_filename: cli_args.input_filename.clone(),
         };
 
-        info!("Initted compiler: {compiler}");
+        debug!("Initted compiler: {compiler}");
 
         Ok(compiler)
     }

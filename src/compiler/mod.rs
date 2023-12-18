@@ -39,7 +39,6 @@ impl Compiler {
         main_module.write_object_file(self)?;
 
         Ok(main_module)
-        // })
     }
 
     pub fn from_cli_args() -> Result<Self> {

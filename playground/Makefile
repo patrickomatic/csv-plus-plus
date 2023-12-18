@@ -19,10 +19,10 @@ test_gs: test.csvpp
 	$(CSVCC) -v --sheet-name "test" -g $(GOOGLE_SHEETS_TEST_ID) $<
 
 %.csv: %.csvpp
-	$(CSVCC) -o $@ $<
+	$(CSVCC) -vvv -o $@ $<
 
 %.xlsx: %.csvpp
-	$(CSVCC) -o $@ $<
+	$(CSVCC) -vvv -o $@ $<
 
 .PHONY: open
 open: all

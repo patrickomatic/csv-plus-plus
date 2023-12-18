@@ -1,12 +1,11 @@
 use super::Options;
 use crate::logger::u8_into_level_filter;
-use crate::CliArgs;
+use crate::{CliArgs, Result};
 
-// TODO: take ownership instead of a ref?
 impl TryFrom<&CliArgs> for Options {
     type Error = crate::Error;
 
-    fn try_from(cli_args: &CliArgs) -> std::result::Result<Self, Self::Error> {
+    fn try_from(cli_args: &CliArgs) -> Result<Self> {
         Ok(Options {
             backup: cli_args.backup,
             google_account_credentials: cli_args.google_account_credentials.clone(),
@@ -14,7 +13,7 @@ impl TryFrom<&CliArgs> for Options {
             overwrite_values: !cli_args.safe,
             sheet_name: Self::sheet_name(cli_args)?,
             use_cache: !cli_args.no_cache,
-            verbosity: u8_into_level_filter(cli_args.verbose),
+            verbosity: u8_into_level_filter(cli_args.verbose)?,
             ..Default::default()
         })
     }
