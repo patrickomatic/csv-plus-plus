@@ -6,7 +6,7 @@
 // TODO:
 // * make it so that `---` is not required
 use crate::parser::code_section_parser::CodeSectionParser;
-use crate::{ArcSourceCode, Error, ModulePath, Result, Scope, SourceCode};
+use crate::{ArcSourceCode, Error, Module, ModulePath, Result, Scope, SourceCode, Spreadsheet};
 use petgraph::graph;
 use std::collections;
 use std::path;
@@ -26,8 +26,7 @@ type Failed = ArcRwLock<collections::HashMap<ModulePath, Error>>;
 
 #[derive(Debug)]
 pub(super) struct ModuleLoader<'a> {
-    main_scope: &'a Scope,
-    main_module_path: &'a ModulePath,
+    main_module: &'a Module,
     attempted: Attempted,
     loaded: Loaded,
     failed: Failed,
@@ -35,11 +34,17 @@ pub(super) struct ModuleLoader<'a> {
 
 macro_rules! merge {
     ($scope:expr, $dep:expr, $functions_or_variables:ident) => {
-        for (name, ast) in $dep.scope.$functions_or_variables.clone().into_iter() {
+        for (name, ast) in $dep
+            .module
+            .scope
+            .$functions_or_variables
+            .clone()
+            .into_iter()
+        {
             $scope.$functions_or_variables.insert(
                 name,
                 ast.eval(&$scope, None)
-                    .map_err(|e| $dep.source_code.eval_error(e, None))?,
+                    .map_err(|e| $dep.module.source_code.eval_error(e, None))?,
             );
         }
     };
@@ -60,18 +65,14 @@ impl<'a> ModuleLoader<'a> {
     /// `failed` and sucesses into `loaded`. The idea being that we want to show as many errors as
     /// possible to the user (otherwise it's annoying to have them fix and re-compile one-by-one),
     /// so we accumulate and keep going.  But in the end fail if there are any errors at all.
-    pub(super) fn load_main(
-        module_path: &'a ModulePath,
-        scope: &'a Scope,
-    ) -> Result<ModuleLoader<'a>> {
+    pub(super) fn load_dependencies(module: &'a Module) -> Result<ModuleLoader<'a>> {
         let module_loader = Self {
-            main_scope: scope,
-            main_module_path: module_path,
+            main_module: module,
             attempted: Default::default(),
             loaded: Default::default(),
             failed: Default::default(),
         };
-        module_loader.load(scope, DependencyRelation::Direct)?;
+        module_loader.load(module, DependencyRelation::Direct)?;
 
         Ok(module_loader)
     }
@@ -96,11 +97,11 @@ impl<'a> ModuleLoader<'a> {
         let mut nodes = collections::HashMap::new();
 
         let mut dep_graph: graph::Graph<_, ()> = graph::Graph::new();
-        let main_node = dep_graph.add_node(self.main_module_path);
-        nodes.insert(self.main_module_path, main_node);
+        let main_node = dep_graph.add_node(&self.main_module.module_path);
+        nodes.insert(&self.main_module.module_path, main_node);
 
         // load all of the direct dependencies
-        for p in &self.main_scope.required_modules {
+        for p in &self.main_module.scope.required_modules {
             let n = dep_graph.add_node(p);
             nodes.insert(p, n);
             dep_graph.add_edge(main_node, n, ());
@@ -119,7 +120,7 @@ impl<'a> ModuleLoader<'a> {
                 pn
             };
 
-            for dep in &dep.scope.required_modules {
+            for dep in &dep.module.scope.required_modules {
                 let n = nodes.entry(dep).or_insert_with(|| dep_graph.add_node(dep));
                 dep_graph.add_edge(path_node, *n, ());
             }
@@ -148,13 +149,13 @@ impl<'a> ModuleLoader<'a> {
                     // build up transitive dependencies in a global "tmp" namespace, but we'll *not* be
                     // exposing this namespace to the main module since it should only get the direct
                     // dependencies
-                    if dep.scope.required_modules.is_empty() {
+                    if dep.module.scope.required_modules.is_empty() {
                         tmp_scope
                             .functions
-                            .extend(dep.scope.functions.clone().into_iter());
+                            .extend(dep.module.scope.functions.clone().into_iter());
                         tmp_scope
                             .variables
-                            .extend(dep.scope.variables.clone().into_iter());
+                            .extend(dep.module.scope.variables.clone().into_iter());
                     } else {
                         merge_scopes!(tmp_scope, dep);
                     }
@@ -169,13 +170,13 @@ impl<'a> ModuleLoader<'a> {
         !self.failed.try_read().unwrap().is_empty()
     }
 
-    fn load(&self, scope: &Scope, dependency_relation: DependencyRelation) -> Result<()> {
+    fn load(&self, module: &Module, dependency_relation: DependencyRelation) -> Result<()> {
         let mut to_attempt = vec![];
         // hold a lock while we reserve all of the dependencies we're going to resolve (by
         // preemptively marking them in `attempted`)
         {
             let mut attempted = self.attempted.write()?;
-            for module_path in &scope.required_modules {
+            for module_path in &module.scope.required_modules {
                 if attempted.contains(module_path) {
                     // another modules has already loaded it
                     continue;
@@ -197,6 +198,7 @@ impl<'a> ModuleLoader<'a> {
         Ok(())
     }
 
+    // TODO: can I use the `TryFrom<PathBuf> for Module`?
     fn load_module(
         &self,
         module_path: ModulePath,
@@ -217,17 +219,23 @@ impl<'a> ModuleLoader<'a> {
         if let Some(scope_source) = &source_code.code_section {
             // TODO: this should use the csvpo cache if there is one
             match CodeSectionParser::parse(scope_source, source_code.clone()) {
-                Ok(cs) => {
+                Ok(scope) => {
+                    let loaded_module = Module::new(
+                        source_code,
+                        module_path.clone(),
+                        scope,
+                        Spreadsheet::default(),
+                    );
+
                     // recursively load the newly loaded code section's dependencies (which are
                     // transitive at this point)
-                    self.load(&cs, DependencyRelation::Transitive)?;
+                    self.load(&loaded_module, DependencyRelation::Transitive)?;
 
                     self.loaded.write()?.insert(
                         module_path,
                         Dependency {
                             relation: dependency_relation,
-                            scope: cs,
-                            source_code: source_code.clone(),
+                            module: loaded_module,
                         },
                     );
                 }
@@ -257,20 +265,15 @@ mod tests {
     use std::sync;
 
     #[test]
-    fn load_main_empty() {
-        let module_path = ModulePath::new("foo");
-
-        assert!(ModuleLoader::load_main(&module_path, &Scope::default()).is_ok());
+    fn load_dependencies_empty() {
+        assert!(ModuleLoader::load_dependencies(&build_module()).is_ok());
     }
 
     #[test]
-    fn load_main_require_does_not_exist() {
-        let module_path = ModulePath::new("foo");
-        let scope = Scope {
-            required_modules: vec![module_path.clone()],
-            ..Default::default()
-        };
-        let module_loader = ModuleLoader::load_main(&module_path, &scope).unwrap();
+    fn load_dependencies_require_does_not_exist() {
+        let mut module = build_module();
+        module.scope.required_modules.push(ModulePath::new("bar"));
+        let module_loader = ModuleLoader::load_dependencies(&module).unwrap();
 
         assert_eq!(module_loader.failed.read().unwrap().len(), 1);
         assert_eq!(module_loader.attempted.read().unwrap().len(), 1);
@@ -278,7 +281,7 @@ mod tests {
     }
 
     #[test]
-    fn load_main_valid_files() {
+    fn load_dependencies_valid_files() {
         let mod1 = TestFile::new(
             "csvpp",
             "
@@ -295,12 +298,15 @@ b := 24
         );
         let mod1_path: ModulePath = (&mod1).into();
         let mod2_path: ModulePath = (&mod2).into();
-        let scope = Scope {
-            required_modules: vec![mod1_path.clone(), mod2_path.clone()],
-            ..Default::default()
+        let module = Module {
+            module_path: ModulePath::new("main"),
+            scope: Scope {
+                required_modules: vec![mod1_path.clone(), mod2_path.clone()],
+                ..Default::default()
+            },
+            ..build_module()
         };
-        let module_path = ModulePath::new("main");
-        let module_loader = ModuleLoader::load_main(&module_path, &scope).unwrap();
+        let module_loader = ModuleLoader::load_dependencies(&module).unwrap();
         let loaded = module_loader.loaded.read().unwrap();
 
         assert_eq!(loaded.len(), 2);
@@ -310,6 +316,7 @@ b := 24
             loaded
                 .get(&mod1_path)
                 .unwrap()
+                .module
                 .scope
                 .variables
                 .get("a")
@@ -320,6 +327,7 @@ b := 24
             loaded
                 .get(&mod2_path)
                 .unwrap()
+                .module
                 .scope
                 .variables
                 .get("b")
@@ -330,20 +338,22 @@ b := 24
 
     #[test]
     fn load_in_directory() {
-        let module = TestFile::new_in_dir(
+        let dep_mod = TestFile::new_in_dir(
             "csvpp",
             "
 a := 42
 ---
         ",
         );
-        let module_path: ModulePath = (&module).into();
-        let scope = Scope {
-            required_modules: vec![module_path.clone()],
-            ..Default::default()
+        let module = Module {
+            module_path: ModulePath::new("main"),
+            scope: Scope {
+                required_modules: vec![(&dep_mod).into()],
+                ..Default::default()
+            },
+            ..build_module()
         };
-        let module_path = ModulePath::new("main");
-        let module_loader = ModuleLoader::load_main(&module_path, &scope).unwrap();
+        let module_loader = ModuleLoader::load_dependencies(&module).unwrap();
 
         assert_eq!(module_loader.loaded.read().unwrap().len(), 1);
         assert_eq!(module_loader.attempted.read().unwrap().len(), 1);
@@ -351,7 +361,7 @@ a := 42
     }
 
     #[test]
-    fn load_main_double_load() {
+    fn load_dependencies_double_load() {
         let mod1 = TestFile::new(
             "csvpp",
             "
@@ -370,13 +380,16 @@ b := 24
         "
             ),
         );
-        let mod2_path: ModulePath = (&mod2).into();
-        let scope = Scope {
-            required_modules: vec![mod1_path.clone(), mod2_path.clone()],
-            ..Default::default()
+
+        let module = Module {
+            module_path: ModulePath::new("main"),
+            scope: Scope {
+                required_modules: vec![(&mod1).into(), (&mod2).into()],
+                ..Default::default()
+            },
+            ..build_module()
         };
-        let module_path = ModulePath::new("main");
-        let module_loader = ModuleLoader::load_main(&module_path, &scope).unwrap();
+        let module_loader = ModuleLoader::load_dependencies(&module).unwrap();
 
         assert_eq!(module_loader.loaded.read().unwrap().len(), 2);
         assert_eq!(module_loader.attempted.read().unwrap().len(), 2);
@@ -386,8 +399,7 @@ b := 24
     #[test]
     fn into_direct_dependencies_empty() {
         let module_loader = ModuleLoader {
-            main_scope: &Scope::default(),
-            main_module_path: &ModulePath::new("foo"),
+            main_module: &build_module(),
             attempted: Default::default(),
             loaded: Default::default(),
             failed: Default::default(),
@@ -399,8 +411,7 @@ b := 24
     #[test]
     fn into_direct_dependencies_error() {
         let module_loader = ModuleLoader {
-            main_scope: &Scope::default(),
-            main_module_path: &ModulePath::new("foo"),
+            main_module: &build_module(),
             attempted: Default::default(),
             loaded: Default::default(),
             failed: Default::default(),
@@ -420,49 +431,56 @@ b := 24
         let mut loaded = collections::HashMap::new();
 
         // var_from_a depends on var_from_b
-        let mut a_scope = Scope {
-            required_modules: vec![ModulePath::new("b")],
-            ..Default::default()
+        let mut mod_a = Module {
+            scope: Scope {
+                required_modules: vec![ModulePath::new("b")],
+                ..Default::default()
+            },
+            ..build_module()
         };
-        a_scope.variables.insert(
+        mod_a.scope.variables.insert(
             "var_from_a".to_string(),
             Ast::new(Node::reference("var_from_b")),
         );
-        loaded.insert(
-            ModulePath::new("a"),
-            Dependency::direct(a_scope, build_source_code()),
-        );
+        loaded.insert(ModulePath::new("a"), Dependency::direct(mod_a));
 
         // var_from_b depends on var_from_c
-        let mut b_scope = Scope {
-            required_modules: vec![ModulePath::new("c")],
-            ..Default::default()
+        let mut mod_b = Module {
+            scope: Scope {
+                required_modules: vec![ModulePath::new("c")],
+                ..Default::default()
+            },
+            ..build_module()
         };
-        b_scope.variables.insert(
+        mod_b.scope.variables.insert(
             "var_from_b".to_string(),
             Ast::new(Node::reference("var_from_c")),
         );
-        loaded.insert(
-            ModulePath::new("b"),
-            Dependency::transitive(b_scope, build_source_code()),
-        );
+        loaded.insert(ModulePath::new("b"), Dependency::transitive(mod_b));
 
         // var_from_c resolves to 420
-        let mut c_scope = Scope {
-            required_modules: vec![],
-            ..Default::default()
+        let mut mod_c = Module {
+            scope: Scope {
+                required_modules: vec![],
+                ..Default::default()
+            },
+            ..build_module()
         };
-        c_scope
+        mod_c
+            .scope
             .variables
             .insert("var_from_c".to_string(), Ast::new(420.into()));
-        loaded.insert(
-            ModulePath::new("c"),
-            Dependency::transitive(c_scope, build_source_code()),
-        );
+        loaded.insert(ModulePath::new("c"), Dependency::transitive(mod_c));
 
+        let main_module = Module {
+            scope: Scope {
+                required_modules: vec![ModulePath::new("a")],
+                ..Default::default()
+            },
+            ..build_module()
+        };
         let module_loader = ModuleLoader {
-            main_scope: &Scope::default(),
-            main_module_path: &ModulePath::new("main"),
+            main_module: &main_module,
             attempted: Default::default(),
             loaded: sync::Arc::new(sync::RwLock::new(loaded)),
             failed: Default::default(),

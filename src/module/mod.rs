@@ -97,7 +97,7 @@ impl Module {
     }
 
     pub(crate) fn load_dependencies(self) -> Result<Self> {
-        let module_loader = ModuleLoader::load_main(&self.module_path, &self.scope)?;
+        let module_loader = ModuleLoader::load_dependencies(&self)?;
         let dependencies = module_loader.into_direct_dependencies()?;
 
         Ok(Self {

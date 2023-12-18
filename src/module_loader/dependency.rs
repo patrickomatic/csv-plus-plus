@@ -1,4 +1,4 @@
-use crate::{ArcSourceCode, Scope};
+use crate::Module;
 
 #[derive(Copy, Clone, Debug)]
 pub(super) enum DependencyRelation {
@@ -9,25 +9,22 @@ pub(super) enum DependencyRelation {
 #[derive(Debug)]
 pub(super) struct Dependency {
     pub(super) relation: DependencyRelation,
-    pub(super) scope: Scope,
-    pub(super) source_code: ArcSourceCode,
+    pub(super) module: Module,
 }
 
 #[cfg(test)]
 impl Dependency {
-    pub(crate) fn direct(scope: Scope, source_code: ArcSourceCode) -> Self {
+    pub(crate) fn direct(module: Module) -> Self {
         Self {
             relation: DependencyRelation::Direct,
-            scope,
-            source_code,
+            module,
         }
     }
 
-    pub(crate) fn transitive(scope: Scope, source_code: ArcSourceCode) -> Self {
+    pub(crate) fn transitive(module: Module) -> Self {
         Self {
             relation: DependencyRelation::Transitive,
-            scope,
-            source_code,
+            module,
         }
     }
 }

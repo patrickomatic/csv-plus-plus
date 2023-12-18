@@ -64,7 +64,11 @@ pub struct CliArgs {
     )]
     pub sheet_name: Option<String>,
 
-    #[arg(action = clap::ArgAction::Count, short = 'v', long, default_value_t = 0)]
+    #[arg(
+        action = clap::ArgAction::Count,
+        short = 'v',
+        long,
+        help = "The verbosity of the output.  You can specify -v, -vv, -vvv and -vvvv for increasing verbosity.  By default only errors are shown.")]
     pub verbose: u8,
 
     #[arg(
