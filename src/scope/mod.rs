@@ -20,7 +20,6 @@ impl Scope {
         Self {
             functions: self.functions.into_iter().chain(other.functions).collect(),
             variables: self.variables.into_iter().chain(other.variables).collect(),
-            ..self
         }
     }
 }

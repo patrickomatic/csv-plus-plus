@@ -7,7 +7,8 @@
 // * make it so that `---` is not required
 use crate::parser::code_section_parser::CodeSectionParser;
 use crate::{ArcSourceCode, Error, Module, ModulePath, Result, Scope, SourceCode, Spreadsheet};
-use petgraph::graph;
+use log::{debug, info};
+use petgraph::graphmap;
 use std::collections;
 use std::path;
 use std::sync;
@@ -92,51 +93,44 @@ impl<'a> ModuleLoader<'a> {
     /// Extract all direct dependencies on `scope`.  
     fn direct_dependencies(self) -> Result<Scope> {
         let loaded = sync::Arc::try_unwrap(self.loaded).unwrap().into_inner()?;
-        // TODO: this whole thing could probably be cleaned up if we built the adjacency list in an
-        // array and managed it ourselves and got rid of the `nodes` HashMap
-        let mut nodes = collections::HashMap::new();
+        info!("Resolving {} module dependencies", loaded.len());
 
-        let mut dep_graph: graph::Graph<_, ()> = graph::Graph::new();
-        let main_node = dep_graph.add_node(&self.main_module.module_path);
-        nodes.insert(&self.main_module.module_path, main_node);
+        let mut dep_graph: graphmap::UnGraphMap<_, ()> = graphmap::UnGraphMap::new();
+
+        dep_graph.add_node(&self.main_module.module_path);
 
         // load all of the direct dependencies
         for p in &self.main_module.required_modules {
-            let n = dep_graph.add_node(p);
-            nodes.insert(p, n);
-            dep_graph.add_edge(main_node, n, ());
+            dep_graph.add_node(p);
+            dep_graph.add_edge(&self.main_module.module_path, p, ());
         }
 
-        // and now all of the transitive dependencies that have already been flattened out into a
-        // HashMap.  this code is a little awkward because we need to consult with `nodes` to see
-        // if we've already added the node
-        // TODO: consume loaded so we don't have to clone below
-        for (p, dep) in &loaded {
-            let path_node = if let Some(pn) = nodes.get(p) {
-                *pn
-            } else {
-                let pn = dep_graph.add_node(p);
-                nodes.insert(p, pn);
-                pn
-            };
+        for (p, dep) in loaded.iter() {
+            dep_graph.add_node(p);
 
-            for dep in &dep.module.required_modules {
-                let n = nodes.entry(dep).or_insert_with(|| dep_graph.add_node(dep));
-                dep_graph.add_edge(path_node, *n, ());
+            for required_dep in &dep.module.required_modules {
+                dep_graph.add_node(required_dep);
+                dep_graph.add_edge(p, required_dep, ());
             }
         }
 
+        debug!("Loaded dependency graph {:?}", &dep_graph);
+
         // now that we have a graph, use Tarjan's algo to give us a topological sort which will
         // represent the dependencies in the order they need to be resolved.
+
         let resolution_order = petgraph::algo::tarjan_scc(&dep_graph)
             .into_iter()
             .flatten()
-            .filter_map(|n| loaded.get(dep_graph[n]));
+            .filter_map(|p| loaded.get(p));
+
+        debug!("Resolving dependencies in order {:?}", &resolution_order);
 
         let mut dep_scope = Scope::default();
         let mut tmp_scope = Scope::default();
 
         for dep in resolution_order.into_iter() {
+            let dep = dep.to_owned();
             match dep.relation {
                 DependencyRelation::Direct => {
                     // for direct dependencies, we want the names to be exposed to the module
@@ -416,7 +410,6 @@ b := 24
         assert!(module_loader.into_direct_dependencies().is_err());
     }
 
-    #[ignore]
     #[test]
     fn into_direct_dependencies_variable() {
         // main -> a -> b -> c
@@ -472,6 +465,7 @@ b := 24
             dependencies.variables.get("var_from_a").unwrap(),
             &Ast::new(420.into())
         );
+        assert!(false);
     }
 
     #[test]
