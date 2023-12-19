@@ -19,10 +19,11 @@ mod try_from;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct Module {
+    pub compiler_version: String,
     pub module_path: ModulePath,
     pub scope: Scope,
     pub spreadsheet: Spreadsheet,
-    pub compiler_version: String,
+    pub(crate) required_modules: Vec<ModulePath>,
     pub(crate) source_code: ArcSourceCode,
 }
 
@@ -37,6 +38,7 @@ impl Module {
             compiler_version: env!("CARGO_PKG_VERSION").to_string(),
             scope,
             module_path,
+            required_modules: vec![],
             spreadsheet,
             source_code,
         }

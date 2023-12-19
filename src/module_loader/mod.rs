@@ -101,7 +101,7 @@ impl<'a> ModuleLoader<'a> {
         nodes.insert(&self.main_module.module_path, main_node);
 
         // load all of the direct dependencies
-        for p in &self.main_module.scope.required_modules {
+        for p in &self.main_module.required_modules {
             let n = dep_graph.add_node(p);
             nodes.insert(p, n);
             dep_graph.add_edge(main_node, n, ());
@@ -120,7 +120,7 @@ impl<'a> ModuleLoader<'a> {
                 pn
             };
 
-            for dep in &dep.module.scope.required_modules {
+            for dep in &dep.module.required_modules {
                 let n = nodes.entry(dep).or_insert_with(|| dep_graph.add_node(dep));
                 dep_graph.add_edge(path_node, *n, ());
             }
@@ -149,7 +149,7 @@ impl<'a> ModuleLoader<'a> {
                     // build up transitive dependencies in a global "tmp" namespace, but we'll *not* be
                     // exposing this namespace to the main module since it should only get the direct
                     // dependencies
-                    if dep.module.scope.required_modules.is_empty() {
+                    if dep.module.required_modules.is_empty() {
                         tmp_scope
                             .functions
                             .extend(dep.module.scope.functions.clone().into_iter());
@@ -176,7 +176,7 @@ impl<'a> ModuleLoader<'a> {
         // preemptively marking them in `attempted`)
         {
             let mut attempted = self.attempted.write()?;
-            for module_path in &module.scope.required_modules {
+            for module_path in &module.required_modules {
                 if attempted.contains(module_path) {
                     // another modules has already loaded it
                     continue;
@@ -219,13 +219,14 @@ impl<'a> ModuleLoader<'a> {
         if let Some(scope_source) = &source_code.code_section {
             // TODO: this should use the csvpo cache if there is one
             match CodeSectionParser::parse(scope_source, source_code.clone()) {
-                Ok(scope) => {
-                    let loaded_module = Module::new(
+                Ok((scope, required_modules)) => {
+                    let mut loaded_module = Module::new(
                         source_code,
                         module_path.clone(),
                         scope,
                         Spreadsheet::default(),
                     );
+                    loaded_module.required_modules = required_modules;
 
                     // recursively load the newly loaded code section's dependencies (which are
                     // transitive at this point)
@@ -272,7 +273,7 @@ mod tests {
     #[test]
     fn load_dependencies_require_does_not_exist() {
         let mut module = build_module();
-        module.scope.required_modules.push(ModulePath::new("bar"));
+        module.required_modules.push(ModulePath::new("bar"));
         let module_loader = ModuleLoader::load_dependencies(&module).unwrap();
 
         assert_eq!(module_loader.failed.read().unwrap().len(), 1);
@@ -300,10 +301,7 @@ b := 24
         let mod2_path: ModulePath = (&mod2).into();
         let module = Module {
             module_path: ModulePath::new("main"),
-            scope: Scope {
-                required_modules: vec![mod1_path.clone(), mod2_path.clone()],
-                ..Default::default()
-            },
+            required_modules: vec![mod1_path.clone(), mod2_path.clone()],
             ..build_module()
         };
         let module_loader = ModuleLoader::load_dependencies(&module).unwrap();
@@ -347,10 +345,7 @@ a := 42
         );
         let module = Module {
             module_path: ModulePath::new("main"),
-            scope: Scope {
-                required_modules: vec![(&dep_mod).into()],
-                ..Default::default()
-            },
+            required_modules: vec![(&dep_mod).into()],
             ..build_module()
         };
         let module_loader = ModuleLoader::load_dependencies(&module).unwrap();
@@ -383,10 +378,7 @@ b := 24
 
         let module = Module {
             module_path: ModulePath::new("main"),
-            scope: Scope {
-                required_modules: vec![(&mod1).into(), (&mod2).into()],
-                ..Default::default()
-            },
+            required_modules: vec![(&mod1).into(), (&mod2).into()],
             ..build_module()
         };
         let module_loader = ModuleLoader::load_dependencies(&module).unwrap();
@@ -432,10 +424,7 @@ b := 24
 
         // var_from_a depends on var_from_b
         let mut mod_a = Module {
-            scope: Scope {
-                required_modules: vec![ModulePath::new("b")],
-                ..Default::default()
-            },
+            required_modules: vec![ModulePath::new("b")],
             ..build_module()
         };
         mod_a.scope.variables.insert(
@@ -446,10 +435,7 @@ b := 24
 
         // var_from_b depends on var_from_c
         let mut mod_b = Module {
-            scope: Scope {
-                required_modules: vec![ModulePath::new("c")],
-                ..Default::default()
-            },
+            required_modules: vec![ModulePath::new("c")],
             ..build_module()
         };
         mod_b.scope.variables.insert(
@@ -460,10 +446,7 @@ b := 24
 
         // var_from_c resolves to 420
         let mut mod_c = Module {
-            scope: Scope {
-                required_modules: vec![],
-                ..Default::default()
-            },
+            required_modules: vec![],
             ..build_module()
         };
         mod_c
@@ -473,10 +456,7 @@ b := 24
         loaded.insert(ModulePath::new("c"), Dependency::transitive(mod_c));
 
         let main_module = Module {
-            scope: Scope {
-                required_modules: vec![ModulePath::new("a")],
-                ..Default::default()
-            },
+            required_modules: vec![ModulePath::new("a")],
             ..build_module()
         };
         let module_loader = ModuleLoader {

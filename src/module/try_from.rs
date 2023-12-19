@@ -16,18 +16,20 @@ impl TryFrom<path::PathBuf> for Module {
         let spreadsheet = Spreadsheet::parse(source_code.clone())?;
         debug!("Loaded spreadsheet section");
 
-        let scope = if let Some(scope_source) = &source_code.code_section {
-            let cs = CodeSectionParser::parse(scope_source, source_code.clone())?;
-            debug!("Parsed code section: {cs}");
-            cs
+        let (scope, required_modules) = if let Some(scope_source) = &source_code.code_section {
+            let code_section = CodeSectionParser::parse(scope_source, source_code.clone())?;
+            debug!("Parsed code section: {code_section:?}");
+            code_section
         } else {
-            Scope::default()
+            (Scope::default(), vec![])
         };
 
         let module_path: ModulePath = source_code.filename.clone().try_into()?;
         debug!("Using ModulePath = {module_path}");
 
-        Ok(Self::new(source_code, module_path, scope, spreadsheet))
+        let mut module = Self::new(source_code, module_path, scope, spreadsheet);
+        module.required_modules = required_modules;
+        Ok(module)
     }
 }
 

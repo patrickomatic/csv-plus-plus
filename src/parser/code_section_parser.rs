@@ -31,7 +31,10 @@ pub(crate) struct CodeSectionParser<'a> {
 /// function, use statements and variable assignments and delegates to `AstParser` for handling
 /// expressions
 impl<'a> CodeSectionParser<'a> {
-    pub(crate) fn parse(input: &'a str, source_code: ArcSourceCode) -> Result<Scope> {
+    pub(crate) fn parse(
+        input: &'a str,
+        source_code: ArcSourceCode,
+    ) -> Result<(Scope, Vec<ModulePath>)> {
         CodeSectionParser {
             lexer: AstLexer::new(input, source_code.clone())
                 .map_err(|e| source_code.code_syntax_error(e))?,
@@ -40,7 +43,7 @@ impl<'a> CodeSectionParser<'a> {
         .parse_scope()
     }
 
-    fn parse_scope(&'a self) -> Result<Scope> {
+    fn parse_scope(&'a self) -> Result<(Scope, Vec<ModulePath>)> {
         let mut variables = HashMap::new();
         let mut functions = HashMap::new();
         let mut required_modules = vec![];
@@ -74,11 +77,13 @@ impl<'a> CodeSectionParser<'a> {
             }
         }
 
-        Ok(Scope {
-            functions,
+        Ok((
+            Scope {
+                functions,
+                variables,
+            },
             required_modules,
-            variables,
-        })
+        ))
     }
 
     /// parses `use` followed by a module name
@@ -163,15 +168,15 @@ mod tests {
     use crate::test_utils::*;
     use crate::*;
 
-    fn test(input: &str) -> Scope {
+    fn test(input: &str) -> (Scope, Vec<ModulePath>) {
         let source_code: SourceCode = (&TestSourceCode::new("csv", input)).into();
         CodeSectionParser::parse(input, ArcSourceCode::new(source_code)).unwrap()
     }
 
     #[test]
     fn parse_function() {
-        let cs = test("fn foo(a, b) a + b");
-        let foo = cs.functions.get("foo").unwrap();
+        let (scope, _) = test("fn foo(a, b) a + b");
+        let foo = scope.functions.get("foo").unwrap();
 
         let expected: Ast = Ast::new(Node::fn_def(
             "foo",
@@ -183,8 +188,8 @@ mod tests {
 
     #[test]
     fn parse_function_without_args() {
-        let cs = test("fn foo() 1 * 2");
-        let foo = cs.functions.get("foo").unwrap();
+        let (scope, _) = test("fn foo() 1 * 2");
+        let foo = scope.functions.get("foo").unwrap();
 
         let expected: Ast = Ast::new(Node::fn_def("foo", &[], Node::infix_fn_call(1, "*", 2)));
         assert_eq!(foo, &expected);
@@ -192,7 +197,7 @@ mod tests {
 
     #[test]
     fn parse_multiple_functions() {
-        let cs = test(
+        let (scope, _) = test(
             r#"
 fn foo()
     1 * 2
@@ -201,19 +206,19 @@ fn bar(a, b)
 "#,
         );
 
-        assert_eq!(cs.functions.len(), 2);
+        assert_eq!(scope.functions.len(), 2);
     }
 
     #[test]
     fn parse_variables() {
-        let cs = test("foo := \"bar\"");
+        let (scope, _) = test("foo := \"bar\"");
 
-        assert!(cs.variables.get("foo").is_some());
+        assert!(scope.variables.get("foo").is_some());
     }
 
     #[test]
     fn parse_variables_and_functions() {
-        let cs = test(
+        let (scope, _) = test(
             r#"
 fn foo_fn() 1 * 2
 foo_var := 3 * 4 + 5
@@ -222,36 +227,36 @@ bar_var := D1
 "#,
         );
 
-        assert!(cs.functions.get("foo_fn").is_some());
-        assert!(cs.functions.get("bar_fn").is_some());
+        assert!(scope.functions.get("foo_fn").is_some());
+        assert!(scope.functions.get("bar_fn").is_some());
 
-        assert!(cs.variables.get("foo_var").is_some());
-        assert!(cs.variables.get("bar_var").is_some());
+        assert!(scope.variables.get("foo_var").is_some());
+        assert!(scope.variables.get("bar_var").is_some());
     }
 
     #[test]
     fn parse_use_module() {
-        let cs = test(
+        let (_, required_modules) = test(
             r#"
 use foo
 "#,
         );
 
-        assert_eq!(cs.required_modules.len(), 1);
-        assert_eq!(cs.required_modules[0], ModulePath(vec!["foo".to_string()]));
+        assert_eq!(required_modules.len(), 1);
+        assert_eq!(required_modules[0], ModulePath::new("foo"));
     }
 
     #[test]
     fn parse_use_module_multiple() {
-        let cs = test(
+        let (_, required_modules) = test(
             r#"
 use foo
 use bar
 "#,
         );
 
-        assert_eq!(cs.required_modules.len(), 2);
-        assert_eq!(cs.required_modules[0], ModulePath(vec!["foo".to_string()]));
-        assert_eq!(cs.required_modules[1], ModulePath(vec!["bar".to_string()]));
+        assert_eq!(required_modules.len(), 2);
+        assert_eq!(required_modules[0], ModulePath::new("foo"));
+        assert_eq!(required_modules[1], ModulePath::new("bar"));
     }
 }
