@@ -17,12 +17,9 @@ use std::path;
 use std::sync;
 use std::thread;
 
-mod dependency;
-use dependency::{Dependency, DependencyRelation};
-
 type ArcRwLock<T> = sync::Arc<sync::RwLock<T>>;
 
-type LoadedModules = collections::HashMap<ModulePath, Dependency>;
+type LoadedModules = collections::HashMap<ModulePath, Module>;
 
 type Attempted = ArcRwLock<collections::HashSet<ModulePath>>;
 type Loaded = ArcRwLock<LoadedModules>;
@@ -71,7 +68,7 @@ impl<'a> ModuleLoader<'a> {
             loaded: Default::default(),
             failed: Default::default(),
         };
-        module_loader.load(module, DependencyRelation::Direct)?;
+        module_loader.load(module)?;
 
         Ok(module_loader)
     }
@@ -103,12 +100,12 @@ impl<'a> ModuleLoader<'a> {
             dep_graph.add_edge(&self.main_module.module_path, p, ());
         }
 
-        for (p, dep) in loaded.iter() {
+        for (p, dep_mod) in loaded.iter() {
             dep_graph.add_node(p);
 
-            for required_dep in &dep.module.required_modules {
-                dep_graph.add_node(required_dep);
-                dep_graph.add_edge(p, required_dep, ());
+            for required_mod in &dep_mod.required_modules {
+                dep_graph.add_node(required_mod);
+                dep_graph.add_edge(p, required_mod, ());
             }
         }
 
@@ -125,21 +122,18 @@ impl<'a> ModuleLoader<'a> {
 
         let mut evaled = collections::HashMap::<&ModulePath, Scope>::new();
 
-        for dep in resolution_order.into_iter() {
-            let mut local_scope = dep.module.scope.clone();
-            for req_path in dep.module.required_modules.iter().rev() {
-                let dep_scope = 
-                    // look in `evaled` first (let it take precedence)
-                    if let Some(s) = evaled.get(req_path) {
-                        s.clone()
-                    // otherwise look in `loaded`
-                    } else if let Some(dep) = loaded.get(req_path) {
-                        dep.module.scope.clone()
-                    } else {
-                        compiler_error(format!(
-                                "Expected module to have been loaded: {req_path}"
-                        ))
-                    };
+        for dep_mod in resolution_order.into_iter() {
+            let mut local_scope = dep_mod.scope.clone();
+            for req_path in dep_mod.required_modules.iter().rev() {
+                // look in `evaled` first, then fall back to `loaded`, and otherwise if it's not
+                // found it doesn't make sense because we know the module loader loaded it
+                let dep_scope = if let Some(s) = evaled.get(req_path) {
+                    s.clone()
+                } else if let Some(m) = loaded.get(req_path) {
+                    m.scope.clone()
+                } else {
+                    compiler_error(format!("Expected module to have been loaded: {req_path}"))
+                };
 
                 // merge the scopes together, but let ours take precedent. because if you
                 // define a variable that has the same name as an import, the assumption is
@@ -147,9 +141,9 @@ impl<'a> ModuleLoader<'a> {
                 local_scope = dep_scope.merge(local_scope);
             }
 
-            eval_scope!(local_scope, dep.module.source_code);
+            eval_scope!(local_scope, dep_mod.source_code);
 
-            evaled.insert(&dep.module.module_path, local_scope);
+            evaled.insert(&dep_mod.module_path, local_scope);
         }
 
         let mut resolved_scope = self.main_module.scope.clone();
@@ -164,7 +158,7 @@ impl<'a> ModuleLoader<'a> {
         !self.failed.try_read().unwrap().is_empty()
     }
 
-    fn load(&self, module: &Module, dependency_relation: DependencyRelation) -> Result<()> {
+    fn load(&self, module: &Module) -> Result<()> {
         let mut to_attempt = vec![];
         // hold a lock while we reserve all of the dependencies we're going to resolve (by
         // preemptively marking them in `attempted`)
@@ -185,7 +179,7 @@ impl<'a> ModuleLoader<'a> {
         // in turn have modules to load
         thread::scope(|s| {
             for module_path in to_attempt {
-                s.spawn(|| self.load_module(module_path, dependency_relation));
+                s.spawn(|| self.load_module(module_path));
             }
         });
 
@@ -193,11 +187,7 @@ impl<'a> ModuleLoader<'a> {
     }
 
     // TODO: can I use the `TryFrom<PathBuf> for Module`?
-    fn load_module(
-        &self,
-        module_path: ModulePath,
-        dependency_relation: DependencyRelation,
-    ) -> Result<()> {
+    fn load_module(&self, module_path: ModulePath) -> Result<()> {
         let p: path::PathBuf = module_path.clone().into();
 
         // load the source code
@@ -224,15 +214,9 @@ impl<'a> ModuleLoader<'a> {
 
                     // recursively load the newly loaded code section's dependencies (which are
                     // transitive at this point)
-                    self.load(&loaded_module, DependencyRelation::Transitive)?;
+                    self.load(&loaded_module)?;
 
-                    self.loaded.write()?.insert(
-                        module_path,
-                        Dependency {
-                            relation: dependency_relation,
-                            module: loaded_module,
-                        },
-                    );
+                    self.loaded.write()?.insert(module_path, loaded_module);
                 }
                 Err(e) => {
                     self.failed.write()?.insert(module_path, e);
@@ -308,7 +292,6 @@ b := 24
             loaded
                 .get(&mod1_path)
                 .unwrap()
-                .module
                 .scope
                 .variables
                 .get("a")
@@ -319,7 +302,6 @@ b := 24
             loaded
                 .get(&mod2_path)
                 .unwrap()
-                .module
                 .scope
                 .variables
                 .get("b")
@@ -425,7 +407,7 @@ b := 24
             "var_from_a".to_string(),
             Ast::new(Node::reference("var_from_b")),
         );
-        loaded.insert(ModulePath::new("a"), Dependency::direct(mod_a));
+        loaded.insert(ModulePath::new("a"), mod_a);
 
         // var_from_b depends on var_from_c
         let mut mod_b = Module {
@@ -437,7 +419,7 @@ b := 24
             "var_from_b".to_string(),
             Ast::new(Node::reference("var_from_c")),
         );
-        loaded.insert(ModulePath::new("b"), Dependency::transitive(mod_b));
+        loaded.insert(ModulePath::new("b"), mod_b);
 
         // var_from_c resolves to 420
         let mut mod_c = Module {
@@ -449,7 +431,7 @@ b := 24
             .scope
             .variables
             .insert("var_from_c".to_string(), Ast::new(420.into()));
-        loaded.insert(ModulePath::new("c"), Dependency::transitive(mod_c));
+        loaded.insert(ModulePath::new("c"), mod_c);
 
         let main_module = Module {
             module_path: ModulePath::new("foo"),
@@ -478,16 +460,73 @@ b := 24
 
     #[test]
     fn into_direct_dependencies_shadowing() {
-        // TODO make sure it shadows variables as we'd expect
+        // main -> a -> b -> c
+        let mut loaded = collections::HashMap::new();
+
+        // var_from_a depends on var_from_b
+        let mut mod_a = Module {
+            module_path: ModulePath::new("a"),
+            required_modules: vec![ModulePath::new("b")],
+            ..build_module()
+        };
+        mod_a.scope.variables.insert(
+            "var_from_a".to_string(),
+            Ast::new(Node::reference("var_from_b")),
+        );
+        loaded.insert(ModulePath::new("a"), mod_a);
+
+        // var_from_b depends on var_from_c
+        let mut mod_b = Module {
+            module_path: ModulePath::new("b"),
+            required_modules: vec![ModulePath::new("c")],
+            ..build_module()
+        };
+        mod_b.scope.variables.insert(
+            "var_from_b".to_string(),
+            Ast::new(Node::reference("var_from_c")),
+        );
+        loaded.insert(ModulePath::new("b"), mod_b);
+
+        // var_from_c resolves to 420
+        let mut mod_c = Module {
+            module_path: ModulePath::new("c"),
+            required_modules: vec![],
+            ..build_module()
+        };
+        mod_c
+            .scope
+            .variables
+            .insert("var_from_c".to_string(), Ast::new(420.into()));
+        loaded.insert(ModulePath::new("c"), mod_c);
+
+        let mut main_module = Module {
+            module_path: ModulePath::new("foo"),
+            required_modules: vec![ModulePath::new("a")],
+            ..build_module()
+        };
+        main_module
+            .scope
+            .variables
+            .insert("var_from_c".to_string(), Ast::new(1.into()));
+        let module_loader = ModuleLoader {
+            main_module: &main_module,
+            attempted: Default::default(),
+            loaded: sync::Arc::new(sync::RwLock::new(loaded)),
+            failed: Default::default(),
+        };
+
+        let dependencies = module_loader.into_direct_dependencies().unwrap();
+
+        // var_from_c should be what main_module declared it as, not what any dependencies declared
+        // it is.  i.e., main shadowed the imports
+        assert_eq!(
+            dependencies.variables.get("var_from_c").unwrap(),
+            &Ast::new(1.into())
+        );
     }
 
     #[test]
     fn into_direct_dependencies_cyclic() {
-        // TODO
-    }
-
-    #[test]
-    fn direct_dependencies_cyclic() {
         // TODO
     }
 }
