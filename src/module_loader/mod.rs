@@ -6,7 +6,10 @@
 // TODO:
 // * make it so that `---` is not required
 use crate::parser::code_section_parser::CodeSectionParser;
-use crate::{ArcSourceCode, Error, Module, ModulePath, Result, Scope, SourceCode, Spreadsheet};
+use crate::{
+    compiler_error, ArcSourceCode, Error, Module, ModulePath, Result, Scope, SourceCode,
+    Spreadsheet,
+};
 use log::{debug, info};
 use petgraph::graphmap;
 use std::collections;
@@ -33,28 +36,23 @@ pub(super) struct ModuleLoader<'a> {
     failed: Failed,
 }
 
-macro_rules! merge {
-    ($scope:expr, $dep:expr, $functions_or_variables:ident) => {
-        for (name, ast) in $dep
-            .module
-            .scope
-            .$functions_or_variables
-            .clone()
-            .into_iter()
-        {
+// TODO: ideally this shouldn't take a $source_code and the calling part does the map_err
+macro_rules! eval_fns_or_vars {
+    ($scope:ident, $functions_or_variables:ident, $source_code:expr) => {{
+        for (name, ast) in $scope.$functions_or_variables.clone().into_iter() {
             $scope.$functions_or_variables.insert(
                 name,
                 ast.eval(&$scope, None)
-                    .map_err(|e| $dep.module.source_code.eval_error(e, None))?,
+                    .map_err(|e| $source_code.eval_error(e, None))?,
             );
         }
-    };
+    }};
 }
 
-macro_rules! merge_scopes {
-    ($scope:expr, $dep:expr) => {
-        merge!($scope, $dep, variables);
-        merge!($scope, $dep, functions);
+macro_rules! eval_scope {
+    ($scope:ident, $source_code:expr) => {
+        eval_fns_or_vars!($scope, variables, $source_code);
+        eval_fns_or_vars!($scope, functions, $source_code);
     };
 }
 
@@ -118,7 +116,6 @@ impl<'a> ModuleLoader<'a> {
 
         // now that we have a graph, use Tarjan's algo to give us a topological sort which will
         // represent the dependencies in the order they need to be resolved.
-
         let resolution_order = petgraph::algo::tarjan_scc(&dep_graph)
             .into_iter()
             .flatten()
@@ -126,38 +123,41 @@ impl<'a> ModuleLoader<'a> {
 
         debug!("Resolving dependencies in order {:?}", &resolution_order);
 
-        let mut dep_scope = Scope::default();
-        let mut tmp_scope = Scope::default();
+        let mut evaled = collections::HashMap::<&ModulePath, Scope>::new();
 
         for dep in resolution_order.into_iter() {
-            let dep = dep.to_owned();
-            match dep.relation {
-                DependencyRelation::Direct => {
-                    // for direct dependencies, we want the names to be exposed to the module
-                    // requiring them.  so merge into `dep_scope` instead of `tmp_scope` (which we'll
-                    // be abandoning after this function runs)
-                    merge_scopes!(dep_scope, dep);
-                }
-
-                DependencyRelation::Transitive => {
-                    // build up transitive dependencies in a global "tmp" namespace, but we'll *not* be
-                    // exposing this namespace to the main module since it should only get the direct
-                    // dependencies
-                    if dep.module.required_modules.is_empty() {
-                        tmp_scope
-                            .functions
-                            .extend(dep.module.scope.functions.clone().into_iter());
-                        tmp_scope
-                            .variables
-                            .extend(dep.module.scope.variables.clone().into_iter());
+            let mut local_scope = dep.module.scope.clone();
+            for req_path in dep.module.required_modules.iter().rev() {
+                let dep_scope = 
+                    // look in `evaled` first (let it take precedence)
+                    if let Some(s) = evaled.get(req_path) {
+                        s.clone()
+                    // otherwise look in `loaded`
+                    } else if let Some(dep) = loaded.get(req_path) {
+                        dep.module.scope.clone()
                     } else {
-                        merge_scopes!(tmp_scope, dep);
-                    }
-                }
+                        compiler_error(format!(
+                                "Expected module to have been loaded: {req_path}"
+                        ))
+                    };
+
+                // merge the scopes together, but let ours take precedent. because if you
+                // define a variable that has the same name as an import, the assumption is
+                // you'll be shadowing it
+                local_scope = dep_scope.merge(local_scope);
             }
+
+            eval_scope!(local_scope, dep.module.source_code);
+
+            evaled.insert(&dep.module.module_path, local_scope);
         }
 
-        Ok(dep_scope)
+        let mut resolved_scope = self.main_module.scope.clone();
+        for req_path in self.main_module.required_modules.iter() {
+            resolved_scope = evaled.remove(req_path).unwrap().merge(resolved_scope);
+        }
+
+        Ok(resolved_scope)
     }
 
     fn has_failures(&self) -> bool {
@@ -417,6 +417,7 @@ b := 24
 
         // var_from_a depends on var_from_b
         let mut mod_a = Module {
+            module_path: ModulePath::new("a"),
             required_modules: vec![ModulePath::new("b")],
             ..build_module()
         };
@@ -428,6 +429,7 @@ b := 24
 
         // var_from_b depends on var_from_c
         let mut mod_b = Module {
+            module_path: ModulePath::new("b"),
             required_modules: vec![ModulePath::new("c")],
             ..build_module()
         };
@@ -439,6 +441,7 @@ b := 24
 
         // var_from_c resolves to 420
         let mut mod_c = Module {
+            module_path: ModulePath::new("c"),
             required_modules: vec![],
             ..build_module()
         };
@@ -449,6 +452,7 @@ b := 24
         loaded.insert(ModulePath::new("c"), Dependency::transitive(mod_c));
 
         let main_module = Module {
+            module_path: ModulePath::new("foo"),
             required_modules: vec![ModulePath::new("a")],
             ..build_module()
         };
@@ -460,16 +464,25 @@ b := 24
         };
 
         let dependencies = module_loader.into_direct_dependencies().unwrap();
-        dbg!(&dependencies);
+
         assert_eq!(
             dependencies.variables.get("var_from_a").unwrap(),
             &Ast::new(420.into())
         );
-        assert!(false);
     }
 
     #[test]
     fn into_direct_dependencies_function() {
+        // TODO
+    }
+
+    #[test]
+    fn into_direct_dependencies_shadowing() {
+        // TODO make sure it shadows variables as we'd expect
+    }
+
+    #[test]
+    fn into_direct_dependencies_cyclic() {
         // TODO
     }
 

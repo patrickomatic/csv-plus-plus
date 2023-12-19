@@ -2,7 +2,7 @@ use crate::ast::{Functions, Variables};
 
 mod display;
 
-#[derive(Debug, Default, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
 pub struct Scope {
     pub(crate) functions: Functions,
     pub(crate) variables: Variables,

@@ -11,7 +11,7 @@
 //      be finite and subtract from it
 use crate::ast::Variables;
 use crate::{ArcSourceCode, Compiler, ModuleLoader, ModulePath, Result, Row, Scope, Spreadsheet};
-use log::{debug, error, info};
+use log::{error, info};
 use std::fs;
 
 mod display;
@@ -116,7 +116,7 @@ impl Module {
 
         let object_code_filename = self.source_code.object_code_filename();
 
-        debug!("Writing object file");
+        info!("Writing object file to {}", object_code_filename.display());
 
         let object_file = fs::File::create(object_code_filename).map_err(|e| {
             error!("IO error: {e:?}");

@@ -65,10 +65,11 @@ pub(crate) fn csv_reader() -> csv::ReaderBuilder {
     csv_reader
 }
 
-pub(crate) fn compiler_error<S: Into<String>>(message: S) -> ! {
+pub(crate) fn compiler_error<S: std::fmt::Display>(message: S) -> ! {
     error!(
         "csv++ ran into a non-recoverable error while compiling.  Please report this at:
-        https://github.com/patrickomatic/csv-plus-plus/issues"
+        https://github.com/patrickomatic/csv-plus-plus/issues and include a copy of your source
+        code."
     );
-    panic!("{}", message.into())
+    panic!("{message}")
 }
