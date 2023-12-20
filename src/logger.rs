@@ -19,5 +19,21 @@ pub(crate) fn u8_into_level_filter(v: u8) -> Result<log::LevelFilter> {
 static INIT: sync::Once = sync::Once::new();
 
 pub(crate) fn init(verbosity: log::LevelFilter) {
-    INIT.call_once(|| env_logger::Builder::new().filter(None, verbosity).init());
+    INIT.call_once(|| {
+        let mut builder = env_logger::Builder::new();
+
+        builder.filter_level(verbosity);
+
+        // turn off timestamps and log level if we're just showing errors
+        if verbosity == log::LevelFilter::Error {
+            builder.format_level(false).format_timestamp(None);
+        }
+
+        // turn off module_paths unless we're at debug or below
+        if verbosity != log::LevelFilter::Debug && verbosity != log::LevelFilter::Trace {
+            builder.format_target(false);
+        }
+
+        builder.init()
+    });
 }
