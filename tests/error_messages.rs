@@ -52,7 +52,7 @@ On line 3 Error parsing input, expected ']]' but saw unrecognized token ``
  1: 
  2: ---
  3: foo,bar,[[text=bold ,foo
-  : ------------------^
+  : -------------------^
 
 "
     );
@@ -83,4 +83,31 @@ Possible values: all (a) | top (t) | bottom (b) | left (l) | right (r)
 
 "
     );
+}
+
+#[test]
+fn syntax_error_in_csv_section() {
+    let s = common::Setup::from_str(
+        "syntax_error_in_csv_section",
+        "csv",
+        r#"
+# it's a common problem that the `function_in_file1(1, 2)` call needs to be quoted. 
+# because it has a comma
+---
+function_in_file1(1 * 2)  ,   =function_in_file1(1, 2)    , should be 1 * 44
+"#,
+    );
+    let module = s.compiler.compile();
+
+    assert_eq!(module.unwrap_err().to_string(), "Syntax error in cell B1 of integration_test_syntax_error_in_csv_section.csvpp
+On line 5 Expected an expression but saw EOF
+If your formula has a comma in it, you might need to escape it with quotes (i.e. \"=my_function(1, 2)\")
+
+ 2: # it's a common problem that the `function_in_file1(1, 2)` call needs to be quoted. 
+ 3: # because it has a comma
+ 4: ---
+ 5: function_in_file1(1 * 2)  ,   =function_in_file1(1, 2)    , should be 1 * 44
+  : --------------------------------------------------^
+
+");
 }

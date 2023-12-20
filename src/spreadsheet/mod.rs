@@ -2,6 +2,7 @@
 //!
 use crate::ast::{Ast, Node, VariableValue, Variables};
 use crate::{csv_reader, ArcSourceCode, Result, Row};
+use log::trace;
 use serde::{Deserialize, Serialize};
 use std::collections;
 
@@ -16,11 +17,12 @@ impl Spreadsheet {
     /// Parse the spreadsheet section of a csv++ source file.
     pub(crate) fn parse(source_code: ArcSourceCode) -> Result<Spreadsheet> {
         let mut csv_reader = csv_reader()
-            .trim(csv::Trim::All)
+            .trim(csv::Trim::None)
             .from_reader(source_code.csv_section.as_bytes());
 
         let mut rows: Vec<Row> = vec![];
         for (row_index, result) in csv_reader.records().enumerate() {
+            trace!("Parsing row {row_index}");
             rows.push(Row::parse(result, row_index.into(), source_code.clone())?);
         }
 

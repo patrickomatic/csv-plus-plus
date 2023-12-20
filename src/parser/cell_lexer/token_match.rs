@@ -48,7 +48,7 @@ impl BadInput for TokenMatch {
     }
 
     fn line_offset(&self) -> CharOffset {
-        self.source_code.line_offset_for_cell(self.position) + self.cell_offset
+        self.source_code.line_offset_for_cell(self.position, false) + self.cell_offset
     }
 }
 

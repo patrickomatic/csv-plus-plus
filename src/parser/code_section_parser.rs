@@ -36,7 +36,7 @@ impl<'a> CodeSectionParser<'a> {
         source_code: ArcSourceCode,
     ) -> Result<(Scope, Vec<ModulePath>)> {
         CodeSectionParser {
-            lexer: AstLexer::new(input, source_code.clone())
+            lexer: AstLexer::new(input, None, source_code.clone())
                 .map_err(|e| source_code.code_syntax_error(e))?,
             source_code,
         }

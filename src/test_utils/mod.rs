@@ -17,10 +17,11 @@ pub(crate) fn build_ast_token_match<'a>(
 ) -> ast_lexer::TokenMatch<'a> {
     ast_lexer::TokenMatch {
         token: ast_lexer::Token::Reference,
-        str_match,
         line_number: 0,
         line_offset: 0,
+        position: None,
         source_code,
+        str_match,
     }
 }
 

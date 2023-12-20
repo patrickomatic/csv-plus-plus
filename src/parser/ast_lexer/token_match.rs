@@ -3,6 +3,7 @@ use crate::ast::{Ast, Node};
 use crate::error::{BadInput, Error, ParseError, ParseResult};
 use crate::parser::TokenInput;
 use crate::{ArcSourceCode, CharOffset, DateTime, LineNumber};
+use colored::Colorize;
 use std::fmt;
 
 #[derive(Clone, Debug)]
@@ -12,6 +13,7 @@ pub(crate) struct TokenMatch<'a> {
     pub(crate) line_number: LineNumber,
     pub(crate) line_offset: CharOffset,
     pub(crate) source_code: ArcSourceCode,
+    pub(crate) position: Option<a1_notation::Address>,
 }
 
 impl TokenMatch<'_> {
@@ -24,11 +26,19 @@ impl TokenMatch<'_> {
 
 impl BadInput for TokenMatch<'_> {
     fn line_number(&self) -> LineNumber {
-        self.line_number
+        if let Some(position) = self.position {
+            self.line_number + self.source_code.csv_line_number(position)
+        } else {
+            self.line_number
+        }
     }
 
     fn line_offset(&self) -> CharOffset {
-        self.line_offset
+        if let Some(position) = self.position {
+            self.line_offset + self.source_code.line_offset_for_cell(position, true)
+        } else {
+            self.line_offset
+        }
     }
 
     fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError {
@@ -44,7 +54,18 @@ impl TokenInput for TokenMatch<'_> {
 
 impl fmt::Display for TokenMatch<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "`{}`", self.str_match)
+        if self.token == Token::Eof {
+            write!(f, "EOF")?;
+            if self.position.is_some() {
+                write!(
+                    f,
+                    "{}",
+                    "\nIf your formula has a comma in it, you might need to escape it with quotes (i.e. \"=my_function(1, 2)\")".cyan())?;
+            }
+        } else {
+            write!(f, "`{}`", self.str_match)?;
+        }
+        Ok(())
     }
 }
 

@@ -32,14 +32,14 @@ impl<'a> AstParser<'a> {
     pub(crate) fn parse(
         input: &'a str,
         single_expr: bool,
+        position: Option<a1_notation::Address>,
         source_code: ArcSourceCode,
-    ) -> Result<Ast> {
-        let lexer = AstLexer::new(input, source_code.clone())
-            .map_err(|e| source_code.code_syntax_error(e))?;
-
-        AstParser::new(&lexer, single_expr)
-            .expr_bp(0)
-            .map_err(|e| source_code.code_syntax_error(e))
+    ) -> ParseResult<Ast> {
+        AstParser::new(
+            &AstLexer::new(input, position, source_code.clone())?,
+            single_expr,
+        )
+        .expr_bp(0)
     }
 
     /// Parse `input` from the command line, specified as a simple key/value string like
@@ -63,7 +63,8 @@ impl<'a> AstParser<'a> {
 
                 variables.insert(
                     key.to_string(),
-                    Self::parse(value, false, source_code.clone())?,
+                    Self::parse(value, false, None, source_code.clone())
+                        .map_err(|e| source_code.code_syntax_error(e))?,
                 );
             } else {
                 return Err(Error::InitError(format!(
@@ -98,11 +99,7 @@ impl<'a> AstParser<'a> {
             | Token::Float
             | Token::Integer
             | Token::Reference => Ast::try_from(lhs_token)?,
-            _ => {
-                return Err(
-                    lhs_token.into_parse_error("Invalid left-hand side expression ({lhs_token})")
-                )
-            }
+            _ => return Err(lhs_token.into_parse_error("Expected an expression")),
         };
 
         loop {
@@ -220,7 +217,7 @@ mod tests {
 
     fn test_parse(input: &str) -> Ast {
         let source_code: SourceCode = (&TestSourceCode::new("xlsx", input)).into();
-        AstParser::parse(input, false, ArcSourceCode::new(source_code)).unwrap()
+        AstParser::parse(input, false, None, ArcSourceCode::new(source_code)).unwrap()
     }
 
     #[test]

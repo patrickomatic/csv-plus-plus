@@ -7,7 +7,6 @@ use crate::{
     ArcSourceCode, BorderSide, BorderStyle, DataValidation, HorizontalAlign, NumberFormat, Result,
     Rgb, Row, TextFormat, VerticalAlign,
 };
-use a1_notation::Address;
 use std::collections::HashSet;
 
 mod display;
@@ -33,9 +32,16 @@ pub struct Cell {
     pub vertical_align: Option<VerticalAlign>,
 }
 
-fn parse_ast(input: &str, source_code: ArcSourceCode) -> Result<Option<Ast>> {
+fn parse_ast(
+    input: &str,
+    position: a1_notation::Address,
+    source_code: ArcSourceCode,
+) -> Result<Option<Ast>> {
     Ok(if let Some(without_equals) = input.strip_prefix('=') {
-        Some(AstParser::parse(without_equals, false, source_code)?)
+        Some(
+            AstParser::parse(without_equals, false, Some(position), source_code.clone())
+                .map_err(|e| source_code.cell_syntax_error(e, position))?,
+        )
     } else {
         None
     })
@@ -44,12 +50,12 @@ fn parse_ast(input: &str, source_code: ArcSourceCode) -> Result<Option<Ast>> {
 impl Cell {
     pub(crate) fn parse(
         input: &str,
-        position: Address,
+        position: a1_notation::Address,
         row: &mut Row,
         source_code: ArcSourceCode,
     ) -> Result<Self> {
         let mut cell = CellParser::parse(input, position, row, source_code.clone())?;
-        cell.ast = parse_ast(&cell.value, source_code.clone())?;
+        cell.ast = parse_ast(&cell.value, position, source_code.clone())?;
 
         Ok(cell)
     }
@@ -88,7 +94,7 @@ mod tests {
         let source_code = test_file.into();
         let cell = Cell::parse(
             "foo",
-            Address::new(0, 4),
+            (0, 4).into(),
             &mut Row::default(),
             ArcSourceCode::new(source_code),
         )
@@ -104,7 +110,7 @@ mod tests {
         let source_code = test_file.into();
         let cell = Cell::parse(
             "=1 + foo",
-            Address::new(0, 4),
+            (0, 4).into(),
             &mut Row::default(),
             ArcSourceCode::new(source_code),
         )

@@ -99,7 +99,11 @@ impl SourceCode {
         self.length_of_scope + 1 + row
     }
 
-    pub(crate) fn line_offset_for_cell(&self, position: a1_notation::Address) -> CharOffset {
+    pub(crate) fn line_offset_for_cell(
+        &self,
+        position: a1_notation::Address,
+        add_leading_whitespace: bool,
+    ) -> CharOffset {
         let line_number = self.csv_line_number(position);
         let Some(line) = self.get_line(line_number) else {
             /* TODO
@@ -129,8 +133,13 @@ impl SourceCode {
             // TODO: this doesn't work if the input takes advantage of CSV's weird double-quote
             // escaping rules. but tbh I dunno if it matters much
             //
-            // the length of all the cells (since spaces is preserved), plus how many commas would have joined them
-            (0..x).fold(0, |acc, i| acc + record[i].len()) + x
+            let leading_count = if add_leading_whitespace {
+                record[x].chars().take_while(|x| x.is_whitespace()).count() + 1
+            } else {
+                0
+            };
+            // the length of all the cells (since spaces is preserved), plus how many commas (x) would have joined them
+            (0..x).fold(0, |acc, i| acc + record[i].len()) + x + leading_count
         } else {
             // TODO
             // compiler_error("Unable to read CSV results to generate error");
@@ -202,10 +211,10 @@ foo1,bar1,baz1
         )
         .unwrap();
 
-        assert_eq!(source_code.line_offset_for_cell((0, 0).into()), 0);
-        assert_eq!(source_code.line_offset_for_cell((1, 0).into()), 4);
-        assert_eq!(source_code.line_offset_for_cell((2, 0).into()), 8);
-        assert_eq!(source_code.line_offset_for_cell((1, 1).into()), 5);
+        assert_eq!(source_code.line_offset_for_cell((0, 0).into(), false), 0);
+        assert_eq!(source_code.line_offset_for_cell((1, 0).into(), false), 4);
+        assert_eq!(source_code.line_offset_for_cell((2, 0).into(), false), 8);
+        assert_eq!(source_code.line_offset_for_cell((1, 1).into(), false), 5);
     }
 
     #[test]
@@ -219,7 +228,7 @@ foo1,bar1,baz1
         )
         .unwrap();
 
-        assert_eq!(source_code.line_offset_for_cell((1, 0).into()), 6);
+        assert_eq!(source_code.line_offset_for_cell((1, 0).into(), false), 6);
     }
 
     #[ignore]
@@ -234,7 +243,7 @@ foo1,bar1,baz1
         )
         .unwrap();
 
-        assert_eq!(source_code.line_offset_for_cell((1, 0).into()), 34);
+        assert_eq!(source_code.line_offset_for_cell((1, 0).into(), false), 34);
     }
 
     #[test]

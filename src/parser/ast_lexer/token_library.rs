@@ -167,10 +167,11 @@ mod tests {
     fn display_tokenmatch() {
         let token_match = TokenMatch {
             token: Token::Comma,
-            str_match: ",",
             line_number: 22,
             line_offset: 3,
+            position: None,
             source_code: build_source_code(),
+            str_match: ",",
         };
 
         assert_eq!("`,`", token_match.to_string());

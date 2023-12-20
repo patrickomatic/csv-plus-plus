@@ -5,7 +5,8 @@
 * Using object code files (.csvpo) during compilation
 * Allow for `.` characters in a function name
 * Support various levels of verbosity by repeating -v (i.e., -vvvv)
-* Use a proper logger (env\_logger)
+* Improved error messages for syntax errors in cells
+* Use a proper logger (env\_logger) and tune output according to the -v[vvv] flag
 * Code coverage reporting
 * Tooling to run benchmarks
 

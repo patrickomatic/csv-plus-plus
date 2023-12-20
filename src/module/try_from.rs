@@ -10,12 +10,13 @@ impl TryFrom<path::PathBuf> for Module {
     fn try_from(p: path::PathBuf) -> Result<Self> {
         info!("Loading module from {}", p.display());
 
+        debug!("Loading SourceCode from {}", p.display());
         let source_code = ArcSourceCode::new(SourceCode::try_from(p)?);
-        debug!("Loaded SourceCode");
 
+        debug!("Loading spreadsheet section");
         let spreadsheet = Spreadsheet::parse(source_code.clone())?;
-        debug!("Loaded spreadsheet section");
 
+        debug!("Parsing code section");
         let (scope, required_modules) = if let Some(scope_source) = &source_code.code_section {
             let code_section = CodeSectionParser::parse(scope_source, source_code.clone())?;
             debug!("Parsed code section: {code_section:?}");

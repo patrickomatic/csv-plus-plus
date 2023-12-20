@@ -8,6 +8,7 @@ pub(crate) struct UnknownToken {
     pub(crate) line_number: LineNumber,
     pub(crate) line_offset: CharOffset,
     pub(crate) source_code: ArcSourceCode,
+    pub(crate) position: Option<a1_notation::Address>,
 }
 
 impl fmt::Display for UnknownToken {
@@ -20,11 +21,19 @@ impl fmt::Display for UnknownToken {
 
 impl BadInput for UnknownToken {
     fn line_number(&self) -> LineNumber {
-        self.line_number
+        if let Some(position) = self.position {
+            self.line_number + self.source_code.csv_line_number(position)
+        } else {
+            self.line_number
+        }
     }
 
     fn line_offset(&self) -> CharOffset {
-        self.line_offset
+        if let Some(position) = self.position {
+            self.line_offset + self.source_code.line_offset_for_cell(position, true)
+        } else {
+            self.line_offset
+        }
     }
 
     fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError {
@@ -49,6 +58,7 @@ mod tests {
             bad_input: "foo".to_string(),
             line_number: 10,
             line_offset: 1,
+            position: None,
             source_code: build_source_code(),
         };
 
@@ -61,6 +71,7 @@ mod tests {
             bad_input: "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890".to_string(),
             line_number: 10,
             line_offset: 1,
+            position: None,
             source_code: build_source_code(),
         };
 
