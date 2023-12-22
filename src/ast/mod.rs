@@ -19,7 +19,6 @@ mod variable_value;
 
 pub(crate) use variable_value::VariableValue;
 
-// TODO: make it a &[String]?
 type FunctionArgs = Vec<String>;
 type FunctionName = String;
 type VariableName = String;

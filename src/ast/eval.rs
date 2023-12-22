@@ -178,14 +178,12 @@ impl Ast {
         let inner = (**self).clone();
         Ast::new(match inner {
             Node::FunctionCall { args, name } => {
-                // recursively call for each arg to a function
-                let mut replaced_args = vec![];
-                for arg in args {
-                    replaced_args.push(arg.replace_variable(var_id, replacement.clone()));
-                }
-
                 Node::FunctionCall {
-                    args: replaced_args,
+                    // recursively call for each arg to a function
+                    args: args
+                        .into_iter()
+                        .map(|a| a.replace_variable(var_id, replacement.clone()))
+                        .collect(),
                     name,
                 }
             }

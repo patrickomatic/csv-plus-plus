@@ -2,7 +2,7 @@
 pub enum Token {
     Boolean,
     CloseParen,
-    ScopeEof,
+    CodeSectionEof,
     Comma,
     Comment,
     DateTime,

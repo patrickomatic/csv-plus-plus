@@ -1,11 +1,7 @@
 //! # SourceCode
 //!
-// TODO:
-// * don't serialize the `code_section`, `csv_section` & `original` - these are all potentially
-//   large. instead we could not serialize them and lazy load when needed
-//
 use crate::parser::ast_lexer::CODE_SECTION_SEPARATOR;
-use crate::{csv_reader, Result};
+use crate::{compiler_error, csv_reader, Result};
 use std::path;
 
 mod arc_source_code;
@@ -25,7 +21,7 @@ pub type CharOffset = usize;
 pub struct SourceCode {
     pub filename: path::PathBuf,
     pub(crate) lines: LineNumber,
-    pub(crate) length_of_scope: LineNumber,
+    pub(crate) length_of_code_section: LineNumber,
     pub(crate) length_of_csv_section: LineNumber,
     pub(crate) code_section: Option<String>,
     pub(crate) csv_section: String,
@@ -51,7 +47,8 @@ impl SourceCode {
             Ok(SourceCode {
                 filename: filename.into(),
                 lines: csv_lines + code_lines,
-                length_of_scope: code_lines,
+                // +1 because `code_lines` will include the separator `---`
+                length_of_code_section: code_lines + 1,
                 length_of_csv_section: csv_lines,
                 csv_section: csv_section.to_string(),
                 code_section: Some(code_section.to_string()),
@@ -63,7 +60,7 @@ impl SourceCode {
             Ok(SourceCode {
                 filename: filename.into(),
                 lines: csv_lines,
-                length_of_scope: 0,
+                length_of_code_section: 0,
                 length_of_csv_section: csv_lines,
                 csv_section: str_input.to_owned(),
                 code_section: None,
@@ -96,7 +93,7 @@ impl SourceCode {
 
     pub(crate) fn csv_line_number(&self, position: a1_notation::Address) -> LineNumber {
         let row = position.row.y;
-        self.length_of_scope + 1 + row
+        self.length_of_code_section + row
     }
 
     pub(crate) fn line_offset_for_cell(
@@ -104,14 +101,13 @@ impl SourceCode {
         position: a1_notation::Address,
         add_leading_whitespace: bool,
     ) -> CharOffset {
+        dbg!(position);
         let line_number = self.csv_line_number(position);
+        dbg!(line_number);
         let Some(line) = self.get_line(line_number) else {
-            /* TODO
             compiler_error(format!(
                 "Unable to find line for `line_number` = {line_number}"
             ));
-            */
-            return 0;
         };
 
         let mut reader = csv_reader().from_reader(line.as_bytes());
@@ -120,14 +116,11 @@ impl SourceCode {
             let record = result.unwrap();
             let x = position.column.x;
 
-            if x > record.len() || x == 0 {
-                /* TODO
+            if x > record.len() {
                 compiler_error(format!(
                     "CSV contained more cells than expected: `x` = {x}, `record.len()` = {}",
                     record.len()
                 ));
-                */
-                return 0;
             }
 
             // TODO: this doesn't work if the input takes advantage of CSV's weird double-quote
@@ -141,9 +134,7 @@ impl SourceCode {
             // the length of all the cells (since spaces is preserved), plus how many commas (x) would have joined them
             (0..x).fold(0, |acc, i| acc + record[i].len()) + x + leading_count
         } else {
-            // TODO
-            // compiler_error("Unable to read CSV results to generate error");
-            0
+            compiler_error("Unable to read CSV results to generate error");
         }
     }
 }
@@ -157,7 +148,7 @@ mod tests {
         SourceCode {
             filename: path::PathBuf::from("test.csvpp".to_string()),
             lines: 25,
-            length_of_scope: 10,
+            length_of_code_section: 10,
             length_of_csv_section: 15,
             code_section: Some("\n".repeat(10)),
             csv_section: "foo,bar,baz".to_string(),
@@ -177,7 +168,7 @@ other_var := 42
 foo,bar,baz
 foo1,bar1,baz1
             ",
-            path::PathBuf::from("test.csvpp"),
+            "test.csvpp",
         )
         .unwrap();
 
@@ -207,7 +198,7 @@ foo1,bar1,baz1
 foo,bar,baz
 foo1,bar1,baz1
             ",
-            path::PathBuf::from("test.csvpp"),
+            "test.csvpp",
         )
         .unwrap();
 
@@ -224,7 +215,7 @@ foo1,bar1,baz1
 ---
   foo,  bar,baz
             ",
-            path::PathBuf::from("test.csvpp"),
+            "test.csvpp",
         )
         .unwrap();
 
@@ -239,7 +230,7 @@ foo1,bar1,baz1
 ---
 \" hmmm, this is all one cell\",baz
             ",
-            path::PathBuf::from("test.csvpp"),
+            "test.csvpp",
         )
         .unwrap();
 
@@ -256,12 +247,11 @@ foo1,bar1,baz1
 
     #[test]
     fn new_no_scope() {
-        let source_code =
-            SourceCode::new("foo,bar,baz", std::path::PathBuf::from("foo.csvpp")).unwrap();
+        let source_code = SourceCode::new("foo,bar,baz", "foo.csvpp").unwrap();
 
         assert_eq!(source_code.lines, 1);
         assert_eq!(source_code.length_of_csv_section, 1);
-        assert_eq!(source_code.length_of_scope, 0);
+        assert_eq!(source_code.length_of_code_section, 0);
         assert_eq!(source_code.code_section, None);
         assert_eq!(source_code.csv_section, "foo,bar,baz".to_string());
     }

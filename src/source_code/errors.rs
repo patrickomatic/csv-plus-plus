@@ -154,7 +154,6 @@ impl SourceCode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path;
 
     #[test]
     fn highlight_line() {
@@ -171,7 +170,7 @@ something {
 ---
 foo,bar,baz
             ",
-            path::PathBuf::from("test.csvpp"),
+            "test.csvpp",
         )
         .unwrap();
 
@@ -195,7 +194,7 @@ something {
 ---
 foo,bar,baz
             ",
-            path::PathBuf::from("test.csvpp"),
+            "test.csvpp",
         )
         .unwrap();
 

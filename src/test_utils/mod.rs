@@ -11,10 +11,10 @@ mod test_source_code;
 pub(crate) use test_file::TestFile;
 pub(crate) use test_source_code::TestSourceCode;
 
-pub(crate) fn build_ast_token_match<'a>(
-    str_match: &'a str,
+pub(crate) fn build_ast_token_match(
+    str_match: &str,
     source_code: ArcSourceCode,
-) -> ast_lexer::TokenMatch<'a> {
+) -> ast_lexer::TokenMatch {
     ast_lexer::TokenMatch {
         token: ast_lexer::Token::Reference,
         line_number: 0,
@@ -56,4 +56,8 @@ pub(crate) fn build_module() -> Module {
 /// If the test just needs a source code but doesn't care about it at all
 pub(crate) fn build_source_code() -> ArcSourceCode {
     ArcSourceCode::new((&TestSourceCode::new("bar.xlsx", "foo,bar,baz")).into())
+}
+
+pub(crate) fn build_source_code_from_input(input: &str) -> ArcSourceCode {
+    ArcSourceCode::new((&TestSourceCode::new("bar.xlsx", input)).into())
 }

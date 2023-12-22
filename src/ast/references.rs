@@ -18,29 +18,29 @@ impl AstReferences {
 
     pub(super) fn extract_dfs(&mut self, ast: &Ast, scope: &Scope) {
         match &**ast {
-            // `FunctionCall`s might be user-defined but we always need to recurse on them
             Node::FunctionCall { name, args } => {
                 if scope.functions.contains_key(name) {
                     self.functions.insert(name.to_string());
                 }
 
+                // each arg can be an AST so we recurse on it
                 for arg in args {
                     self.extract_dfs(arg, scope);
                 }
             }
 
             Node::Function { body, .. } => {
+                // just the body can be an AST so recure on that
                 self.extract_dfs(body, scope);
             }
 
-            // `InfixFunctionCall`s can't be defined by the user but we need to recurse on the left and
-            // right sides
             Node::InfixFunctionCall { left, right, .. } => {
+                // recurse on both the left and right side ASTs
                 self.extract_dfs(left, scope);
                 self.extract_dfs(right, scope);
             }
 
-            // take any references corresponding do a defined variable
+            // references can be variables (if they match one in scope)
             Node::Reference(r) if scope.variables.contains_key(r) => {
                 self.variables.insert(r.to_string());
             }

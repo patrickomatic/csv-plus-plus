@@ -354,11 +354,11 @@ mod tests {
     use super::*;
     use crate::test_utils::*;
 
-    fn test_lexer<'a>(lexer_input: &'a str) -> CellLexer<'a> {
+    fn test_lexer(lexer_input: &str) -> CellLexer {
         CellLexer::new(
             lexer_input,
             a1_notation::Address::new(0, 0),
-            build_source_code(),
+            build_source_code_from_input(lexer_input),
         )
     }
 
