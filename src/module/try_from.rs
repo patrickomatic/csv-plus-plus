@@ -11,7 +11,7 @@ impl TryFrom<path::PathBuf> for Module {
         info!("Loading module from {}", p.display());
 
         debug!("Loading SourceCode from {}", p.display());
-        let source_code = ArcSourceCode::new(SourceCode::try_from(p)?);
+        let source_code = ArcSourceCode::new(SourceCode::try_from(p.clone())?);
 
         debug!("Loading spreadsheet section");
         let spreadsheet = Spreadsheet::parse(source_code.clone())?;
@@ -25,7 +25,14 @@ impl TryFrom<path::PathBuf> for Module {
             (Scope::default(), vec![])
         };
 
-        let module_path: ModulePath = source_code.filename.clone().try_into()?;
+        let Some(main_filename) = p.file_name() else {
+            return Err(Error::InitError(format!(
+                "Unable to extract filename for: {}",
+                p.display()
+            )));
+        };
+
+        let module_path: ModulePath = path::Path::new(main_filename).to_path_buf().try_into()?;
         debug!("Using ModulePath = {module_path}");
 
         let mut module = Self::new(source_code, module_path, scope, spreadsheet);

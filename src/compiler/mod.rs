@@ -24,13 +24,22 @@ impl Compiler {
             t
         } else {
         */
-        debug!("Compiling module from source code");
+        debug!("Loading module from file {}", self.input_filename.display());
 
-        let main_module =
-            self.eval(Module::try_from(self.input_filename.clone())?.load_dependencies()?)?;
+        let mut main_module = Module::try_from(self.input_filename.clone())?;
+        let relative_to = self
+            .input_filename
+            .parent()
+            .unwrap_or_else(|| path::Path::new(""))
+            .to_path_buf();
 
-        debug!("Compiled module");
-        info!("{}", &main_module);
+        debug!("Loading dependencies for {}", &main_module.module_path);
+        main_module = main_module.load_dependencies(relative_to)?;
+
+        debug!("Compiling module");
+        let main_module = self.eval(main_module)?;
+
+        info!("Compiled main: {}", &main_module);
 
         debug!(
             "Writing object file {}",

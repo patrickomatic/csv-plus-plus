@@ -101,7 +101,7 @@ function_in_file1(1 * 2)  ,   =function_in_file1(1, 2)    , should be 1 * 44
 
     assert_eq!(module.unwrap_err().to_string(), "Syntax error in cell B1 of integration_test_syntax_error_in_csv_section.csvpp
 On line 5 Expected an expression but saw EOF
-If your formula has a comma in it, you might need to escape it with quotes (i.e. \"=my_function(1, 2)\")
+If your formula has a comma in it, you might need to escape it with quotes (i.e. `foo,\"=my_function(1, 2)\",bar`)
 
  2: # it's a common problem that the `function_in_file1(1, 2)` call needs to be quoted. 
  3: # because it has a comma
@@ -110,4 +110,28 @@ If your formula has a comma in it, you might need to escape it with quotes (i.e.
   : --------------------------------------------------^
 
 ");
+}
+
+#[test]
+fn module_loader_module_does_not_exist() {
+    let s = common::Setup::from_str(
+        "module_loader_module_does_not_exist",
+        "csv",
+        r#"
+use foobar
+
+a := 1 * 2
+---
+"#,
+    );
+    let module = s.compiler.compile();
+
+    assert_eq!(
+        module.unwrap_err().to_string(),
+        "Error loading module foobar
+Error reading source foobar.csvpp
+Error reading source code foobar.csvpp: No such file or directory (os error 2)
+
+"
+    );
 }

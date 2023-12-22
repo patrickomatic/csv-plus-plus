@@ -13,6 +13,7 @@ use crate::ast::Variables;
 use crate::{ArcSourceCode, Compiler, ModuleLoader, ModulePath, Result, Row, Scope, Spreadsheet};
 use log::{error, info};
 use std::fs;
+use std::path;
 
 mod display;
 mod try_from;
@@ -98,8 +99,8 @@ impl Module {
         })
     }
 
-    pub(crate) fn load_dependencies(self) -> Result<Self> {
-        let module_loader = ModuleLoader::load_dependencies(&self)?;
+    pub(crate) fn load_dependencies<P: Into<path::PathBuf>>(self, relative_to: P) -> Result<Self> {
+        let module_loader = ModuleLoader::load_dependencies(&self, relative_to)?;
         let dependencies = module_loader.into_direct_dependencies()?;
 
         Ok(Self {
@@ -275,7 +276,7 @@ mod tests {
             .scope
             .variables
             .insert("bar".to_string(), Ast::new(2.into()));
-        let module = module.load_dependencies().unwrap();
+        let module = module.load_dependencies("").unwrap();
 
         assert!(module.scope.functions.contains_key("foo"));
         assert!(module.scope.variables.contains_key("bar"));

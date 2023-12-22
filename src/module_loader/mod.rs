@@ -31,6 +31,7 @@ pub(super) struct ModuleLoader<'a> {
     attempted: Attempted,
     loaded: Loaded,
     failed: Failed,
+    relative_to: path::PathBuf,
 }
 
 // TODO: ideally this shouldn't take a $source_code and the calling part does the map_err
@@ -61,12 +62,16 @@ impl<'a> ModuleLoader<'a> {
     /// `failed` and sucesses into `loaded`. The idea being that we want to show as many errors as
     /// possible to the user (otherwise it's annoying to have them fix and re-compile one-by-one),
     /// so we accumulate and keep going.  But in the end fail if there are any errors at all.
-    pub(super) fn load_dependencies(module: &'a Module) -> Result<ModuleLoader<'a>> {
+    pub(super) fn load_dependencies<P: Into<path::PathBuf>>(
+        module: &'a Module,
+        relative_to: P,
+    ) -> Result<ModuleLoader<'a>> {
         let module_loader = Self {
             main_module: module,
             attempted: Default::default(),
             loaded: Default::default(),
             failed: Default::default(),
+            relative_to: relative_to.into(),
         };
         module_loader.load(module)?;
 
@@ -179,7 +184,7 @@ impl<'a> ModuleLoader<'a> {
         // in turn have modules to load
         thread::scope(|s| {
             for module_path in to_attempt {
-                s.spawn(|| self.load_module(module_path));
+                s.spawn(|| self.load_module(module_path, &module.module_path));
             }
         });
 
@@ -187,8 +192,10 @@ impl<'a> ModuleLoader<'a> {
     }
 
     // TODO: can I use the `TryFrom<PathBuf> for Module`?
-    fn load_module(&self, module_path: ModulePath) -> Result<()> {
-        let p: path::PathBuf = module_path.clone().into();
+    fn load_module(&self, module_path: ModulePath, relative_to: &ModulePath) -> Result<()> {
+        let p = self
+            .relative_to
+            .join(module_path.clone().filename_relative_to(relative_to));
 
         // load the source code
         let source_code = match SourceCode::try_from(p) {
@@ -245,14 +252,14 @@ mod tests {
 
     #[test]
     fn load_dependencies_empty() {
-        assert!(ModuleLoader::load_dependencies(&build_module()).is_ok());
+        assert!(ModuleLoader::load_dependencies(&build_module(), "").is_ok());
     }
 
     #[test]
     fn load_dependencies_require_does_not_exist() {
         let mut module = build_module();
         module.required_modules.push(ModulePath::new("bar"));
-        let module_loader = ModuleLoader::load_dependencies(&module).unwrap();
+        let module_loader = ModuleLoader::load_dependencies(&module, "").unwrap();
 
         assert_eq!(module_loader.failed.read().unwrap().len(), 1);
         assert_eq!(module_loader.attempted.read().unwrap().len(), 1);
@@ -282,7 +289,7 @@ b := 24
             required_modules: vec![mod1_path.clone(), mod2_path.clone()],
             ..build_module()
         };
-        let module_loader = ModuleLoader::load_dependencies(&module).unwrap();
+        let module_loader = ModuleLoader::load_dependencies(&module, "").unwrap();
         let loaded = module_loader.loaded.read().unwrap();
 
         assert_eq!(loaded.len(), 2);
@@ -324,7 +331,7 @@ a := 42
             required_modules: vec![(&dep_mod).into()],
             ..build_module()
         };
-        let module_loader = ModuleLoader::load_dependencies(&module).unwrap();
+        let module_loader = ModuleLoader::load_dependencies(&module, "").unwrap();
 
         assert_eq!(module_loader.loaded.read().unwrap().len(), 1);
         assert_eq!(module_loader.attempted.read().unwrap().len(), 1);
@@ -357,7 +364,7 @@ b := 24
             required_modules: vec![(&mod1).into(), (&mod2).into()],
             ..build_module()
         };
-        let module_loader = ModuleLoader::load_dependencies(&module).unwrap();
+        let module_loader = ModuleLoader::load_dependencies(&module, "").unwrap();
 
         assert_eq!(module_loader.loaded.read().unwrap().len(), 2);
         assert_eq!(module_loader.attempted.read().unwrap().len(), 2);
@@ -371,6 +378,7 @@ b := 24
             attempted: Default::default(),
             loaded: Default::default(),
             failed: Default::default(),
+            relative_to: path::Path::new("").to_path_buf(),
         };
 
         assert!(module_loader.into_direct_dependencies().is_ok());
@@ -383,6 +391,7 @@ b := 24
             attempted: Default::default(),
             loaded: Default::default(),
             failed: Default::default(),
+            relative_to: path::Path::new("").to_path_buf(),
         };
         module_loader.failed.write().unwrap().insert(
             ModulePath::new("foo"),
@@ -443,6 +452,7 @@ b := 24
             attempted: Default::default(),
             loaded: sync::Arc::new(sync::RwLock::new(loaded)),
             failed: Default::default(),
+            relative_to: path::Path::new("").to_path_buf(),
         };
 
         let dependencies = module_loader.into_direct_dependencies().unwrap();
@@ -513,6 +523,7 @@ b := 24
             attempted: Default::default(),
             loaded: sync::Arc::new(sync::RwLock::new(loaded)),
             failed: Default::default(),
+            relative_to: path::Path::new("").to_path_buf(),
         };
 
         let dependencies = module_loader.into_direct_dependencies().unwrap();

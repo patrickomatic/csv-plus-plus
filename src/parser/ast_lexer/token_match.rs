@@ -60,7 +60,7 @@ impl fmt::Display for TokenMatch<'_> {
                 write!(
                     f,
                     "{}",
-                    "\nIf your formula has a comma in it, you might need to escape it with quotes (i.e. \"=my_function(1, 2)\")".cyan())?;
+                    "\nIf your formula has a comma in it, you might need to escape it with quotes (i.e. `foo,\"=my_function(1, 2)\",bar`)".cyan())?;
             }
         } else {
             write!(f, "`{}`", self.str_match)?;
@@ -120,11 +120,7 @@ mod tests {
     use super::*;
     use crate::test_utils::*;
 
-    fn build_token_match<'a>(
-        token: Token,
-        str_match: &'a str,
-        source_code: ArcSourceCode,
-    ) -> TokenMatch<'a> {
+    fn build_token_match(token: Token, str_match: &str, source_code: ArcSourceCode) -> TokenMatch {
         let mut tm = build_ast_token_match(str_match, source_code);
         tm.token = token;
         tm
