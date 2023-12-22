@@ -1,6 +1,7 @@
 use super::{Ast, FunctionName, Node, VariableName};
 use crate::Scope;
 
+// TODO: turn into HashSet
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct AstReferences {
     pub(crate) functions: Vec<FunctionName>,
@@ -45,6 +46,10 @@ fn extract_dfs(
             for arg in args {
                 extract_dfs(arg, scope, acc_fns, acc_vars);
             }
+        }
+
+        Node::Function { body, .. } => {
+            extract_dfs(body, scope, acc_fns, acc_vars);
         }
 
         // `InfixFunctionCall`s can't be defined by the user but we need to recurse on the left and

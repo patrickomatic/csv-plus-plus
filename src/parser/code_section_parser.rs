@@ -19,7 +19,6 @@ use super::ast_lexer::{AstLexer, Token, TokenMatch};
 use super::ast_parser::AstParser;
 use crate::ast::{Ast, Node, VariableValue};
 use crate::{ArcSourceCode, ModulePath, Result, Scope};
-use std::collections::HashMap;
 
 pub(crate) struct CodeSectionParser<'a> {
     lexer: AstLexer<'a>,
@@ -44,8 +43,7 @@ impl<'a> CodeSectionParser<'a> {
     }
 
     fn parse_scope(&'a self) -> Result<(Scope, Vec<ModulePath>)> {
-        let mut variables = HashMap::new();
-        let mut functions = HashMap::new();
+        let mut scope = Scope::default();
         let mut required_modules = vec![];
 
         loop {
@@ -54,19 +52,16 @@ impl<'a> CodeSectionParser<'a> {
                 Token::Eof => break,
                 Token::FunctionDefinition => {
                     let (fn_name, function) = self.parse_fn_definition()?;
-                    functions.insert(fn_name, function.into());
+                    scope.define_function(fn_name, function);
                 }
                 Token::UseModule => {
                     required_modules.push(self.parse_use_module()?);
                 }
                 Token::Reference => {
-                    variables.insert(
-                        next.str_match.to_string(),
-                        Node::var(
-                            next.str_match,
-                            VariableValue::Ast(self.parse_variable_assign()?),
-                        )
-                        .into(),
+                    let var_assign = self.parse_variable_assign()?;
+                    scope.define_variable(
+                        next.str_match,
+                        Node::var(next.str_match, VariableValue::Ast(var_assign)),
                     );
                 }
                 _ => {
@@ -77,13 +72,7 @@ impl<'a> CodeSectionParser<'a> {
             }
         }
 
-        Ok((
-            Scope {
-                functions,
-                variables,
-            },
-            required_modules,
-        ))
+        Ok((scope, required_modules))
     }
 
     /// parses `use` followed by a module name
@@ -124,7 +113,7 @@ impl<'a> CodeSectionParser<'a> {
                 token: Token::OpenParen,
                 ..
             } => (),
-            token => return Err(token.into_error("Expected `(`")),
+            token => return Err(token.into_error("Expected `(` for a function definition")),
         };
 
         // here we're looking for zero or more References representing the function arguments.
@@ -139,7 +128,11 @@ impl<'a> CodeSectionParser<'a> {
                 Token::Reference => {
                     fn_args.push(next.str_match.to_string());
                 }
-                _ => return Err(next.into_error("Expected `(`")),
+                _ => {
+                    return Err(
+                        next.into_error("Expected comma-separated function arguments or `)`")
+                    )
+                }
             }
         }
 

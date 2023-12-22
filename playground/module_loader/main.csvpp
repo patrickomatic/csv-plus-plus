@@ -1,0 +1,14 @@
+## main.csvpp
+#
+# A test of the `use` statement which imports code from other `.csvpp` files into our local namespace.
+#
+use file1
+
+# this is imported from file1 but we're going to override it to make sure shadowing works as expected
+another_defined_in_file1 := 555
+
+---
+defined_in_file1          ,=defined_in_file1           ,should be 22
+defined_in_file2          ,=defined_in_file2           ,should not resolve
+function_in_file1(1 * 2)  ,"=function_in_file1(1, 2)"  ,should be 1 * 44
+another_defined_in_file1  ,=another_defined_in_file1   ,should be shadowed to be 555

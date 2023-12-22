@@ -144,7 +144,11 @@ impl Ast {
                     called_args.push(arg.call_function(fn_id, fn_ast)?);
                 }
 
-                Node::fn_call(name, &called_args).into()
+                Node::FunctionCall {
+                    name,
+                    args: called_args,
+                }
+                .into()
             }
 
             // also recurse for infix functions
@@ -152,11 +156,11 @@ impl Ast {
                 left,
                 operator,
                 right,
-            } => Node::infix_fn_call(
-                left.call_function(fn_id, fn_ast)?,
+            } => Node::InfixFunctionCall {
+                left: left.call_function(fn_id, fn_ast)?,
                 operator,
-                right.call_function(fn_id, fn_ast)?,
-            )
+                right: right.call_function(fn_id, fn_ast)?,
+            }
             .into(),
 
             // otherwise just don't modify it
@@ -175,18 +179,27 @@ impl Ast {
                     replaced_args.push(arg.replace_variable(var_id, replacement.clone()));
                 }
 
-                Node::fn_call(name, &replaced_args)
+                Node::FunctionCall {
+                    args: replaced_args,
+                    name,
+                }
             }
+
+            Node::Function { args, body, name } => Node::Function {
+                name,
+                args,
+                body: body.replace_variable(var_id, replacement.clone()),
+            },
 
             Node::InfixFunctionCall {
                 left,
                 operator,
                 right,
-            } => Node::infix_fn_call(
-                left.replace_variable(var_id, replacement.clone()),
+            } => Node::InfixFunctionCall {
+                left: left.replace_variable(var_id, replacement.clone()),
                 operator,
-                right.replace_variable(var_id, replacement.clone()),
-            ),
+                right: right.replace_variable(var_id, replacement.clone()),
+            },
 
             // a reference matching our variable - take the replacement
             Node::Reference(r) if var_id == r => replacement.into_inner(),

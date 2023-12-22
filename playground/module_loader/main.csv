@@ -1,0 +1,4 @@
+defined_in_file1,=22,should be 22
+defined_in_file2,=44,should not resolve
+function_in_file1(1 * 2),=(1 * 44),should be 1 * 44
+another_defined_in_file1,=555,should be shadowed to be 555

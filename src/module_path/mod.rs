@@ -36,12 +36,10 @@ impl ModulePath {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::test_utils::*;
-    use std::path;
+    //use super::*;
 
     #[test]
     fn filename_relative_to() {
-        // XXX
+        // TODO
     }
 }

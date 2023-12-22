@@ -83,8 +83,9 @@ impl<'a> ModuleLoader<'a> {
     /// Module B, not from Module C (or any other indirect dependencies)
     pub(super) fn into_direct_dependencies(self) -> Result<Scope> {
         if self.has_failures() {
-            let failed = sync::Arc::try_unwrap(self.failed).unwrap().into_inner()?;
-            Err(Error::ModuleLoadErrors(failed))
+            Err(Error::ModuleLoadErrors(
+                sync::Arc::try_unwrap(self.failed).unwrap().into_inner()?,
+            ))
         } else {
             self.direct_dependencies()
         }
@@ -127,9 +128,9 @@ impl<'a> ModuleLoader<'a> {
 
         let mut evaled = collections::HashMap::<&ModulePath, Scope>::new();
 
-        for dep_mod in resolution_order.into_iter() {
-            let mut local_scope = dep_mod.scope.clone();
-            for req_path in dep_mod.required_modules.iter().rev() {
+        for to_resolve in resolution_order.into_iter() {
+            let mut local_scope = to_resolve.scope.clone();
+            for req_path in to_resolve.required_modules.iter().rev() {
                 // look in `evaled` first, then fall back to `loaded`, and otherwise if it's not
                 // found it doesn't make sense because we know the module loader loaded it
                 let dep_scope = if let Some(s) = evaled.get(req_path) {
@@ -143,17 +144,17 @@ impl<'a> ModuleLoader<'a> {
                 // merge the scopes together, but let ours take precedent. because if you
                 // define a variable that has the same name as an import, the assumption is
                 // you'll be shadowing it
-                local_scope = dep_scope.merge(local_scope);
+                local_scope = local_scope.merge(dep_scope);
             }
 
-            eval_scope!(local_scope, dep_mod.source_code);
+            eval_scope!(local_scope, to_resolve.source_code);
 
-            evaled.insert(&dep_mod.module_path, local_scope);
+            evaled.insert(&to_resolve.module_path, local_scope);
         }
 
         let mut resolved_scope = self.main_module.scope.clone();
         for req_path in self.main_module.required_modules.iter() {
-            resolved_scope = evaled.remove(req_path).unwrap().merge(resolved_scope);
+            resolved_scope = resolved_scope.merge_into_main(evaled.remove(req_path).unwrap());
         }
 
         Ok(resolved_scope)
@@ -412,10 +413,9 @@ b := 24
             required_modules: vec![ModulePath::new("b")],
             ..build_module()
         };
-        mod_a.scope.variables.insert(
-            "var_from_a".to_string(),
-            Ast::new(Node::reference("var_from_b")),
-        );
+        mod_a
+            .scope
+            .define_variable("var_from_a", Node::reference("var_from_b"));
         loaded.insert(ModulePath::new("a"), mod_a);
 
         // var_from_b depends on var_from_c
@@ -424,10 +424,9 @@ b := 24
             required_modules: vec![ModulePath::new("c")],
             ..build_module()
         };
-        mod_b.scope.variables.insert(
-            "var_from_b".to_string(),
-            Ast::new(Node::reference("var_from_c")),
-        );
+        mod_b
+            .scope
+            .define_variable("var_from_b", Node::reference("var_from_c"));
         loaded.insert(ModulePath::new("b"), mod_b);
 
         // var_from_c resolves to 420
@@ -438,8 +437,7 @@ b := 24
         };
         mod_c
             .scope
-            .variables
-            .insert("var_from_c".to_string(), Ast::new(420.into()));
+            .define_variable("var_from_c", Node::Integer(420));
         loaded.insert(ModulePath::new("c"), mod_c);
 
         let main_module = Module {
@@ -461,6 +459,8 @@ b := 24
             dependencies.variables.get("var_from_a").unwrap(),
             &Ast::new(420.into())
         );
+        assert!(!dependencies.variables.contains_key("var_from_b"));
+        assert!(!dependencies.variables.contains_key("var_from_c"));
     }
 
     #[test]
@@ -479,10 +479,9 @@ b := 24
             required_modules: vec![ModulePath::new("b")],
             ..build_module()
         };
-        mod_a.scope.variables.insert(
-            "var_from_a".to_string(),
-            Ast::new(Node::reference("var_from_b")),
-        );
+        mod_a
+            .scope
+            .define_variable("var_from_a", Node::reference("var_from_b"));
         loaded.insert(ModulePath::new("a"), mod_a);
 
         // var_from_b depends on var_from_c
@@ -491,10 +490,9 @@ b := 24
             required_modules: vec![ModulePath::new("c")],
             ..build_module()
         };
-        mod_b.scope.variables.insert(
-            "var_from_b".to_string(),
-            Ast::new(Node::reference("var_from_c")),
-        );
+        mod_b
+            .scope
+            .define_variable("var_from_b", Node::reference("var_from_c"));
         loaded.insert(ModulePath::new("b"), mod_b);
 
         // var_from_c resolves to 420
@@ -505,8 +503,7 @@ b := 24
         };
         mod_c
             .scope
-            .variables
-            .insert("var_from_c".to_string(), Ast::new(420.into()));
+            .define_variable("var_from_c", Ast::new(420.into()));
         loaded.insert(ModulePath::new("c"), mod_c);
 
         let mut main_module = Module {
@@ -516,8 +513,7 @@ b := 24
         };
         main_module
             .scope
-            .variables
-            .insert("var_from_c".to_string(), Ast::new(1.into()));
+            .define_variable("var_from_c", Ast::new(1.into()));
         let module_loader = ModuleLoader {
             main_module: &main_module,
             attempted: Default::default(),

@@ -75,6 +75,7 @@ impl Node {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn fn_call<N, A>(name: N, args: &[A]) -> Self
     where
         N: Into<String>,
@@ -86,6 +87,7 @@ impl Node {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn infix_fn_call<L, O, R>(left: L, operator: O, right: R) -> Self
     where
         L: Into<Ast>,

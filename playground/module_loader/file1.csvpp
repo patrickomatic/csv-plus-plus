@@ -1,0 +1,9 @@
+use file2
+
+defined_in_file1 := 22
+another_defined_in_file1 := 33
+
+fn function_in_file1(a, b)
+  a * defined_in_file2
+
+---

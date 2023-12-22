@@ -18,7 +18,7 @@ foo,bar
     assert_eq!(
         module.unwrap_err().to_string(),
         "Syntax error in code section of integration_test_syntax_error_in_code_section.csvpp
-On line 4 Expected `(` but saw `<`
+On line 4 Expected `(` for a function definition but saw `<`
 
  1: 
  2: ## Welcome to the all_features.csvpp test. this is a comment
