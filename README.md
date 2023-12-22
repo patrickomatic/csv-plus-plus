@@ -29,8 +29,8 @@ fn my_fn(a, b)
   multiplier * SUM(a, b)
 
 ---
-Sum             , Column 1, Column 2,
-=my_fn(B2, C2)  ,         ,         ,
+Sum                 , Column 1, Column 2,
+"=my_fn(B2, C2)"    ,         ,         ,
 ```
 
 One more useful feature is the ability to bind variables to a cell.  You can use the `[[`/`]]`
@@ -41,8 +41,8 @@ fn my_complex_fn(a, b)
   a * a + SQRT(b)
 
 ---
-Complex function    , Column 1  , Column 2 ,
-=my_complex_fn(a, b), [[var=a]] , [[var=b]],
+Complex function      , Column 1  , Column 2 ,
+"=my_complex_fn(a, b)", [[var=a]] , [[var=b]],
 ```
 
 
@@ -91,6 +91,35 @@ Breaking this down:
 * `bar_outside_fill` - Will always be `A1`, pointing to the cell where it was defined.  There
   is no relative aspect to it since it's not defined in an `fill`.
 
+
+## Importing Code
+
+csv++ allows you to import and re-use functions and variables with the `use` statement:
+
+#### `my_math_constants.csvpp`
+```csvpp
+pi := 3.14159
+e := 2.7182818284
+---
+```
+
+#### `main.csvpp`
+```csvpp
+use my_math_constants
+
+fn circumference_from_diameter(r)
+    r * 2 * pi
+
+fn radius_to_diameter(r)
+    2 * r
+
+fn circumference_from_radius(r)
+    radius_from_diameter(radius_to_diameter(r))
+
+---
+Radius          ,Circumference                           ,
+[[var=radius]]  ,"=circumference_from_radius(radius)"    ,
+```
 
 ## Formatting
 

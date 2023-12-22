@@ -26,9 +26,11 @@ pub struct Module {
     pub spreadsheet: Spreadsheet,
     pub(crate) required_modules: Vec<ModulePath>,
     pub(crate) source_code: ArcSourceCode,
+    pub(crate) is_dirty: bool,
 }
 
 impl Module {
+    // TODO: look at where this is used... it's kinda unclear what the contract is
     pub(crate) fn new(
         source_code: ArcSourceCode,
         module_path: ModulePath,
@@ -42,6 +44,7 @@ impl Module {
             required_modules: vec![],
             spreadsheet,
             source_code,
+            is_dirty: false,
         }
     }
 

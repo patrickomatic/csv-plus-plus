@@ -115,7 +115,7 @@ impl<'a> ModuleLoader<'a> {
             }
         }
 
-        debug!("Loaded dependency graph {:?}", &dep_graph);
+        debug!("Loaded dependency graph {dep_graph:?}");
 
         // now that we have a graph, use Tarjan's algo to give us a topological sort which will
         // represent the dependencies in the order they need to be resolved.
@@ -124,7 +124,7 @@ impl<'a> ModuleLoader<'a> {
             .flatten()
             .filter_map(|p| loaded.get(p));
 
-        debug!("Resolving dependencies in order {:?}", &resolution_order);
+        debug!("Resolving dependencies in order {resolution_order:?}");
 
         let mut evaled = collections::HashMap::<&ModulePath, Scope>::new();
 
