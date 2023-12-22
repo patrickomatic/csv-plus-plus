@@ -47,7 +47,7 @@ impl SourceCode {
             Ok(SourceCode {
                 filename: filename.into(),
                 lines: csv_lines + code_lines,
-                // +1 because `code_lines` will include the separator `---`
+                // +1 because `code_lines` will account for the separator `---`
                 length_of_code_section: code_lines + 1,
                 length_of_csv_section: csv_lines,
                 csv_section: csv_section.to_string(),

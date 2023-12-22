@@ -27,10 +27,10 @@ type Failed = ArcRwLock<collections::HashMap<ModulePath, Error>>;
 
 #[derive(Debug)]
 pub(super) struct ModuleLoader<'a> {
-    main_module: &'a Module,
     attempted: Attempted,
-    loaded: Loaded,
     failed: Failed,
+    loaded: Loaded,
+    main_module: &'a Module,
     relative_to: path::PathBuf,
 }
 
@@ -67,10 +67,10 @@ impl<'a> ModuleLoader<'a> {
         relative_to: P,
     ) -> Result<ModuleLoader<'a>> {
         let module_loader = Self {
-            main_module: module,
             attempted: Default::default(),
-            loaded: Default::default(),
             failed: Default::default(),
+            loaded: Default::default(),
+            main_module: module,
             relative_to: relative_to.into(),
         };
         module_loader.load(module)?;
@@ -249,7 +249,8 @@ mod tests {
     use crate::ast::*;
     use crate::test_utils::*;
     use crate::*;
-    use std::sync;
+    use std::collections::*;
+    use std::sync::*;
 
     #[test]
     fn load_dependencies_empty() {
@@ -404,9 +405,6 @@ b := 24
 
     #[test]
     fn into_direct_dependencies_variable() {
-        // main -> a -> b -> c
-        let mut loaded = collections::HashMap::new();
-
         // var_from_a depends on var_from_b
         let mut mod_a = Module {
             module_path: ModulePath::new("a"),
@@ -416,7 +414,6 @@ b := 24
         mod_a
             .scope
             .define_variable("var_from_a", Node::reference("var_from_b"));
-        loaded.insert(ModulePath::new("a"), mod_a);
 
         // var_from_b depends on var_from_c
         let mut mod_b = Module {
@@ -427,7 +424,6 @@ b := 24
         mod_b
             .scope
             .define_variable("var_from_b", Node::reference("var_from_c"));
-        loaded.insert(ModulePath::new("b"), mod_b);
 
         // var_from_c resolves to 420
         let mut mod_c = Module {
@@ -438,7 +434,6 @@ b := 24
         mod_c
             .scope
             .define_variable("var_from_c", Node::Integer(420));
-        loaded.insert(ModulePath::new("c"), mod_c);
 
         let main_module = Module {
             module_path: ModulePath::new("foo"),
@@ -448,7 +443,11 @@ b := 24
         let module_loader = ModuleLoader {
             main_module: &main_module,
             attempted: Default::default(),
-            loaded: sync::Arc::new(sync::RwLock::new(loaded)),
+            loaded: Arc::new(RwLock::new(HashMap::from([
+                (ModulePath::new("a"), mod_a),
+                (ModulePath::new("b"), mod_b),
+                (ModulePath::new("c"), mod_c),
+            ]))),
             failed: Default::default(),
             relative_to: path::Path::new("").to_path_buf(),
         };
@@ -465,14 +464,50 @@ b := 24
 
     #[test]
     fn into_direct_dependencies_function() {
-        // TODO
+        let mut mod_a = Module {
+            module_path: ModulePath::new("a"),
+            required_modules: vec![ModulePath::new("b")],
+            ..build_module()
+        };
+        mod_a.scope.define_function(
+            "fn_from_a",
+            Node::fn_def("fn_from_a", &[], Node::reference("var_from_b")),
+        );
+
+        let mut mod_b = Module {
+            module_path: ModulePath::new("b"),
+            ..build_module()
+        };
+        mod_b
+            .scope
+            .define_variable("var_from_b", Node::Integer(420));
+
+        let main_module = Module {
+            module_path: ModulePath::new("foo"),
+            required_modules: vec![ModulePath::new("a")],
+            ..build_module()
+        };
+        let module_loader = ModuleLoader {
+            main_module: &main_module,
+            attempted: Default::default(),
+            loaded: Arc::new(RwLock::new(HashMap::from([
+                (ModulePath::new("a"), mod_a),
+                (ModulePath::new("b"), mod_b),
+            ]))),
+            failed: Default::default(),
+            relative_to: path::Path::new("").to_path_buf(),
+        };
+
+        let dependencies = module_loader.into_direct_dependencies().unwrap();
+
+        assert_eq!(
+            dependencies.functions.get("fn_from_a").unwrap(),
+            &Ast::new(Node::fn_def("fn_from_a", &[], Node::Integer(420)))
+        );
     }
 
     #[test]
     fn into_direct_dependencies_shadowing() {
-        // main -> a -> b -> c
-        let mut loaded = collections::HashMap::new();
-
         // var_from_a depends on var_from_b
         let mut mod_a = Module {
             module_path: ModulePath::new("a"),
@@ -482,7 +517,6 @@ b := 24
         mod_a
             .scope
             .define_variable("var_from_a", Node::reference("var_from_b"));
-        loaded.insert(ModulePath::new("a"), mod_a);
 
         // var_from_b depends on var_from_c
         let mut mod_b = Module {
@@ -493,7 +527,6 @@ b := 24
         mod_b
             .scope
             .define_variable("var_from_b", Node::reference("var_from_c"));
-        loaded.insert(ModulePath::new("b"), mod_b);
 
         // var_from_c resolves to 420
         let mut mod_c = Module {
@@ -504,7 +537,6 @@ b := 24
         mod_c
             .scope
             .define_variable("var_from_c", Ast::new(420.into()));
-        loaded.insert(ModulePath::new("c"), mod_c);
 
         let mut main_module = Module {
             module_path: ModulePath::new("foo"),
@@ -517,7 +549,11 @@ b := 24
         let module_loader = ModuleLoader {
             main_module: &main_module,
             attempted: Default::default(),
-            loaded: sync::Arc::new(sync::RwLock::new(loaded)),
+            loaded: Arc::new(RwLock::new(HashMap::from([
+                (ModulePath::new("a"), mod_a),
+                (ModulePath::new("b"), mod_b),
+                (ModulePath::new("c"), mod_c),
+            ]))),
             failed: Default::default(),
             relative_to: path::Path::new("").to_path_buf(),
         };
