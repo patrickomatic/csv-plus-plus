@@ -17,7 +17,6 @@ mod from;
 mod references;
 mod variable_value;
 
-pub(crate) use references::AstReferences;
 pub(crate) use variable_value::VariableValue;
 
 // TODO: make it a &[String]?

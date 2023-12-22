@@ -1,69 +1,63 @@
-use super::{Ast, FunctionName, Node, VariableName};
+use super::{Ast, Node};
 use crate::Scope;
+use std::collections;
 
-// TODO: turn into HashSet
+type References = collections::HashSet<String>;
+pub(super) type ReferencesIter = collections::hash_set::IntoIter<String>;
+
 #[derive(Clone, Debug, Default, PartialEq)]
-pub(crate) struct AstReferences {
-    pub(crate) functions: Vec<FunctionName>,
-    pub(crate) variables: Vec<VariableName>,
+pub(super) struct AstReferences {
+    pub(super) functions: References,
+    pub(super) variables: References,
 }
 
 impl AstReferences {
-    pub fn is_empty(&self) -> bool {
+    pub(super) fn is_empty(&self) -> bool {
         self.functions.is_empty() && self.variables.is_empty()
+    }
+
+    pub(super) fn extract_dfs(&mut self, ast: &Ast, scope: &Scope) {
+        match &**ast {
+            // `FunctionCall`s might be user-defined but we always need to recurse on them
+            Node::FunctionCall { name, args } => {
+                if scope.functions.contains_key(name) {
+                    self.functions.insert(name.to_string());
+                }
+
+                for arg in args {
+                    self.extract_dfs(arg, scope);
+                }
+            }
+
+            Node::Function { body, .. } => {
+                self.extract_dfs(body, scope);
+            }
+
+            // `InfixFunctionCall`s can't be defined by the user but we need to recurse on the left and
+            // right sides
+            Node::InfixFunctionCall { left, right, .. } => {
+                self.extract_dfs(left, scope);
+                self.extract_dfs(right, scope);
+            }
+
+            // take any references corresponding do a defined variable
+            Node::Reference(r) if scope.variables.contains_key(r) => {
+                self.variables.insert(r.to_string());
+            }
+
+            // anything else is terminal
+            _ => (),
+        }
     }
 }
 
 impl Node {
     /// Does a depth first search on `ast` and parses out all identifiers that might be able to be
     /// eval()ed
-    pub(crate) fn extract_references(&self, scope: &Scope) -> AstReferences {
-        let mut fns = vec![];
-        let mut vars = vec![];
-
-        extract_dfs(&Ast::new(self.clone()), scope, &mut fns, &mut vars);
-
-        AstReferences {
-            functions: fns,
-            variables: vars,
-        }
-    }
-}
-
-fn extract_dfs(
-    ast: &Ast,
-    scope: &Scope,
-    acc_fns: &mut Vec<FunctionName>,
-    acc_vars: &mut Vec<VariableName>,
-) {
-    match &**ast {
-        // `FunctionCall`s might be user-defined but we always need to recurse on them
-        Node::FunctionCall { name, args } => {
-            if scope.functions.contains_key(name) {
-                acc_fns.push(name.to_string());
-            }
-
-            for arg in args {
-                extract_dfs(arg, scope, acc_fns, acc_vars);
-            }
-        }
-
-        Node::Function { body, .. } => {
-            extract_dfs(body, scope, acc_fns, acc_vars);
-        }
-
-        // `InfixFunctionCall`s can't be defined by the user but we need to recurse on the left and
-        // right sides
-        Node::InfixFunctionCall { left, right, .. } => {
-            extract_dfs(left, scope, acc_fns, acc_vars);
-            extract_dfs(right, scope, acc_fns, acc_vars);
-        }
-
-        // take any references corresponding do a defined variable
-        Node::Reference(r) if scope.variables.contains_key(r) => acc_vars.push(r.to_string()),
-
-        // anything else is terminal
-        _ => (),
+    pub(super) fn extract_references(&self, scope: &Scope) -> AstReferences {
+        let mut references = AstReferences::default();
+        references.extract_dfs(&Ast::new(self.clone()), scope);
+        references
     }
 }
 
@@ -81,7 +75,7 @@ mod tests {
     }
 
     #[test]
-    fn extract_references_fns_user_defined() {
+    fn extract_references_fn_call_user_defined() {
         let mut module = build_module();
         module.scope.functions.insert(
             "foo".to_string(),
@@ -93,12 +87,11 @@ mod tests {
             &module.scope,
         );
 
-        assert_eq!(references.functions.len(), 1);
-        assert_eq!(&references.functions[0], "foo");
+        assert!(references.functions.contains("foo"));
     }
 
     #[test]
-    fn extract_references_fns_infix() {
+    fn extract_references_infix_fn() {
         let mut module = build_module();
         module.scope.functions.insert(
             "foo".to_string(),
@@ -114,12 +107,11 @@ mod tests {
             &module.scope,
         );
 
-        assert_eq!(references.functions.len(), 1);
-        assert_eq!(&references.functions[0], "foo");
+        assert!(references.functions.contains("foo"));
     }
 
     #[test]
-    fn extract_references_fns_nested() {
+    fn extract_references_fn_calls_nested() {
         let mut module = build_module();
         module.scope.functions.insert(
             "foo".to_string(),
@@ -137,8 +129,20 @@ mod tests {
             &module.scope,
         );
 
-        assert_eq!(references.functions.len(), 1);
-        assert_eq!(&references.functions[0], "foo");
+        assert!(references.functions.contains("foo"));
+    }
+
+    #[test]
+    fn extract_references_fn_def_user_defined() {
+        let mut module = build_module();
+        module.scope.variables.insert("bar".to_string(), 1.into());
+
+        let references = Node::extract_references(
+            &Node::fn_def("foo", &["A", "B"], Node::reference("bar")),
+            &module.scope,
+        );
+
+        assert!(references.variables.contains("bar"));
     }
 
     #[test]
@@ -151,8 +155,7 @@ mod tests {
 
         let references = Node::extract_references(&Node::reference("foo"), &module.scope);
 
-        assert_eq!(references.variables.len(), 1);
-        assert_eq!(&references.variables[0], "foo");
+        assert!(references.variables.contains("foo"));
     }
 
     #[test]
@@ -174,7 +177,6 @@ mod tests {
             &module.scope,
         );
 
-        assert_eq!(references.variables.len(), 1);
-        assert_eq!(&references.variables[0], "bar");
+        assert!(references.variables.contains("bar"));
     }
 }

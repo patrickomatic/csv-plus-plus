@@ -2,7 +2,8 @@
 //!
 //! The main functions for evaluating a function or variable.
 //!
-use super::{Ast, AstReferences, FunctionName, Node};
+use super::references::{AstReferences, ReferencesIter};
+use super::{Ast, Node, Variables};
 use crate::{EvalError, EvalResult, Scope};
 use std::collections;
 
@@ -26,8 +27,12 @@ impl Ast {
             last_round_refs = refs.clone();
 
             evaled_ast = evaled_ast
-                .eval_variables(evaled_ast.resolve_variables(scope, &refs.variables, position))
-                .eval_functions(&refs.functions, scope)?;
+                .eval_variables(evaled_ast.resolve_variables(
+                    scope,
+                    refs.variables.into_iter(),
+                    position,
+                ))
+                .eval_functions(refs.functions.into_iter(), scope)?;
         }
 
         Ok(evaled_ast)
@@ -38,12 +43,12 @@ impl Ast {
     fn resolve_variables(
         &self,
         scope: &Scope,
-        var_names: &[String],
+        var_names: ReferencesIter,
         position: Option<a1_notation::Address>,
     ) -> collections::HashMap<String, Ast> {
-        let mut resolved_vars = collections::HashMap::new();
+        let mut resolved_vars: Variables = Default::default();
         for var_name in var_names {
-            if let Some(value) = scope.variables.get(var_name) {
+            if let Some(value) = scope.variables.get(&var_name) {
                 let value_from_var = match &**value {
                     Node::Variable { value, .. } => value.clone().into_ast(position),
                     n => n.clone().into(),
@@ -59,11 +64,11 @@ impl Ast {
     /// Evaluate the given `functions` calling `resolve_fn` upon each occurence to render a
     /// replacement.  Unlike variable resolution, we can't produce the values up front because the
     /// resolution function requires being called with the `arguments` at the call site.
-    fn eval_functions(self, fns_to_resolve: &[FunctionName], scope: &Scope) -> EvalResult<Ast> {
+    fn eval_functions(self, fns_to_resolve: ReferencesIter, scope: &Scope) -> EvalResult<Ast> {
         let mut evaled_ast = self;
         for fn_name in fns_to_resolve {
-            if let Some(fn_ast) = scope.functions.get(fn_name) {
-                evaled_ast = evaled_ast.call_function(fn_name, fn_ast)?;
+            if let Some(fn_ast) = scope.functions.get(&fn_name) {
+                evaled_ast = evaled_ast.call_function(&fn_name, fn_ast)?;
             } else {
                 // TODO: log a warning that we tried to resolve an unknown function
                 // this is one of those things that should never happen (since `fns_to_resolve`
@@ -76,7 +81,7 @@ impl Ast {
 
     /// Use the mapping in `variable_values` to replace each variable referenced in the AST with
     /// it's given replacement.
-    fn eval_variables(&self, variable_values: collections::HashMap<String, Ast>) -> Ast {
+    fn eval_variables(&self, variable_values: Variables) -> Ast {
         let mut evaled_ast = self.clone();
         for (var_id, replacement) in variable_values {
             evaled_ast = evaled_ast.replace_variable(&var_id, replacement);
