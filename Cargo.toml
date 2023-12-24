@@ -1,6 +1,6 @@
 [package]
 authors = ["Patrick Carroll <patrick@patrickomatic.com>"]
-description = "Compile csvpp source code to a target spreadsheet format"
+description = "Compile csv++ source code to a target spreadsheet format"
 homepage = "https://github.com/patrickomatic/csv-plus-plus"
 keywords = ["csv++", "csvpp", "csv", "spreadsheet"]
 license = "MIT"
