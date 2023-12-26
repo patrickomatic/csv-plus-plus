@@ -41,13 +41,6 @@ impl SourceCode {
         }
     }
 
-    pub(crate) fn object_code_error<S: Into<String>>(&self, message: S) -> Error {
-        Error::ObjectCodeError {
-            message: message.into(),
-            filename: self.object_code_filename(),
-        }
-    }
-
     pub(crate) fn parse_error<S: Into<String>>(
         &self,
         bad_input: impl BadInput,

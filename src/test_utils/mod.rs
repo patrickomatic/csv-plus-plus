@@ -3,7 +3,7 @@
 //!
 use crate::parser::ast_lexer;
 use crate::parser::cell_lexer;
-use crate::{ArcSourceCode, Compiler, DateTime, Module, ModulePath, Scope, Spreadsheet};
+use crate::{ArcSourceCode, Compiler, DateTime, Module, ModulePath};
 
 mod test_file;
 mod test_source_code;
@@ -45,12 +45,15 @@ pub(crate) fn build_compiler() -> Compiler {
 }
 
 pub(crate) fn build_module() -> Module {
-    Module::new(
-        build_source_code(),
-        ModulePath::new("foo"),
-        Scope::default(),
-        Spreadsheet::default(),
-    )
+    Module {
+        compiler_version: "v0.0.1".to_string(),
+        source_code: build_source_code(),
+        module_path: ModulePath::new("foo"),
+        scope: Default::default(),
+        spreadsheet: Default::default(),
+        required_modules: Default::default(),
+        is_dirty: false,
+    }
 }
 
 /// If the test just needs a source code but doesn't care about it at all

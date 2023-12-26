@@ -62,6 +62,7 @@ pub enum Error {
     ModuleLoadErrors(collections::HashMap<ModulePath, Error>),
 
     /// An error encountered while serializing the compiled module to an object file.
+    #[deprecated]
     ObjectCodeError {
         filename: path::PathBuf,
         message: String,

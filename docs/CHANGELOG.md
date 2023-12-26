@@ -1,3 +1,7 @@
+## v0.5.1
+
+### Features
+
 ## v0.5.0
 
 ### Features

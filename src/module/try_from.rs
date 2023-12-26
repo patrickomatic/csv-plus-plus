@@ -2,8 +2,10 @@ use super::Module;
 use crate::parser::code_section_parser::CodeSectionParser;
 use crate::{ArcSourceCode, Error, ModulePath, Result, Scope, SourceCode, Spreadsheet};
 use log::{debug, info};
+use std::env;
 use std::path;
 
+// TODO: use a csvpo file if there is one
 impl TryFrom<path::PathBuf> for Module {
     type Error = Error;
 
@@ -35,9 +37,15 @@ impl TryFrom<path::PathBuf> for Module {
         let module_path: ModulePath = path::Path::new(main_filename).to_path_buf().try_into()?;
         debug!("Using ModulePath = {module_path}");
 
-        let mut module = Self::new(source_code, module_path, scope, spreadsheet);
-        module.required_modules = required_modules;
-        Ok(module)
+        Ok(Self {
+            source_code,
+            module_path,
+            scope,
+            spreadsheet,
+            required_modules,
+            is_dirty: false,
+            compiler_version: env!("CARGO_PKG_VERSION").to_string(),
+        })
     }
 }
 

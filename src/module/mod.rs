@@ -10,8 +10,13 @@
 // * make sure there is only one infinite fill in the docs (ones can follow it, but they have to
 //      be finite and subtract from it
 use crate::ast::Variables;
-use crate::{ArcSourceCode, Compiler, ModuleLoader, ModulePath, Result, Row, Scope, Spreadsheet};
-use log::{error, info};
+use crate::parser::code_section_parser::CodeSectionParser;
+use crate::{
+    compiler_error, ArcSourceCode, Compiler, Error, ModuleLoader, ModulePath, Result, Row, Scope,
+    SourceCode, Spreadsheet,
+};
+use log::{error, info, warn};
+use std::cmp;
 use std::fs;
 use std::path;
 
@@ -24,30 +29,12 @@ pub struct Module {
     pub module_path: ModulePath,
     pub scope: Scope,
     pub spreadsheet: Spreadsheet,
-    pub(crate) required_modules: Vec<ModulePath>,
+    pub required_modules: Vec<ModulePath>,
     pub(crate) source_code: ArcSourceCode,
     pub(crate) is_dirty: bool,
 }
 
 impl Module {
-    // TODO: look at where this is used... it's kinda unclear what the contract is
-    pub(crate) fn new(
-        source_code: ArcSourceCode,
-        module_path: ModulePath,
-        scope: Scope,
-        spreadsheet: Spreadsheet,
-    ) -> Self {
-        Self {
-            compiler_version: env!("CARGO_PKG_VERSION").to_string(),
-            scope,
-            module_path,
-            required_modules: vec![],
-            spreadsheet,
-            source_code,
-            is_dirty: false,
-        }
-    }
-
     /// For each row of the spreadsheet, if it has a [[fill=]] then we need to actually fill it to
     /// that many rows.  
     ///
@@ -112,6 +99,79 @@ impl Module {
         })
     }
 
+    fn load_from_object_code_file<P: AsRef<path::Path>>(
+        module_path: ModulePath,
+        relative_to: &ModulePath,
+        loader_root: P,
+    ) -> Option<Self> {
+        let mut filename = loader_root
+            .as_ref()
+            .join(module_path.clone().filename_relative_to(relative_to));
+        filename.set_extension("csvpo");
+
+        if !filename.exists() {
+            return None;
+        }
+
+        let obj_file_reader = match fs::File::open(&filename) {
+            Ok(r) => r,
+            Err(e) => compiler_error(format!("Error opening object code: {e}")),
+        };
+
+        let Ok(loaded_module): std::result::Result<Self, serde_cbor::Error> =
+            serde_cbor::from_reader(obj_file_reader)
+        else {
+            // if we fail to load the old object file just warn about it and move on.  for whatever
+            // reason (written by an old version) it's not compatible with our current version
+            warn!(
+                "Error loading object code from {}.  Was it written with an old version of csv++?",
+                filename.display()
+            );
+            return None;
+        };
+
+        Some(loaded_module)
+    }
+
+    pub(crate) fn load_source<P: AsRef<path::Path>>(
+        module_path: ModulePath,
+        relative_to: &ModulePath,
+        loader_root: P,
+    ) -> Result<Self> {
+        if let Some(mut loaded_module) =
+            Self::load_from_object_code_file(module_path.clone(), relative_to, &loader_root)
+        {
+            loaded_module.check_if_is_dirty()?;
+            Ok(loaded_module)
+        } else {
+            let filename = loader_root
+                .as_ref()
+                .join(module_path.clone().filename_relative_to(relative_to));
+
+            // load the source code
+            let source_code = ArcSourceCode::new(SourceCode::try_from(filename)?);
+
+            // parse the code section
+            if let Some(scope_source) = &source_code.code_section {
+                let (scope, required_modules) =
+                    CodeSectionParser::parse(scope_source, source_code.clone())?;
+                Ok(Module {
+                    compiler_version: env!("CARGO_PKG_VERSION").to_string(),
+                    is_dirty: false,
+                    module_path,
+                    required_modules,
+                    scope,
+                    source_code,
+                    spreadsheet: Spreadsheet::default(),
+                })
+            } else {
+                Err(Error::ModuleLoadError(
+                    "This module does not have a code section (but you imported it)".to_string(),
+                ))
+            }
+        }
+    }
+
     pub(crate) fn write_object_file(&self, compiler: &Compiler) -> Result<()> {
         if !compiler.options.use_cache {
             info!("Not writing object file because --no-cache flag is set");
@@ -122,85 +182,71 @@ impl Module {
 
         info!("Writing object file to {}", object_code_filename.display());
 
-        let object_file = fs::File::create(object_code_filename).map_err(|e| {
+        let object_file = fs::File::create(&object_code_filename).map_err(|e| {
             error!("IO error: {e:?}");
-            self.source_code
-                .object_code_error(format!("Error opening object code for writing: {e}"))
+            Error::SourceCodeError {
+                filename: object_code_filename,
+                message: format!("Error opening object code for writing: {e}"),
+            }
         })?;
 
-        serde_cbor::to_writer(object_file, self).map_err(|e| {
-            error!("CBOR write error: {e:?}");
-            self.source_code
-                .object_code_error(format!("Error serializing object code for writing: {e}"))
-        })?;
-
-        Ok(())
+        match serde_cbor::to_writer(object_file, self) {
+            Err(e) => {
+                error!("CBOR write error: {e:?}");
+                compiler_error(format!("Error serializing object code for writing: {e}"));
+            }
+            _ => Ok(()),
+        }
     }
 
-    /* TODO: bring back object codes (but in a way that works with the module loader)
-    pub(crate) fn read_from_object_file(compiler: &Compiler) -> Result<Option<Self>> {
-        if !compiler.options.use_cache {
-            compiler.info("Not reading object file");
-            return Ok(None);
-        }
+    pub fn check_if_is_dirty(&mut self) -> Result<()> {
+        let object_code_filename = self.source_code.object_code_filename();
 
-        let sc = &compiler.source_code;
-        let obj_file = sc.object_code_filename();
-
-        // does the object code file even exist?
-        if !obj_file.exists() {
-            compiler.info("Attempted to read object file but it does not exist");
-            return Ok(None);
-        }
-
-        let obj_file_modified = fs::metadata(&obj_file)
+        let obj_file_modified = fs::metadata(&object_code_filename)
             .and_then(|s| s.modified())
-            .map_err(|e| sc.object_code_error(format!("Unable to stat object code: {e}")))?;
-        let source_file_modified = fs::metadata(&sc.filename)
+            .map_err(|e| Error::SourceCodeError {
+                filename: object_code_filename,
+                message: format!("Unable to stat object code: {e}"),
+            })?;
+
+        let source_file_modified = fs::metadata(&self.source_code.filename)
             .and_then(|s| s.modified())
-            .map_err(|e| sc.object_code_error(format!("Unable to stat source code: {e}")))?;
+            .map_err(|e| Error::SourceCodeError {
+                filename: self.source_code.filename.clone(),
+                message: format!("Unable to stat source code: {e}"),
+            })?;
 
         // is the object code more recent than the source? (i.e., no changes since it was last
         // written)
         if source_file_modified > obj_file_modified {
-            return Ok(None);
+            self.is_dirty = true;
         }
 
-        let obj_file_reader = fs::File::open(&obj_file)
-            .map_err(|e| sc.object_code_error(format!("Error opening object code: {e}")))?;
-
-        let Ok(loaded_module): std::result::Result<Self, serde_cbor::Error> =
-            serde_cbor::from_reader(obj_file_reader)
-        else {
-            // if we fail to load the old object file just warn about it and move on.  for whatever
-            // reason (written by an old version) it's not compatible with our current version
-            compiler.warn(format!(
-                "Error loading object code from {}.  Was it written with an old version of csv++?",
-                obj_file.display()
-            ));
-            return Ok(None);
+        let current_version = env!("CARGO_PKG_VERSION");
+        let this_version = match semver::Version::parse(current_version) {
+            Ok(v) => v,
+            Err(e) => compiler_error(format!(
+                "Unable to parse compiler version `{current_version}`: {e}"
+            )),
         };
 
-        let current_version = env!("CARGO_PKG_VERSION").to_string();
-        let this_version = semver::Version::parse(&current_version).map_err(|e| {
-            sc.object_code_error(format!("Unable to parse version `{current_version}`: {e}"))
-        })?;
-        let loaded_version =
-            semver::Version::parse(&loaded_module.compiler_version).map_err(|e| {
-                sc.object_code_error(format!(
-                    "Unable to parse loaded module version `{}`: {e}",
-                    &loaded_module.compiler_version
-                ))
-            })?;
+        let loaded_version = match semver::Version::parse(&self.compiler_version) {
+            Ok(v) => v,
+            Err(e) => compiler_error(format!(
+                "Unable to parse loaded module version `{}`: {e}",
+                &self.compiler_version
+            )),
+        };
 
         // if the version is less than ours, don't use it and recompile instead.  otherwise we can
         // trust that it's ok to use
-        Ok(match this_version.cmp(&loaded_version) {
-            cmp::Ordering::Equal | cmp::Ordering::Greater => Some(loaded_module),
-            cmp::Ordering::Less => None,
-        })
+        self.is_dirty = match this_version.cmp(&loaded_version) {
+            cmp::Ordering::Equal | cmp::Ordering::Greater => false,
+            cmp::Ordering::Less => true,
+        };
+
+        Ok(())
     }
-        */
 }
 
 #[cfg(test)]

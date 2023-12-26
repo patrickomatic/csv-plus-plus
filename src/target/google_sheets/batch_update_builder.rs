@@ -158,12 +158,12 @@ mod tests {
             ..Default::default()
         });
 
-        let module = Module::new(
-            build_source_code(),
-            ModulePath::new("foo"),
-            Scope::default(),
+        let module = Module {
+            module_path: ModulePath::new("foo"),
+            scope: Scope::default(),
             spreadsheet,
-        );
+            ..build_module()
+        };
         let existing_values = ExistingValues { cells: vec![] };
         let builder = BatchUpdateBuilder::new(&compiler, &module, &existing_values).build();
 

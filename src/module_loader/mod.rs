@@ -5,11 +5,7 @@
 //!
 // TODO:
 // * make it so that `---` is not required
-use crate::parser::code_section_parser::CodeSectionParser;
-use crate::{
-    compiler_error, ArcSourceCode, Error, Module, ModulePath, Result, Scope, SourceCode,
-    Spreadsheet,
-};
+use crate::{compiler_error, Error, Module, ModulePath, Result, Scope};
 use log::{debug, info};
 use petgraph::graphmap;
 use std::collections;
@@ -31,7 +27,9 @@ pub(super) struct ModuleLoader<'a> {
     failed: Failed,
     loaded: Loaded,
     main_module: &'a Module,
-    relative_to: path::PathBuf,
+    loader_root: path::PathBuf,
+    // TODO: this is going to need to respect the --use-cache flag
+    // use_cache: bool,
 }
 
 // TODO: ideally this shouldn't take a $source_code and the calling part does the map_err
@@ -54,6 +52,39 @@ macro_rules! eval_scope {
     };
 }
 
+fn load_dependency_graph<'a>(
+    main_module: &'a Module,
+    loaded: &'a LoadedModules,
+) -> graphmap::UnGraphMap<&'a ModulePath, ()> {
+    info!(
+        "Creating dependency graph with {} dependencies",
+        loaded.len()
+    );
+
+    let mut dep_graph: graphmap::UnGraphMap<_, ()> = graphmap::UnGraphMap::new();
+
+    dep_graph.add_node(&main_module.module_path);
+
+    // load all of the direct dependencies
+    for p in &main_module.required_modules {
+        dep_graph.add_node(p);
+        dep_graph.add_edge(&main_module.module_path, p, ());
+    }
+
+    for (p, dep_mod) in loaded.iter() {
+        dep_graph.add_node(p);
+
+        for required_mod in &dep_mod.required_modules {
+            dep_graph.add_node(required_mod);
+            dep_graph.add_edge(p, required_mod, ());
+        }
+    }
+
+    debug!("Loaded dependency graph {dep_graph:?}");
+
+    dep_graph
+}
+
 // TODO:
 // * get rid of unwrap()s
 // * see if I can reduce the clone()s
@@ -66,14 +97,16 @@ impl<'a> ModuleLoader<'a> {
         module: &'a Module,
         relative_to: P,
     ) -> Result<ModuleLoader<'a>> {
-        let module_loader = Self {
+        let mut module_loader = Self {
             attempted: Default::default(),
             failed: Default::default(),
             loaded: Default::default(),
             main_module: module,
-            relative_to: relative_to.into(),
+            loader_root: relative_to.into(),
         };
         module_loader.load(module)?;
+        module_loader.propagate_dirty_flag();
+        module_loader.reload_dirty_modules();
 
         Ok(module_loader)
     }
@@ -91,31 +124,18 @@ impl<'a> ModuleLoader<'a> {
         }
     }
 
+    fn propagate_dirty_flag(&mut self) {
+        // TODO:
+    }
+
+    fn reload_dirty_modules(&mut self) {
+        // TODO:
+    }
+
     /// Extract all direct dependencies on `scope`.  
     fn direct_dependencies(self) -> Result<Scope> {
         let loaded = sync::Arc::try_unwrap(self.loaded).unwrap().into_inner()?;
-        info!("Resolving {} module dependencies", loaded.len());
-
-        let mut dep_graph: graphmap::UnGraphMap<_, ()> = graphmap::UnGraphMap::new();
-
-        dep_graph.add_node(&self.main_module.module_path);
-
-        // load all of the direct dependencies
-        for p in &self.main_module.required_modules {
-            dep_graph.add_node(p);
-            dep_graph.add_edge(&self.main_module.module_path, p, ());
-        }
-
-        for (p, dep_mod) in loaded.iter() {
-            dep_graph.add_node(p);
-
-            for required_mod in &dep_mod.required_modules {
-                dep_graph.add_node(required_mod);
-                dep_graph.add_edge(p, required_mod, ());
-            }
-        }
-
-        debug!("Loaded dependency graph {dep_graph:?}");
+        let dep_graph = load_dependency_graph(self.main_module, &loaded);
 
         // now that we have a graph, use Tarjan's algo to give us a topological sort which will
         // represent the dependencies in the order they need to be resolved.
@@ -181,7 +201,7 @@ impl<'a> ModuleLoader<'a> {
             }
         }
 
-        // now a thread for each module to load, and they'll recurse back to this function if they
+        // now a thread for each module to load and they'll recurse back to this function if they
         // in turn have modules to load
         thread::scope(|s| {
             for module_path in to_attempt {
@@ -192,51 +212,17 @@ impl<'a> ModuleLoader<'a> {
         Ok(())
     }
 
-    // TODO: can I use the `TryFrom<PathBuf> for Module`?
     fn load_module(&self, module_path: ModulePath, relative_to: &ModulePath) -> Result<()> {
-        let p = self
-            .relative_to
-            .join(module_path.clone().filename_relative_to(relative_to));
-
-        // load the source code
-        let source_code = match SourceCode::try_from(p) {
-            Ok(s) => ArcSourceCode::new(s),
+        match Module::load_source(module_path.clone(), relative_to, &self.loader_root) {
+            Ok(loaded_module) => {
+                // recursively load the newly loaded code section's dependencies (which are
+                // transitive at this point)
+                self.load(&loaded_module)?;
+                self.loaded.write()?.insert(module_path, loaded_module);
+            }
             Err(e) => {
                 self.failed.write()?.insert(module_path, e);
-                return Ok(());
             }
-        };
-
-        // parse the code section
-        if let Some(scope_source) = &source_code.code_section {
-            // TODO: this should use the csvpo cache if there is one
-            match CodeSectionParser::parse(scope_source, source_code.clone()) {
-                Ok((scope, required_modules)) => {
-                    let mut loaded_module = Module::new(
-                        source_code,
-                        module_path.clone(),
-                        scope,
-                        Spreadsheet::default(),
-                    );
-                    loaded_module.required_modules = required_modules;
-
-                    // recursively load the newly loaded code section's dependencies (which are
-                    // transitive at this point)
-                    self.load(&loaded_module)?;
-
-                    self.loaded.write()?.insert(module_path, loaded_module);
-                }
-                Err(e) => {
-                    self.failed.write()?.insert(module_path, e);
-                }
-            }
-        } else {
-            self.failed.write()?.insert(
-                module_path.clone(),
-                Error::ModuleLoadError(
-                    "This module does not have a code section (but you imported it)".to_string(),
-                ),
-            );
         }
 
         Ok(())
@@ -380,7 +366,7 @@ b := 24
             attempted: Default::default(),
             loaded: Default::default(),
             failed: Default::default(),
-            relative_to: path::Path::new("").to_path_buf(),
+            loader_root: path::Path::new("").to_path_buf(),
         };
 
         assert!(module_loader.into_direct_dependencies().is_ok());
@@ -393,7 +379,7 @@ b := 24
             attempted: Default::default(),
             loaded: Default::default(),
             failed: Default::default(),
-            relative_to: path::Path::new("").to_path_buf(),
+            loader_root: path::Path::new("").to_path_buf(),
         };
         module_loader.failed.write().unwrap().insert(
             ModulePath::new("foo"),
@@ -449,7 +435,7 @@ b := 24
                 (ModulePath::new("c"), mod_c),
             ]))),
             failed: Default::default(),
-            relative_to: path::Path::new("").to_path_buf(),
+            loader_root: path::Path::new("").to_path_buf(),
         };
 
         let dependencies = module_loader.into_direct_dependencies().unwrap();
@@ -495,7 +481,7 @@ b := 24
                 (ModulePath::new("b"), mod_b),
             ]))),
             failed: Default::default(),
-            relative_to: path::Path::new("").to_path_buf(),
+            loader_root: path::Path::new("").to_path_buf(),
         };
 
         let dependencies = module_loader.into_direct_dependencies().unwrap();
@@ -555,7 +541,7 @@ b := 24
                 (ModulePath::new("c"), mod_c),
             ]))),
             failed: Default::default(),
-            relative_to: path::Path::new("").to_path_buf(),
+            loader_root: path::Path::new("").to_path_buf(),
         };
 
         let dependencies = module_loader.into_direct_dependencies().unwrap();
