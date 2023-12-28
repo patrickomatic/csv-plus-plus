@@ -34,7 +34,7 @@ impl Compiler {
             .to_path_buf();
 
         debug!("Loading dependencies for {}", &main_module.module_path);
-        main_module = main_module.load_dependencies(relative_to)?;
+        main_module = main_module.load_dependencies(relative_to, self.options.use_cache)?;
 
         debug!("Compiling module");
         let main_module = self.eval(main_module)?;

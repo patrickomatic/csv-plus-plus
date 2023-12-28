@@ -32,6 +32,7 @@ pub struct Module {
     pub required_modules: Vec<ModulePath>,
     pub(crate) source_code: ArcSourceCode,
     pub(crate) is_dirty: bool,
+    pub(crate) needs_eval: bool,
 }
 
 impl Module {
@@ -89,8 +90,13 @@ impl Module {
         })
     }
 
-    pub(crate) fn load_dependencies<P: Into<path::PathBuf>>(self, relative_to: P) -> Result<Self> {
-        let module_loader = ModuleLoader::load_dependencies(&self, relative_to)?;
+    // TODO: should it just call the module loader directly?
+    pub(crate) fn load_dependencies<P: Into<path::PathBuf>>(
+        self,
+        relative_to: P,
+        use_cache: bool,
+    ) -> Result<Self> {
+        let module_loader = ModuleLoader::load_dependencies(&self, relative_to, use_cache)?;
         let dependencies = module_loader.into_direct_dependencies()?;
 
         Ok(Self {
@@ -133,7 +139,20 @@ impl Module {
         Some(loaded_module)
     }
 
-    pub(crate) fn load_from_source<P: Into<path::PathBuf>>(
+    pub(crate) fn load_from_source_relative<P: AsRef<path::Path>>(
+        module_path: ModulePath,
+        relative_to: &ModulePath,
+        loader_root: P,
+    ) -> Result<Self> {
+        Self::load_from_source_from_filename(
+            module_path.clone(),
+            loader_root
+                .as_ref()
+                .join(module_path.filename_relative_to(relative_to)),
+        )
+    }
+
+    pub(crate) fn load_from_source_from_filename<P: Into<path::PathBuf>>(
         module_path: ModulePath,
         filename: P,
     ) -> Result<Self> {
@@ -145,6 +164,7 @@ impl Module {
             Ok(Module {
                 compiler_version: env!("CARGO_PKG_VERSION").to_string(),
                 is_dirty: false,
+                needs_eval: true,
                 module_path,
                 required_modules,
                 scope,
@@ -169,22 +189,11 @@ impl Module {
             loaded_module.check_if_is_dirty()?;
             Ok(loaded_module)
         } else {
-            let filename = loader_root
-                .as_ref()
-                .join(module_path.clone().filename_relative_to(relative_to));
-
-            Self::load_from_source(module_path, filename)
+            Self::load_from_source_relative(module_path, relative_to, &loader_root)
         }
     }
 
     pub(crate) fn write_object_file(&self) -> Result<()> {
-        /* TODO: bring back no_cache flag
-        if !compiler.options.use_cache {
-            info!("Not writing object file because --no-cache flag is set");
-            return Ok(());
-        }
-        */
-
         let object_code_filename = self.source_code.object_code_filename();
 
         info!("Writing object file to {}", object_code_filename.display());
@@ -332,7 +341,7 @@ mod tests {
             .scope
             .variables
             .insert("bar".to_string(), Ast::new(2.into()));
-        let module = module.load_dependencies("").unwrap();
+        let module = module.load_dependencies("", true).unwrap();
 
         assert!(module.scope.functions.contains_key("foo"));
         assert!(module.scope.variables.contains_key("bar"));

@@ -44,6 +44,7 @@ impl TryFrom<path::PathBuf> for Module {
             spreadsheet,
             required_modules,
             is_dirty: false,
+            needs_eval: true,
             compiler_version: env!("CARGO_PKG_VERSION").to_string(),
         })
     }

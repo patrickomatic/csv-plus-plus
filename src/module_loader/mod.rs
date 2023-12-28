@@ -7,7 +7,7 @@
 // * make it so that `---` is not required
 use crate::{compiler_error, Error, Module, ModulePath, Result, Scope};
 use log::{debug, info};
-use petgraph::{algo, graph, stable_graph};
+use petgraph::{algo, graph};
 use std::collections;
 use std::path;
 use std::sync;
@@ -29,8 +29,7 @@ pub(super) struct ModuleLoader<'a> {
     loader_root: path::PathBuf,
     main_module: &'a Module,
     is_dirty: bool,
-    // TODO: this is going to need to respect the --use-cache flag
-    // use_cache: bool,
+    use_cache: bool,
 }
 
 // TODO: ideally this shouldn't take a $source_code and the calling part does the map_err
@@ -46,6 +45,8 @@ macro_rules! eval_fns_or_vars {
     }};
 }
 
+// TODO:
+// this probably doesn't need to be a macro
 macro_rules! eval_scope {
     ($scope:ident, $source_code:expr) => {
         eval_fns_or_vars!($scope, variables, $source_code);
@@ -64,6 +65,7 @@ impl<'a> ModuleLoader<'a> {
     pub(super) fn load_dependencies<P: Into<path::PathBuf>>(
         module: &'a Module,
         relative_to: P,
+        use_cache: bool,
     ) -> Result<ModuleLoader<'a>> {
         let mut module_loader = Self {
             attempted: Default::default(),
@@ -72,6 +74,7 @@ impl<'a> ModuleLoader<'a> {
             main_module: module,
             loader_root: relative_to.into(),
             is_dirty: false,
+            use_cache,
         };
 
         // we need to do this in a loop because every time we reload dirty dependencies we're
@@ -103,28 +106,43 @@ impl<'a> ModuleLoader<'a> {
         }
     }
 
-    fn load_dependency_graph(&self) -> stable_graph::StableGraph<ModulePath, ()> {
+    fn load_dependency_graph(&self) -> graph::Graph<ModulePath, ()> {
         let loaded = self.loaded.read().unwrap();
         info!(
             "Creating dependency graph with {} dependencies",
             loaded.len()
         );
 
-        let mut dep_graph: stable_graph::StableGraph<_, ()> = stable_graph::StableGraph::new();
+        let mut dep_graph: graph::Graph<_, ()> = graph::Graph::new();
 
         let main_node = dep_graph.add_node(self.main_module.module_path.clone());
+
+        let mut loaded_nodes = collections::HashMap::new();
+        loaded_nodes.insert(&self.main_module.module_path, main_node);
 
         // load all of the direct dependencies
         for p in &self.main_module.required_modules {
             let direct_dep_node = dep_graph.add_node(p.clone());
+            loaded_nodes.insert(p, direct_dep_node);
             dep_graph.add_edge(main_node, direct_dep_node, ());
         }
 
         for (p, dep_mod) in loaded.iter() {
-            let dep_node = dep_graph.add_node(p.clone());
+            // TODO: clean this up with a macro or something. or maybe wrap the petgraph into a
+            // `UniqueGraph` of my own making
+            let dep_node = loaded_nodes
+                .get(p)
+                .copied()
+                .unwrap_or_else(|| dep_graph.add_node(p.clone()));
+            loaded_nodes.insert(p, dep_node);
 
             for required_mod in &dep_mod.required_modules {
-                let dep_dep_node = dep_graph.add_node(required_mod.clone());
+                let dep_dep_node = loaded_nodes
+                    .get(required_mod)
+                    .copied()
+                    .unwrap_or_else(|| dep_graph.add_node(required_mod.clone()));
+                loaded_nodes.insert(required_mod, dep_dep_node);
+
                 dep_graph.add_edge(dep_node, dep_dep_node, ());
             }
         }
@@ -187,7 +205,10 @@ impl<'a> ModuleLoader<'a> {
             if module.is_dirty {
                 self.loaded.write()?.insert(
                     mp.clone(),
-                    Module::load_from_source(mp.clone(), module.source_code.filename.clone())?,
+                    Module::load_from_source_from_filename(
+                        mp.clone(),
+                        module.source_code.filename.clone(),
+                    )?,
                 );
             }
         }
@@ -212,6 +233,10 @@ impl<'a> ModuleLoader<'a> {
         let mut evaled = collections::HashMap::<&ModulePath, Scope>::new();
 
         for to_resolve in resolution_order.into_iter() {
+            if !to_resolve.needs_eval {
+                continue;
+            }
+
             let mut local_scope = to_resolve.scope.clone();
             for req_path in to_resolve.required_modules.iter().rev() {
                 // look in `evaled` first, then fall back to `loaded`, and otherwise if it's not
@@ -231,6 +256,8 @@ impl<'a> ModuleLoader<'a> {
             }
 
             eval_scope!(local_scope, to_resolve.source_code);
+
+            // XXX need to update the module and save the object file after evaling
 
             evaled.insert(&to_resolve.module_path, local_scope);
         }
@@ -276,8 +303,13 @@ impl<'a> ModuleLoader<'a> {
     }
 
     fn load_module(&self, module_path: ModulePath, relative_to: &ModulePath) -> Result<()> {
-        match Module::load_from_cache_or_source(module_path.clone(), relative_to, &self.loader_root)
-        {
+        let load_result = if self.use_cache {
+            Module::load_from_cache_or_source(module_path.clone(), relative_to, &self.loader_root)
+        } else {
+            Module::load_from_source_relative(module_path.clone(), relative_to, &self.loader_root)
+        };
+
+        match load_result {
             Ok(loaded_module) => {
                 // recursively load the newly loaded code section's dependencies (which are
                 // transitive at this point)
@@ -304,14 +336,14 @@ mod tests {
 
     #[test]
     fn load_dependencies_empty() {
-        assert!(ModuleLoader::load_dependencies(&build_module(), "").is_ok());
+        assert!(ModuleLoader::load_dependencies(&build_module(), "", true).is_ok());
     }
 
     #[test]
     fn load_dependencies_require_does_not_exist() {
         let mut module = build_module();
         module.required_modules.push(ModulePath::new("bar"));
-        let module_loader = ModuleLoader::load_dependencies(&module, "").unwrap();
+        let module_loader = ModuleLoader::load_dependencies(&module, "", true).unwrap();
 
         assert_eq!(module_loader.failed.read().unwrap().len(), 1);
         assert_eq!(module_loader.attempted.read().unwrap().len(), 1);
@@ -341,7 +373,7 @@ b := 24
             required_modules: vec![mod1_path.clone(), mod2_path.clone()],
             ..build_module()
         };
-        let module_loader = ModuleLoader::load_dependencies(&module, "").unwrap();
+        let module_loader = ModuleLoader::load_dependencies(&module, "", true).unwrap();
         let loaded = module_loader.loaded.read().unwrap();
 
         assert_eq!(loaded.len(), 2);
@@ -383,7 +415,7 @@ a := 42
             required_modules: vec![(&dep_mod).into()],
             ..build_module()
         };
-        let module_loader = ModuleLoader::load_dependencies(&module, "").unwrap();
+        let module_loader = ModuleLoader::load_dependencies(&module, "", true).unwrap();
 
         assert_eq!(module_loader.loaded.read().unwrap().len(), 1);
         assert_eq!(module_loader.attempted.read().unwrap().len(), 1);
@@ -416,7 +448,7 @@ b := 24
             required_modules: vec![(&mod1).into(), (&mod2).into()],
             ..build_module()
         };
-        let module_loader = ModuleLoader::load_dependencies(&module, "").unwrap();
+        let module_loader = ModuleLoader::load_dependencies(&module, "", true).unwrap();
 
         assert_eq!(module_loader.loaded.read().unwrap().len(), 2);
         assert_eq!(module_loader.attempted.read().unwrap().len(), 2);
@@ -432,6 +464,7 @@ b := 24
             failed: Default::default(),
             loader_root: path::Path::new("").to_path_buf(),
             is_dirty: false,
+            use_cache: true,
         };
 
         assert!(module_loader.into_direct_dependencies().is_ok());
@@ -446,6 +479,7 @@ b := 24
             failed: Default::default(),
             loader_root: path::Path::new("").to_path_buf(),
             is_dirty: false,
+            use_cache: true,
         };
         module_loader.failed.write().unwrap().insert(
             ModulePath::new("foo"),
@@ -503,6 +537,7 @@ b := 24
             failed: Default::default(),
             loader_root: path::Path::new("").to_path_buf(),
             is_dirty: false,
+            use_cache: true,
         };
 
         let dependencies = module_loader.into_direct_dependencies().unwrap();
@@ -550,6 +585,7 @@ b := 24
             failed: Default::default(),
             loader_root: path::Path::new("").to_path_buf(),
             is_dirty: false,
+            use_cache: true,
         };
 
         let dependencies = module_loader.into_direct_dependencies().unwrap();
@@ -611,6 +647,7 @@ b := 24
             failed: Default::default(),
             loader_root: path::Path::new("").to_path_buf(),
             is_dirty: false,
+            use_cache: true,
         };
 
         let dependencies = module_loader.into_direct_dependencies().unwrap();

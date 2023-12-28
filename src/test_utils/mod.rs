@@ -53,6 +53,7 @@ pub(crate) fn build_module() -> Module {
         spreadsheet: Default::default(),
         required_modules: Default::default(),
         is_dirty: false,
+        needs_eval: true,
     }
 }
 
