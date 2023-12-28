@@ -41,11 +41,13 @@ impl Compiler {
 
         info!("Compiled main: {}", &main_module);
 
-        debug!(
-            "Writing object file {}",
-            main_module.source_code.object_code_filename().display()
-        );
-        main_module.write_object_file(self)?;
+        if self.options.use_cache {
+            debug!(
+                "Writing object file {}",
+                main_module.source_code.object_code_filename().display()
+            );
+            main_module.write_object_file()?;
+        }
 
         Ok(main_module)
     }

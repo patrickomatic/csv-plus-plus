@@ -79,12 +79,6 @@ impl SourceCode {
             .map(|s| s.to_string())
     }
 
-    /*
-    pub(crate) fn is_object_code_outdated(&self) -> bool {
-        unimplemented!()
-    }
-    */
-
     pub(crate) fn object_code_filename(&self) -> path::PathBuf {
         let mut f = self.filename.clone();
         f.set_extension("csvpo");

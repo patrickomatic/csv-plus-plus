@@ -7,7 +7,7 @@
 // * make it so that `---` is not required
 use crate::{compiler_error, Error, Module, ModulePath, Result, Scope};
 use log::{debug, info};
-use petgraph::graphmap;
+use petgraph::{algo, graphmap};
 use std::collections;
 use std::path;
 use std::sync;
@@ -26,8 +26,9 @@ pub(super) struct ModuleLoader<'a> {
     attempted: Attempted,
     failed: Failed,
     loaded: Loaded,
-    main_module: &'a Module,
     loader_root: path::PathBuf,
+    main_module: &'a Module,
+    is_dirty: bool,
     // TODO: this is going to need to respect the --use-cache flag
     // use_cache: bool,
 }
@@ -103,10 +104,21 @@ impl<'a> ModuleLoader<'a> {
             loaded: Default::default(),
             main_module: module,
             loader_root: relative_to.into(),
+            is_dirty: false,
         };
-        module_loader.load(module)?;
-        module_loader.propagate_dirty_flag();
-        module_loader.reload_dirty_modules();
+
+        // we need to do this in a loop because every time we reload dirty dependencies we're
+        // pulling in changes to the source code, which could mean the author added a new `use ...`
+        // in which case we need to load it
+        loop {
+            module_loader.load(module)?;
+            module_loader = module_loader.propagate_dirty_flag()?;
+            if module_loader.is_dirty {
+                module_loader.reload_dirty_modules()?;
+            } else {
+                break;
+            }
+        }
 
         Ok(module_loader)
     }
@@ -124,12 +136,65 @@ impl<'a> ModuleLoader<'a> {
         }
     }
 
-    fn propagate_dirty_flag(&mut self) {
-        // TODO:
+    fn dirty_nodes(&self) -> collections::HashSet<ModulePath> {
+        let loaded = self.loaded.read().unwrap();
+        let dep_graph = load_dependency_graph(self.main_module, &loaded);
+
+        let mut dirty_nodes: collections::HashSet<ModulePath> = Default::default();
+        for mp in dep_graph.nodes().collect::<Vec<_>>() {
+            let Some(module) = loaded.get(mp) else {
+                continue;
+            };
+
+            if module.is_dirty {
+                for graph_path in algo::simple_paths::all_simple_paths::<Vec<_>, _>(
+                    &dep_graph,
+                    &self.main_module.module_path,
+                    mp,
+                    1,
+                    None,
+                ) {
+                    for node in graph_path {
+                        dirty_nodes.insert(node.clone());
+                    }
+                }
+            }
+        }
+
+        dirty_nodes
     }
 
-    fn reload_dirty_modules(&mut self) {
-        // TODO:
+    fn propagate_dirty_flag(self) -> Result<Self> {
+        let dirty_nodes = self.dirty_nodes();
+        let mut loaded = sync::Arc::try_unwrap(self.loaded).unwrap().into_inner()?;
+
+        let is_dirty = !dirty_nodes.is_empty();
+
+        for mp in dirty_nodes {
+            if let Some(n) = loaded.get_mut(&mp) {
+                n.is_dirty = true;
+            }
+        }
+
+        Ok(Self {
+            loaded: sync::Arc::new(sync::RwLock::new(loaded)),
+            is_dirty,
+            ..self
+        })
+    }
+
+    fn reload_dirty_modules(&mut self) -> Result<()> {
+        let loaded = self.loaded.read().unwrap();
+        for (mp, module) in loaded.iter() {
+            if module.is_dirty {
+                self.loaded.write()?.insert(
+                    mp.clone(),
+                    Module::load_from_source(mp.clone(), module.source_code.filename.clone())?,
+                );
+            }
+        }
+
+        Ok(())
     }
 
     /// Extract all direct dependencies on `scope`.  
@@ -139,7 +204,7 @@ impl<'a> ModuleLoader<'a> {
 
         // now that we have a graph, use Tarjan's algo to give us a topological sort which will
         // represent the dependencies in the order they need to be resolved.
-        let resolution_order = petgraph::algo::tarjan_scc(&dep_graph)
+        let resolution_order = algo::tarjan_scc(&dep_graph)
             .into_iter()
             .flatten()
             .filter_map(|p| loaded.get(p));
@@ -192,7 +257,7 @@ impl<'a> ModuleLoader<'a> {
             let mut attempted = self.attempted.write()?;
             for module_path in &module.required_modules {
                 if attempted.contains(module_path) {
-                    // another modules has already loaded it
+                    // another module has already loaded it
                     continue;
                 } else {
                     attempted.insert(module_path.clone());
@@ -213,7 +278,8 @@ impl<'a> ModuleLoader<'a> {
     }
 
     fn load_module(&self, module_path: ModulePath, relative_to: &ModulePath) -> Result<()> {
-        match Module::load_source(module_path.clone(), relative_to, &self.loader_root) {
+        match Module::load_from_cache_or_source(module_path.clone(), relative_to, &self.loader_root)
+        {
             Ok(loaded_module) => {
                 // recursively load the newly loaded code section's dependencies (which are
                 // transitive at this point)
@@ -367,6 +433,7 @@ b := 24
             loaded: Default::default(),
             failed: Default::default(),
             loader_root: path::Path::new("").to_path_buf(),
+            is_dirty: false,
         };
 
         assert!(module_loader.into_direct_dependencies().is_ok());
@@ -380,6 +447,7 @@ b := 24
             loaded: Default::default(),
             failed: Default::default(),
             loader_root: path::Path::new("").to_path_buf(),
+            is_dirty: false,
         };
         module_loader.failed.write().unwrap().insert(
             ModulePath::new("foo"),
@@ -436,6 +504,7 @@ b := 24
             ]))),
             failed: Default::default(),
             loader_root: path::Path::new("").to_path_buf(),
+            is_dirty: false,
         };
 
         let dependencies = module_loader.into_direct_dependencies().unwrap();
@@ -482,6 +551,7 @@ b := 24
             ]))),
             failed: Default::default(),
             loader_root: path::Path::new("").to_path_buf(),
+            is_dirty: false,
         };
 
         let dependencies = module_loader.into_direct_dependencies().unwrap();
@@ -542,6 +612,7 @@ b := 24
             ]))),
             failed: Default::default(),
             loader_root: path::Path::new("").to_path_buf(),
+            is_dirty: false,
         };
 
         let dependencies = module_loader.into_direct_dependencies().unwrap();

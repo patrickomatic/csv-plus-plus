@@ -12,8 +12,8 @@
 use crate::ast::Variables;
 use crate::parser::code_section_parser::CodeSectionParser;
 use crate::{
-    compiler_error, ArcSourceCode, Compiler, Error, ModuleLoader, ModulePath, Result, Row, Scope,
-    SourceCode, Spreadsheet,
+    compiler_error, ArcSourceCode, Error, ModuleLoader, ModulePath, Result, Row, Scope, SourceCode,
+    Spreadsheet,
 };
 use log::{error, info, warn};
 use std::cmp;
@@ -133,7 +133,32 @@ impl Module {
         Some(loaded_module)
     }
 
-    pub(crate) fn load_source<P: AsRef<path::Path>>(
+    pub(crate) fn load_from_source<P: Into<path::PathBuf>>(
+        module_path: ModulePath,
+        filename: P,
+    ) -> Result<Self> {
+        let source_code = ArcSourceCode::new(SourceCode::try_from(filename.into())?);
+
+        if let Some(scope_source) = &source_code.code_section {
+            let (scope, required_modules) =
+                CodeSectionParser::parse(scope_source, source_code.clone())?;
+            Ok(Module {
+                compiler_version: env!("CARGO_PKG_VERSION").to_string(),
+                is_dirty: false,
+                module_path,
+                required_modules,
+                scope,
+                source_code,
+                spreadsheet: Spreadsheet::default(),
+            })
+        } else {
+            Err(Error::ModuleLoadError(
+                "This module does not have a code section (but you imported it)".to_string(),
+            ))
+        }
+    }
+
+    pub(crate) fn load_from_cache_or_source<P: AsRef<path::Path>>(
         module_path: ModulePath,
         relative_to: &ModulePath,
         loader_root: P,
@@ -148,35 +173,17 @@ impl Module {
                 .as_ref()
                 .join(module_path.clone().filename_relative_to(relative_to));
 
-            // load the source code
-            let source_code = ArcSourceCode::new(SourceCode::try_from(filename)?);
-
-            // parse the code section
-            if let Some(scope_source) = &source_code.code_section {
-                let (scope, required_modules) =
-                    CodeSectionParser::parse(scope_source, source_code.clone())?;
-                Ok(Module {
-                    compiler_version: env!("CARGO_PKG_VERSION").to_string(),
-                    is_dirty: false,
-                    module_path,
-                    required_modules,
-                    scope,
-                    source_code,
-                    spreadsheet: Spreadsheet::default(),
-                })
-            } else {
-                Err(Error::ModuleLoadError(
-                    "This module does not have a code section (but you imported it)".to_string(),
-                ))
-            }
+            Self::load_from_source(module_path, filename)
         }
     }
 
-    pub(crate) fn write_object_file(&self, compiler: &Compiler) -> Result<()> {
+    pub(crate) fn write_object_file(&self) -> Result<()> {
+        /* TODO: bring back no_cache flag
         if !compiler.options.use_cache {
             info!("Not writing object file because --no-cache flag is set");
             return Ok(());
         }
+        */
 
         let object_code_filename = self.source_code.object_code_filename();
 
