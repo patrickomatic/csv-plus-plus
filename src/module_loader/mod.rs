@@ -7,7 +7,7 @@
 // * make it so that `---` is not required
 use crate::{compiler_error, Error, Module, ModulePath, Result, Scope};
 use log::{debug, info};
-use petgraph::{algo, graphmap};
+use petgraph::{algo, graph, stable_graph};
 use std::collections;
 use std::path;
 use std::sync;
@@ -51,39 +51,6 @@ macro_rules! eval_scope {
         eval_fns_or_vars!($scope, variables, $source_code);
         eval_fns_or_vars!($scope, functions, $source_code);
     };
-}
-
-fn load_dependency_graph<'a>(
-    main_module: &'a Module,
-    loaded: &'a LoadedModules,
-) -> graphmap::UnGraphMap<&'a ModulePath, ()> {
-    info!(
-        "Creating dependency graph with {} dependencies",
-        loaded.len()
-    );
-
-    let mut dep_graph: graphmap::UnGraphMap<_, ()> = graphmap::UnGraphMap::new();
-
-    dep_graph.add_node(&main_module.module_path);
-
-    // load all of the direct dependencies
-    for p in &main_module.required_modules {
-        dep_graph.add_node(p);
-        dep_graph.add_edge(&main_module.module_path, p, ());
-    }
-
-    for (p, dep_mod) in loaded.iter() {
-        dep_graph.add_node(p);
-
-        for required_mod in &dep_mod.required_modules {
-            dep_graph.add_node(required_mod);
-            dep_graph.add_edge(p, required_mod, ());
-        }
-    }
-
-    debug!("Loaded dependency graph {dep_graph:?}");
-
-    dep_graph
 }
 
 // TODO:
@@ -136,26 +103,57 @@ impl<'a> ModuleLoader<'a> {
         }
     }
 
+    fn load_dependency_graph(&self) -> stable_graph::StableGraph<ModulePath, ()> {
+        let loaded = self.loaded.read().unwrap();
+        info!(
+            "Creating dependency graph with {} dependencies",
+            loaded.len()
+        );
+
+        let mut dep_graph: stable_graph::StableGraph<_, ()> = stable_graph::StableGraph::new();
+
+        let main_node = dep_graph.add_node(self.main_module.module_path.clone());
+
+        // load all of the direct dependencies
+        for p in &self.main_module.required_modules {
+            let direct_dep_node = dep_graph.add_node(p.clone());
+            dep_graph.add_edge(main_node, direct_dep_node, ());
+        }
+
+        for (p, dep_mod) in loaded.iter() {
+            let dep_node = dep_graph.add_node(p.clone());
+
+            for required_mod in &dep_mod.required_modules {
+                let dep_dep_node = dep_graph.add_node(required_mod.clone());
+                dep_graph.add_edge(dep_node, dep_dep_node, ());
+            }
+        }
+
+        debug!("Loaded dependency graph {dep_graph:?}");
+
+        dep_graph
+    }
+
     fn dirty_nodes(&self) -> collections::HashSet<ModulePath> {
         let loaded = self.loaded.read().unwrap();
-        let dep_graph = load_dependency_graph(self.main_module, &loaded);
+        let dep_graph = self.load_dependency_graph();
 
         let mut dirty_nodes: collections::HashSet<ModulePath> = Default::default();
-        for mp in dep_graph.nodes().collect::<Vec<_>>() {
-            let Some(module) = loaded.get(mp) else {
+        for node in dep_graph.node_indices().collect::<Vec<_>>() {
+            let Some(module) = loaded.get(&dep_graph[node]) else {
                 continue;
             };
 
             if module.is_dirty {
                 for graph_path in algo::simple_paths::all_simple_paths::<Vec<_>, _>(
                     &dep_graph,
-                    &self.main_module.module_path,
-                    mp,
+                    graph::NodeIndex::new(0),
+                    node,
                     1,
                     None,
                 ) {
-                    for node in graph_path {
-                        dirty_nodes.insert(node.clone());
+                    for n in graph_path {
+                        dirty_nodes.insert(dep_graph[n].clone());
                     }
                 }
             }
@@ -199,15 +197,15 @@ impl<'a> ModuleLoader<'a> {
 
     /// Extract all direct dependencies on `scope`.  
     fn direct_dependencies(self) -> Result<Scope> {
+        let dep_graph = self.load_dependency_graph();
         let loaded = sync::Arc::try_unwrap(self.loaded).unwrap().into_inner()?;
-        let dep_graph = load_dependency_graph(self.main_module, &loaded);
 
         // now that we have a graph, use Tarjan's algo to give us a topological sort which will
         // represent the dependencies in the order they need to be resolved.
         let resolution_order = algo::tarjan_scc(&dep_graph)
             .into_iter()
             .flatten()
-            .filter_map(|p| loaded.get(p));
+            .filter_map(|p| loaded.get(&dep_graph[p]));
 
         debug!("Resolving dependencies in order {resolution_order:?}");
 
