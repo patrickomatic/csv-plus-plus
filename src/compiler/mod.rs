@@ -1,6 +1,8 @@
 //! # Compiler
 //!
-use crate::{CliArgs, CompilationTarget, Error, Module, Options, Output, Result};
+use crate::{
+    CliArgs, CompilationTarget, Error, Module, ModuleLoader, ModulePath, Options, Output, Result,
+};
 use clap::Parser;
 use log::{debug, info};
 use std::path;
@@ -17,36 +19,46 @@ pub struct Compiler {
 
 impl Compiler {
     pub fn compile(&self) -> Result<Module> {
-        /* TODO bring back object file usage
-        Ok(if let Some(t) = Module::read_from_object_file(self)? {
-            self.progress("Read module from object file (not compiling)");
-            self.info(&t);
-            t
-        } else {
-        */
         debug!("Loading module from file {}", self.input_filename.display());
 
-        let mut main_module = Module::try_from(self.input_filename.clone())?;
-        let relative_to = self
+        let loader_root = self
             .input_filename
             .parent()
             .unwrap_or_else(|| path::Path::new(""))
             .to_path_buf();
 
+        let Some(main_filename) = self.input_filename.file_name() else {
+            return Err(Error::InitError(format!(
+                "Unable to extract filename for: {}",
+                self.input_filename.display()
+            )));
+        };
+
+        let main_module_path: ModulePath =
+            path::Path::new(main_filename).to_path_buf().try_into()?;
+
+        let main_module =
+            Module::load_from_cache_from_filename(main_module_path, self.input_filename.clone())?;
+
         debug!("Loading dependencies for {}", &main_module.module_path);
-        main_module = main_module.load_dependencies(relative_to, self.options.use_cache)?;
+        let mut main_module =
+            ModuleLoader::load_main(main_module, loader_root, self.options.use_cache)?;
 
-        debug!("Compiling module");
-        let main_module = self.eval(main_module)?;
+        if main_module.needs_eval {
+            debug!("Compiling module");
+            main_module = self.eval(main_module)?;
 
-        info!("Compiled main: {}", &main_module);
+            info!("Compiled main: {main_module}");
 
-        if self.options.use_cache {
-            debug!(
-                "Writing object file {}",
-                main_module.source_code.object_code_filename().display()
-            );
-            main_module.write_object_file()?;
+            if self.options.use_cache {
+                debug!(
+                    "Writing object file {}",
+                    main_module.source_code.object_code_filename().display()
+                );
+                main_module.write_object_file()?;
+            }
+        } else {
+            debug!("Cached main is up to date, skipping compilation");
         }
 
         Ok(main_module)

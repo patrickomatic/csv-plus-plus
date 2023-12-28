@@ -12,8 +12,7 @@
 use crate::ast::Variables;
 use crate::parser::code_section_parser::CodeSectionParser;
 use crate::{
-    compiler_error, ArcSourceCode, Error, ModuleLoader, ModulePath, Result, Row, Scope, SourceCode,
-    Spreadsheet,
+    compiler_error, ArcSourceCode, Error, ModulePath, Result, Row, Scope, SourceCode, Spreadsheet,
 };
 use log::{error, info, warn};
 use std::cmp;
@@ -21,7 +20,6 @@ use std::fs;
 use std::path;
 
 mod display;
-mod try_from;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct Module {
@@ -90,29 +88,18 @@ impl Module {
         })
     }
 
-    // TODO: should it just call the module loader directly?
-    pub(crate) fn load_dependencies<P: Into<path::PathBuf>>(
-        self,
-        relative_to: P,
-        use_cache: bool,
-    ) -> Result<Self> {
-        let module_loader = ModuleLoader::load_dependencies(&self, relative_to, use_cache)?;
-        let dependencies = module_loader.into_direct_dependencies()?;
-
-        Ok(Self {
-            scope: self.scope.merge(dependencies),
-            ..self
-        })
-    }
-
-    fn load_from_object_code_file<P: AsRef<path::Path>>(
+    fn load_from_object_code<P: AsRef<path::Path>>(
         module_path: ModulePath,
         relative_to: &ModulePath,
         loader_root: P,
     ) -> Option<Self> {
-        let mut filename = loader_root
+        let filename = loader_root
             .as_ref()
             .join(module_path.clone().filename_relative_to(relative_to));
+        Self::load_from_object_code_from_filename(filename)
+    }
+
+    fn load_from_object_code_from_filename(mut filename: path::PathBuf) -> Option<Self> {
         filename.set_extension("csvpo");
 
         if !filename.exists() {
@@ -139,7 +126,8 @@ impl Module {
         Some(loaded_module)
     }
 
-    pub(crate) fn load_from_source_relative<P: AsRef<path::Path>>(
+    // TODO: I would love to cut down on all these loader functions
+    pub(crate) fn load_from_source_relative<P: Into<path::PathBuf>>(
         module_path: ModulePath,
         relative_to: &ModulePath,
         loader_root: P,
@@ -147,49 +135,68 @@ impl Module {
         Self::load_from_source_from_filename(
             module_path.clone(),
             loader_root
-                .as_ref()
+                .into()
                 .join(module_path.filename_relative_to(relative_to)),
         )
     }
 
-    pub(crate) fn load_from_source_from_filename<P: Into<path::PathBuf>>(
+    pub(crate) fn load_from_source_from_filename(
         module_path: ModulePath,
-        filename: P,
+        filename: path::PathBuf,
     ) -> Result<Self> {
-        let source_code = ArcSourceCode::new(SourceCode::try_from(filename.into())?);
+        info!("Loading {module_path} from source: {}", filename.display());
 
-        if let Some(scope_source) = &source_code.code_section {
-            let (scope, required_modules) =
-                CodeSectionParser::parse(scope_source, source_code.clone())?;
-            Ok(Module {
-                compiler_version: env!("CARGO_PKG_VERSION").to_string(),
-                is_dirty: false,
-                needs_eval: true,
-                module_path,
-                required_modules,
-                scope,
-                source_code,
-                spreadsheet: Spreadsheet::default(),
-            })
+        let source_code = ArcSourceCode::new(SourceCode::try_from(filename)?);
+
+        let (scope, required_modules) = if let Some(scope_source) = &source_code.code_section {
+            CodeSectionParser::parse(scope_source, source_code.clone())?
         } else {
-            Err(Error::ModuleLoadError(
-                "This module does not have a code section (but you imported it)".to_string(),
-            ))
+            (Default::default(), Default::default())
+        };
+
+        let spreadsheet = Spreadsheet::parse(source_code.clone())?;
+
+        Ok(Module {
+            compiler_version: env!("CARGO_PKG_VERSION").to_string(),
+            is_dirty: false,
+            needs_eval: true,
+            module_path,
+            required_modules,
+            scope,
+            source_code,
+            spreadsheet,
+        })
+    }
+
+    pub(crate) fn load_from_cache_from_filename(
+        module_path: ModulePath,
+        filename: path::PathBuf,
+    ) -> Result<Self> {
+        if let Some(mut loaded_module) = Self::load_from_object_code_from_filename(filename.clone())
+        {
+            loaded_module.check_if_is_dirty()?;
+            Ok(loaded_module)
+        } else {
+            Self::load_from_source_from_filename(module_path, filename)
         }
     }
 
-    pub(crate) fn load_from_cache_or_source<P: AsRef<path::Path>>(
+    pub(crate) fn load_from_cache<P: AsRef<path::Path>>(
         module_path: ModulePath,
         relative_to: &ModulePath,
         loader_root: P,
     ) -> Result<Self> {
         if let Some(mut loaded_module) =
-            Self::load_from_object_code_file(module_path.clone(), relative_to, &loader_root)
+            Self::load_from_object_code(module_path.clone(), relative_to, &loader_root)
         {
             loaded_module.check_if_is_dirty()?;
             Ok(loaded_module)
         } else {
-            Self::load_from_source_relative(module_path, relative_to, &loader_root)
+            Self::load_from_source_relative(
+                module_path,
+                relative_to,
+                loader_root.as_ref().to_path_buf().clone(),
+            )
         }
     }
 
@@ -268,7 +275,6 @@ impl Module {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::*;
     use crate::test_utils::*;
     use crate::*;
 
@@ -328,30 +334,5 @@ mod tests {
         // and 10-999 should be Fill { amount: None, start_row: 10 }
         assert_eq!(spreadsheet.rows[10].fill.unwrap().start_row, 10.into());
         assert_eq!(spreadsheet.rows[999].fill.unwrap().start_row, 10.into());
-    }
-
-    #[test]
-    fn load_dependencies_with_scope() {
-        let mut module = build_module();
-        module
-            .scope
-            .functions
-            .insert("foo".to_string(), Ast::new(1.into()));
-        module
-            .scope
-            .variables
-            .insert("bar".to_string(), Ast::new(2.into()));
-        let module = module.load_dependencies("", true).unwrap();
-
-        assert!(module.scope.functions.contains_key("foo"));
-        assert!(module.scope.variables.contains_key("bar"));
-    }
-
-    #[test]
-    fn load_depdencies_without_scope() {
-        let module = build_module();
-
-        assert!(module.scope.functions.is_empty());
-        assert!(module.scope.variables.is_empty());
     }
 }

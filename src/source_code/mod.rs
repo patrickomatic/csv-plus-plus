@@ -95,9 +95,7 @@ impl SourceCode {
         position: a1_notation::Address,
         add_leading_whitespace: bool,
     ) -> CharOffset {
-        dbg!(position);
         let line_number = self.csv_line_number(position);
-        dbg!(line_number);
         let Some(line) = self.get_line(line_number) else {
             compiler_error(format!(
                 "Unable to find line for `line_number` = {line_number}"

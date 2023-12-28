@@ -67,8 +67,9 @@ pub(crate) fn csv_reader() -> csv::ReaderBuilder {
 
 pub(crate) fn compiler_error<S: std::fmt::Display>(message: S) -> ! {
     error!(
-        "csv++ ran into an unexpected error while compiling.  Please run with `-vvvv` as a CLI flag and share a copy of the output and your source code at:
-        https://github.com/patrickomatic/csv-plus-plus/issues"
+        "csv++ ran into an unexpected error while compiling.
+Please run with `-vvvv` as a CLI flag and share a copy of the output and your source code at:
+https://github.com/patrickomatic/csv-plus-plus/issues"
     );
     panic!("{message}")
 }

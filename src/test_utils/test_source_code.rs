@@ -1,4 +1,4 @@
-use crate::{CliArgs, Compiler, SourceCode};
+use crate::{CliArgs, Compiler, ModulePath, SourceCode};
 use rand::Rng;
 use std::fs;
 use std::path;
@@ -16,6 +16,7 @@ use std::path;
 pub(crate) struct TestSourceCode {
     pub(crate) input_file: path::PathBuf,
     pub(crate) output_file: path::PathBuf,
+    in_dir: bool,
 }
 
 /// We frequently need to be able to produce a `Compiler` given a source file.
@@ -30,6 +31,12 @@ impl From<&TestSourceCode> for Compiler {
             ..Default::default()
         })
         .unwrap()
+    }
+}
+
+impl From<&TestSourceCode> for ModulePath {
+    fn from(tsc: &TestSourceCode) -> Self {
+        ModulePath::try_from(tsc.input_file.clone()).unwrap()
     }
 }
 
@@ -56,6 +63,28 @@ impl TestSourceCode {
         Self {
             input_file: source_path.to_path_buf(),
             output_file: output_path.to_path_buf(),
+            in_dir: false,
+        }
+    }
+
+    pub(crate) fn new_in_dir(output_extension: &str, input: &str) -> Self {
+        let mut rng = rand::thread_rng();
+        let dir = rng.gen::<u64>().to_string();
+        fs::create_dir(&dir).unwrap();
+        let input_filename = format!("{dir}/unit_test_input_{}.csvpp", rng.gen::<u64>());
+        let source_path = path::Path::new(&input_filename);
+        fs::write(source_path, input).unwrap();
+
+        let output_filename = format!(
+            "{dir}/unit_test_output_{}.{output_extension}",
+            rng.gen::<u64>()
+        );
+        let output_path = path::Path::new(&output_filename);
+
+        Self {
+            input_file: source_path.to_path_buf(),
+            output_file: output_path.to_path_buf(),
+            in_dir: true,
         }
     }
 
@@ -83,5 +112,9 @@ impl Drop for TestSourceCode {
         fs::remove_file(self.object_code_filename());
         fs::remove_file(&self.input_file);
         fs::remove_file(&self.output_file);
+
+        if self.in_dir {
+            fs::remove_dir(self.input_file.parent().unwrap()).unwrap();
+        }
     }
 }

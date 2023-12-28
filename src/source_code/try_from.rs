@@ -34,7 +34,6 @@ foo,bar,baz,=foo
         );
         let source_code = SourceCode::try_from(s.input_file.clone()).unwrap();
 
-        dbg!(&source_code);
         assert_eq!(source_code.lines, 5);
         // TODO: the csv_section should not include an additional newline
         assert_eq!(source_code.length_of_csv_section, 2);
