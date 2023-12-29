@@ -69,7 +69,7 @@ impl TokenLibrary {
             ),
             integer: TokenMatcher::new(r"-?\d+", Token::Integer),
             float: TokenMatcher::new(r"-?\d+\.\d*", Token::Float),
-            fn_def: TokenMatcher::new(r"fn", Token::FunctionDefinition),
+            fn_def: TokenMatcher::new(r"fn\s+", Token::FunctionDefinition),
             newline: TokenMatcher::new(r"\n", Token::Newline),
             open_paren: TokenMatcher::new(r"\(", Token::OpenParen),
             reference: TokenMatcher::new(r"[$!\w:]+[$!\w:.]?", Token::Reference),

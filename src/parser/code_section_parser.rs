@@ -214,6 +214,7 @@ fn bar(a, b)
         let (scope, _) = test(
             r#"
 fn foo_fn() 1 * 2
+fn fn_foo() "something"
 foo_var := 3 * 4 + 5
 fn bar_fn(a, b) a + b
 bar_var := D1
@@ -221,6 +222,7 @@ bar_var := D1
         );
 
         assert!(scope.functions.get("foo_fn").is_some());
+        assert!(scope.functions.get("fn_foo").is_some());
         assert!(scope.functions.get("bar_fn").is_some());
 
         assert!(scope.variables.get("foo_var").is_some());
