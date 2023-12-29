@@ -1,4 +1,4 @@
-use super::{Ast, Node};
+use super::{Ast, Node, VariableValue};
 use crate::Scope;
 use std::collections;
 
@@ -44,6 +44,11 @@ impl AstReferences {
             Node::Reference(r) if scope.variables.contains_key(r) => {
                 self.variables.insert(r.to_string());
             }
+
+            Node::Variable {
+                value: VariableValue::Ast(ast),
+                ..
+            } => self.extract_dfs(ast, scope),
 
             // anything else is terminal
             _ => (),

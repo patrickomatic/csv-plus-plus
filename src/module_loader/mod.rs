@@ -36,7 +36,6 @@ pub(super) struct ModuleLoader {
 macro_rules! eval_fns_or_vars {
     ($scope:expr, $functions_or_variables:ident, $source_code:expr) => {{
         for (name, ast) in $scope.$functions_or_variables.clone().into_iter() {
-            dbg!(&name);
             $scope.$functions_or_variables.insert(
                 name,
                 ast.eval(&$scope, None)
@@ -267,20 +266,7 @@ impl ModuleLoader {
                 to_resolve.scope.merge(dep_scope);
             }
 
-            dbg!("before");
-            dbg!(&to_resolve.scope);
-            // eval_scope!(to_resolve.scope, to_resolve.source_code);
-            for (name, ast) in to_resolve.scope.variables.clone().into_iter() {
-                dbg!(&name);
-                to_resolve.scope.variables.insert(
-                    name,
-                    ast.eval(&to_resolve.scope, None)
-                        .map_err(|e| to_resolve.source_code.eval_error(e, None))?,
-                );
-            }
-
-            dbg!("after");
-            dbg!(&to_resolve.scope);
+            eval_scope!(to_resolve.scope, to_resolve.source_code);
 
             // now that we've evaled it that's the last step, write the csvpo file
             if self.use_cache {
@@ -491,10 +477,9 @@ var_from_a := var_from_b
         };
         let main_module = ModuleLoader::load_main(main_module, "", true).unwrap();
 
-        dbg!(&main_module);
         assert_eq!(
             main_module.scope.variables.get("var_from_a").unwrap(),
-            &Ast::new(420.into())
+            &Node::var("var_from_a", VariableValue::Ast(420.into())).into()
         );
         assert!(!main_module.scope.variables.contains_key("var_from_b"));
         assert!(!main_module.scope.variables.contains_key("var_from_c"));

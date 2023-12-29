@@ -3,7 +3,7 @@
 //! The main functions for evaluating a function or variable.
 //!
 use super::references::{AstReferences, ReferencesIter};
-use super::{Ast, Node, Variables};
+use super::{Ast, Node, VariableValue, Variables};
 use crate::{EvalError, EvalResult, Scope};
 use std::collections;
 
@@ -168,6 +168,15 @@ impl Ast {
             }
             .into(),
 
+            Node::Variable {
+                value: VariableValue::Ast(ast),
+                name,
+            } => Node::Variable {
+                name,
+                value: VariableValue::Ast(ast.call_function(fn_id, fn_ast)?),
+            }
+            .into(),
+
             // otherwise just don't modify it
             _ => inner.clone().into(),
         })
@@ -206,6 +215,14 @@ impl Ast {
 
             // a reference matching our variable - take the replacement
             Node::Reference(r) if var_id == r => replacement.into_inner(),
+
+            Node::Variable {
+                value: VariableValue::Ast(ast),
+                name,
+            } => Node::Variable {
+                name,
+                value: VariableValue::Ast(ast.replace_variable(var_id, replacement.clone())),
+            },
 
             // otherwise keep the Node unmodified
             _ => inner,
@@ -258,5 +275,23 @@ mod tests {
         );
 
         assert_eq!(ast.clone().eval(&scope, None).unwrap(), 1.into());
+    }
+
+    #[test]
+    fn eval_variable_in_variable_value() {
+        let ast = Ast::new(Node::var(
+            "bar",
+            VariableValue::Ast(Node::reference("foo").into()),
+        ));
+        let mut scope = Scope::default();
+        scope.variables.insert(
+            "foo".to_string(),
+            Node::var("foo", VariableValue::Ast(1.into())).into(),
+        );
+
+        assert_eq!(
+            ast.clone().eval(&scope, None).unwrap(),
+            Node::var("bar", VariableValue::Ast(1.into())).into()
+        );
     }
 }
