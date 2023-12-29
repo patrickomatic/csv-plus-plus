@@ -1,4 +1,4 @@
-//! # BatchUpdateBuilder
+//! # `BatchUpdateBuilder`
 //!
 use super::{google_sheets_cell, SheetsValue};
 use crate::ast::Node;
@@ -47,7 +47,7 @@ impl<'a> BatchUpdateBuilder<'a> {
             .collect()
     }
 
-    fn cell_data(&self, row: &[MergeResult<SheetsValue>]) -> Vec<api::CellData> {
+    fn cell_data(row: &[MergeResult<SheetsValue>]) -> Vec<api::CellData> {
         row.iter()
             .map(|cell| {
                 match cell {
@@ -63,7 +63,7 @@ impl<'a> BatchUpdateBuilder<'a> {
                         api::CellData {
                             data_validation: gs_cell.data_validation_rule(),
                             user_entered_format: gs_cell.cell_format(),
-                            user_entered_value: self.user_entered_value(cell),
+                            user_entered_value: Self::user_entered_value(cell),
                             note: cell.note.clone(),
                             ..Default::default()
                         }
@@ -85,7 +85,7 @@ impl<'a> BatchUpdateBuilder<'a> {
                 let merged_row = merge_rows(existing_row, &row.cells, &self.compiler.options);
 
                 api::RowData {
-                    values: Some(self.cell_data(&merged_row)),
+                    values: Some(Self::cell_data(&merged_row)),
                 }
             })
             .collect()
@@ -95,8 +95,15 @@ impl<'a> BatchUpdateBuilder<'a> {
         api::UpdateCellsRequest {
             fields: Some(google_sheets4::FieldMask::from_str("*").unwrap()),
             start: Some(api::GridCoordinate {
-                column_index: Some(self.compiler.options.offset.1 as i32),
-                row_index: Some(self.compiler.options.offset.0 as i32),
+                // TODO: get rid of the unwraps
+                column_index: Some(
+                    i32::try_from(self.compiler.options.offset.1)
+                        .expect("a 32-bit value for column offset"),
+                ),
+                row_index: Some(
+                    i32::try_from(self.compiler.options.offset.0)
+                        .expect("a 32-bit value for row offset"),
+                ),
                 sheet_id: None,
             }),
             rows: Some(rows.to_vec()),
@@ -104,7 +111,7 @@ impl<'a> BatchUpdateBuilder<'a> {
         }
     }
 
-    fn user_entered_value(&self, cell: &Cell) -> Option<api::ExtendedValue> {
+    fn user_entered_value(cell: &Cell) -> Option<api::ExtendedValue> {
         if let Some(ast) = &cell.ast {
             Some(match ast.clone().into_inner() {
                 Node::Boolean(b) => api::ExtendedValue {
@@ -120,6 +127,7 @@ impl<'a> BatchUpdateBuilder<'a> {
                     ..Default::default()
                 },
                 Node::Integer(i) => api::ExtendedValue {
+                    #[allow(clippy::cast_precision_loss)]
                     number_value: Some(i as f64),
                     ..Default::default()
                 },

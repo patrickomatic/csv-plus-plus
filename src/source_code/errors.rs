@@ -43,7 +43,7 @@ impl SourceCode {
 
     pub(crate) fn parse_error<S: Into<String>>(
         &self,
-        bad_input: impl BadInput,
+        bad_input: &impl BadInput,
         message: S,
     ) -> ParseError {
         let line_number = bad_input.line_number();
@@ -62,7 +62,7 @@ impl SourceCode {
 
     pub(crate) fn parse_error_with_possible_values<S: Into<String>>(
         &self,
-        bad_input: impl BadInput,
+        bad_input: &impl BadInput,
         message: S,
         // TODO: make this a slice
         possible_values: Vec<String>,
@@ -78,7 +78,7 @@ impl SourceCode {
         let lines = self
             .original
             .lines()
-            .map(|l| l.to_string())
+            .map(std::string::ToString::to_string)
             .collect::<Vec<String>>();
 
         // are they requesting a line totally outside of the range?
@@ -133,11 +133,7 @@ impl SourceCode {
                     format!(" {: <width$}: {line}", " ", width = longest_line_number)
                 } else {
                     line_count += 1;
-                    format!(
-                        " {: <width$}: {line}",
-                        line_count,
-                        width = longest_line_number
-                    )
+                    format!(" {line_count: <longest_line_number$}: {line}")
                 }
             })
             .collect()
@@ -164,8 +160,7 @@ something {
 foo,bar,baz
             ",
             "test.csvpp",
-        )
-        .unwrap();
+        );
 
         let highlighted_lines = source_code.highlight_line(7, 5);
         assert_eq!(highlighted_lines.len(), 8);
@@ -188,8 +183,7 @@ something {
 foo,bar,baz
             ",
             "test.csvpp",
-        )
-        .unwrap();
+        );
 
         let highlighted_lines = source_code.highlight_line(0, 5);
         assert_eq!(highlighted_lines.len(), 5);

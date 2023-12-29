@@ -46,7 +46,7 @@ impl Module {
         let s = self.spreadsheet;
         let mut row_num = 0;
 
-        for row in s.rows.into_iter() {
+        for row in s.rows {
             if let Some(f) = row.fill {
                 let new_fill = f.clone_to_row(row_num);
                 for _ in 0..new_fill.fill_amount(row_num) {
@@ -78,7 +78,7 @@ impl Module {
 
         let mut evaled_rows = vec![];
         for (row_index, row) in spreadsheet.rows.into_iter().enumerate() {
-            evaled_rows.push(row.eval(self.source_code.clone(), &scope, row_index.into())?);
+            evaled_rows.push(row.eval(&self.source_code, &scope, row_index.into())?);
         }
 
         Ok(Self {
@@ -95,7 +95,7 @@ impl Module {
     ) -> Option<Self> {
         let filename = loader_root
             .as_ref()
-            .join(module_path.clone().filename_relative_to(relative_to));
+            .join(module_path.filename_relative_to(relative_to));
         Self::load_from_object_code_from_filename(filename)
     }
 
@@ -151,10 +151,10 @@ impl Module {
         let (scope, required_modules) = if let Some(scope_source) = &source_code.code_section {
             CodeSectionParser::parse(scope_source, source_code.clone())?
         } else {
-            (Default::default(), Default::default())
+            (Scope::default(), Vec::default())
         };
 
-        let spreadsheet = Spreadsheet::parse(source_code.clone())?;
+        let spreadsheet = Spreadsheet::parse(&source_code)?;
 
         Ok(Module {
             compiler_version: env!("CARGO_PKG_VERSION").to_string(),
@@ -222,6 +222,14 @@ impl Module {
         }
     }
 
+    /// In the case that `self` was deserialized from an object file (`.csvpo`), we need to see if
+    /// the original source code could possibly have any updates that we don't have.  In other
+    /// words does the source code have changes since this was compiled?
+    ///
+    /// # Errors
+    ///
+    /// * `Error::SourceCodeError` - if unable to stat the source code file
+    /// * `Error::SourceCodeError` - if unable to stat the cached object code file
     pub fn check_if_is_dirty(&mut self) -> Result<()> {
         let object_code_filename = self.source_code.object_code_filename();
 
@@ -243,6 +251,7 @@ impl Module {
         // written)
         if source_file_modified > obj_file_modified {
             self.is_dirty = true;
+            return Ok(());
         }
 
         let current_version = env!("CARGO_PKG_VERSION");

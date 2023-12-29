@@ -1,4 +1,4 @@
-//! # ModuleLoader
+//! # `ModuleLoader`
 //!
 //! A multithreaded module loader that will resursively load the dependencies for a given
 //! `Scope`.
@@ -68,9 +68,9 @@ impl ModuleLoader {
         use_cache: bool,
     ) -> Result<Module> {
         let mut module_loader = Self {
-            attempted: Default::default(),
-            failed: Default::default(),
-            loaded: Default::default(),
+            attempted: sync::Arc::default(),
+            failed: sync::Arc::default(),
+            loaded: sync::Arc::default(),
             main_module,
             loader_root: relative_to.into(),
             is_dirty: false,
@@ -106,7 +106,7 @@ impl ModuleLoader {
             let mut loaded = self.loaded.write()?;
             let mut main_module = self.main_module;
 
-            for req_path in main_module.required_modules.iter() {
+            for req_path in &main_module.required_modules {
                 main_module
                     .scope
                     .merge(&loaded.remove(req_path).unwrap().scope);
@@ -166,7 +166,7 @@ impl ModuleLoader {
         let loaded = self.loaded.read().unwrap();
         let dep_graph = self.load_dependency_graph();
 
-        let mut dirty_nodes: collections::HashSet<ModulePath> = Default::default();
+        let mut dirty_nodes: collections::HashSet<ModulePath> = collections::HashSet::default();
         for node in dep_graph.node_indices().collect::<Vec<_>>() {
             let Some(module) = loaded.get(&dep_graph[node]) else {
                 continue;
@@ -246,7 +246,7 @@ impl ModuleLoader {
             scopes.insert(mp.clone(), m.scope.clone());
         }
 
-        for mp_to_resolve in resolution_order.into_iter() {
+        for mp_to_resolve in resolution_order {
             let Some(to_resolve) = loaded.get_mut(&mp_to_resolve) else {
                 continue;
             };
@@ -293,10 +293,10 @@ impl ModuleLoader {
                 if attempted.contains(module_path) {
                     // another module has already loaded it
                     continue;
-                } else {
-                    attempted.insert(module_path.clone());
-                    to_attempt.insert(module_path.clone());
                 }
+
+                attempted.insert(module_path.clone());
+                to_attempt.insert(module_path.clone());
             }
         }
 
@@ -335,6 +335,7 @@ impl ModuleLoader {
 }
 
 #[cfg(test)]
+#[allow(clippy::similar_names)]
 mod tests {
     use super::*;
     use crate::ast::*;
@@ -524,16 +525,16 @@ fn fn_from_a() var_from_b
 
     #[test]
     fn into_direct_dependencies_shadowing() {
-        let mod_c_file = TestSourceCode::new(
+        let mod_c_source_code = TestSourceCode::new(
             "csv",
             "
 var_from_c := 420
 ---
     ",
         );
-        let mod_c_path = ModulePath::from(&mod_c_file);
+        let mod_c_path = ModulePath::from(&mod_c_source_code);
 
-        let mod_b_file = TestSourceCode::new(
+        let mod_b_source_code = TestSourceCode::new(
             "csv",
             &format!(
                 "
@@ -543,9 +544,9 @@ var_from_b := var_from_c
 "
             ),
         );
-        let mod_b_path = ModulePath::from(&mod_b_file);
+        let mod_b_path = ModulePath::from(&mod_b_source_code);
 
-        let mod_a_file = TestSourceCode::new(
+        let mod_a_source_code = TestSourceCode::new(
             "csv",
             &format!(
                 "
@@ -555,7 +556,7 @@ var_from_a := var_from_b
 "
             ),
         );
-        let mod_a_path = ModulePath::from(&mod_a_file);
+        let mod_a_path = ModulePath::from(&mod_a_source_code);
 
         let mut main_module = Module {
             module_path: ModulePath::new("foo"),

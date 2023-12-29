@@ -1,4 +1,4 @@
-//! # CellParseError
+//! # `CellParseError`
 //!
 //! An error that can be thrown when parsing a cell.
 use super::BadInput;
@@ -25,7 +25,7 @@ impl CellParseError {
             option_name: option_name.into(),
             possible_values: possible_values
                 .iter()
-                .map(|pv| pv.to_string())
+                .map(|pv| (*pv).to_string())
                 .collect::<Vec<String>>(),
         }
     }
@@ -56,9 +56,11 @@ impl BadInput for CellParseError {
     }
 
     fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError {
-        let possible_values = self.possible_values.clone();
-        let source_code = self.bad_input.source_code.clone();
-        source_code.parse_error_with_possible_values(self, message, possible_values)
+        self.bad_input.source_code.parse_error_with_possible_values(
+            &self,
+            message,
+            self.possible_values.clone(),
+        )
     }
 }
 

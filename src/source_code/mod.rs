@@ -1,7 +1,7 @@
-//! # SourceCode
+//! # `SourceCode`
 //!
 use crate::parser::ast_lexer::CODE_SECTION_SEPARATOR;
-use crate::{compiler_error, csv_reader, Result};
+use crate::{compiler_error, csv_reader};
 use std::path;
 
 mod arc_source_code;
@@ -33,7 +33,7 @@ impl SourceCode {
     /// section by looking for `---`.
     // TODO: make `filename` optional - we don't have it when reading from CLI key/values.  or if
     // we were ever to support from stdin
-    pub(crate) fn new<S, P>(input: S, filename: P) -> Result<SourceCode>
+    pub(crate) fn new<S, P>(input: S, filename: P) -> SourceCode
     where
         S: Into<String>,
         P: Into<path::PathBuf>,
@@ -44,7 +44,7 @@ impl SourceCode {
             let csv_lines = csv_section.lines().count();
             let code_lines = code_section.lines().count();
 
-            Ok(SourceCode {
+            SourceCode {
                 filename: filename.into(),
                 lines: csv_lines + code_lines,
                 // +1 because `code_lines` will account for the separator `---`
@@ -52,20 +52,20 @@ impl SourceCode {
                 length_of_csv_section: csv_lines,
                 csv_section: csv_section.to_string(),
                 code_section: Some(code_section.to_string()),
-                original: str_input.to_owned(),
-            })
+                original: str_input.clone(),
+            }
         } else {
             let csv_lines = str_input.lines().count();
 
-            Ok(SourceCode {
+            SourceCode {
                 filename: filename.into(),
                 lines: csv_lines,
                 length_of_code_section: 0,
                 length_of_csv_section: csv_lines,
-                csv_section: str_input.to_owned(),
+                csv_section: str_input.clone(),
                 code_section: None,
-                original: str_input.to_owned(),
-            })
+                original: str_input.clone(),
+            }
         }
     }
 
@@ -73,10 +73,10 @@ impl SourceCode {
     pub(crate) fn get_line(&self, line_number: LineNumber) -> Option<String> {
         self.original
             .lines()
-            .map(|l| l.to_string())
+            .map(std::string::ToString::to_string)
             .collect::<Vec<String>>()
             .get(line_number)
-            .map(|s| s.to_string())
+            .map(std::string::ToString::to_string)
     }
 
     pub(crate) fn object_code_filename(&self) -> path::PathBuf {
@@ -161,8 +161,7 @@ foo,bar,baz
 foo1,bar1,baz1
             ",
             "test.csvpp",
-        )
-        .unwrap();
+        );
 
         assert_eq!(
             7,
@@ -191,8 +190,7 @@ foo,bar,baz
 foo1,bar1,baz1
             ",
             "test.csvpp",
-        )
-        .unwrap();
+        );
 
         assert_eq!(source_code.line_offset_for_cell((0, 0).into(), false), 0);
         assert_eq!(source_code.line_offset_for_cell((1, 0).into(), false), 4);
@@ -208,8 +206,7 @@ foo1,bar1,baz1
   foo,  bar,baz
             ",
             "test.csvpp",
-        )
-        .unwrap();
+        );
 
         assert_eq!(source_code.line_offset_for_cell((1, 0).into(), false), 6);
     }
@@ -223,8 +220,7 @@ foo1,bar1,baz1
 \" hmmm, this is all one cell\",baz
             ",
             "test.csvpp",
-        )
-        .unwrap();
+        );
 
         assert_eq!(source_code.line_offset_for_cell((1, 0).into(), false), 34);
     }
@@ -239,7 +235,7 @@ foo1,bar1,baz1
 
     #[test]
     fn new_no_scope() {
-        let source_code = SourceCode::new("foo,bar,baz", "foo.csvpp").unwrap();
+        let source_code = SourceCode::new("foo,bar,baz", "foo.csvpp");
 
         assert_eq!(source_code.lines, 1);
         assert_eq!(source_code.length_of_csv_section, 1);

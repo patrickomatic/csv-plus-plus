@@ -23,6 +23,7 @@ pub struct Options {
 }
 
 impl Options {
+    #[must_use]
     pub fn redacted_google_account_credentials(&self) -> String {
         if self.google_account_credentials.is_some() {
             "...redacted...".to_owned()

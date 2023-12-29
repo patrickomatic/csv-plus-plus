@@ -8,6 +8,7 @@ pub(crate) struct TokenMatcher<T>(pub(crate) T, pub(crate) Regex);
 pub(super) struct StrMatch<'a> {
     pub(super) len_leading_whitespace: usize,
     pub(super) len_full_match: usize,
+    #[allow(clippy::struct_field_names)]
     pub(super) str_match: &'a str,
 }
 

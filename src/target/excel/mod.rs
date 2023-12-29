@@ -42,7 +42,7 @@ impl<'a> Excel<'a> {
     /// Since the excel library allows us to modify the speadsheet in place, the strategy here is
     /// to be as light-touch as possible and just loop through our values and set them (or not
     /// depending on the merge strategy).
-    fn build_worksheet(&self, module: &Module, worksheet: &mut u::Worksheet) -> Result<()> {
+    fn build_worksheet(&self, module: &Module, worksheet: &mut u::Worksheet) {
         let mut cell_validations = vec![];
 
         for (row_index, row) in module.spreadsheet.rows.iter().enumerate() {
@@ -50,7 +50,7 @@ impl<'a> Excel<'a> {
                 let position = a1_notation::Address::new(cell_index, row_index);
 
                 let merged_cell = merge_cell(
-                    &self.get_existing_cell(position, worksheet),
+                    &Self::get_existing_cell(position, worksheet),
                     Some(cell),
                     &self.compiler.options,
                 );
@@ -64,14 +64,14 @@ impl<'a> Excel<'a> {
                     MergeResult::New(cell) => {
                         let e = worksheet.get_cell_mut(position.to_string());
 
-                        self.set_value(e, &cell);
+                        Self::set_value(e, &cell);
 
-                        if let Some(style) = self.build_style(&cell) {
+                        if let Some(style) = Self::build_style(&cell) {
                             e.set_style(style);
                         }
 
                         if let Some(n) = &cell.note {
-                            self.set_comment(worksheet, position, n);
+                            Self::set_comment(worksheet, position, n);
                         }
 
                         if let Some(data_validation) = cell.data_validation {
@@ -82,32 +82,25 @@ impl<'a> Excel<'a> {
             }
         }
 
-        self.set_data_validations(worksheet, cell_validations);
-
-        Ok(())
+        Self::set_data_validations(worksheet, cell_validations);
     }
 
-    fn set_data_validations(
-        &self,
-        worksheet: &mut u::Worksheet,
-        cell_validations: Vec<CellValidation>,
-    ) {
+    fn set_data_validations(worksheet: &mut u::Worksheet, cell_validations: Vec<CellValidation>) {
         let mut validations = u::DataValidations::default();
         if cell_validations.is_empty() {
             return;
         }
 
-        validations
-            .set_data_validation_list(cell_validations.into_iter().map(|dv| dv.into()).collect());
+        validations.set_data_validation_list(
+            cell_validations
+                .into_iter()
+                .map(std::convert::Into::into)
+                .collect(),
+        );
         worksheet.set_data_validations(validations);
     }
 
-    fn set_comment(
-        &self,
-        worksheet: &mut u::Worksheet,
-        position: a1_notation::Address,
-        note: &str,
-    ) {
+    fn set_comment(worksheet: &mut u::Worksheet, position: a1_notation::Address, note: &str) {
         let mut comment = u::Comment::default();
         comment.set_author("csvpp");
 
@@ -115,19 +108,20 @@ impl<'a> Excel<'a> {
         rt.set_text(note);
 
         let coord = comment.get_coordinate_mut();
-        coord.set_col_num(position.column.x as u32);
-        coord.set_row_num(position.row.y as u32);
+        coord.set_col_num(u32::try_from(position.column.x).expect("32 bit coordinate for comment"));
+        coord.set_row_num(u32::try_from(position.row.y).expect("32 bit coordinate for comment"));
 
         worksheet.add_comments(comment);
     }
 
     // TODO: turn into an impl (from/into)? the problem is we're mutating existing_cell...
-    fn set_value(&self, existing_cell: &mut u::Cell, cell: &Cell) {
+    fn set_value(existing_cell: &mut u::Cell, cell: &Cell) {
         if let Some(ast) = &cell.ast {
             match ast.clone().into_inner() {
                 Node::Boolean(b) => existing_cell.set_value_bool(b),
                 Node::Text(t) => existing_cell.set_value_string(t),
                 Node::Float(f) => existing_cell.set_value_number(f),
+                #[allow(clippy::cast_precision_loss)]
                 Node::Integer(i) => existing_cell.set_value_number(i as f64),
                 _ => existing_cell.set_formula(ast.to_string()),
             };
@@ -136,7 +130,7 @@ impl<'a> Excel<'a> {
         }
     }
 
-    fn build_style(&self, cell: &Cell) -> Option<u::Style> {
+    fn build_style(cell: &Cell) -> Option<u::Style> {
         let excel_cell = excel_cell::ExcelCell(cell);
         if !excel_cell.has_style() {
             return None;
@@ -145,11 +139,7 @@ impl<'a> Excel<'a> {
         Some(excel_cell.into())
     }
 
-    fn get_existing_cell(
-        &self,
-        position: Address,
-        worksheet: &u::Worksheet,
-    ) -> ExistingCell<ExcelValue> {
+    fn get_existing_cell(position: Address, worksheet: &u::Worksheet) -> ExistingCell<ExcelValue> {
         let cell_value = worksheet.get_cell(position.to_string());
         if let Some(cell) = cell_value {
             ExistingCell::Value(cell.clone())

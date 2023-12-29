@@ -1,6 +1,6 @@
 //! # Output
 //!
-use crate::target::*;
+use crate::target::{Csv, Excel, GoogleSheets, OpenDocument};
 use crate::{CompilationTarget, Compiler, Error, Result};
 use std::path;
 
@@ -37,7 +37,7 @@ impl Output {
         }
     }
 
-    fn from_filename<P>(path: P) -> Result<Self>
+    fn from_filename<P>(path: &P) -> Result<Self>
     where
         P: AsRef<path::Path> + Into<path::PathBuf>,
     {

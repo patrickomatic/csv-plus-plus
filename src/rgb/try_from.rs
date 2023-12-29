@@ -36,7 +36,7 @@ impl TryFrom<TokenMatch> for Rgb {
 
     fn try_from(input: TokenMatch) -> ParseResult<Self> {
         let str_match = input.str_match.clone();
-        let start_at = if str_match.starts_with('#') { 1 } else { 0 };
+        let start_at = usize::from(str_match.starts_with('#'));
         let input_len = str_match.len() - start_at;
 
         if input_len == 3 || input_len == 6 {

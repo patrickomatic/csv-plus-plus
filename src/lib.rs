@@ -1,3 +1,5 @@
+#![warn(clippy::pedantic)]
+
 mod ast;
 mod border_side;
 mod border_style;

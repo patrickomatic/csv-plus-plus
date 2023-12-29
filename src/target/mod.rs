@@ -23,12 +23,21 @@ pub(crate) struct ExistingValues<V: Clone> {
     cells: Vec<Vec<ExistingCell<V>>>,
 }
 
+#[allow(clippy::module_name_repetitions)]
 pub trait CompilationTarget {
     /// Create a backup of the spreadsheet, at the given target (for most this is making a copy of
     /// a file, but different for Google Sheets
+    ///
+    /// # Errors
+    ///
+    /// * OS-level I/O errors
     fn write_backup(&self) -> Result<()>;
 
     /// Write the compiled `Module` to the target.
+    ///
+    /// # Errors
+    ///
+    /// * OS-level I/O errors
     fn write(&self, module: &Module) -> Result<()>;
 }
 

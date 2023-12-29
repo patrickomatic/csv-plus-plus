@@ -1,6 +1,6 @@
-//! # OpenDocument
+//! # `OpenDocument`
 //!
-//! Functions for writing to OpenDocument files
+//! Functions for writing .ods files
 //!
 use super::file_backer_upper;
 use super::CompilationTarget;

@@ -18,9 +18,11 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub(crate) use bad_input::BadInput;
 pub(crate) use cell_parse_error::CellParseError;
 
+#[allow(clippy::module_name_repetitions)]
 pub use eval_error::EvalError;
 pub(crate) type EvalResult<T> = std::result::Result<T, EvalError>;
 
+#[allow(clippy::module_name_repetitions)]
 pub use parse_error::ParseError;
 pub(crate) type ParseResult<T> = std::result::Result<T, ParseError>;
 

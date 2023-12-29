@@ -1,4 +1,4 @@
-//! # AstLexer
+//! # `AstLexer`
 //!
 use super::TokenMatcher;
 use crate::error::ParseResult;
@@ -68,7 +68,7 @@ impl<'a> AstLexer<'a> {
         loop {
             let mut matched = false;
 
-            for token_matcher in matchers_ordered(token_library).iter() {
+            for token_matcher in &matchers_ordered(token_library) {
                 let token = token_matcher.0;
 
                 if let Some(m) = token_matcher.try_match(p) {

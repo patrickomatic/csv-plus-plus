@@ -1,4 +1,4 @@
-//! # CellLexer
+//! # `CellLexer`
 //!
 //! This is the lexer/tokenizer used for parsing csv++ cells - rather than tokenizing all in one
 //! go, this lexer works by extracting a token one at a time as we parse.
@@ -126,7 +126,7 @@ impl<'a> CellLexer<'a> {
             Token::Date => self.take_date(),
             Token::EndOptions => self.take(token, "]]"),
             Token::Equals => self.take(token, "="),
-            Token::OptionName => self.take_while(token, |ch| ch.is_alphanumeric()),
+            Token::OptionName => self.take_while(token, char::is_alphanumeric),
             Token::Identifier => self.take_while(token, |ch| ch.is_alphanumeric() || ch == '_'),
             Token::Number => {
                 // TODO: I could do a little better (enforce only one starting - and one .)
@@ -221,7 +221,7 @@ impl<'a> CellLexer<'a> {
     fn take_color(&mut self) -> ParseResult<TokenMatch> {
         let mut matched_alphas = 0;
         let mut saw_hash = false;
-        let mut matched = "".to_string();
+        let mut matched = String::new();
 
         self.take_whitespace();
 
@@ -261,13 +261,13 @@ impl<'a> CellLexer<'a> {
         if self.input.starts_with('\'') {
             Ok(self.take_single_quoted_string()?)
         } else {
-            Ok(self.take_while(Token::String, |ch| ch.is_alphanumeric())?)
+            Ok(self.take_while(Token::String, char::is_alphanumeric)?)
         }
     }
 
     fn take_single_quoted_string(&mut self) -> ParseResult<TokenMatch> {
         let mut escape_mode = false;
-        let mut matched = "".to_string();
+        let mut matched = String::new();
         let mut start_quote = false;
         let mut end_quote = false;
         // TODO: pretty sure we can just use .enumerate() and get rid of the clippy allow above...
@@ -315,7 +315,7 @@ impl<'a> CellLexer<'a> {
     {
         self.take_whitespace();
 
-        let mut matched = "".to_string();
+        let mut matched = String::new();
 
         for c in self.input.chars() {
             if while_fn(c) {

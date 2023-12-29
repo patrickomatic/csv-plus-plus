@@ -41,7 +41,7 @@ impl Scope {
     /// Merge another `Scope` (only it's `exports`) into this one. if a var or function is already
     /// defined, we do not insert it
     pub(crate) fn merge(&mut self, other: &Self) {
-        for e in other.exports.iter() {
+        for e in &other.exports {
             if let Some(f) = other.functions.get(e) {
                 if !self.functions.contains_key(e) {
                     self.functions.insert(e.clone(), f.clone());

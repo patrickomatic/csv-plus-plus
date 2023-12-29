@@ -1,4 +1,4 @@
-//! # DateTime::TryFrom
+//! # `DateTime::TryFrom`
 //!
 //! Uniform date-handling
 //!

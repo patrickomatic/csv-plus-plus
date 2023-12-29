@@ -18,6 +18,13 @@ pub struct Compiler {
 }
 
 impl Compiler {
+    /// Given the current `self.options` load the main module, all of it's dependencies and
+    /// evaluate it and get ready for output.  This function just compiles but does not output.
+    ///
+    /// # Errors
+    ///
+    /// * `Error` for anything that can go wrong during compilation.  This can be a huge range,
+    /// anything is really game at this point.
     pub fn compile(&self) -> Result<Module> {
         debug!("Loading module from file {}", self.input_filename.display());
 
@@ -64,10 +71,16 @@ impl Compiler {
         Ok(main_module)
     }
 
+    /// # Errors
+    ///
+    /// * `Error::InitError` - if the combination of CLI args are invalid.
     pub fn from_cli_args() -> Result<Self> {
         Self::try_from(&CliArgs::parse())
     }
 
+    /// # Errors
+    ///
+    /// * `Error`
     pub fn target<'a>(&'a self) -> Result<Box<dyn CompilationTarget + 'a>> {
         self.output.compilation_target(self)
     }

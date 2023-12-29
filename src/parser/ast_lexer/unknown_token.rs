@@ -37,7 +37,7 @@ impl BadInput for UnknownToken {
     }
 
     fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError {
-        self.source_code.clone().parse_error(self, message)
+        self.source_code.parse_error(&self, message)
     }
 }
 

@@ -1,4 +1,4 @@
-//! # BorderSide
+//! # `BorderSide`
 //!
 //! Represents a side (or all) of a spreadsheet cell.
 //!

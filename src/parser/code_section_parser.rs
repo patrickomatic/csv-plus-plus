@@ -1,4 +1,4 @@
-//! # CodeSectionParser
+//! # `CodeSectionParser`
 //!
 //! The `CodeSectionParser` relies on the `AstParser` to parse individual expressions, but it
 //! handles the parsing of functions and variables.

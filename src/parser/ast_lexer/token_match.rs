@@ -42,7 +42,7 @@ impl BadInput for TokenMatch<'_> {
     }
 
     fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError {
-        self.source_code.parse_error(self.clone(), message)
+        self.source_code.parse_error(&self, message)
     }
 }
 

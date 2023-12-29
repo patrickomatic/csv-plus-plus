@@ -32,7 +32,10 @@ impl TryFrom<TokenMatch<'_>> for ModulePath {
     // TODO do more validation (can only be [\w_/])
     fn try_from(tm: TokenMatch) -> Result<Self> {
         Ok(Self(
-            tm.str_match.split('/').map(|s| s.to_string()).collect(),
+            tm.str_match
+                .split('/')
+                .map(std::string::ToString::to_string)
+                .collect(),
         ))
     }
 }

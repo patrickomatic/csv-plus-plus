@@ -11,7 +11,7 @@
 //! * [Simple but Powerful Pratt Parsing](https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html)
 //! * [Which Parsing Approach?](https://news.ycombinator.com/item?id=24480504)
 //!
-use super::ast_lexer::*;
+use super::ast_lexer::{AstLexer, Token};
 use crate::ast::{Ast, Node, Variables};
 use crate::error::{BadInput, Error, ParseResult, Result};
 use crate::{ArcSourceCode, SourceCode};
@@ -35,11 +35,7 @@ impl<'a> AstParser<'a> {
         position: Option<a1_notation::Address>,
         source_code: ArcSourceCode,
     ) -> ParseResult<Ast> {
-        AstParser::new(
-            &AstLexer::new(input, position, source_code.clone())?,
-            single_expr,
-        )
-        .expr_bp(0)
+        AstParser::new(&AstLexer::new(input, position, source_code)?, single_expr).expr_bp(0)
     }
 
     /// Parse `input` from the command line, specified as a simple key/value string like
@@ -53,13 +49,13 @@ impl<'a> AstParser<'a> {
         let mut variables = collections::HashMap::new();
         let input_filename = input_filename.into();
 
-        for kv in key_values.iter() {
+        for kv in key_values {
             if let Some((key, value)) = kv.split_once('=') {
                 // the lexer requires that we have a `SourceCode`, but we're trying to parse something that
                 // came from the CLI. so we kinda need to fudge together a SourceCode here:
                 let source_input = format!("{key} := {value}");
                 let source_code =
-                    ArcSourceCode::new(SourceCode::new(source_input, input_filename.clone())?);
+                    ArcSourceCode::new(SourceCode::new(source_input, input_filename.clone()));
 
                 variables.insert(
                     key.to_string(),
@@ -126,7 +122,7 @@ impl<'a> AstParser<'a> {
                 t => return Err(op_token.into_parse_error(format!("Unexpected token ({t:?})"))),
             };
 
-            if let Some((l_bp, ())) = self.postfix_binding_power(op) {
+            if let Some((l_bp, ())) = Self::postfix_binding_power(op) {
                 if l_bp < min_bp {
                     break;
                 }
@@ -136,9 +132,8 @@ impl<'a> AstParser<'a> {
 
                 lhs = if op == "(" {
                     // function call
-                    let id = match lhs.into_inner() {
-                        Node::Reference(id) => id,
-                        _ => return Err(op_token.into_parse_error("Unable to get id for fn")),
+                    let Node::Reference(id) = lhs.into_inner() else {
+                        return Err(op_token.into_parse_error("Unable to get id for fn"));
                     };
 
                     let mut args = vec![];
@@ -165,7 +160,7 @@ impl<'a> AstParser<'a> {
                 continue;
             }
 
-            if let Some((l_bp, r_bp)) = self.infix_binding_power(op) {
+            if let Some((l_bp, r_bp)) = Self::infix_binding_power(op) {
                 if l_bp < min_bp {
                     break;
                 }
@@ -190,14 +185,14 @@ impl<'a> AstParser<'a> {
         Ok(lhs)
     }
 
-    fn postfix_binding_power(&self, op: &str) -> Option<(u8, ())> {
+    fn postfix_binding_power(op: &str) -> Option<(u8, ())> {
         Some(match op {
             "(" => (15, ()),
             _ => return None,
         })
     }
 
-    fn infix_binding_power(&self, op: &str) -> Option<(u8, u8)> {
+    fn infix_binding_power(op: &str) -> Option<(u8, u8)> {
         Some(match op {
             "=" | "<" | ">" | "<=" | ">=" | "<>" => (5, 6),
             "&" => (7, 8),

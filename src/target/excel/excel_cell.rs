@@ -1,6 +1,6 @@
-//! # ExcelCell
+//! # `ExcelCell`
 //!
-//! Converts between a Cell and an umya_spreadsheet::Style (which feature-wise actually happen
+//! Converts between a Cell and an `umya_spreadsheet::Style` (which feature-wise actually happen
 //! to map pretty nicely)
 use crate::{
     BorderSide, BorderStyle, Cell, HorizontalAlign, NumberFormat, Rgb, TextFormat, VerticalAlign,
@@ -159,7 +159,7 @@ impl<'a> ExcelCell<'a> {
         let mut font = umya_spreadsheet::Font::default();
 
         if let Some(fs) = self.0.font_size {
-            font.set_size(fs as f64);
+            font.set_size(f64::from(fs));
         }
 
         if let Some(ff) = self.0.font_family.clone() {

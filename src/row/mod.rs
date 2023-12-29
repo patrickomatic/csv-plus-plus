@@ -32,7 +32,7 @@ pub struct Row {
 impl Row {
     pub(crate) fn eval(
         self,
-        source_code: ArcSourceCode,
+        source_code: &ArcSourceCode,
         scope: &Scope,
         row_a1: a1_notation::Row,
     ) -> Result<Row> {
@@ -56,7 +56,7 @@ impl Row {
     pub(crate) fn parse(
         record_result: CsvRowResult,
         row_a1: a1_notation::Row,
-        source_code: ArcSourceCode,
+        source_code: &ArcSourceCode,
     ) -> Result<Self> {
         let mut row = Self::default();
 
@@ -66,7 +66,7 @@ impl Row {
 
         for (cell_index, unparsed_value) in csv_parsed_row.into_iter().enumerate() {
             let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
-            let cell = Cell::parse(unparsed_value, cell_a1, &mut row, source_code.clone())?;
+            let cell = Cell::parse(unparsed_value, cell_a1, &mut row, source_code)?;
             row.cells.push(cell);
         }
 
@@ -89,7 +89,7 @@ mod tests {
             }],
             ..Default::default()
         }
-        .eval(build_source_code(), &Scope::default(), 0.into())
+        .eval(&build_source_code(), &Scope::default(), 0.into())
         .is_ok());
     }
 
@@ -98,7 +98,7 @@ mod tests {
         let row = Row::parse(
             Ok(csv::StringRecord::from(vec!["a", "b", "c"])),
             0.into(),
-            build_source_code(),
+            &build_source_code(),
         )
         .unwrap();
 

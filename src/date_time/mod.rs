@@ -1,4 +1,4 @@
-//! # DateTime
+//! # `DateTime`
 //!
 //! How we handle dates and times (or both together).  This is mostly a wrapper around `chrono` but
 //! it's important that we handle timezones and parsing uniformly across the app.

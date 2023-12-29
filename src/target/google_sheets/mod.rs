@@ -1,4 +1,4 @@
-//! # GoogleSheets
+//! # `GoogleSheets`
 //!
 // TODO:
 // * implement backing up
@@ -98,14 +98,14 @@ impl<'a> GoogleSheets<'a> {
         */
 
         let sheets = unwrap_or_empty!(spreadsheet.sheets); // Vec<Sheet>
-        let sheet = unwrap_or_empty!(sheets.get(0)); // &Sheet
+        let sheet = unwrap_or_empty!(sheets.first()); // &Sheet
         let data = unwrap_or_empty!(&sheet.data); // &Vec<GridData>
-        let grid_data = unwrap_or_empty!(data.get(0)); // &GridData
+        let grid_data = unwrap_or_empty!(data.first()); // &GridData
         let row_data = unwrap_or_empty!(&grid_data.row_data); // &Vec<RowData>
 
         let mut existing_cells = vec![];
 
-        for row in row_data.iter() {
+        for row in row_data {
             if let Some(v) = &row.values {
                 existing_cells.push(
                     v.iter()

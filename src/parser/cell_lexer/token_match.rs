@@ -1,4 +1,4 @@
-//! # TokenMatch
+//! # `TokenMatch`
 //!
 use super::Token;
 use crate::ast::{Ast, Node};
@@ -39,8 +39,7 @@ impl fmt::Display for TokenMatch {
 
 impl BadInput for TokenMatch {
     fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError {
-        let source_code = self.source_code.clone();
-        source_code.parse_error(self, message)
+        self.source_code.parse_error(&self, message)
     }
 
     fn line_number(&self) -> LineNumber {

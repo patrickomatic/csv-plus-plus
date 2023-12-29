@@ -19,7 +19,7 @@ impl CompilationTarget for Excel<'_> {
         // to get it but I couldn't get the mutable references to work out.
         let worksheet = self.get_worksheet_mut(&mut spreadsheet)?;
 
-        self.build_worksheet(module, worksheet)?;
+        self.build_worksheet(module, worksheet);
 
         u::writer::xlsx::write(&spreadsheet, self.path.clone()).map_err(|e| {
             self.compiler.output_error(format!(

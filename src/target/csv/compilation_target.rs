@@ -33,12 +33,12 @@ impl CompilationTarget for Csv<'_> {
             .map(|cell| match cell {
                 MergeResult::New(v) => v.to_string(),
                 MergeResult::Existing(v) => v.to_string(),
-                MergeResult::Empty => "".to_owned(),
+                MergeResult::Empty => String::new(),
             })
             .collect();
 
             // all rows have to be as wide as the widest row
-            output_row.resize(widest_row, "".to_string());
+            output_row.resize(widest_row, String::new());
 
             writer.write_record(output_row).map_err(|e| {
                 self.compiler

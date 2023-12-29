@@ -19,7 +19,7 @@ impl fmt::Display for Node {
             Self::FunctionCall { args, name } => {
                 let args_to_string = args
                     .iter()
-                    .map(|n| n.to_string())
+                    .map(std::string::ToString::to_string)
                     .collect::<Vec<_>>()
                     .join(", ");
                 write!(f, "{name}({args_to_string})")

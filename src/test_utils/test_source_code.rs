@@ -45,7 +45,7 @@ impl From<&TestSourceCode> for ModulePath {
 /// remove the files.  So we need to keep a reference open to it rather than owning it
 impl From<&TestSourceCode> for SourceCode {
     fn from(test_file: &TestSourceCode) -> Self {
-        Self::new(test_file.read_input(), test_file.input_file.clone()).unwrap()
+        Self::new(test_file.read_input(), test_file.input_file.clone())
     }
 }
 

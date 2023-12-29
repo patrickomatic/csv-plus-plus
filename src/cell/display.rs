@@ -8,8 +8,7 @@ impl fmt::Display for Cell {
             "{}",
             self.ast
                 .clone()
-                .map(|a| format!("={a}"))
-                .unwrap_or_else(|| self.value.clone())
+                .map_or_else(|| self.value.clone(), |a| format!("={a}"))
         )
     }
 }

@@ -176,6 +176,7 @@ where
         })
     }
 
+    #[allow(clippy::unnecessary_wraps)]
     fn lock(&mut self) -> ParseResult<()> {
         if self.is_row_options {
             self.row.lock = true;

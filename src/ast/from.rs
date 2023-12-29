@@ -39,7 +39,7 @@ impl From<i64> for Ast {
 
 impl From<i32> for Ast {
     fn from(value: i32) -> Self {
-        Node::Integer(value as i64).into()
+        Node::Integer(i64::from(value)).into()
     }
 }
 
@@ -93,7 +93,7 @@ impl From<i64> for Node {
 
 impl From<i32> for Node {
     fn from(value: i32) -> Self {
-        Self::Integer(value as i64)
+        Self::Integer(i64::from(value))
     }
 }
 

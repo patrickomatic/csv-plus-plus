@@ -1,7 +1,7 @@
 use super::Rgb;
 
 fn safe_scale_to_1(value: u8) -> f32 {
-    let val = (value as f32) / 255.0;
+    let val = f32::from(value) / 255.0;
     if val == std::f32::INFINITY {
         0.0
     } else {

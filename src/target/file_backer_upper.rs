@@ -45,7 +45,7 @@ pub(crate) fn backup_file<P: AsRef<path::Path>>(
         .ok_or(compiler.output_error(format!("Unable to get extension for: {filename_str}")))?;
 
     let now = Local::now();
-    for time_format in BACKUP_FORMATS.iter() {
+    for time_format in BACKUP_FORMATS {
         let timestamp = now.format(time_format);
 
         let mut new_file = file_parent.to_path_buf();

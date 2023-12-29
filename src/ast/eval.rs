@@ -27,7 +27,7 @@ impl Ast {
             last_round_refs = refs.clone();
 
             evaled_ast = evaled_ast
-                .eval_variables(evaled_ast.resolve_variables(
+                .eval_variables(Self::resolve_variables(
                     scope,
                     refs.variables.into_iter(),
                     position,
@@ -41,12 +41,11 @@ impl Ast {
     /// Variables can all be resolved in one go - we just loop them by name and resolve the ones
     /// that we can and leave the rest alone.
     fn resolve_variables(
-        &self,
         scope: &Scope,
         var_names: ReferencesIter,
         position: Option<a1_notation::Address>,
     ) -> collections::HashMap<String, Ast> {
-        let mut resolved_vars: Variables = Default::default();
+        let mut resolved_vars: Variables = collections::HashMap::default();
         for var_name in var_names {
             if let Some(value) = scope.variables.get(&var_name) {
                 let value_from_var = match &**value {

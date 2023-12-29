@@ -1,4 +1,4 @@
-//! # ParseError
+//! # `ParseError`
 //! `ParseError`s are errors that lack an outer context such as `line_number` or `index: A1`.
 //! They should be caught and wrapped into an `Error`.
 use crate::{CharOffset, LineNumber};

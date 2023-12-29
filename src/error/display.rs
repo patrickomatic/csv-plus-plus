@@ -66,11 +66,7 @@ csv++ with `GOOGLE_APPLICATION_CREDENTIALS` or the `--google-account-credentials
                 )
             }
 
-            Self::InitError(message) => {
-                writeln!(f, "{message}")
-            }
-
-            Self::ModuleLoadError(message) => {
+            Self::InitError(message) | Self::ModuleLoadError(message) => {
                 writeln!(f, "{message}")
             }
 

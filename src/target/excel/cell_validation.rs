@@ -52,6 +52,7 @@ macro_rules! date_validation {
 // * .set_prompt_title() too?
 // * does it matter that I use Decimal rather than Whole?
 impl From<CellValidation> for u::DataValidation {
+    #[allow(clippy::too_many_lines)]
     fn from(CellValidation(position, dv): CellValidation) -> Self {
         let mut sqref = u::SequenceOfReferences::default();
         sqref.set_sqref(position.to_string());

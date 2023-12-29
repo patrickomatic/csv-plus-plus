@@ -1,4 +1,4 @@
-//! # NumberFormat
+//! # `NumberFormat`
 use crate::error::CellParseError;
 use crate::parser::cell_lexer::TokenMatch;
 

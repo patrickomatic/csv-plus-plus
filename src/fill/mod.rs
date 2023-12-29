@@ -15,6 +15,7 @@ pub struct Fill {
 }
 
 impl Fill {
+    #[must_use]
     pub fn clone_to_row<R: Into<Row>>(&self, row: R) -> Self {
         Self {
             amount: self.amount,
@@ -22,6 +23,7 @@ impl Fill {
         }
     }
 
+    #[must_use]
     pub fn end_row(&self) -> Row {
         if let Some(a) = self.amount {
             cmp::min(self.start_row.y + a, ROW_MAX).into()

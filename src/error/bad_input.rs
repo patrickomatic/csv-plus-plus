@@ -1,4 +1,4 @@
-//! # BadInput
+//! # `BadInput`
 //!
 //! "Bad input" comes in two forms: from the AST parser & lexer or from the cell parser & lexer.
 //! The two are not quite the same and have their own use-cases, but when it comes to error

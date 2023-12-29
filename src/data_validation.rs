@@ -1,4 +1,4 @@
-//! # DataValidation
+//! # `DataValidation`
 //!
 //! * [Google
 //! Sheets](https://developers.google.com/apps-script/reference/spreadsheet/data-validation-criteria)

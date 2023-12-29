@@ -1,4 +1,4 @@
-//! # GoogleSheetsCell
+//! # `GoogleSheetsCell`
 //!
 //! A wrapper around `Cell` to make it more compatible with the Google Sheets API.  An important
 //! design principal here is that we only send the changes that the user set - we should not be
@@ -41,10 +41,28 @@ macro_rules! validate_str {
     };
 }
 
+fn color_style(rgb: &Option<Rgb>) -> Option<api::ColorStyle> {
+    if let Some(rgb) = rgb {
+        let (r, g, b): (f32, f32, f32) = rgb.into();
+
+        Some(api::ColorStyle {
+            rgb_color: Some(api::Color {
+                alpha: None,
+                red: Some(r),
+                green: Some(g),
+                blue: Some(b),
+            }),
+            theme_color: None,
+        })
+    } else {
+        None
+    }
+}
+
 impl<'a> GoogleSheetsCell<'a> {
     pub(super) fn cell_format(&self) -> Option<api::CellFormat> {
         let borders = self.borders();
-        let background_color_style = self.color_style(&self.0.color);
+        let background_color_style = color_style(&self.0.color);
         let horizontal_alignment = self.horizontal_alignment();
         let number_format = self.number_format();
         let text_format = self.text_format();
@@ -150,7 +168,7 @@ impl<'a> GoogleSheetsCell<'a> {
         }
     }
 
-    /// https://developers.google.com/apps-script/reference/spreadsheet/border-style
+    /// <https://developers.google.com/apps-script/reference/spreadsheet/border-style>
     fn border_style(&self) -> Option<String> {
         self.0.border_style.map(|bs| {
             match bs {
@@ -180,28 +198,10 @@ impl<'a> GoogleSheetsCell<'a> {
 
     fn border(&self) -> api::Border {
         api::Border {
-            color_style: self.color_style(&self.0.border_color),
+            color_style: color_style(&self.0.border_color),
             // TODO: I might need to do a mapping to the google style formats here
             style: self.border_style(),
             ..Default::default()
-        }
-    }
-
-    fn color_style(&self, rgb: &Option<Rgb>) -> Option<api::ColorStyle> {
-        if let Some(rgb) = rgb {
-            let (r, g, b): (f32, f32, f32) = rgb.into();
-
-            Some(api::ColorStyle {
-                rgb_color: Some(api::Color {
-                    alpha: None,
-                    red: Some(r),
-                    green: Some(g),
-                    blue: Some(b),
-                }),
-                theme_color: None,
-            })
-        } else {
-            None
         }
     }
 
@@ -224,8 +224,8 @@ impl<'a> GoogleSheetsCell<'a> {
         })
     }
 
-    /// https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/cells#numberformat
-    /// https://docs.rs/google-sheets4/latest/google_sheets4/api/struct.NumberFormat.html
+    /// <https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/cells#numberformat>
+    /// <https://docs.rs/google-sheets4/latest/google_sheets4/api/struct.NumberFormat.html>
     fn number_format(&self) -> Option<api::NumberFormat> {
         self.0.number_format.map(|nf| {
             let nf_type = match nf {
@@ -250,8 +250,8 @@ impl<'a> GoogleSheetsCell<'a> {
     fn text_format(&self) -> Option<api::TextFormat> {
         let bold = self.format_as_option(TextFormat::Bold);
         let font_family = self.0.font_family.clone();
-        let font_size = self.0.font_size.map(|fs| fs as i32);
-        let foreground_color_style = self.color_style(&self.0.font_color);
+        let font_size = self.0.font_size.map(i32::from);
+        let foreground_color_style = color_style(&self.0.font_color);
         let italic = self.format_as_option(TextFormat::Italic);
         let strikethrough = self.format_as_option(TextFormat::Strikethrough);
         let underline = self.format_as_option(TextFormat::Underline);

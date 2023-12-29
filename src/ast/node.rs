@@ -59,7 +59,7 @@ pub enum Node {
     },
 }
 
-/// Most of these just make testing easier to not have to call .to_string() constantly, but they're
+/// Most of these just make testing easier to not have to call `.to_string()` constantly, but they're
 /// also nice for some of the code that needs to build ASTs.
 impl Node {
     #[cfg(test)]
@@ -70,7 +70,7 @@ impl Node {
     {
         Self::Function {
             name: name.into(),
-            args: args.iter().map(|a| a.to_string()).collect(),
+            args: args.iter().map(ToString::to_string).collect(),
             body: body.into(),
         }
     }

@@ -12,7 +12,7 @@ impl TryFrom<path::PathBuf> for SourceCode {
             message: format!("Error reading source code {}: {e}", p.display()),
         })?;
 
-        Self::new(input.as_str(), p)
+        Ok(Self::new(input.as_str(), p))
     }
 }
 

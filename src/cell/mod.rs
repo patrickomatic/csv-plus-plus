@@ -35,7 +35,7 @@ pub struct Cell {
 fn parse_ast(
     input: &str,
     position: a1_notation::Address,
-    source_code: ArcSourceCode,
+    source_code: &ArcSourceCode,
 ) -> Result<Option<Ast>> {
     Ok(if let Some(without_equals) = input.strip_prefix('=') {
         Some(
@@ -52,10 +52,10 @@ impl Cell {
         input: &str,
         position: a1_notation::Address,
         row: &mut Row,
-        source_code: ArcSourceCode,
+        source_code: &ArcSourceCode,
     ) -> Result<Self> {
         let mut cell = CellParser::parse(input, position, row, source_code.clone())?;
-        cell.ast = parse_ast(&cell.value, position, source_code.clone())?;
+        cell.ast = parse_ast(&cell.value, position, source_code)?;
 
         Ok(cell)
     }
@@ -96,7 +96,7 @@ mod tests {
             "foo",
             (0, 4).into(),
             &mut Row::default(),
-            ArcSourceCode::new(source_code),
+            &ArcSourceCode::new(source_code),
         )
         .unwrap();
 
@@ -112,7 +112,7 @@ mod tests {
             "=1 + foo",
             (0, 4).into(),
             &mut Row::default(),
-            ArcSourceCode::new(source_code),
+            &ArcSourceCode::new(source_code),
         )
         .unwrap();
 

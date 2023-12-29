@@ -34,6 +34,6 @@ pub(crate) fn init(verbosity: log::LevelFilter) {
             builder.format_target(false);
         }
 
-        builder.init()
+        builder.init();
     });
 }
