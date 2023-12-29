@@ -2,6 +2,17 @@
 
 ### Features
 
+* Generate and use `csvpo` cache files (increase compilation speed)
+* Ugprade `umya-spreadsheet` to v1.1.1
+* Deprecate `Error::ObjectCodeError`
+
+### Bugfixes
+
+* Fix leaking of namespaces from dependencies making their way into the dependent.  Only exported
+  symbols should have been propagated
+* Fix evaluation of variables dependent on variables from another file
+* Fix lexing of the `fn` keyword in places like `fn fn_name` where the "fn" part is repeated twice
+
 ## v0.5.0
 
 ### Features
@@ -21,7 +32,9 @@
 
 ### **Breaking (Language) Changes**
 
-* All builtin variables & functions are removed.  All of the functionality provided by them could be done with native spreadsheet functions anyway.  And we're adding support for module loading which means they could just be implemented as a lib instead.
+* All builtin variables & functions are removed.  All of the functionality provided by them could
+  be done with native spreadsheet functions anyway.  And we're adding support for module loading 
+  which means they could just be implemented as a lib instead.
 * Rename `![[expand]]` to `![[fill]]` and all related code references
 * Rename `[[format]]`  to `[[text]]` 
 * Rename `Template` to `Module`
@@ -41,7 +54,8 @@
 
 ### Bugfixes
 
-* Variables defined on rows (i.e., `![[var=this_row]],=this_row`) weren't being evaluated to the correct results
+* Variables defined on rows (i.e., `![[var=this_row]],=this_row`) weren't being evaluated to the
+  correct results
 * Expands were incorrectly filling into the rows below them, only for excel
 * More consistent parsing of dates
 * Fix line count in syntax error messages
@@ -54,8 +68,12 @@
 
 ### Features
 
-* Ability to reference variables defined in an expand, outside of an expand.  If they're referenced inside an expand they'll resolve to their exact location, otherwise they resolve to the range represented by that column in the range.
-* Support for `![[var=...]]` both in and outside expands.  They'll reference either a row (if defined outside an expand), a row relative to the expand (if defined and referenced in an expand) or the entire row range of the expand (if defined in an expand and referenced outside it).
+* Ability to reference variables defined in an expand, outside of an expand.  If they're
+  referenced inside an expand they'll resolve to their exact location, otherwise they resolve to
+  the range represented by that column in the range.
+* Support for `![[var=...]]` both in and outside expands.  They'll reference either a row (if
+  defined outside an expand), a row relative to the expand (if defined and referenced in an expand)
+  or the entire row range of the expand (if defined in an expand and referenced outside it).
 * Much better error reporting - pretty much everything now includes some contextual code highlighting
 * Excel: `note` support
 * More useful `-v/--verbose` output
@@ -84,13 +102,16 @@ Complete rewrite in Rust, which also includes:
 
 ## v0.2.1
 
-- Add a `-s`/`--safe` flag which changes the merge strategy to not overwrite existing values.  If the spreadsheet being written to has values where the csvpp template wants to write, they will be overwritten otherwise.
+- Add a `-s`/`--safe` flag which changes the merge strategy to not overwrite existing values.  If
+  the spreadsheet being written to has values where the csvpp template wants to write, they will
+  be overwritten otherwise.
 
 ## v0.2.0
 
 ### **Breaking Changes**
 
-- Removal of the $$ operator - to dereference variables you can just reference them by name and they will be resolved if they are defined.  Otherwise they will be left alone in the output
+- Removal of the $$ operator - to dereference variables you can just reference them by name and
+  they will be resolved if they are defined.  Otherwise they will be left alone in the output
 
 ### Non-breaking Changes
 
@@ -120,7 +141,8 @@ Complete rewrite in Rust, which also includes:
 ## v0.1.1
 
 - Better support for the various infix operators (+,-,/,*,^,%,=,<,etc)
-  * Previously we were converting them to their prefix equivalent (multiply, minus, concat, etc) but excel doesn't support most of those.  So we keep them infix
+  * Previously we were converting them to their prefix equivalent (multiply, minus, concat, etc)
+    but excel doesn't support most of those.  So we keep them infix
   * Didn't support some infix operators (^, %, </>/<=/>=/<>)
   * Proper support for operator precedence
 - When in verbose mode, print a summary of compiled functions and variables
