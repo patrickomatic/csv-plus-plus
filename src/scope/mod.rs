@@ -38,38 +38,20 @@ impl Scope {
         self.variables.insert(name, ast.into());
     }
 
-    pub(crate) fn merge(self, other: Self) -> Self {
-        Self {
-            // functions: self.functions.into_iter().chain(other.functions).collect(),
-            functions: other.functions.into_iter().chain(self.functions).collect(),
-            ..self
-        }
-        .merge_variables(other.variables)
-    }
-
-    // merge two scopes, but only the exports from `other`
-    pub(crate) fn merge_into_main(self, other: Self) -> Self {
-        let mut exports = self.exports;
-        let mut functions = self.functions;
-        let mut variables = self.variables;
-        for e in other.exports {
-            if let Some(f) = other.functions.get(&e) {
-                if !functions.contains_key(&e) {
-                    functions.insert(e.clone(), f.clone());
+    /// Merge another `Scope` (only it's `exports`) into this one. if a var or function is already
+    /// defined, we do not insert it
+    pub(crate) fn merge(&mut self, other: &Self) {
+        for e in other.exports.iter() {
+            if let Some(f) = other.functions.get(e) {
+                if !self.functions.contains_key(e) {
+                    self.functions.insert(e.clone(), f.clone());
                 }
             }
-            if let Some(v) = other.variables.get(&e) {
-                if !variables.contains_key(&e) {
-                    variables.insert(e.clone(), v.clone());
+            if let Some(v) = other.variables.get(e) {
+                if !self.variables.contains_key(e) {
+                    self.variables.insert(e.clone(), v.clone());
                 }
             }
-            exports.insert(e);
-        }
-
-        Self {
-            exports,
-            functions,
-            variables,
         }
     }
 }
@@ -90,7 +72,7 @@ mod tests {
             exports: HashSet::from(["foo".to_string(), "bar".to_string()]),
             ..Default::default()
         };
-        let scope2 = Scope {
+        let mut scope2 = Scope {
             variables: HashMap::from([("foobs".to_string(), 1.into())]),
             functions: HashMap::from([(
                 "func".to_string(),
@@ -98,11 +80,11 @@ mod tests {
             )]),
             ..Default::default()
         };
-        let merged = scope1.merge(scope2);
+        scope2.merge(&scope1);
 
-        assert_eq!(merged.variables.len(), 3);
-        assert_eq!(merged.functions.len(), 1);
-        assert_eq!(merged.exports.len(), 2);
+        assert_eq!(scope2.variables.len(), 3);
+        assert_eq!(scope2.functions.len(), 1);
+        assert_eq!(scope2.exports.len(), 0);
     }
 
     #[test]

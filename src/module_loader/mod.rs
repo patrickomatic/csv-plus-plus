@@ -34,8 +34,9 @@ pub(super) struct ModuleLoader {
 
 // TODO: ideally this shouldn't take a $source_code and the calling part does the map_err
 macro_rules! eval_fns_or_vars {
-    ($scope:ident, $functions_or_variables:ident, $source_code:expr) => {{
+    ($scope:expr, $functions_or_variables:ident, $source_code:expr) => {{
         for (name, ast) in $scope.$functions_or_variables.clone().into_iter() {
+            dbg!(&name);
             $scope.$functions_or_variables.insert(
                 name,
                 ast.eval(&$scope, None)
@@ -48,7 +49,7 @@ macro_rules! eval_fns_or_vars {
 // TODO:
 // this probably doesn't need to be a macro
 macro_rules! eval_scope {
-    ($scope:ident, $source_code:expr) => {
+    ($scope:expr, $source_code:expr) => {
         eval_fns_or_vars!($scope, variables, $source_code);
         eval_fns_or_vars!($scope, functions, $source_code);
     };
@@ -107,9 +108,9 @@ impl ModuleLoader {
             let mut main_module = self.main_module;
 
             for req_path in main_module.required_modules.iter() {
-                main_module.scope = main_module
+                main_module
                     .scope
-                    .merge_into_main(loaded.remove(req_path).unwrap().scope);
+                    .merge(&loaded.remove(req_path).unwrap().scope);
             }
 
             Ok(main_module)
@@ -255,7 +256,7 @@ impl ModuleLoader {
                 continue;
             }
 
-            let mut local_scope = to_resolve.scope.clone();
+            // let mut local_scope = to_resolve.scope.clone();
             for req_path in to_resolve.required_modules.iter().rev() {
                 let Some(dep_scope) = scopes.get(req_path) else {
                     compiler_error(format!(
@@ -263,21 +264,30 @@ impl ModuleLoader {
                     ))
                 };
 
-                // merge the scopes together, but let ours take precedent. because if you
-                // define a variable that has the same name as an import, the assumption is
-                // you'll be shadowing it
-                local_scope = local_scope.merge(dep_scope.clone());
+                to_resolve.scope.merge(dep_scope);
             }
 
-            eval_scope!(local_scope, to_resolve.source_code);
+            dbg!("before");
+            dbg!(&to_resolve.scope);
+            // eval_scope!(to_resolve.scope, to_resolve.source_code);
+            for (name, ast) in to_resolve.scope.variables.clone().into_iter() {
+                dbg!(&name);
+                to_resolve.scope.variables.insert(
+                    name,
+                    ast.eval(&to_resolve.scope, None)
+                        .map_err(|e| to_resolve.source_code.eval_error(e, None))?,
+                );
+            }
 
-            // save our newly evaled scope
-            to_resolve.scope = local_scope.clone();
+            dbg!("after");
+            dbg!(&to_resolve.scope);
+
+            // now that we've evaled it that's the last step, write the csvpo file
             if self.use_cache {
                 to_resolve.write_object_file()?;
             }
 
-            scopes.insert(to_resolve.module_path.clone(), local_scope);
+            scopes.insert(to_resolve.module_path.clone(), to_resolve.scope.clone());
         }
 
         Ok(())
@@ -288,7 +298,7 @@ impl ModuleLoader {
     }
 
     fn load(&self, module: &Module) -> Result<()> {
-        let mut to_attempt = vec![];
+        let mut to_attempt = collections::HashSet::new();
         // hold a lock while we reserve all of the dependencies we're going to resolve (by
         // preemptively marking them in `attempted`)
         {
@@ -299,7 +309,7 @@ impl ModuleLoader {
                     continue;
                 } else {
                     attempted.insert(module_path.clone());
-                    to_attempt.push(module_path.clone());
+                    to_attempt.insert(module_path.clone());
                 }
             }
         }
@@ -344,8 +354,6 @@ mod tests {
     use crate::ast::*;
     use crate::test_utils::*;
     use crate::*;
-    use std::collections::*;
-    use std::sync::*;
 
     #[test]
     fn load_main_empty() {
@@ -353,330 +361,262 @@ mod tests {
     }
 
     #[test]
-    fn load_main_require_does_not_exist() {
+    fn load_main_require_error() {
         let mut module = build_module();
         module.required_modules.push(ModulePath::new("bar"));
 
         assert!(ModuleLoader::load_main(module, "", true).is_err());
     }
-    /*
 
-        #[test]
-        fn load_dependencies_valid_files() {
-            let mod1 = TestSourceCode::new(
-                "csv",
-                "
+    #[test]
+    fn load_main_valid_files() {
+        let mod1 = TestSourceCode::new(
+            "csv",
+            "
     a := 42
     ---
             ",
-            );
-            let mod2 = TestSourceCode::new(
-                "csv",
-                "
+        );
+        let mod2 = TestSourceCode::new(
+            "csv",
+            "
     b := 24
     ---
             ",
-            );
-            let mod1_path: ModulePath = (&mod1).into();
-            let mod2_path: ModulePath = (&mod2).into();
-            let module = Module {
-                module_path: ModulePath::new("main"),
-                required_modules: vec![mod1_path.clone(), mod2_path.clone()],
-                ..build_module()
-            };
-            let module_loader = ModuleLoader::load_dependencies(&module, "", true).unwrap();
-            let loaded = module_loader.loaded.read().unwrap();
+        );
+        let main_module = Module {
+            module_path: ModulePath::new("main"),
+            required_modules: vec![(&mod1).into(), (&mod2).into()],
+            ..build_module()
+        };
+        let main_module = ModuleLoader::load_main(main_module, "", true).unwrap();
 
-            assert_eq!(loaded.len(), 2);
-            assert_eq!(module_loader.attempted.read().unwrap().len(), 2);
-            assert_eq!(module_loader.failed.read().unwrap().len(), 0);
-            assert_eq!(
-                loaded
-                    .get(&mod1_path)
-                    .unwrap()
-                    .scope
-                    .variables
-                    .get("a")
-                    .unwrap(),
-                &Ast::new(Node::var("a", VariableValue::Ast(42.into()))),
-            );
-            assert_eq!(
-                loaded
-                    .get(&mod2_path)
-                    .unwrap()
-                    .scope
-                    .variables
-                    .get("b")
-                    .unwrap(),
-                &Ast::new(Node::var("b", VariableValue::Ast(24.into()))),
-            );
-        }
+        assert_eq!(
+            main_module.scope.variables.get("a").unwrap(),
+            &Ast::new(Node::var("a", VariableValue::Ast(42.into()))),
+        );
+        assert_eq!(
+            main_module.scope.variables.get("b").unwrap(),
+            &Ast::new(Node::var("b", VariableValue::Ast(24.into()))),
+        );
+    }
 
-        #[test]
-        fn load_in_directory() {
-            let dep_mod = TestSourceCode::new_in_dir(
-                "csv",
-                "
+    #[test]
+    fn load_main_in_directory() {
+        let dep_mod = TestSourceCode::new_in_dir(
+            "csv",
+            "
     a := 42
     ---
             ",
-            );
-            let module = Module {
-                module_path: ModulePath::new("main"),
-                required_modules: vec![(&dep_mod).into()],
-                ..build_module()
-            };
-            let module_loader = ModuleLoader::load_dependencies(&module, "", true).unwrap();
+        );
+        let main_module = Module {
+            module_path: ModulePath::new("main"),
+            required_modules: vec![(&dep_mod).into()],
+            ..build_module()
+        };
+        let main_module = ModuleLoader::load_main(main_module, "", true).unwrap();
 
-            assert_eq!(module_loader.loaded.read().unwrap().len(), 1);
-            assert_eq!(module_loader.attempted.read().unwrap().len(), 1);
-            assert_eq!(module_loader.failed.read().unwrap().len(), 0);
-        }
+        assert!(main_module.scope.variables.contains_key("a"));
+    }
 
-        #[test]
-        fn load_dependencies_double_load() {
-            let mod1 = TestSourceCode::new(
-                "csv",
-                "
+    #[test]
+    fn load_main_double_load() {
+        let mod1 = TestSourceCode::new(
+            "csv",
+            "
     a := 42
     ---
             ",
-            );
-            let mod1_path: ModulePath = (&mod1).into();
-            let mod2 = TestSourceCode::new(
-                "csv",
-                &format!(
-                    "
+        );
+        let mod1_path = ModulePath::from(&mod1);
+        let mod2 = TestSourceCode::new(
+            "csv",
+            &format!(
+                "
     use {mod1_path}
     b := 24
     ---
             "
-                ),
-            );
+            ),
+        );
 
-            let module = Module {
-                module_path: ModulePath::new("main"),
-                required_modules: vec![(&mod1).into(), (&mod2).into()],
-                ..build_module()
-            };
-            let module_loader = ModuleLoader::load_dependencies(&module, "", true).unwrap();
+        let main_module = Module {
+            module_path: ModulePath::new("main"),
+            required_modules: vec![(&mod1).into(), (&mod2).into()],
+            ..build_module()
+        };
+        assert!(ModuleLoader::load_main(main_module, "", true).is_ok());
+    }
 
-            assert_eq!(module_loader.loaded.read().unwrap().len(), 2);
-            assert_eq!(module_loader.attempted.read().unwrap().len(), 2);
-            assert_eq!(module_loader.failed.read().unwrap().len(), 0);
-        }
+    #[test]
+    fn load_main_variable_dependencies() {
+        let mod_c_file = TestSourceCode::new(
+            "csv",
+            "
+var_from_c := 420
+---
+    ",
+        );
+        let mod_c_path = ModulePath::from(&mod_c_file);
 
-        #[test]
-        fn into_direct_dependencies_empty() {
-            let module_loader = ModuleLoader {
-                main_module: &build_module(),
-                attempted: Default::default(),
-                loaded: Default::default(),
-                failed: Default::default(),
-                loader_root: path::Path::new("").to_path_buf(),
-                is_dirty: false,
-                use_cache: true,
-            };
+        let mod_b_file = TestSourceCode::new(
+            "csv",
+            &format!(
+                "
+use {mod_c_path}
+var_from_b := var_from_c
+---
+"
+            ),
+        );
+        let mod_b_path = ModulePath::from(&mod_b_file);
 
-            assert!(module_loader.into_direct_dependencies().is_ok());
-        }
+        let mod_a_file = TestSourceCode::new(
+            "csv",
+            &format!(
+                "
+use {mod_b_path}
+var_from_a := var_from_b
+---
+"
+            ),
+        );
+        let mod_a_path = ModulePath::from(&mod_a_file);
 
-        #[test]
-        fn into_direct_dependencies_error() {
-            let module_loader = ModuleLoader {
-                main_module: &build_module(),
-                attempted: Default::default(),
-                loaded: Default::default(),
-                failed: Default::default(),
-                loader_root: path::Path::new("").to_path_buf(),
-                is_dirty: false,
-                use_cache: true,
-            };
-            module_loader.failed.write().unwrap().insert(
-                ModulePath::new("foo"),
-                Error::InitError("failed".to_string()),
-            );
+        let main_module = Module {
+            module_path: ModulePath::new("foo"),
+            required_modules: vec![mod_a_path],
+            ..build_module()
+        };
+        let main_module = ModuleLoader::load_main(main_module, "", true).unwrap();
 
-            assert!(module_loader.into_direct_dependencies().is_err());
-        }
+        dbg!(&main_module);
+        assert_eq!(
+            main_module.scope.variables.get("var_from_a").unwrap(),
+            &Ast::new(420.into())
+        );
+        assert!(!main_module.scope.variables.contains_key("var_from_b"));
+        assert!(!main_module.scope.variables.contains_key("var_from_c"));
+    }
 
-        #[test]
-        fn into_direct_dependencies_variable() {
-            // var_from_a depends on var_from_b
-            let mut mod_a = Module {
-                module_path: ModulePath::new("a"),
-                required_modules: vec![ModulePath::new("b")],
-                ..build_module()
-            };
-            mod_a
-                .scope
-                .define_variable("var_from_a", Node::reference("var_from_b"));
+    /*
+    #[test]
+    fn load_main_function_dependencies() {
+        let mut mod_a = Module {
+            module_path: ModulePath::new("a"),
+            required_modules: vec![ModulePath::new("b")],
+            ..build_module()
+        };
+        mod_a.scope.define_function(
+            "fn_from_a",
+            Node::fn_def("fn_from_a", &[], Node::reference("var_from_b")),
+        );
 
-            // var_from_b depends on var_from_c
-            let mut mod_b = Module {
-                module_path: ModulePath::new("b"),
-                required_modules: vec![ModulePath::new("c")],
-                ..build_module()
-            };
-            mod_b
-                .scope
-                .define_variable("var_from_b", Node::reference("var_from_c"));
+        let mut mod_b = Module {
+            module_path: ModulePath::new("b"),
+            ..build_module()
+        };
+        mod_b
+            .scope
+            .define_variable("var_from_b", Node::Integer(420));
 
-            // var_from_c resolves to 420
-            let mut mod_c = Module {
-                module_path: ModulePath::new("c"),
-                required_modules: vec![],
-                ..build_module()
-            };
-            mod_c
-                .scope
-                .define_variable("var_from_c", Node::Integer(420));
-
-            let main_module = Module {
-                module_path: ModulePath::new("foo"),
-                required_modules: vec![ModulePath::new("a")],
-                ..build_module()
-            };
-            let module_loader = ModuleLoader {
-                main_module: &main_module,
-                attempted: Default::default(),
-                loaded: Arc::new(RwLock::new(HashMap::from([
-                    (ModulePath::new("a"), mod_a),
-                    (ModulePath::new("b"), mod_b),
-                    (ModulePath::new("c"), mod_c),
-                ]))),
-                failed: Default::default(),
-                loader_root: path::Path::new("").to_path_buf(),
-                is_dirty: false,
-                use_cache: true,
-            };
-
-            let dependencies = module_loader.into_direct_dependencies().unwrap();
-
-            assert_eq!(
-                dependencies.variables.get("var_from_a").unwrap(),
-                &Ast::new(420.into())
-            );
-            assert!(!dependencies.variables.contains_key("var_from_b"));
-            assert!(!dependencies.variables.contains_key("var_from_c"));
-        }
-
-        #[test]
-        fn into_direct_dependencies_function() {
-            let mut mod_a = Module {
-                module_path: ModulePath::new("a"),
-                required_modules: vec![ModulePath::new("b")],
-                ..build_module()
-            };
-            mod_a.scope.define_function(
-                "fn_from_a",
-                Node::fn_def("fn_from_a", &[], Node::reference("var_from_b")),
-            );
-
-            let mut mod_b = Module {
-                module_path: ModulePath::new("b"),
-                ..build_module()
-            };
-            mod_b
-                .scope
-                .define_variable("var_from_b", Node::Integer(420));
-
-            let main_module = Module {
-                module_path: ModulePath::new("foo"),
-                required_modules: vec![ModulePath::new("a")],
-                ..build_module()
-            };
-            let module_loader = ModuleLoader::load_dependencies(&main_module, "", true).unwrap();
-            /*
-            let module_loader = ModuleLoader {
-                main_module: &main_module,
-                attempted: Default::default(),
-                loaded: Arc::new(RwLock::new(HashMap::from([
-                    (ModulePath::new("a"), mod_a),
-                    (ModulePath::new("b"), mod_b),
-                ]))),
-                failed: Default::default(),
-                loader_root: path::Path::new("").to_path_buf(),
-                is_dirty: false,
-                use_cache: true,
-            };
-            */
-
-            let dependencies = module_loader.into_direct_dependencies().unwrap();
-
-            assert_eq!(
-                dependencies.functions.get("fn_from_a").unwrap(),
-                &Ast::new(Node::fn_def("fn_from_a", &[], Node::Integer(420)))
-            );
-        }
-
-        #[test]
-        fn into_direct_dependencies_shadowing() {
-            // var_from_a depends on var_from_b
-            let mut mod_a = Module {
-                module_path: ModulePath::new("a"),
-                required_modules: vec![ModulePath::new("b")],
-                ..build_module()
-            };
-            mod_a
-                .scope
-                .define_variable("var_from_a", Node::reference("var_from_b"));
-
-            // var_from_b depends on var_from_c
-            let mut mod_b = Module {
-                module_path: ModulePath::new("b"),
-                required_modules: vec![ModulePath::new("c")],
-                ..build_module()
-            };
-            mod_b
-                .scope
-                .define_variable("var_from_b", Node::reference("var_from_c"));
-
-            // var_from_c resolves to 420
-            let mut mod_c = Module {
-                module_path: ModulePath::new("c"),
-                required_modules: vec![],
-                ..build_module()
-            };
-            mod_c
-                .scope
-                .define_variable("var_from_c", Ast::new(420.into()));
-
-            let mut main_module = Module {
-                module_path: ModulePath::new("foo"),
-                required_modules: vec![ModulePath::new("a")],
-                ..build_module()
-            };
-            main_module
-                .scope
-                .define_variable("var_from_c", Ast::new(1.into()));
-            let module_loader = ModuleLoader {
-                main_module: &main_module,
-                attempted: Default::default(),
-                loaded: Arc::new(RwLock::new(HashMap::from([
-                    (ModulePath::new("a"), mod_a),
-                    (ModulePath::new("b"), mod_b),
-                    (ModulePath::new("c"), mod_c),
-                ]))),
-                failed: Default::default(),
-                loader_root: path::Path::new("").to_path_buf(),
-                is_dirty: false,
-                use_cache: true,
-            };
-
-            let dependencies = module_loader.into_direct_dependencies().unwrap();
-
-            // var_from_c should be what main_module declared it as, not what any dependencies declared
-            // it is.  i.e., main shadowed the imports
-            assert_eq!(
-                dependencies.variables.get("var_from_c").unwrap(),
-                &Ast::new(1.into())
-            );
-        }
-
-        #[test]
-        fn into_direct_dependencies_cyclic() {
-            // TODO
-        }
+        let main_module = Module {
+            module_path: ModulePath::new("foo"),
+            required_modules: vec![ModulePath::new("a")],
+            ..build_module()
+        };
+        let module_loader = ModuleLoader::load_dependencies(&main_module, "", true).unwrap();
+        /*
+        let module_loader = ModuleLoader {
+            main_module: &main_module,
+            attempted: Default::default(),
+            loaded: Arc::new(RwLock::new(HashMap::from([
+                (ModulePath::new("a"), mod_a),
+                (ModulePath::new("b"), mod_b),
+            ]))),
+            failed: Default::default(),
+            loader_root: path::Path::new("").to_path_buf(),
+            is_dirty: false,
+            use_cache: true,
+        };
         */
+
+        let dependencies = module_loader.into_direct_dependencies().unwrap();
+
+        assert_eq!(
+            dependencies.functions.get("fn_from_a").unwrap(),
+            &Ast::new(Node::fn_def("fn_from_a", &[], Node::Integer(420)))
+        );
+    }
+
+    #[test]
+    fn into_direct_dependencies_shadowing() {
+        // var_from_a depends on var_from_b
+        let mut mod_a = Module {
+            module_path: ModulePath::new("a"),
+            required_modules: vec![ModulePath::new("b")],
+            ..build_module()
+        };
+        mod_a
+            .scope
+            .define_variable("var_from_a", Node::reference("var_from_b"));
+
+        // var_from_b depends on var_from_c
+        let mut mod_b = Module {
+            module_path: ModulePath::new("b"),
+            required_modules: vec![ModulePath::new("c")],
+            ..build_module()
+        };
+        mod_b
+            .scope
+            .define_variable("var_from_b", Node::reference("var_from_c"));
+
+        // var_from_c resolves to 420
+        let mut mod_c = Module {
+            module_path: ModulePath::new("c"),
+            required_modules: vec![],
+            ..build_module()
+        };
+        mod_c
+            .scope
+            .define_variable("var_from_c", Ast::new(420.into()));
+
+        let mut main_module = Module {
+            module_path: ModulePath::new("foo"),
+            required_modules: vec![ModulePath::new("a")],
+            ..build_module()
+        };
+        main_module
+            .scope
+            .define_variable("var_from_c", Ast::new(1.into()));
+        let module_loader = ModuleLoader {
+            main_module: &main_module,
+            attempted: Default::default(),
+            loaded: Arc::new(RwLock::new(HashMap::from([
+                (ModulePath::new("a"), mod_a),
+                (ModulePath::new("b"), mod_b),
+                (ModulePath::new("c"), mod_c),
+            ]))),
+            failed: Default::default(),
+            loader_root: path::Path::new("").to_path_buf(),
+            is_dirty: false,
+            use_cache: true,
+        };
+
+        let dependencies = module_loader.into_direct_dependencies().unwrap();
+
+        // var_from_c should be what main_module declared it as, not what any dependencies declared
+        // it is.  i.e., main shadowed the imports
+        assert_eq!(
+            dependencies.variables.get("var_from_c").unwrap(),
+            &Ast::new(1.into())
+        );
+    }
+
+    #[test]
+    fn load_main_dependencies_cyclic() {
+        // TODO
+    }
+    */
 }

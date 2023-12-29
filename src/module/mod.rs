@@ -126,7 +126,7 @@ impl Module {
         Some(loaded_module)
     }
 
-    // TODO: I would love to cut down on all these loader functions
+    // TODO: I would love to cut down on all these load_from_* functions
     pub(crate) fn load_from_source_relative<P: Into<path::PathBuf>>(
         module_path: ModulePath,
         relative_to: &ModulePath,
