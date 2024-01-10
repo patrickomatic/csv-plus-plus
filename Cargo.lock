@@ -685,6 +685,7 @@ dependencies = [
  "petgraph",
  "pprof",
  "rand",
+ "rayon",
  "regex",
  "semver",
  "serde",

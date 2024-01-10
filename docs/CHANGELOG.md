@@ -1,3 +1,9 @@
+## v0.5.2
+
+### Features
+
+* Eval rows in parallel
+
 ## v0.5.1
 
 ### Features

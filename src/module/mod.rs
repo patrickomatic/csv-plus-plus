@@ -6,7 +6,6 @@
 // * we need more unit tests around the various eval phases
 //      - fills
 //      - row vs cell variable definitions
-// * eval cells in parallel (rayon)
 // * make sure there is only one infinite fill in the docs (ones can follow it, but they have to
 //      be finite and subtract from it
 use crate::ast::Variables;
@@ -15,6 +14,7 @@ use crate::{
     compiler_error, ArcSourceCode, Error, ModulePath, Result, Row, Scope, SourceCode, Spreadsheet,
 };
 use log::{error, info, warn};
+use rayon::prelude::*;
 use std::cmp;
 use std::fs;
 use std::path;
@@ -68,7 +68,6 @@ impl Module {
         }
     }
 
-    // TODO: do this in parallel (thread for each row (maybe cell? with a threadpool))
     pub(crate) fn eval_spreadsheet(self, external_vars: Variables) -> Result<Self> {
         let spreadsheet = self.spreadsheet;
         let scope = self
@@ -76,10 +75,12 @@ impl Module {
             .merge_variables(spreadsheet.variables())
             .merge_variables(external_vars);
 
-        let mut evaled_rows = vec![];
-        for (row_index, row) in spreadsheet.rows.into_iter().enumerate() {
-            evaled_rows.push(row.eval(&self.source_code, &scope, row_index.into())?);
-        }
+        let evaled_rows = spreadsheet
+            .rows
+            .into_par_iter()
+            .enumerate()
+            .map(|(row_index, row)| row.eval(&self.source_code, &scope, row_index.into()))
+            .collect::<std::result::Result<Vec<_>, _>>()?;
 
         Ok(Self {
             scope,
