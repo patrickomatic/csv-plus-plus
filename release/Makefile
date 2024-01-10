@@ -17,7 +17,7 @@ doc_files := $(wildcard $(docs_dir)/*.md) ../LICENSE.txt ../README.md
 doc_files := $(filter-out $(docs_dir)/RELEASE_CHECKLIST.md, $(doc_files))
 
 .PHONY: all
-all: $(release_files) $(release_file_sigs) bump_homebrew_formula_version
+all: $(release_files) $(release_file_sigs) # bump_homebrew_formula_version
 
 .PHONY: bump_homebrew_formula_version
 bump_homebrew_formula_version:
