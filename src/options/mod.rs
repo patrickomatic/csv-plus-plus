@@ -18,6 +18,7 @@ pub struct Options {
     pub offset: (u32, u32),
     pub overwrite_values: bool,
     pub sheet_name: String,
+    pub time_zone: Option<chrono_tz::Tz>,
     pub use_cache: bool,
     pub verbosity: log::LevelFilter,
 }
@@ -30,6 +31,10 @@ impl Options {
         } else {
             "none".to_string()
         }
+    }
+
+    pub(crate) fn time_zone(&self) -> impl chrono::TimeZone {
+        self.time_zone.unwrap_or(chrono::Local)
     }
 
     fn sheet_name(cli_args: &CliArgs) -> Result<String> {

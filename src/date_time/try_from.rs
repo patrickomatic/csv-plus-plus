@@ -59,6 +59,7 @@ fn token_into(input: impl BadInput + TokenInput) -> ParseResult<DateTime> {
 
 impl TryFrom<ast_lexer::TokenMatch<'_>> for DateTime {
     type Error = ParseError;
+
     fn try_from(input: ast_lexer::TokenMatch) -> ParseResult<Self> {
         token_into(input)
     }
@@ -66,6 +67,7 @@ impl TryFrom<ast_lexer::TokenMatch<'_>> for DateTime {
 
 impl TryFrom<cell_lexer::TokenMatch> for DateTime {
     type Error = ParseError;
+
     fn try_from(input: cell_lexer::TokenMatch) -> ParseResult<Self> {
         token_into(input)
     }
@@ -78,7 +80,7 @@ mod tests {
     use crate::test_utils::*;
     use crate::*;
 
-    fn build_input<'a>(s: &'a str, source_code: ArcSourceCode) -> ast_lexer::TokenMatch<'a> {
+    fn build_input(s: &str, source_code: ArcSourceCode) -> ast_lexer::TokenMatch {
         build_ast_token_match(s, source_code)
     }
 

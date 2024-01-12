@@ -1,6 +1,6 @@
 use std::path;
 
-#[derive(Debug, clap::Parser)]
+#[derive(Debug, Default, clap::Parser)]
 #[command(author = "Patrick Carroll")]
 #[command(version, about)]
 pub struct CliArgs {
@@ -65,6 +65,12 @@ pub struct CliArgs {
     pub sheet_name: Option<String>,
 
     #[arg(
+        long,
+        help = "The timezone for which dates in the spreadsheet will be based."
+    )]
+    pub time_zone: Option<String>,
+
+    #[arg(
         action = clap::ArgAction::Count,
         short = 'v',
         long,
@@ -89,25 +95,6 @@ pub struct CliArgs {
 
     #[arg(required = true)]
     pub input_filename: path::PathBuf,
-}
-
-impl Default for CliArgs {
-    fn default() -> Self {
-        Self {
-            backup: false,
-            google_account_credentials: None,
-            google_sheet_id: None,
-            input_filename: path::PathBuf::new(),
-            key_values: vec![],
-            no_cache: false,
-            output_filename: None,
-            safe: false,
-            sheet_name: None,
-            verbose: 0,
-            x_offset: 0,
-            y_offset: 0,
-        }
-    }
 }
 
 #[cfg(test)]
