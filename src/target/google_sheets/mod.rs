@@ -22,7 +22,7 @@ type SheetsHub = google_sheets4::Sheets<hyper_rustls::HttpsConnector<hyper::clie
 type SheetsValue = google_sheets4::api::CellData;
 
 pub(crate) struct GoogleSheets<'a> {
-    async_compiler: tokio::runtime::Runtime,
+    async_runtime: tokio::runtime::Runtime,
     credentials: Credentials,
     compiler: &'a Compiler,
     pub(crate) sheet_id: String,
@@ -41,17 +41,17 @@ impl<'a> GoogleSheets<'a> {
     pub(crate) fn new<S: Into<String>>(compiler: &'a Compiler, sheet_id: S) -> Result<Self> {
         let credentials = compiler.try_into()?;
 
-        let async_compiler = tokio::runtime::Builder::new_current_thread()
+        let async_runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .map_err(|e| {
                 Error::InitError(format!(
-                    "Error starting async compiler to write Google Sheets: {e}"
+                    "Error starting async runtime to write Google Sheets: {e}"
                 ))
             })?;
 
         Ok(Self {
-            async_compiler,
+            async_runtime,
             credentials,
             sheet_id: sheet_id.into(),
             compiler,
@@ -87,14 +87,17 @@ impl<'a> GoogleSheets<'a> {
             }
         };
 
-        // TODO: ugh why can't I just chain .and_thens or .maps or something
-        /*
+        /* TODO: ugh why won't this wor!!
         let row_data = spreadsheet
             .sheets
             .and_then(|sheets| sheets.get(0))
             .and_then(|sheet| sheet.data)
             .and_then(|data| data.get(0))
-            .map(|&grid_data| grid_data.row_data);
+            .map(|grid_data| grid_data.row_data);
+
+        let Some(row_data) = row_data.unwrap() else {
+            return Ok(ExistingValues::default());
+        };
         */
 
         let sheets = unwrap_or_empty!(spreadsheet.sheets); // Vec<Sheet>
@@ -103,23 +106,21 @@ impl<'a> GoogleSheets<'a> {
         let grid_data = unwrap_or_empty!(data.first()); // &GridData
         let row_data = unwrap_or_empty!(&grid_data.row_data); // &Vec<RowData>
 
-        let mut existing_cells = vec![];
+        let mut cells = vec![];
 
         for row in row_data {
             if let Some(v) = &row.values {
-                existing_cells.push(
+                cells.push(
                     v.iter()
                         .map(|cell| ExistingCell::Value(cell.clone()))
                         .collect(),
                 );
             } else {
-                existing_cells.push(vec![]);
+                cells.push(vec![]);
             }
         }
 
-        Ok(ExistingValues {
-            cells: existing_cells,
-        })
+        Ok(ExistingValues { cells })
     }
 
     async fn sheets_hub(&self) -> Result<SheetsHub> {
