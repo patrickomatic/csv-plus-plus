@@ -33,10 +33,6 @@ impl Options {
         }
     }
 
-    pub(crate) fn time_zone(&self) -> impl chrono::TimeZone {
-        self.time_zone.unwrap_or(chrono::Local)
-    }
-
     fn sheet_name(cli_args: &CliArgs) -> Result<String> {
         if let Some(sheet_name) = &cli_args.sheet_name {
             Ok(sheet_name.clone())

@@ -338,6 +338,7 @@ dependencies = [
  "chrono",
  "chrono-tz-build",
  "phf",
+ "uncased",
 ]
 
 [[package]]
@@ -349,6 +350,7 @@ dependencies = [
  "parse-zoneinfo",
  "phf",
  "phf_codegen",
+ "uncased",
 ]
 
 [[package]]
@@ -1907,6 +1909,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "90fcb95eef784c2ac79119d1dd819e162b5da872ce6f3c3abe1e8ca1c082f72b"
 dependencies = [
  "siphasher",
+ "uncased",
 ]
 
 [[package]]
@@ -2844,6 +2847,15 @@ dependencies = [
  "sha2",
  "thousands",
  "zip",
+]
+
+[[package]]
+name = "uncased"
+version = "0.9.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b9bc53168a4be7402ab86c3aad243a84dd7381d09be0eddc81280c1da95ca68"
+dependencies = [
+ "version_check",
 ]
 
 [[package]]
