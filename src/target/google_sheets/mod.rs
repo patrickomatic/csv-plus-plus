@@ -87,15 +87,15 @@ impl<'a> GoogleSheets<'a> {
             }
         };
 
-        /* TODO: ugh why won't this wor!!
+        /* TODO: ugh why won't this work!!
         let row_data = spreadsheet
             .sheets
             .and_then(|sheets| sheets.get(0))
             .and_then(|sheet| sheet.data)
             .and_then(|data| data.get(0))
-            .map(|grid_data| grid_data.row_data);
+            .and_then(|grid_data| grid_data.row_data);
 
-        let Some(row_data) = row_data.unwrap() else {
+        let Some(row_data) = row_data else {
             return Ok(ExistingValues::default());
         };
         */
@@ -106,21 +106,20 @@ impl<'a> GoogleSheets<'a> {
         let grid_data = unwrap_or_empty!(data.first()); // &GridData
         let row_data = unwrap_or_empty!(&grid_data.row_data); // &Vec<RowData>
 
-        let mut cells = vec![];
-
-        for row in row_data {
-            if let Some(v) = &row.values {
-                cells.push(
-                    v.iter()
-                        .map(|cell| ExistingCell::Value(cell.clone()))
-                        .collect(),
-                );
-            } else {
-                cells.push(vec![]);
-            }
-        }
-
-        Ok(ExistingValues { cells })
+        Ok(ExistingValues {
+            cells: row_data
+                .iter()
+                .map(|row| {
+                    if let Some(v) = &row.values {
+                        v.iter()
+                            .map(|cell| ExistingCell::Value(cell.clone()))
+                            .collect()
+                    } else {
+                        vec![]
+                    }
+                })
+                .collect(),
+        })
     }
 
     async fn sheets_hub(&self) -> Result<SheetsHub> {

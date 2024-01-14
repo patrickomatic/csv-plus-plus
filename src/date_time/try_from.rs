@@ -9,10 +9,10 @@ use crate::parser::{ast_lexer, cell_lexer, TokenInput};
 // I wish chrono had some kind of smart string parser but it seems like it's up to me to handle all
 // the nuances of different types and supported patterns
 const DATE_TIME_WITH_TZ: &[&str] = &[
-    "%Y-%m-%d %H:%M:%S %Z",
-    "%m/%d/%Y %H:%M:%S %Z",
-    "%Y-%m-%d %H:%M %Z",
-    "%m/%d/%Y %H:%M %Z",
+    "%Y-%m-%d %H:%M:%S %z",
+    "%m/%d/%Y %H:%M:%S %z",
+    "%Y-%m-%d %H:%M %z",
+    "%m/%d/%Y %H:%M %z",
 ];
 
 const DATE_TIME: &[&str] = &[
@@ -27,6 +27,12 @@ const DATE: &[&str] = &["%y-%m-%d", "%m/%d/%y", "%Y-%m-%d", "%m/%d/%Y"];
 const TIME: &[&str] = &["%H:%M:%S.%Z", "%H:%M:%S", "%H:%M"];
 
 fn token_into(input: impl BadInput + TokenInput) -> ParseResult<DateTime> {
+    if let Ok(dt) = chrono::DateTime::parse_from_rfc2822(input.input())
+        .or_else(|_| chrono::DateTime::parse_from_rfc3339(input.input()))
+    {
+        return Ok(DateTime::DateAndTime(dt));
+    }
+
     for format in DATE_TIME_WITH_TZ {
         if let Ok(d) = chrono::DateTime::parse_from_str(input.input(), format) {
             return Ok(DateTime::DateAndTime(d));
@@ -35,10 +41,7 @@ fn token_into(input: impl BadInput + TokenInput) -> ParseResult<DateTime> {
 
     for format in DATE_TIME {
         if let Ok(d) = chrono::NaiveDateTime::parse_from_str(input.input(), format) {
-            // TODO: deal with the unwrap and present a better error
-            return Ok(DateTime::DateAndTime(
-                d.and_local_timezone(chrono::Local).unwrap().into(),
-            ));
+            return Ok(DateTime::NaiveDateAndTime(d));
         }
     }
 
@@ -85,7 +88,7 @@ mod tests {
     }
 
     #[test]
-    fn date() {
+    fn naive_date() {
         let source_code = build_source_code();
 
         assert_eq!(
@@ -100,26 +103,22 @@ mod tests {
     }
 
     #[test]
-    fn date_and_time() {
+    fn naive_date_and_time() {
         assert_eq!(
             DateTime::try_from(build_input("10/22/2012 1:00", build_source_code())).unwrap(),
-            DateTime::DateAndTime(
+            DateTime::NaiveDateAndTime(
                 chrono::NaiveDate::from_ymd_opt(2012, 10, 22)
                     .unwrap()
                     .and_hms_opt(1, 0, 0)
                     .unwrap()
-                    .and_local_timezone(chrono::Local)
-                    .unwrap()
-                    .into()
             ),
         );
     }
 
-    #[ignore]
     #[test]
-    fn date_and_time_and_timezone() {
+    fn date_and_time() {
         assert_eq!(
-            DateTime::try_from(build_input("10/22/2012 1:00 0800", build_source_code())).unwrap(),
+            DateTime::try_from(build_input("10/22/2012 1:00 +0800", build_source_code())).unwrap(),
             DateTime::DateAndTime(
                 chrono::NaiveDate::from_ymd_opt(2012, 10, 22)
                     .unwrap()
@@ -132,7 +131,7 @@ mod tests {
     }
 
     #[test]
-    fn time() {
+    fn naive_time() {
         assert_eq!(
             DateTime::try_from(build_input("1:00", build_source_code())).unwrap(),
             DateTime::Time(chrono::NaiveTime::from_hms_opt(1, 0, 0).unwrap()),
