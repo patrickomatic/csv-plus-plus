@@ -17,6 +17,7 @@
 
 * `DateTime` no longer supports a variant with fixed TZ offset
 * Various functions on `Fill` made crate-private
+* Removed `Error::ObjectCodeError` variant
 
 ## v0.5.1
 

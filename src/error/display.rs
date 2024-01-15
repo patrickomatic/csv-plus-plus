@@ -78,12 +78,6 @@ csv++ with `GOOGLE_APPLICATION_CREDENTIALS` or the `--google-account-credentials
                 Ok(())
             }
 
-            #[allow(deprecated)]
-            Self::ObjectCodeError { filename, message } => {
-                writeln!(f, "Error updating object file {}", filename.display())?;
-                writeln!(f, "{message}")
-            }
-
             Self::SourceCodeError { filename, message } => {
                 writeln!(f, "Error reading source {}", filename.display())?;
                 writeln!(f, "{message}")
