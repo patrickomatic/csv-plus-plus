@@ -4,9 +4,9 @@
 //! `Scope`.
 //!
 // TODO:
-// * make it so that `---` is not required
+// * make it so that `---` is not required for dependent modules
 use crate::{compiler_error, Error, Module, ModulePath, Result, Scope};
-use log::{debug, info};
+use log::debug;
 use petgraph::{algo, graph};
 use std::collections;
 use std::path;
@@ -33,7 +33,7 @@ pub(super) struct ModuleLoader {
 }
 
 // TODO: ideally this shouldn't take a $source_code and the calling part does the map_err
-macro_rules! eval_fns_or_vars {
+macro_rules! eval_ast {
     ($scope:expr, $functions_or_variables:ident, $source_code:expr) => {{
         for (name, ast) in $scope.$functions_or_variables.clone().into_iter() {
             $scope.$functions_or_variables.insert(
@@ -43,15 +43,6 @@ macro_rules! eval_fns_or_vars {
             );
         }
     }};
-}
-
-// TODO:
-// this probably doesn't need to be a macro
-macro_rules! eval_scope {
-    ($scope:expr, $source_code:expr) => {
-        eval_fns_or_vars!($scope, variables, $source_code);
-        eval_fns_or_vars!($scope, functions, $source_code);
-    };
 }
 
 // TODO:
@@ -76,6 +67,7 @@ impl ModuleLoader {
             is_dirty: false,
             use_cache,
         };
+        let mut were_any_deps_dirty = false;
 
         // we need to do this in a loop because every time we reload dirty dependencies we're
         // pulling in changes to the source code, which could mean the author added a new `use ...`
@@ -84,6 +76,7 @@ impl ModuleLoader {
             module_loader.load(&module_loader.main_module)?;
             module_loader = module_loader.propagate_dirty_flag()?;
             if module_loader.is_dirty {
+                were_any_deps_dirty = true;
                 module_loader.reload_dirty_modules()?;
             } else {
                 break;
@@ -91,7 +84,10 @@ impl ModuleLoader {
         }
 
         module_loader.eval_dependencies()?;
-        module_loader.merge_direct_dependencies()
+
+        let mut main = module_loader.merge_direct_dependencies()?;
+        main.is_dirty = were_any_deps_dirty;
+        Ok(main)
     }
 
     /// Returns only the direct dependencies for this module graph.  For example if our Module A
@@ -100,7 +96,9 @@ impl ModuleLoader {
     fn merge_direct_dependencies(self) -> Result<Module> {
         if self.has_failures() {
             Err(Error::ModuleLoadErrors(
-                sync::Arc::try_unwrap(self.failed).unwrap().into_inner()?,
+                sync::Arc::try_unwrap(self.failed)
+                    .expect("Unable to access failed")
+                    .into_inner()?,
             ))
         } else {
             let mut loaded = self.loaded.write()?;
@@ -118,10 +116,7 @@ impl ModuleLoader {
 
     fn load_dependency_graph(&self) -> graph::Graph<ModulePath, ()> {
         let loaded = self.loaded.read().unwrap();
-        info!(
-            "Creating dependency graph with {} dependencies",
-            loaded.len()
-        );
+        debug!("Loaded dependency graph with {} dependencies", loaded.len());
 
         let mut dep_graph = graph::Graph::new();
 
@@ -193,7 +188,9 @@ impl ModuleLoader {
 
     fn propagate_dirty_flag(self) -> Result<Self> {
         let dirty_nodes = self.dirty_nodes();
-        let mut loaded = sync::Arc::try_unwrap(self.loaded).unwrap().into_inner()?;
+        let mut loaded = sync::Arc::try_unwrap(self.loaded)
+            .expect("Unable to access loaded")
+            .into_inner()?;
 
         let is_dirty = !dirty_nodes.is_empty();
 
@@ -266,7 +263,8 @@ impl ModuleLoader {
                 to_resolve.scope.merge(dep_scope);
             }
 
-            eval_scope!(to_resolve.scope, to_resolve.source_code);
+            eval_ast!(to_resolve.scope, variables, to_resolve.source_code);
+            eval_ast!(to_resolve.scope, functions, to_resolve.source_code);
 
             // now that we've evaled it that's the last step, write the csvpo file
             if self.use_cache {

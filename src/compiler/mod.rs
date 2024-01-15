@@ -52,10 +52,9 @@ impl Compiler {
             ModuleLoader::load_main(main_module, loader_root, self.options.use_cache)?;
 
         if main_module.needs_eval {
-            debug!("Compiling module");
+            info!("Compiling main module");
             main_module = self.eval(main_module)?;
-
-            info!("Compiled main: {main_module}");
+            main_module.needs_eval = false;
 
             if self.options.use_cache {
                 debug!(
@@ -65,8 +64,10 @@ impl Compiler {
                 main_module.write_object_file()?;
             }
         } else {
-            debug!("Cached main is up to date, skipping compilation");
+            info!("Cached main is up to date, skipping compilation");
         }
+
+        info!("Compiled main: {main_module}");
 
         Ok(main_module)
     }
@@ -89,11 +90,10 @@ impl Compiler {
         self.output.clone().into_error(message)
     }
 
-    fn eval(&self, module: Module) -> Result<Module> {
-        debug!("Evaluating module");
+    fn eval(&self, main: Module) -> Result<Module> {
+        debug!("Evaluating main module");
 
-        module
-            .eval_fills()
+        main.eval_fills()
             .eval_spreadsheet(self.options.key_values.clone())
     }
 }

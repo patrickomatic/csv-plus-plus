@@ -17,3 +17,8 @@ another_defined_in_file1,=555,should be shadowed to be 555
 "
     );
 }
+
+#[test]
+fn module_loading_repeatedly_from_cache() {
+    // TODO
+}

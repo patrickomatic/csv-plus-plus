@@ -11,7 +11,7 @@
 use crate::ast::Variables;
 use crate::parser::code_section_parser::CodeSectionParser;
 use crate::{
-    compiler_error, ArcSourceCode, Error, ModulePath, Result, Row, Scope, SourceCode, Spreadsheet,
+    compiler_error, ArcSourceCode, Error, ModulePath, Result, Scope, SourceCode, Spreadsheet,
 };
 use log::{error, info, warn};
 use rayon::prelude::*;
@@ -34,37 +34,9 @@ pub struct Module {
 }
 
 impl Module {
-    /// For each row of the spreadsheet, if it has a [[fill=]] then we need to actually fill it to
-    /// that many rows.  
-    ///
-    /// This has to happen before eval()ing the cells because that process depends on them being in
-    /// their final location.
-    // TODO: make sure there is only one infinite fill
-    // TODO: move this into spreadsheet?
     pub(crate) fn eval_fills(self) -> Self {
-        let mut new_spreadsheet = Spreadsheet::default();
-        let s = self.spreadsheet;
-        let mut row_num = 0;
-
-        for row in s.rows {
-            if let Some(f) = row.fill {
-                let new_fill = f.clone_to_row(row_num);
-                for _ in 0..new_fill.fill_amount(row_num) {
-                    new_spreadsheet.rows.push(Row {
-                        fill: Some(new_fill),
-                        ..row.clone()
-                    });
-                    row_num += 1;
-                }
-            } else {
-                new_spreadsheet.rows.push(row);
-                row_num += 1;
-            }
-        }
-
-        dbg!(&new_spreadsheet);
         Self {
-            spreadsheet: new_spreadsheet,
+            spreadsheet: self.spreadsheet.eval_fills(),
             ..self
         }
     }
@@ -85,7 +57,10 @@ impl Module {
 
         Ok(Self {
             scope,
-            spreadsheet: Spreadsheet { rows },
+            spreadsheet: Spreadsheet {
+                rows,
+                ..spreadsheet
+            },
             ..self
         })
     }
@@ -253,6 +228,7 @@ impl Module {
         // written)
         if source_file_modified > obj_file_modified {
             self.is_dirty = true;
+            self.needs_eval = true;
             return Ok(());
         }
 
@@ -285,65 +261,5 @@ impl Module {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::test_utils::*;
-    use crate::*;
-
-    #[test]
-    fn eval_fills_finite() {
-        let module = Module {
-            spreadsheet: Spreadsheet {
-                rows: vec![
-                    Row {
-                        fill: Some(Fill::new(0, Some(10))),
-                        ..Default::default()
-                    },
-                    Row {
-                        fill: Some(Fill::new(10, Some(30))),
-                        ..Default::default()
-                    },
-                ],
-            },
-            ..build_module()
-        }
-        .eval_fills();
-        let spreadsheet = module.spreadsheet;
-
-        assert_eq!(spreadsheet.rows.len(), 40);
-        // 0-9 should be Fill { amount: 10, start_row: 0 }
-        assert_eq!(spreadsheet.rows[0].fill.unwrap().start_row, 0.into());
-        assert_eq!(spreadsheet.rows[9].fill.unwrap().start_row, 0.into());
-        // and 10-39 should be Fill { amount: 30, start_row: 10 }
-        assert_eq!(spreadsheet.rows[10].fill.unwrap().start_row, 10.into());
-        assert_eq!(spreadsheet.rows[39].fill.unwrap().start_row, 10.into());
-    }
-
-    #[test]
-    fn eval_fills_infinite() {
-        let module = Module {
-            spreadsheet: Spreadsheet {
-                rows: vec![
-                    Row {
-                        fill: Some(Fill::new(0, Some(10))),
-                        ..Default::default()
-                    },
-                    Row {
-                        fill: Some(Fill::new(10, None)),
-                        ..Default::default()
-                    },
-                ],
-            },
-            ..build_module()
-        }
-        .eval_fills();
-        let spreadsheet = module.spreadsheet;
-
-        assert_eq!(spreadsheet.rows.len(), 1000);
-        // 0-9 should be Fill { amount: 10, start_row: 0 }
-        assert_eq!(spreadsheet.rows[0].fill.unwrap().start_row, 0.into());
-        assert_eq!(spreadsheet.rows[9].fill.unwrap().start_row, 0.into());
-        // and 10-999 should be Fill { amount: None, start_row: 10 }
-        assert_eq!(spreadsheet.rows[10].fill.unwrap().start_row, 10.into());
-        assert_eq!(spreadsheet.rows[999].fill.unwrap().start_row, 10.into());
-    }
+    // TODO
 }

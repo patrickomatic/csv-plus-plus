@@ -16,7 +16,7 @@ pub struct Fill {
 
 impl Fill {
     #[must_use]
-    pub fn clone_to_row<R: Into<Row>>(&self, row: R) -> Self {
+    pub(crate) fn clone_to_row<R: Into<Row>>(&self, row: R) -> Self {
         Self {
             amount: self.amount,
             start_row: row.into(),
@@ -24,7 +24,7 @@ impl Fill {
     }
 
     #[must_use]
-    pub fn end_row(&self) -> Row {
+    pub(crate) fn end_row(&self) -> Row {
         if let Some(a) = self.amount {
             cmp::min(self.start_row.y + a, ROW_MAX).into()
         } else {
@@ -32,8 +32,15 @@ impl Fill {
         }
     }
 
-    pub fn fill_amount<R: Into<Row>>(&self, row: R) -> usize {
-        self.amount.unwrap_or(ROW_MAX - row.into().y)
+    pub(crate) fn fill_amount<R: Into<Row>>(&self, row: R) -> usize {
+        self.amount.unwrap_or_else(|| {
+            let y = row.into().y;
+            if y > ROW_MAX {
+                0
+            } else {
+                ROW_MAX - y
+            }
+        })
     }
 
     pub fn new<R: Into<Row>>(start_row: R, amount: Option<usize>) -> Self {
@@ -104,5 +111,15 @@ mod tests {
 
         assert_eq!(fill.fill_amount(0), 1000);
         assert_eq!(fill.fill_amount(10), 990);
+    }
+
+    #[test]
+    fn fill_amount_overflow() {
+        let fill = Fill {
+            amount: None,
+            start_row: 999.into(),
+        };
+
+        assert_eq!(fill.fill_amount(1001), 0);
     }
 }

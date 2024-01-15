@@ -11,9 +11,46 @@ mod display;
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Spreadsheet {
     pub rows: Vec<Row>,
+    pub(crate) fills_expanded: bool,
 }
 
 impl Spreadsheet {
+    /// For each row of the spreadsheet, if it has a [[fill=]] then we need to actually fill it to
+    /// that many rows.  
+    ///
+    /// This has to happen before eval()ing the cells because that process depends on them being in
+    /// their final location.
+    // TODO: make sure there is only one infinite fill
+    pub(crate) fn eval_fills(self) -> Self {
+        if self.fills_expanded {
+            return self;
+        }
+
+        let mut rows = vec![];
+        let mut row_num = 0;
+
+        for row in self.rows {
+            if let Some(f) = row.fill {
+                let new_fill = f.clone_to_row(row_num);
+                for _ in 0..new_fill.fill_amount(row_num) {
+                    rows.push(Row {
+                        fill: Some(new_fill),
+                        ..row.clone()
+                    });
+                    row_num += 1;
+                }
+            } else {
+                rows.push(row);
+                row_num += 1;
+            }
+        }
+
+        Self {
+            rows,
+            fills_expanded: true,
+        }
+    }
+
     /// Parse the spreadsheet section of a csv++ source file.
     pub(crate) fn parse(source_code: &ArcSourceCode) -> Result<Spreadsheet> {
         let mut csv_reader = csv_reader()
@@ -26,13 +63,16 @@ impl Spreadsheet {
             rows.push(Row::parse(result, row_index.into(), source_code)?);
         }
 
-        Ok(Spreadsheet { rows })
+        Ok(Spreadsheet {
+            rows,
+            fills_expanded: false,
+        })
     }
 
     /// Extract all of the variables that were defined by cells contained in this spreadsheet
     //
     // NOTE: we could also store these in a HashMap on the Spreadsheet as we build it rather than
-    // parsing them out at compiler
+    // parsing them out at compile-time
     pub(crate) fn variables(&self) -> Variables {
         let mut vars = collections::HashMap::new();
 
@@ -103,6 +143,78 @@ mod tests {
 
     fn build_source_code(input: &str) -> ArcSourceCode {
         ArcSourceCode::new((&TestSourceCode::new("csv", input)).into())
+    }
+
+    #[test]
+    fn eval_fills_already_expanded() {
+        let spreadsheet = Spreadsheet {
+            rows: vec![
+                Row {
+                    fill: Some(Fill::new(0, Some(10))),
+                    ..Default::default()
+                },
+                Row {
+                    fill: Some(Fill::new(10, Some(30))),
+                    ..Default::default()
+                },
+            ],
+            fills_expanded: true,
+        }
+        .eval_fills();
+
+        assert_eq!(spreadsheet.rows.len(), 2);
+    }
+
+    #[test]
+    fn eval_fills_finite() {
+        let spreadsheet = Spreadsheet {
+            rows: vec![
+                Row {
+                    fill: Some(Fill::new(0, Some(10))),
+                    ..Default::default()
+                },
+                Row {
+                    fill: Some(Fill::new(10, Some(30))),
+                    ..Default::default()
+                },
+            ],
+            fills_expanded: false,
+        }
+        .eval_fills();
+
+        assert_eq!(spreadsheet.rows.len(), 40);
+        // 0-9 should be Fill { amount: 10, start_row: 0 }
+        assert_eq!(spreadsheet.rows[0].fill.unwrap().start_row, 0.into());
+        assert_eq!(spreadsheet.rows[9].fill.unwrap().start_row, 0.into());
+        // and 10-39 should be Fill { amount: 30, start_row: 10 }
+        assert_eq!(spreadsheet.rows[10].fill.unwrap().start_row, 10.into());
+        assert_eq!(spreadsheet.rows[39].fill.unwrap().start_row, 10.into());
+    }
+
+    #[test]
+    fn eval_fills_infinite() {
+        let spreadsheet = Spreadsheet {
+            rows: vec![
+                Row {
+                    fill: Some(Fill::new(0, Some(10))),
+                    ..Default::default()
+                },
+                Row {
+                    fill: Some(Fill::new(10, None)),
+                    ..Default::default()
+                },
+            ],
+            fills_expanded: false,
+        }
+        .eval_fills();
+
+        assert_eq!(spreadsheet.rows.len(), 1000);
+        // 0-9 should be Fill { amount: 10, start_row: 0 }
+        assert_eq!(spreadsheet.rows[0].fill.unwrap().start_row, 0.into());
+        assert_eq!(spreadsheet.rows[9].fill.unwrap().start_row, 0.into());
+        // and 10-999 should be Fill { amount: None, start_row: 10 }
+        assert_eq!(spreadsheet.rows[10].fill.unwrap().start_row, 10.into());
+        assert_eq!(spreadsheet.rows[999].fill.unwrap().start_row, 10.into());
     }
 
     #[test]
@@ -196,6 +308,7 @@ mod tests {
                 ],
                 ..Default::default()
             }],
+            ..Default::default()
         };
 
         let variables = spreadsheet.variables();
@@ -227,6 +340,7 @@ mod tests {
                     ..Default::default()
                 },
             ],
+            ..Default::default()
         };
 
         let variables = spreadsheet.variables();
@@ -279,6 +393,7 @@ mod tests {
                     ..Default::default()
                 },
             ],
+            ..Default::default()
         };
 
         assert_eq!(spreadsheet.widest_row(), 3);

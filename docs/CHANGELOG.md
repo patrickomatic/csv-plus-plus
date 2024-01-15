@@ -1,4 +1,4 @@
-## v0.5.2 (upcoming)
+## v0.6.0 (upcoming)
 
 ### Features
 
@@ -6,9 +6,17 @@
 * Support for backing up on Google Sheets
 * Dates, times and datetimes are now tz-unaware
 
+### Bugfixes
+
+* Fix fills being evaluated every time they're loaded from a .csvpo cache (and blowing up the 
+  resulting spreadsheet)
+* The main module will always use it's csvpo cache when possible
+* Fixes a potential overflow when calculating fills past row 1000
+
 ### **Breaking Changes**
 
 * `DateTime` no longer supports a variant with fixed TZ offset
+* Various functions on `Fill` made crate-private
 
 ## v0.5.1
 

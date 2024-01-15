@@ -16,7 +16,7 @@ all: $(excel_files) $(csv_files)
 
 .PHONY: all_features_gs
 test_gs: test.csvpp
-	$(CSVCC) -bv --sheet-name "test" -g $(GOOGLE_SHEETS_TEST_ID) $<
+	$(CSVCC) -bvv --sheet-name "test" -g $(GOOGLE_SHEETS_TEST_ID) $<
 
 %.csv: %.csvpp
 	$(CSVCC) -vvv -o $@ $<
