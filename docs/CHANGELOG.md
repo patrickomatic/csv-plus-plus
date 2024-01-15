@@ -3,11 +3,12 @@
 ### Features
 
 * Eval rows in parallel
+* Support for backing up on Google Sheets
 * Dates, times and datetimes are now tz-unaware
 
 ### **Breaking Changes**
 
-* DateTime no longer supports a variant with fixed TZ offset
+* `DateTime` no longer supports a variant with fixed TZ offset
 
 ## v0.5.1
 

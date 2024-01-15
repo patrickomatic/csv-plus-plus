@@ -4,8 +4,8 @@ use crate::{Module, Result};
 
 impl CompilationTarget for GoogleSheets<'_> {
     fn write_backup(&self) -> Result<()> {
-        // TODO note to myself: you use a drive client to do this, not a sheets client
-        todo!();
+        self.async_runtime
+            .block_on(async { self.backup_sheet().await })
     }
 
     fn write(&self, module: &Module) -> Result<()> {

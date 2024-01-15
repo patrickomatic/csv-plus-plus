@@ -1,8 +1,8 @@
+use super::HyperConnector;
 use crate::{Compiler, Error, Result};
+use google_sheets4::oauth2;
 use log::info;
-use std::env;
-use std::fs;
-use std::path;
+use std::{env, fs, path};
 
 /// The file containing credentials that will be used to connect to Sheets API
 #[derive(Debug)]
@@ -67,15 +67,7 @@ impl TryFrom<&Compiler> for Credentials {
 }
 
 impl Credentials {
-    pub(super) fn is_service_account(&self) -> Result<bool> {
-        Ok(self.read_json()?["type"] == "service_account")
-    }
-
-    pub(super) fn is_authorized_user(&self) -> Result<bool> {
-        Ok(self.read_json()?["type"] == "authorized_user")
-    }
-
-    pub fn read_json(&self) -> Result<serde_json::Value> {
+    pub(super) fn read_json(&self) -> Result<serde_json::Value> {
         let json = fs::read_to_string(&self.file).map_err(|e| {
             Error::GoogleSetupError(format!("Unable to read credentials file: {e}"))
         })?;
@@ -84,6 +76,48 @@ impl Credentials {
             Error::GoogleSetupError(format!("Error parsing credentials file JSON: {e}"))
         })
     }
+
+    pub(super) async fn auth(
+        &self,
+    ) -> Result<oauth2::authenticator::Authenticator<HyperConnector>> {
+        let json = self.read_json()?;
+
+        if json["type"] == "authorized_user" {
+            Ok(oauth2::AuthorizedUserAuthenticator::builder(
+                oauth2::read_authorized_user_secret(&self.file)
+                    .await
+                    .map_err(|e| {
+                        Error::GoogleSetupError(format!("Error reading application secret: {e}"))
+                    })?,
+            )
+            .build()
+            .await
+            .map_err(|e| {
+                Error::GoogleSetupError(format!("Error requesting access to the spreadsheet: {e}"))
+            })?)
+        } else if json["type"] == "service_account" {
+            Ok(oauth2::ServiceAccountAuthenticator::builder(
+                oauth2::read_service_account_key(&self.file)
+                    .await
+                    .map_err(|e| {
+                        Error::GoogleSetupError(format!(
+                            "Error reading sevice account credentials: {e}"
+                        ))
+                    })?,
+            )
+            .build()
+            .await
+            .map_err(|e| {
+                Error::GoogleSetupError(format!(
+                    "Error building service account authenticator: {e}"
+                ))
+            })?)
+        } else {
+            Err(Error::GoogleSetupError(
+                "Credentials file must be a service or user account but saw type: ".to_string(),
+            ))
+        }
+    }
 }
 
 #[cfg(test)]
@@ -91,42 +125,6 @@ mod tests {
     use super::*;
     use crate::test_utils::*;
     use std::env;
-
-    #[test]
-    fn is_authorized_user_true() {
-        let test_file = TestFile::new("json", "{\"type\": \"authorized_user\"}");
-        let creds = Credentials {
-            file: test_file.path.clone(),
-        };
-        assert!(creds.is_authorized_user().unwrap());
-    }
-
-    #[test]
-    fn is_authorized_user_false() {
-        let test_file = TestFile::new("json", "{}");
-        let creds = Credentials {
-            file: test_file.path.clone(),
-        };
-        assert!(!creds.is_authorized_user().unwrap());
-    }
-
-    #[test]
-    fn is_service_account_true() {
-        let test_file = TestFile::new("json", "{\"type\": \"service_account\"}");
-        let creds = Credentials {
-            file: test_file.path.clone(),
-        };
-        assert!(creds.is_service_account().unwrap());
-    }
-
-    #[test]
-    fn is_service_account_false() {
-        let test_file = TestFile::new("json", "{}");
-        let creds = Credentials {
-            file: test_file.path.clone(),
-        };
-        assert!(!creds.is_service_account().unwrap());
-    }
 
     #[test]
     #[ignore]

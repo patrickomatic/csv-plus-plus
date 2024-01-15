@@ -62,6 +62,7 @@ impl Module {
             }
         }
 
+        dbg!(&new_spreadsheet);
         Self {
             spreadsheet: new_spreadsheet,
             ..self

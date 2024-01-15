@@ -1,8 +1,5 @@
 //! # `GoogleSheets`
 //!
-// TODO:
-// * implement backing up
-//
 mod batch_update_builder;
 mod compilation_target;
 mod credentials;
@@ -14,10 +11,11 @@ use batch_update_builder::BatchUpdateBuilder;
 use credentials::Credentials;
 use google_sheets4::hyper;
 use google_sheets4::hyper_rustls;
-use google_sheets4::oauth2;
 use log::{error, warn};
 
-type SheetsHub = google_sheets4::Sheets<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>;
+type HyperConnector = hyper_rustls::HttpsConnector<hyper::client::HttpConnector>;
+type SheetsHub = google_sheets4::Sheets<HyperConnector>;
+type DriveHub = google_drive3::DriveHub<HyperConnector>;
 
 type SheetsValue = google_sheets4::api::CellData;
 
@@ -35,6 +33,17 @@ macro_rules! unwrap_or_empty {
             None => return Ok(ExistingValues::default()),
         }
     }};
+}
+
+fn hyper_client() -> hyper::Client<HyperConnector> {
+    hyper::Client::builder().build(
+        hyper_rustls::HttpsConnectorBuilder::new()
+            .with_native_roots()
+            .https_or_http()
+            .enable_http1()
+            .enable_http2()
+            .build(),
+    )
 }
 
 impl<'a> GoogleSheets<'a> {
@@ -122,55 +131,17 @@ impl<'a> GoogleSheets<'a> {
         })
     }
 
+    async fn drive_hub(&self) -> Result<DriveHub> {
+        Ok(google_drive3::DriveHub::new(
+            hyper_client(),
+            self.credentials.auth().await?,
+        ))
+    }
+
     async fn sheets_hub(&self) -> Result<SheetsHub> {
-        let auth = if self.credentials.is_authorized_user()? {
-            let secret = oauth2::read_authorized_user_secret(&self.credentials.file)
-                .await
-                .map_err(|e| {
-                    Error::GoogleSetupError(format!("Error reading application secret: {e}"))
-                })?;
-
-            oauth2::AuthorizedUserAuthenticator::builder(secret)
-                .build()
-                .await
-                .map_err(|e| {
-                    Error::GoogleSetupError(format!(
-                        "Error requesting access to the spreadsheet: {e}"
-                    ))
-                })?
-        } else if self.credentials.is_service_account()? {
-            let secret = oauth2::read_service_account_key(&self.credentials.file)
-                .await
-                .map_err(|e| {
-                    Error::GoogleSetupError(format!(
-                        "Error reading sevice account credentials: {e}"
-                    ))
-                })?;
-
-            oauth2::ServiceAccountAuthenticator::builder(secret)
-                .build()
-                .await
-                .map_err(|e| {
-                    Error::GoogleSetupError(format!(
-                        "Error building service account authenticator: {e}"
-                    ))
-                })?
-        } else {
-            return Err(Error::GoogleSetupError(
-                "Credentials file must be a service or user account".to_string(),
-            ));
-        };
-
         Ok(google_sheets4::Sheets::new(
-            hyper::Client::builder().build(
-                hyper_rustls::HttpsConnectorBuilder::new()
-                    .with_native_roots()
-                    .https_or_http()
-                    .enable_http1()
-                    .enable_http2()
-                    .build(),
-            ),
-            auth,
+            hyper_client(),
+            self.credentials.auth().await?,
         ))
     }
 
@@ -190,6 +161,22 @@ impl<'a> GoogleSheets<'a> {
                 self.compiler
                     .output_error(format!("Error writing to Google Sheets: {e}"))
             })
+    }
+
+    async fn backup_sheet(&self) -> Result<()> {
+        let hub = self.drive_hub().await?;
+
+        hub.files()
+            .copy(google_drive3::api::File::default(), &self.sheet_id)
+            .doit()
+            .await
+            .map_err(|e| {
+                error!("Error backing up via Google Drive API: {e:?}");
+                self.compiler
+                    .output_error(format!("Error backing up via Google Drive API: {e}"))
+            })?;
+
+        Ok(())
     }
 }
 
