@@ -15,9 +15,7 @@ use crate::{
 };
 use log::{error, info, warn};
 use rayon::prelude::*;
-use std::cmp;
-use std::fs;
-use std::path;
+use std::{cmp, fs, path};
 
 mod display;
 
