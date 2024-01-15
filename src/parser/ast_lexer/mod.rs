@@ -28,7 +28,7 @@ pub(crate) struct AstLexer<'a> {
 /// (for example 555.55 could be matched by both float and integer (integer can just match the first
 /// part of it)) so it's important float is first. Another example is comments - they have to be
 /// stripped out first
-fn matchers_ordered(tl: &TokenLibrary) -> [&TokenMatcher<Token>; 17] {
+fn matchers_ordered(tl: &TokenLibrary) -> [&TokenMatcher<Token>; 16] {
     [
         &tl.newline,
         &tl.comment,
@@ -41,7 +41,6 @@ fn matchers_ordered(tl: &TokenLibrary) -> [&TokenMatcher<Token>; 17] {
         &tl.open_paren,
         &tl.infix_operator,
         &tl.code_section_eof,
-        &tl.date_time,
         // float has to be happen before integer!  it needs to greedy match 1.5, where integer will
         // also match the first part 1, but not the rest
         &tl.float,

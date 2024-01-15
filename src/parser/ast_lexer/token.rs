@@ -5,7 +5,6 @@ pub enum Token {
     CodeSectionEof,
     Comma,
     Comment,
-    DateTime,
     DoubleQuotedString,
     Eof,
     Float,

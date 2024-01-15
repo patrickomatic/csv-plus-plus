@@ -65,12 +65,6 @@ pub struct CliArgs {
     pub sheet_name: Option<String>,
 
     #[arg(
-        long,
-        help = "The timezone for which dates in the spreadsheet will be based."
-    )]
-    pub time_zone: Option<String>,
-
-    #[arg(
         action = clap::ArgAction::Count,
         short = 'v',
         long,

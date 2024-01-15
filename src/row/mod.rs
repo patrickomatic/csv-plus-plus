@@ -35,7 +35,7 @@ impl Row {
         source_code: &ArcSourceCode,
         scope: &Scope,
         row_a1: a1_notation::Row,
-    ) -> Result<Row> {
+    ) -> Result<Self> {
         let mut cells = vec![];
         for (cell_index, cell) in self.cells.into_iter().enumerate() {
             let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
@@ -50,7 +50,7 @@ impl Row {
             cells.push(Cell { ast, ..cell });
         }
 
-        Ok(Row { cells, ..self })
+        Ok(Self { cells, ..self })
     }
 
     pub(crate) fn parse(
@@ -58,19 +58,26 @@ impl Row {
         row_a1: a1_notation::Row,
         source_code: &ArcSourceCode,
     ) -> Result<Self> {
-        let mut row = Self::default();
-
         // handle if the row is blank or an error or something. (maybe we should warn here if it's
         // an error?)
         let csv_parsed_row = &record_result.unwrap_or_default();
 
-        for (cell_index, unparsed_value) in csv_parsed_row.into_iter().enumerate() {
-            let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
-            let cell = Cell::parse(unparsed_value, cell_a1, &mut row, source_code)?;
-            row.cells.push(cell);
-        }
-
-        Ok(row)
+        let mut row = Self::default();
+        Ok(Self {
+            cells: csv_parsed_row
+                .into_iter()
+                .enumerate()
+                .map(|(cell_index, unparsed_value)| {
+                    Cell::parse(
+                        unparsed_value,
+                        a1_notation::Address::new(cell_index, row_a1.y),
+                        &mut row,
+                        source_code,
+                    )
+                })
+                .collect::<Result<Vec<_>>>()?,
+            ..row
+        })
     }
 }
 

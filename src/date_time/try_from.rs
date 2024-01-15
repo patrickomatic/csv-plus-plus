@@ -6,15 +6,6 @@ use super::DateTime;
 use crate::error::{BadInput, ParseError, ParseResult};
 use crate::parser::{ast_lexer, cell_lexer, TokenInput};
 
-// I wish chrono had some kind of smart string parser but it seems like it's up to me to handle all
-// the nuances of different types and supported patterns
-const DATE_TIME_WITH_TZ: &[&str] = &[
-    "%Y-%m-%d %H:%M:%S %z",
-    "%m/%d/%Y %H:%M:%S %z",
-    "%Y-%m-%d %H:%M %z",
-    "%m/%d/%Y %H:%M %z",
-];
-
 const DATE_TIME: &[&str] = &[
     "%Y-%m-%d %H:%M:%S",
     "%m/%d/%Y %H:%M:%S",
@@ -26,36 +17,35 @@ const DATE: &[&str] = &["%y-%m-%d", "%m/%d/%y", "%Y-%m-%d", "%m/%d/%Y"];
 
 const TIME: &[&str] = &["%H:%M:%S.%Z", "%H:%M:%S", "%H:%M"];
 
+macro_rules! try_formats {
+    ($input:ident, $formats:ident, $target:expr, $chrono_target:path) => {{
+        for format in $formats {
+            if let Ok(res) = $chrono_target($input.input(), format) {
+                return Ok($target(res));
+            }
+        }
+    }};
+}
+
 fn token_into(input: impl BadInput + TokenInput) -> ParseResult<DateTime> {
-    if let Ok(dt) = chrono::DateTime::parse_from_rfc2822(input.input())
-        .or_else(|_| chrono::DateTime::parse_from_rfc3339(input.input()))
-    {
-        return Ok(DateTime::DateAndTime(dt));
-    }
-
-    for format in DATE_TIME_WITH_TZ {
-        if let Ok(d) = chrono::DateTime::parse_from_str(input.input(), format) {
-            return Ok(DateTime::DateAndTime(d));
-        }
-    }
-
-    for format in DATE_TIME {
-        if let Ok(d) = chrono::NaiveDateTime::parse_from_str(input.input(), format) {
-            return Ok(DateTime::NaiveDateAndTime(d));
-        }
-    }
-
-    for format in DATE {
-        if let Ok(d) = chrono::NaiveDate::parse_from_str(input.input(), format) {
-            return Ok(DateTime::Date(d));
-        }
-    }
-
-    for format in TIME {
-        if let Ok(t) = chrono::NaiveTime::parse_from_str(input.input(), format) {
-            return Ok(DateTime::Time(t));
-        }
-    }
+    try_formats!(
+        input,
+        DATE_TIME,
+        DateTime::DateAndTime,
+        chrono::NaiveDateTime::parse_from_str
+    );
+    try_formats!(
+        input,
+        DATE,
+        DateTime::Date,
+        chrono::NaiveDate::parse_from_str
+    );
+    try_formats!(
+        input,
+        TIME,
+        DateTime::Time,
+        chrono::NaiveTime::parse_from_str
+    );
 
     Err(input.into_parse_error("Unable to parse date"))
 }
@@ -103,28 +93,13 @@ mod tests {
     }
 
     #[test]
-    fn naive_date_and_time() {
-        assert_eq!(
-            DateTime::try_from(build_input("10/22/2012 1:00", build_source_code())).unwrap(),
-            DateTime::NaiveDateAndTime(
-                chrono::NaiveDate::from_ymd_opt(2012, 10, 22)
-                    .unwrap()
-                    .and_hms_opt(1, 0, 0)
-                    .unwrap()
-            ),
-        );
-    }
-
-    #[test]
     fn date_and_time() {
         assert_eq!(
-            DateTime::try_from(build_input("10/22/2012 1:00 +0800", build_source_code())).unwrap(),
+            DateTime::try_from(build_input("10/22/2012 1:00", build_source_code())).unwrap(),
             DateTime::DateAndTime(
                 chrono::NaiveDate::from_ymd_opt(2012, 10, 22)
                     .unwrap()
                     .and_hms_opt(1, 0, 0)
-                    .unwrap()
-                    .and_local_timezone(chrono::FixedOffset::west_opt(-8 * 3600).unwrap())
                     .unwrap()
             ),
         );

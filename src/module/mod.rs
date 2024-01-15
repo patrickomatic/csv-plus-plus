@@ -75,16 +75,16 @@ impl Module {
             .merge_variables(spreadsheet.variables())
             .merge_variables(external_vars);
 
-        let evaled_rows = spreadsheet
+        let rows = spreadsheet
             .rows
             .into_par_iter()
             .enumerate()
             .map(|(row_index, row)| row.eval(&self.source_code, &scope, row_index.into()))
-            .collect::<std::result::Result<Vec<_>, _>>()?;
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(Self {
             scope,
-            spreadsheet: Spreadsheet { rows: evaled_rows },
+            spreadsheet: Spreadsheet { rows },
             ..self
         })
     }

@@ -15,7 +15,7 @@ impl Ast {
         self,
         scope: &Scope,
         position: Option<a1_notation::Address>,
-    ) -> EvalResult<Ast> {
+    ) -> EvalResult<Self> {
         let mut evaled_ast = self;
         let mut last_round_refs = AstReferences::default();
 
@@ -44,7 +44,7 @@ impl Ast {
         scope: &Scope,
         var_names: ReferencesIter,
         position: Option<a1_notation::Address>,
-    ) -> collections::HashMap<String, Ast> {
+    ) -> collections::HashMap<String, Self> {
         let mut resolved_vars: Variables = collections::HashMap::default();
         for var_name in var_names {
             if let Some(value) = scope.variables.get(&var_name) {
@@ -63,7 +63,7 @@ impl Ast {
     /// Evaluate the given `functions` calling `resolve_fn` upon each occurence to render a
     /// replacement.  Unlike variable resolution, we can't produce the values up front because the
     /// resolution function requires being called with the `arguments` at the call site.
-    fn eval_functions(self, fns_to_resolve: ReferencesIter, scope: &Scope) -> EvalResult<Ast> {
+    fn eval_functions(self, fns_to_resolve: ReferencesIter, scope: &Scope) -> EvalResult<Self> {
         let mut evaled_ast = self;
         for fn_name in fns_to_resolve {
             if let Some(fn_ast) = scope.functions.get(&fn_name) {
@@ -80,7 +80,7 @@ impl Ast {
 
     /// Use the mapping in `variable_values` to replace each variable referenced in the AST with
     /// it's given replacement.
-    fn eval_variables(&self, variable_values: Variables) -> Ast {
+    fn eval_variables(&self, variable_values: Variables) -> Self {
         let mut evaled_ast = self.clone();
         for (var_id, replacement) in variable_values {
             evaled_ast = evaled_ast.replace_variable(&var_id, replacement);
@@ -92,7 +92,7 @@ impl Ast {
     /// Do a depth-first-search on the AST, "calling" the function wherever we see a
     /// `Node::FunctionCall` with the matching name.  Calling a function can result in two main
     /// paths:
-    fn call_function(self, fn_id: &str, fn_ast: &Ast) -> EvalResult<Self> {
+    fn call_function(self, fn_id: &str, fn_ast: &Self) -> EvalResult<Self> {
         let inner = self.into_inner();
         Ok(match inner {
             Node::FunctionCall { args, name } if name == fn_id => {
@@ -182,7 +182,7 @@ impl Ast {
     }
 
     /// Depth-first-search replacing `Node::Reference`s of `var_id` with `replacement`.
-    fn replace_variable(&self, var_id: &str, replacement: Ast) -> Self {
+    fn replace_variable(&self, var_id: &str, replacement: Self) -> Self {
         let inner = (**self).clone();
         Ast::new(match inner {
             Node::FunctionCall { args, name } => {

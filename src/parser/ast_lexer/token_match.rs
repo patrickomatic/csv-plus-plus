@@ -2,7 +2,7 @@ use super::Token;
 use crate::ast::{Ast, Node};
 use crate::error::{BadInput, Error, ParseError, ParseResult};
 use crate::parser::TokenInput;
-use crate::{ArcSourceCode, CharOffset, DateTime, LineNumber};
+use crate::{ArcSourceCode, CharOffset, LineNumber};
 use colored::Colorize;
 use std::fmt;
 
@@ -77,9 +77,9 @@ impl TryFrom<TokenMatch<'_>> for Ast {
             Token::Boolean => {
                 let input_lower = tm.str_match.to_lowercase();
                 if input_lower == "true" {
-                    Ok(Ast::new(true.into()))
+                    Ok(true.into())
                 } else if input_lower == "false" {
-                    Ok(Ast::new(false.into()))
+                    Ok(false.into())
                 } else {
                     Err(tm.into_parse_error(
                         "Error parsing boolean value: expected `true` or `false`",
@@ -87,25 +87,21 @@ impl TryFrom<TokenMatch<'_>> for Ast {
                 }
             }
 
-            Token::DateTime => Ok(Ast::new(Node::DateTime(DateTime::try_from(tm)?))),
+            Token::Float => Ok(tm
+                .str_match
+                .parse::<f64>()
+                .map_err(|e| tm.into_parse_error(format!("Error parsing float value: {e}")))?
+                .into()),
 
-            Token::Float => Ok(Ast::new(
-                tm.str_match
-                    .parse::<f64>()
-                    .map_err(|e| tm.into_parse_error(format!("Error parsing float value: {e}")))?
-                    .into(),
-            )),
+            Token::Integer => Ok(tm
+                .str_match
+                .parse::<i64>()
+                .map_err(|e| tm.into_parse_error(format!("Error parsing integer value: {e}")))?
+                .into()),
 
-            Token::Integer => Ok(Ast::new(
-                tm.str_match
-                    .parse::<i64>()
-                    .map_err(|e| tm.into_parse_error(format!("Error parsing integer value: {e}")))?
-                    .into(),
-            )),
+            Token::Reference => Ok(Node::reference(tm.str_match).into()),
 
-            Token::Reference => Ok(Ast::new(Node::reference(tm.str_match))),
-
-            Token::DoubleQuotedString => Ok(Ast::new(Node::text(tm.str_match))),
+            Token::DoubleQuotedString => Ok(Node::text(tm.str_match).into()),
 
             // TODO: create a new error type for these kinds of things... Error::InternalError
             _ => Err(tm
@@ -173,21 +169,6 @@ mod tests {
     fn try_from_invalid() {
         assert!(
             Ast::try_from(build_token_match(Token::Comma, "bar", build_source_code())).is_err()
-        );
-    }
-
-    #[test]
-    fn try_from_datetime() {
-        let date = build_date_time_ymd(2022, 10, 12);
-
-        assert_eq!(
-            Node::DateTime(date),
-            *(Ast::try_from(build_token_match(
-                Token::DateTime,
-                "2022-10-12",
-                build_source_code()
-            ))
-            .unwrap())
         );
     }
 

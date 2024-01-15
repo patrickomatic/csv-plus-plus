@@ -8,11 +8,7 @@ mod try_from;
 #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
 pub enum DateTime {
     Date(chrono::NaiveDate),
-
-    DateAndTime(chrono::DateTime<chrono::FixedOffset>),
-
-    NaiveDateAndTime(chrono::NaiveDateTime),
-
+    DateAndTime(chrono::NaiveDateTime),
     Time(chrono::NaiveTime),
 }
 

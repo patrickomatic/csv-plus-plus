@@ -10,7 +10,6 @@ impl Default for Options {
             offset: (0, 0),
             overwrite_values: true,
             sheet_name: "empty".to_string(),
-            time_zone: None,
             use_cache: true,
             verbosity: log::LevelFilter::Info,
         }

@@ -90,7 +90,6 @@ impl<'a> AstParser<'a> {
 
             // terminals
             Token::Boolean
-            | Token::DateTime
             | Token::DoubleQuotedString
             | Token::Float
             | Token::Integer

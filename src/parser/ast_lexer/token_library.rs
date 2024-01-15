@@ -19,7 +19,6 @@ pub(crate) struct TokenLibrary {
     pub(crate) comma: Matcher,
     pub(crate) comment: Matcher,
     pub(crate) close_paren: Matcher,
-    pub(crate) date_time: Matcher,
     pub(crate) double_quoted_string: Matcher,
     pub(crate) infix_operator: Matcher,
     pub(crate) integer: Matcher,
@@ -46,19 +45,7 @@ impl TokenLibrary {
             comment: TokenMatcher::new(r"(?m)#.*", Token::Comment),
             code_section_eof: TokenMatcher::new(r"---", Token::CodeSectionEof),
             close_paren: TokenMatcher::new(r"\)", Token::CloseParen),
-            date_time: TokenMatcher::new(
-                r"(?x)
-                 # just a date (and optional TZ)
-                 (?<date0>\d{2,4}-\d{1,2}-\d{1,2})\s*(?<tz0>\w+)?
-                 | 
-                 # just a time (and an optional TZ)
-                 (?<time1>\d+:\d{1,2}(\d+)?)\s*(?<tz1>\w+)?
-                 |
-                 # a time and date
-                 (?<date2>\d{2,4}-\d{1,2}-\d{1,2})\s+(?<time2>\d+:\d{1,2}(\d+)?)\s*(?<tz2>\w+)?
-                ",
-                Token::DateTime,
-            ),
+            // TODO: change to single_quoted_string
             double_quoted_string: TokenMatcher::new(
                 r#""(?:[^"\\]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*""#,
                 Token::DoubleQuotedString,
@@ -106,14 +93,6 @@ mod tests {
     #[test]
     fn library_comment() {
         assert!(token_library().comment.1.is_match("# this is a comment"));
-    }
-
-    #[test]
-    fn library_date_time() {
-        assert!(token_library().date_time.1.is_match("2022-01-12"));
-        assert!(token_library().date_time.1.is_match("2022-01-12 EST"));
-        assert!(token_library().date_time.1.is_match("2022-01-12 11:00"));
-        assert!(token_library().date_time.1.is_match("2022-01-12 11:00 EST"));
     }
 
     #[test]
