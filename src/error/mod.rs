@@ -63,7 +63,7 @@ pub enum Error {
 
     ModuleLoadErrors(collections::HashMap<ModulePath, Error>),
 
-    /// An error ecountered reaading or doing an initial parse of the source code.
+    /// An error encountered reading or doing an initial parse of the source code.
     SourceCodeError {
         filename: path::PathBuf,
         message: String,

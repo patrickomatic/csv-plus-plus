@@ -1,4 +1,4 @@
-//! # Compiler
+//! # Compiter
 //!
 use crate::{
     CliArgs, CompilationTarget, Error, Module, ModuleLoader, ModulePath, Options, Output, Result,
@@ -93,7 +93,7 @@ impl Compiler {
     fn eval(&self, main: Module) -> Result<Module> {
         debug!("Evaluating main module");
 
-        main.eval_fills()
+        main.eval_fills()?
             .eval_spreadsheet(self.options.key_values.clone())
     }
 }

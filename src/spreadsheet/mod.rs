@@ -1,7 +1,8 @@
 //! # Spreadsheet
 //!
 use crate::ast::{Ast, Node, VariableValue, Variables};
-use crate::{csv_reader, ArcSourceCode, Result, Row};
+use crate::fill::ROW_MAX;
+use crate::{csv_reader, ArcSourceCode, EvalError, EvalResult, Result, Row};
 use log::trace;
 use serde::{Deserialize, Serialize};
 use std::collections;
@@ -20,19 +21,28 @@ impl Spreadsheet {
     ///
     /// This has to happen before eval()ing the cells because that process depends on them being in
     /// their final location.
-    // TODO: make sure there is only one infinite fill
-    pub(crate) fn eval_fills(self) -> Self {
+    pub(crate) fn eval_fills(self) -> EvalResult<Self> {
         if self.fills_expanded {
-            return self;
+            return Ok(self);
+        } else if self.has_multiple_infinite_expands() {
+            return Err(EvalError::new(
+                "![[fill]]",
+                "Multiple infinite fills - \
+                    you can only have one without a fill amount and all others must supply an \
+                    amount (i.e., `![[fill=10]]` rather than `![[fill]]`)",
+            ));
         }
 
         let mut rows = vec![];
         let mut row_num = 0;
+        let rows_left_over = self.rows_left_over();
 
         for row in self.rows {
             if let Some(f) = row.fill {
                 let new_fill = f.clone_to_row(row_num);
-                for _ in 0..new_fill.fill_amount(row_num) {
+                let fill_amount = new_fill.amount.unwrap_or(rows_left_over);
+
+                for _ in 0..fill_amount {
                     rows.push(Row {
                         fill: Some(new_fill),
                         ..row.clone()
@@ -45,10 +55,10 @@ impl Spreadsheet {
             }
         }
 
-        Self {
+        Ok(Self {
             rows,
             fills_expanded: true,
-        }
+        })
     }
 
     /// Parse the spreadsheet section of a csv++ source file.
@@ -132,6 +142,30 @@ impl Spreadsheet {
             .max()
             .unwrap_or(0)
     }
+
+    fn has_multiple_infinite_expands(&self) -> bool {
+        let mut saw_infinite = false;
+        for row in &self.rows {
+            if let Some(fill) = row.fill {
+                if fill.amount.is_none() {
+                    if saw_infinite {
+                        return true;
+                    }
+                    saw_infinite = true;
+                }
+            }
+        }
+
+        false
+    }
+
+    fn rows_left_over(&self) -> usize {
+        let total_rows_minus_infinite = self.rows.iter().fold(0, |acc, row| {
+            acc + row.fill.map_or(1, |f| f.amount.unwrap_or(0))
+        });
+
+        ROW_MAX.saturating_sub(total_rows_minus_infinite)
+    }
 }
 
 #[cfg(test)]
@@ -160,7 +194,8 @@ mod tests {
             ],
             fills_expanded: true,
         }
-        .eval_fills();
+        .eval_fills()
+        .unwrap();
 
         assert_eq!(spreadsheet.rows.len(), 2);
     }
@@ -180,7 +215,8 @@ mod tests {
             ],
             fills_expanded: false,
         }
-        .eval_fills();
+        .eval_fills()
+        .unwrap();
 
         assert_eq!(spreadsheet.rows.len(), 40);
         // 0-9 should be Fill { amount: 10, start_row: 0 }
@@ -206,7 +242,8 @@ mod tests {
             ],
             fills_expanded: false,
         }
-        .eval_fills();
+        .eval_fills()
+        .unwrap();
 
         assert_eq!(spreadsheet.rows.len(), 1000);
         // 0-9 should be Fill { amount: 10, start_row: 0 }
@@ -215,6 +252,50 @@ mod tests {
         // and 10-999 should be Fill { amount: None, start_row: 10 }
         assert_eq!(spreadsheet.rows[10].fill.unwrap().start_row, 10.into());
         assert_eq!(spreadsheet.rows[999].fill.unwrap().start_row, 10.into());
+    }
+
+    #[test]
+    fn eval_fills_multiple_and_infinite() {
+        let spreadsheet = Spreadsheet {
+            rows: vec![
+                Row {
+                    fill: Some(Fill::new(0, Some(10))),
+                    ..Default::default()
+                },
+                Row {
+                    fill: Some(Fill::new(10, None)),
+                    ..Default::default()
+                },
+                Row {
+                    fill: Some(Fill::new(990, Some(10))),
+                    ..Default::default()
+                },
+            ],
+            fills_expanded: false,
+        }
+        .eval_fills()
+        .unwrap();
+
+        assert_eq!(spreadsheet.rows.len(), 1000);
+    }
+
+    #[test]
+    fn eval_fills_multiple_infinite() {
+        assert!(Spreadsheet {
+            rows: vec![
+                Row {
+                    fill: Some(Fill::new(0, None)),
+                    ..Default::default()
+                },
+                Row {
+                    fill: Some(Fill::new(10, None)),
+                    ..Default::default()
+                },
+            ],
+            fills_expanded: false,
+        }
+        .eval_fills()
+        .is_err());
     }
 
     #[test]

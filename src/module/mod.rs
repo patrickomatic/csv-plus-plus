@@ -32,11 +32,14 @@ pub struct Module {
 }
 
 impl Module {
-    pub(crate) fn eval_fills(self) -> Self {
-        Self {
-            spreadsheet: self.spreadsheet.eval_fills(),
+    pub(crate) fn eval_fills(self) -> Result<Self> {
+        Ok(Self {
+            spreadsheet: self
+                .spreadsheet
+                .eval_fills()
+                .map_err(|e| self.source_code.eval_error(e, None))?,
             ..self
-        }
+        })
     }
 
     pub(crate) fn eval_spreadsheet(self, external_vars: Variables) -> Result<Self> {

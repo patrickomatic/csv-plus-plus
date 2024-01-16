@@ -6,7 +6,7 @@ use std::cmp;
 
 mod into;
 
-const ROW_MAX: usize = 1000;
+pub(crate) const ROW_MAX: usize = 1000;
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Fill {
@@ -30,17 +30,6 @@ impl Fill {
         } else {
             ROW_MAX.into()
         }
-    }
-
-    pub(crate) fn fill_amount<R: Into<Row>>(&self, row: R) -> usize {
-        self.amount.unwrap_or_else(|| {
-            let y = row.into().y;
-            if y > ROW_MAX {
-                0
-            } else {
-                ROW_MAX - y
-            }
-        })
     }
 
     pub fn new<R: Into<Row>>(start_row: R, amount: Option<usize>) -> Self {
@@ -89,37 +78,5 @@ mod tests {
         };
 
         assert_eq!(fill.end_row(), 1000.into());
-    }
-
-    #[test]
-    fn fill_amount_finite() {
-        let fill = Fill {
-            amount: Some(5),
-            start_row: 0.into(),
-        };
-
-        assert_eq!(fill.fill_amount(0), 5);
-        assert_eq!(fill.fill_amount(10), 5);
-    }
-
-    #[test]
-    fn fill_amount_infinite() {
-        let fill = Fill {
-            amount: None,
-            start_row: 0.into(),
-        };
-
-        assert_eq!(fill.fill_amount(0), 1000);
-        assert_eq!(fill.fill_amount(10), 990);
-    }
-
-    #[test]
-    fn fill_amount_overflow() {
-        let fill = Fill {
-            amount: None,
-            start_row: 999.into(),
-        };
-
-        assert_eq!(fill.fill_amount(1001), 0);
     }
 }
