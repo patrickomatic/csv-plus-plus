@@ -1,4 +1,5 @@
 #![warn(clippy::pedantic)]
+#![deny(warnings)]
 
 mod ast;
 mod border_side;
