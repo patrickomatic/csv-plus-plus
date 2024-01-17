@@ -1,4 +1,4 @@
-use csvpp::{CliArgs, Compiler};
+use csvpp::*;
 use rand::Rng;
 use std::fs;
 use std::path;
@@ -12,6 +12,20 @@ pub(crate) struct Setup {
 }
 
 impl Setup {
+    #[allow(dead_code)]
+    pub(crate) fn str_to_csv(test_name: &str, input: &str) -> String {
+        let s = Self::from_str(test_name, "csv", input);
+        let target = s.compiler.target().unwrap();
+        let module = s
+            .compiler
+            .compile()
+            .map_err(|e| dbg!(e.to_string()))
+            .unwrap();
+        target.write(&module).unwrap();
+
+        s.read_output()
+    }
+
     #[allow(dead_code)]
     pub(crate) fn from_str(test_name: &str, extension: &str, input: &str) -> Self {
         let input_filename = format!("integration_test_{test_name}.csvpp");

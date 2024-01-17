@@ -3,6 +3,7 @@
 ### Features
 
 * Allow for a single infinite fill but any number of finite fills before and after it
+* Support `=` comparison operator
 
 ### Bugfixes
 

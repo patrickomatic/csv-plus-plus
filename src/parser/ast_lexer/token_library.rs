@@ -51,7 +51,7 @@ impl TokenLibrary {
                 Token::DoubleQuotedString,
             ),
             infix_operator: TokenMatcher::new(
-                r"(\^|\+|-|\*|/|&|<|>|<=|>=|<>)",
+                r"(\^|\+|-|\*|/|&|=|<|>|<=|>=|<>)",
                 Token::InfixOperator,
             ),
             integer: TokenMatcher::new(r"-?\d+", Token::Integer),
