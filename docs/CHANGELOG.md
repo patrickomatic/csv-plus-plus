@@ -1,4 +1,4 @@
-## v0.6.1 (upcoming)
+## v0.7.0 (upcoming)
 
 ### Features
 
@@ -9,6 +9,10 @@
 
 * Fix `</<=/>/>=` lexing
 * Don't allow (throw an error) if there are multiple infinite fills
+
+### Breaking Changes
+
+* Operator precedence has changed to match the [OpenFormula spec](https://docs.oasis-open.org/office/v1.2/os/OpenDocument-v1.2-os-part2.html#__RefHeading__1017940_715980110)
 
 ## v0.6.0
 

@@ -12,7 +12,6 @@ type Matcher = TokenMatcher<Token>;
 
 #[derive(Debug)]
 pub(crate) struct TokenLibrary {
-    // pub(crate) a1_reference: Matcher,
     pub(crate) close_parenthesis: Matcher,
     pub(crate) date: Matcher,
     pub(crate) identifier: Matcher,
@@ -26,7 +25,6 @@ impl TokenLibrary {
         static TOKEN_LIBRARY: sync::OnceLock<TokenLibrary> = sync::OnceLock::new();
 
         TOKEN_LIBRARY.get_or_init(|| Self {
-            // a1_reference: TokenMatcher::new(r"[$!\w:]+", Token::A1)?,
             close_parenthesis: TokenMatcher::new(r"\)", Token::CloseParenthesis),
             date: TokenMatcher::new(
                 r"(?:(?:\d\d\d\d\-\d\d\-\d\d)|(?:\d{1,2}\/\d{1,2}\/\d{2,4}))",

@@ -18,6 +18,12 @@ use crate::{ArcSourceCode, SourceCode};
 use std::collections;
 use std::path;
 
+macro_rules! left_power {
+    ($p:expr) => {
+        ($p, $p + 1)
+    };
+}
+
 pub(crate) struct AstParser<'a> {
     lexer: &'a AstLexer<'a>,
     single_expr: bool,
@@ -184,20 +190,32 @@ impl<'a> AstParser<'a> {
         Ok(lhs)
     }
 
+    #[allow(dead_code)]
+    fn prefix_binding_power(op: &str) -> Option<((), u8)> {
+        Some(match op {
+            "+" | "-" => ((), 4),
+            _ => return None,
+        })
+    }
+
     fn postfix_binding_power(op: &str) -> Option<(u8, ())> {
         Some(match op {
-            "(" => (15, ()),
+            "(" => (16, ()),
+            "%" => (5, ()),
             _ => return None,
         })
     }
 
     fn infix_binding_power(op: &str) -> Option<(u8, u8)> {
         Some(match op {
-            "=" | "<" | ">" | "<=" | ">=" | "<>" => (5, 6),
-            "&" => (7, 8),
-            "+" | "-" => (9, 10),
-            "*" | "/" => (11, 12),
-            "^" => (13, 14),
+            ":" => left_power!(1),
+            "!" => left_power!(2),
+            "~" => left_power!(3),
+            "^" => left_power!(6),
+            "*" | "/" => left_power!(7),
+            "+" | "-" => left_power!(9),
+            "&" => left_power!(11),
+            "=" | "<" | ">" | "<=" | ">=" | "<>" => left_power!(13),
             _ => return None,
         })
     }
@@ -268,9 +286,17 @@ mod tests {
         assert_eq!(
             test_parse("1 * 2 + 3 - 4 / 5"),
             Node::infix_fn_call(
-                Node::infix_fn_call(Node::infix_fn_call(1, "*", 2), "+", 3),
-                "-",
-                Node::infix_fn_call(4, "/", 5),
+                Node::infix_fn_call(
+                    Ast::new(1.into()),
+                    "*",
+                    Node::infix_fn_call(
+                        Node::infix_fn_call(Ast::new(2.into()), "+", Ast::new(3.into())),
+                        "-",
+                        Ast::new(4.into())
+                    ),
+                ),
+                "/",
+                Ast::new(5.into())
             )
             .into()
         );
