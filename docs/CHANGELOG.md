@@ -7,6 +7,7 @@
 
 ### Bugfixes
 
+* Fix `</<=/>/>=` lexing
 * Don't allow (throw an error) if there are multiple infinite fills
 
 ## v0.6.0

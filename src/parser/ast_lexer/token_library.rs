@@ -51,7 +51,7 @@ impl TokenLibrary {
                 Token::DoubleQuotedString,
             ),
             infix_operator: TokenMatcher::new(
-                r"(\^|\+|-|\*|/|&|=|<|>|<=|>=|<>)",
+                r"(\^|\+|-|\*|/|&|<=|>=|<>|<|>|=)",
                 Token::InfixOperator,
             ),
             integer: TokenMatcher::new(r"-?\d+", Token::Integer),
@@ -72,73 +72,92 @@ mod tests {
     use super::*;
     use crate::test_utils::*;
 
+    macro_rules! assert_match {
+        ($regex:ident, $match:expr) => {
+            assert!(TokenLibrary::library().$regex.1.is_match($match));
+        };
+    }
+
+    macro_rules! assert_not_match {
+        ($regex:ident, $match:expr) => {
+            assert!(!TokenLibrary::library().$regex.1.is_match($match));
+        };
+    }
+
     fn token_library() -> &'static TokenLibrary {
         TokenLibrary::library()
     }
 
     #[test]
     fn library_boolean() {
-        assert!(token_library().boolean_true.1.is_match("true"));
-        assert!(token_library().boolean_false.1.is_match("false"));
+        assert_match!(boolean_true, "true");
+        assert_match!(boolean_false, "false");
 
-        assert!(!token_library().boolean_true.1.is_match("false"));
-        assert!(!token_library().boolean_false.1.is_match("true"));
+        assert_not_match!(boolean_true, "false");
+        assert_not_match!(boolean_false, "true");
     }
 
     #[test]
     fn library_code_section_eof() {
-        assert!(token_library().code_section_eof.1.is_match("---"));
+        assert_match!(code_section_eof, "---");
     }
 
     #[test]
     fn library_comment() {
-        assert!(token_library().comment.1.is_match("# this is a comment"));
+        assert_match!(comment, "# this is a comment");
     }
 
     #[test]
     fn library_double_quoted_string() {
-        assert!(token_library()
-            .double_quoted_string
-            .1
-            .is_match("\"this is a string\""));
-        assert!(token_library()
-            .double_quoted_string
-            .1
-            .is_match("\"with an \\\" escaped quote\""));
+        assert_match!(double_quoted_string, "\"this is a string\"");
+        assert_match!(double_quoted_string, "\"with an \\\" escaped quote\"");
 
-        assert!(!token_library()
-            .double_quoted_string
-            .1
-            .is_match("\"missing end quote"));
-        assert!(!token_library().double_quoted_string.1.is_match("foo"));
-    }
-
-    #[test]
-    fn library_integer() {
-        assert!(token_library().integer.1.is_match("555"));
-        assert!(token_library().integer.1.is_match("-555"));
-
-        assert!(!token_library().integer.1.is_match("foo"));
+        assert_not_match!(double_quoted_string, "\"missing end quote");
+        assert_not_match!(double_quoted_string, "foo");
     }
 
     #[test]
     fn library_float() {
-        assert!(token_library().float.1.is_match("555.55"));
-        assert!(token_library().float.1.is_match("-555.55"));
+        assert_match!(float, "555.55");
+        assert_match!(float, "-555.55");
 
-        assert!(!token_library().float.1.is_match("555"));
+        assert_not_match!(float, "555");
+    }
+
+    #[test]
+    fn library_integer() {
+        assert_match!(integer, "555");
+        assert_match!(integer, "-555");
+
+        assert_not_match!(integer, "foo");
+    }
+
+    #[test]
+    fn library_infix_operator() {
+        assert_match!(infix_operator, "^");
+        assert_match!(infix_operator, "+");
+        assert_match!(infix_operator, "-");
+        assert_match!(infix_operator, "*");
+        assert_match!(infix_operator, "/");
+        assert_match!(infix_operator, "&");
+        assert_match!(infix_operator, "<=");
+        assert_match!(infix_operator, ">=");
+        assert_match!(infix_operator, "<>");
+        assert_match!(infix_operator, "<");
+        assert_match!(infix_operator, ">");
+        assert_match!(infix_operator, "=");
     }
 
     #[test]
     fn library_reference() {
-        assert!(token_library().reference.1.is_match("foo"));
-        assert!(token_library().reference.1.is_match("A1:B2"));
-        assert!(token_library().reference.1.is_match("Foo!A1:B2"));
+        assert_match!(reference, "foo");
+        assert_match!(reference, "A1:B2");
+        assert_match!(reference, "Foo!A1:B2");
 
         assert!(!token_library().reference.1.is_match("*"));
 
         // it can contain a `.` but it can't start with one
-        assert!(token_library().reference.1.is_match("foo.bar"));
+        assert_match!(reference, "foo.bar");
         assert!(!token_library().reference.1.is_match(".foo"));
     }
 

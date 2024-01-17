@@ -16,11 +16,7 @@ impl Setup {
     pub(crate) fn str_to_csv(test_name: &str, input: &str) -> String {
         let s = Self::from_str(test_name, "csv", input);
         let target = s.compiler.target().unwrap();
-        let module = s
-            .compiler
-            .compile()
-            .map_err(|e| dbg!(e.to_string()))
-            .unwrap();
+        let module = s.compiler.compile().map_err(|e| dbg!(e)).unwrap();
         target.write(&module).unwrap();
 
         s.read_output()
