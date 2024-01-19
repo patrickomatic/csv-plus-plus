@@ -5,6 +5,7 @@
 * Allow for a single infinite fill but any number of finite fills before and after it
 * Support `%` postfix operator
 * Support `=` comparison operator
+* Support `+` prefix operator
 
 ### Bugfixes
 

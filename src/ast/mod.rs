@@ -7,6 +7,7 @@ use std::ops;
 
 mod node;
 pub(crate) use node::Node;
+pub(crate) use node::NumberSign;
 
 /// traits that are implemented for `Node`
 mod display;

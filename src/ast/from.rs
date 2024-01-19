@@ -24,6 +24,7 @@ impl From<f64> for Ast {
         Node::Float {
             value,
             percentage: false,
+            sign: None,
         }
         .into()
     }
@@ -34,6 +35,7 @@ impl From<isize> for Ast {
         Node::Integer {
             value: value as i64,
             percentage: false,
+            sign: None,
         }
         .into()
     }
@@ -44,6 +46,7 @@ impl From<i64> for Ast {
         Node::Integer {
             value,
             percentage: false,
+            sign: None,
         }
         .into()
     }
@@ -54,6 +57,7 @@ impl From<i32> for Ast {
         Node::Integer {
             value: i64::from(value),
             percentage: false,
+            sign: None,
         }
         .into()
     }
@@ -94,6 +98,7 @@ impl From<f64> for Node {
         Self::Float {
             value,
             percentage: false,
+            sign: None,
         }
     }
 }
@@ -103,6 +108,7 @@ impl From<isize> for Node {
         Self::Integer {
             value: value as i64,
             percentage: false,
+            sign: None,
         }
     }
 }
@@ -112,6 +118,7 @@ impl From<i64> for Node {
         Self::Integer {
             value,
             percentage: false,
+            sign: None,
         }
     }
 }
@@ -121,6 +128,7 @@ impl From<i32> for Node {
         Self::Integer {
             value: i64::from(value),
             percentage: false,
+            sign: None,
         }
     }
 }

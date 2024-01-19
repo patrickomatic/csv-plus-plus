@@ -125,11 +125,19 @@ impl<'a> BatchUpdateBuilder<'a> {
                     string_value: Some(t),
                     ..Default::default()
                 },
-                Node::Float { value, percentage } if !percentage => api::ExtendedValue {
+                Node::Float {
+                    value,
+                    percentage,
+                    sign: None,
+                } if !percentage => api::ExtendedValue {
                     number_value: Some(value),
                     ..Default::default()
                 },
-                Node::Integer { value, percentage } if !percentage => api::ExtendedValue {
+                Node::Integer {
+                    value,
+                    percentage,
+                    sign: None,
+                } if !percentage => api::ExtendedValue {
                     #[allow(clippy::cast_precision_loss)]
                     number_value: Some(value as f64),
                     ..Default::default()

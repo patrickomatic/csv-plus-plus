@@ -13,20 +13,19 @@ type Matcher = TokenMatcher<Token>;
 
 #[derive(Debug)]
 pub(crate) struct TokenLibrary {
-    pub(crate) boolean_true: Matcher,
     pub(crate) boolean_false: Matcher,
+    pub(crate) boolean_true: Matcher,
+    pub(crate) close_paren: Matcher,
     pub(crate) code_section_eof: Matcher,
     pub(crate) comma: Matcher,
     pub(crate) comment: Matcher,
-    pub(crate) close_paren: Matcher,
     pub(crate) double_quoted_string: Matcher,
-    pub(crate) infix_operator: Matcher,
-    pub(crate) integer: Matcher,
     pub(crate) float: Matcher,
     pub(crate) fn_def: Matcher,
+    pub(crate) integer: Matcher,
     pub(crate) newline: Matcher,
     pub(crate) open_paren: Matcher,
-    pub(crate) postfix_operator: Matcher,
+    pub(crate) operator: Matcher,
     pub(crate) reference: Matcher,
     pub(crate) use_module: Matcher,
     pub(crate) var_assign: Matcher,
@@ -46,18 +45,13 @@ impl TokenLibrary {
             comment: TokenMatcher::new(r"(?m)#.*", Token::Comment),
             code_section_eof: TokenMatcher::new(r"---", Token::CodeSectionEof),
             close_paren: TokenMatcher::new(r"\)", Token::CloseParen),
-            // TODO: change to single_quoted_string
             double_quoted_string: TokenMatcher::new(
                 r#""(?:[^"\\]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*""#,
                 Token::DoubleQuotedString,
             ),
-            infix_operator: TokenMatcher::new(
-                r"(\^|\+|-|\*|/|&|<=|>=|<>|<|>|=)",
-                Token::InfixOperator,
-            ),
-            postfix_operator: TokenMatcher::new(r"(%)", Token::PostfixOperator),
-            integer: TokenMatcher::new(r"-?\d+", Token::Integer),
-            float: TokenMatcher::new(r"-?\d+\.\d*", Token::Float),
+            operator: TokenMatcher::new(r"(\^|\+|-|\*|/|&|%|<=|>=|<>|<|>|=)", Token::Operator),
+            integer: TokenMatcher::new(r"\d+", Token::Integer),
+            float: TokenMatcher::new(r"\d+\.\d*", Token::Float),
             fn_def: TokenMatcher::new(r"fn\s+", Token::FunctionDefinition),
             newline: TokenMatcher::new(r"\n", Token::Newline),
             open_paren: TokenMatcher::new(r"\(", Token::OpenParen),
@@ -121,7 +115,6 @@ mod tests {
     #[test]
     fn library_float() {
         assert_match!(float, "555.55");
-        assert_match!(float, "-555.55");
 
         assert_not_match!(float, "555");
     }
@@ -129,30 +122,25 @@ mod tests {
     #[test]
     fn library_integer() {
         assert_match!(integer, "555");
-        assert_match!(integer, "-555");
 
         assert_not_match!(integer, "foo");
     }
 
     #[test]
-    fn library_infix_operator() {
-        assert_match!(infix_operator, "^");
-        assert_match!(infix_operator, "+");
-        assert_match!(infix_operator, "-");
-        assert_match!(infix_operator, "*");
-        assert_match!(infix_operator, "/");
-        assert_match!(infix_operator, "&");
-        assert_match!(infix_operator, "<=");
-        assert_match!(infix_operator, ">=");
-        assert_match!(infix_operator, "<>");
-        assert_match!(infix_operator, "<");
-        assert_match!(infix_operator, ">");
-        assert_match!(infix_operator, "=");
-    }
-
-    #[test]
-    fn library_postfix_operator() {
-        assert_match!(postfix_operator, "%");
+    fn library_operator() {
+        assert_match!(operator, "^");
+        assert_match!(operator, "+");
+        assert_match!(operator, "-");
+        assert_match!(operator, "*");
+        assert_match!(operator, "/");
+        assert_match!(operator, "&");
+        assert_match!(operator, "<=");
+        assert_match!(operator, ">=");
+        assert_match!(operator, "<>");
+        assert_match!(operator, "<");
+        assert_match!(operator, ">");
+        assert_match!(operator, "=");
+        assert_match!(operator, "%");
     }
 
     #[test]

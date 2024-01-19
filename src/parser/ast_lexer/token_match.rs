@@ -176,8 +176,9 @@ mod tests {
     fn try_from_float() {
         assert_eq!(
             Node::Float {
+                percentage: false,
+                sign: None,
                 value: 123.45,
-                percentage: false
             },
             *(Ast::try_from(build_token_match(
                 Token::Float,
@@ -192,8 +193,9 @@ mod tests {
     fn try_from_integer() {
         assert_eq!(
             Node::Integer {
+                percentage: false,
+                sign: None,
                 value: 123,
-                percentage: false
             },
             *(Ast::try_from(build_token_match(
                 Token::Integer,

@@ -400,8 +400,9 @@ mod tests {
                 Ast::new(Node::Text("foo".to_string())),
                 Ast::new(Node::Reference("bar".to_string())),
                 Ast::new(Node::Integer {
+                    percentage: false,
+                    sign: None,
                     value: 123,
-                    percentage: false
                 }),
                 Ast::new(Node::DateTime(DateTime::Date(
                     chrono::NaiveDate::from_ymd_opt(2024, 11, 22).unwrap()

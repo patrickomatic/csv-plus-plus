@@ -21,6 +21,10 @@ greater_than_equal := 1 >= 2
 # postfix
 percentage := 1%
 
+# prefix
+positive := +1
+negative := -1
+
 ---
 =plus,
 =minus,
@@ -34,6 +38,8 @@ percentage := 1%
 =greater_than,
 =greater_than_equal,
 =percentage,
+=positive,
+=negative,
 "#,
     );
 
@@ -51,6 +57,8 @@ percentage := 1%
 =(1 > 2),
 =(1 >= 2),
 =1%,
+=+1,
+=-1,
 ",
     );
 }

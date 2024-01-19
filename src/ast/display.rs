@@ -1,6 +1,15 @@
-use super::{Ast, Node, VariableValue};
+use super::{Ast, Node, NumberSign, VariableValue};
 use a1_notation::A1;
 use std::fmt;
+
+impl fmt::Display for NumberSign {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Positive => write!(f, "+"),
+            Self::Negative => write!(f, "-"),
+        }
+    }
+}
 
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -9,8 +18,20 @@ impl fmt::Display for Node {
 
             Self::DateTime(d) => write!(f, "{d}"),
 
-            Self::Float { percentage, value } => {
-                write!(f, "{value}{}", if *percentage { "%" } else { "" })
+            Self::Float {
+                percentage,
+                sign,
+                value,
+            } => {
+                write!(
+                    f,
+                    "{}{value}{}",
+                    match sign {
+                        Some(s) => s.to_string(),
+                        None => String::new(),
+                    },
+                    if *percentage { "%" } else { "" }
+                )
             }
 
             Self::Function { args, body, name } => {
@@ -33,8 +54,20 @@ impl fmt::Display for Node {
                 right,
             } => write!(f, "({left} {operator} {right})"),
 
-            Self::Integer { percentage, value } => {
-                write!(f, "{value}{}", if *percentage { "%" } else { "" })
+            Self::Integer {
+                percentage,
+                value,
+                sign,
+            } => {
+                write!(
+                    f,
+                    "{}{value}{}",
+                    match sign {
+                        Some(s) => s.to_string(),
+                        None => String::new(),
+                    },
+                    if *percentage { "%" } else { "" }
+                )
             }
 
             Self::Reference(r) => write!(f, "{r}"),
@@ -104,8 +137,23 @@ mod tests {
         let f = Node::Float {
             percentage: true,
             value: 123.45,
+            sign: None,
         };
         assert_eq!("123.45%", f.to_string());
+
+        let f = Node::Float {
+            percentage: false,
+            value: 123.45,
+            sign: Some(NumberSign::Negative),
+        };
+        assert_eq!("-123.45", f.to_string());
+
+        let f = Node::Float {
+            percentage: false,
+            value: 123.45,
+            sign: Some(NumberSign::Positive),
+        };
+        assert_eq!("+123.45", f.to_string());
     }
 
     #[test]
@@ -136,9 +184,24 @@ mod tests {
 
         let i = Node::Integer {
             percentage: true,
+            sign: None,
             value: 123,
         };
         assert_eq!("123%", i.to_string());
+
+        let f = Node::Integer {
+            percentage: false,
+            value: 123,
+            sign: Some(NumberSign::Negative),
+        };
+        assert_eq!("-123", f.to_string());
+
+        let f = Node::Integer {
+            percentage: false,
+            value: 123,
+            sign: Some(NumberSign::Positive),
+        };
+        assert_eq!("+123", f.to_string());
     }
 
     #[test]

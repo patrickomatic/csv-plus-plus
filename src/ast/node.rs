@@ -1,5 +1,11 @@
 use super::{Ast, FunctionArgs, FunctionName, VariableName, VariableValue};
 
+#[derive(Clone, Copy, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+pub enum NumberSign {
+    Negative,
+    Positive,
+}
+
 /// The most basic building block of our language AST.  The AST is made recursive by the fact that
 /// function calls and infix function calls can be composed.
 #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
@@ -11,7 +17,11 @@ pub enum Node {
     DateTime(crate::DateTime),
 
     /// A float (with a decimal) value
-    Float { percentage: bool, value: f64 },
+    Float {
+        percentage: bool,
+        sign: Option<NumberSign>,
+        value: f64,
+    },
 
     /// A function definition
     ///
@@ -42,7 +52,11 @@ pub enum Node {
     },
 
     /// An integer
-    Integer { percentage: bool, value: i64 },
+    Integer {
+        percentage: bool,
+        sign: Option<NumberSign>,
+        value: i64,
+    },
 
     /// Somewhat of a catch-all type - when parsing the source code we come across a string like
     /// "abc" which could either be a valid A1 reference or a reference to a variable.  If it's an

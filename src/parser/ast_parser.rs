@@ -12,7 +12,7 @@
 //! * [Which Parsing Approach?](https://news.ycombinator.com/item?id=24480504)
 //!
 use super::ast_lexer::{AstLexer, Token};
-use crate::ast::{Ast, Node, Variables};
+use crate::ast::{Ast, Node, NumberSign, Variables};
 use crate::error::{BadInput, Error, ParseResult, Result};
 use crate::{ArcSourceCode, SourceCode};
 use std::collections;
@@ -91,6 +91,7 @@ impl<'a> AstParser<'a> {
     }
 
     /// The core pratt parser logic for parsing an expression of our AST.  
+    #[allow(clippy::too_many_lines)]
     pub(super) fn expr_bp(&self, min_bp: u8) -> ParseResult<Ast> {
         let lhs_token = self.lexer.next();
 
@@ -112,6 +113,44 @@ impl<'a> AstParser<'a> {
             | Token::Float
             | Token::Integer
             | Token::Reference => Ast::try_from(lhs_token)?,
+
+            Token::Operator => {
+                let op = lhs_token.str_match;
+                let Some(((), r_bp)) = Self::prefix_binding_power(op) else {
+                    return Err(lhs_token.into_parse_error("Invalid prefix operator"));
+                };
+
+                let sign = if op == "+" {
+                    NumberSign::Positive
+                } else {
+                    NumberSign::Negative
+                };
+
+                let rhs = self.expr_bp(r_bp)?;
+                match *rhs {
+                    Node::Integer {
+                        percentage, value, ..
+                    } => Node::Integer {
+                        percentage,
+                        sign: Some(sign),
+                        value,
+                    }
+                    .into(),
+                    Node::Float {
+                        percentage, value, ..
+                    } => Node::Float {
+                        percentage,
+                        sign: Some(sign),
+                        value,
+                    }
+                    .into(),
+                    _ => {
+                        return Err(lhs_token
+                            .into_parse_error("Expected a number or float after prefix operator"))
+                    }
+                }
+            }
+
             _ => return Err(lhs_token.into_parse_error("Expected an expression")),
         };
 
@@ -133,10 +172,7 @@ impl<'a> AstParser<'a> {
                 // end of an expression, stop looping
                 Token::Comma | Token::CloseParen | Token::Eof => break,
 
-                // an infix expression or a function definition
-                Token::InfixOperator | Token::OpenParen | Token::PostfixOperator => {
-                    op_token.str_match
-                }
+                Token::Operator | Token::OpenParen => op_token.str_match,
 
                 // otherwise undefined
                 t => return Err(op_token.into_parse_error(format!("Unexpected token ({t:?})"))),
@@ -175,13 +211,15 @@ impl<'a> AstParser<'a> {
                     Node::FunctionCall { name: id, args }.into()
                 } else if op == "%" {
                     match *lhs {
-                        Node::Float { value, .. } => Node::Float {
+                        Node::Float { sign, value, .. } => Node::Float {
                             percentage: true,
+                            sign,
                             value,
                         }
                         .into(),
-                        Node::Integer { value, .. } => Node::Integer {
+                        Node::Integer { sign, value, .. } => Node::Integer {
                             percentage: true,
+                            sign,
                             value,
                         }
                         .into(),
@@ -223,7 +261,6 @@ impl<'a> AstParser<'a> {
         Ok(lhs)
     }
 
-    #[allow(dead_code)]
     fn prefix_binding_power(op: &str) -> Option<((), u8)> {
         Some(match op {
             "+" | "-" => prefix_power!(17),
@@ -274,7 +311,8 @@ mod tests {
             test_parse("1.50%"),
             Node::Float {
                 percentage: true,
-                value: 1.50
+                value: 1.50,
+                sign: None,
             }
             .into()
         );
@@ -287,7 +325,21 @@ mod tests {
             test_parse("1%"),
             Node::Integer {
                 percentage: true,
-                value: 1
+                value: 1,
+                sign: None,
+            }
+            .into()
+        );
+    }
+
+    #[test]
+    fn parse_prefix_function() {
+        assert_eq!(
+            test_parse("+1"),
+            Node::Integer {
+                percentage: false,
+                value: 1,
+                sign: Some(NumberSign::Positive),
             }
             .into()
         );
