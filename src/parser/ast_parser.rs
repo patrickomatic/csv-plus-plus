@@ -18,9 +18,21 @@ use crate::{ArcSourceCode, SourceCode};
 use std::collections;
 use std::path;
 
-macro_rules! left_power {
+macro_rules! infix_power {
     ($p:expr) => {
-        ($p, $p + 1)
+        (($p * 10) + 1, $p * 10)
+    };
+}
+
+macro_rules! prefix_power {
+    ($p:expr) => {
+        ((), $p * 10)
+    };
+}
+
+macro_rules! postfix_power {
+    ($p:expr) => {
+        ($p * 10, ())
     };
 }
 
@@ -193,29 +205,29 @@ impl<'a> AstParser<'a> {
     #[allow(dead_code)]
     fn prefix_binding_power(op: &str) -> Option<((), u8)> {
         Some(match op {
-            "+" | "-" => ((), 4),
+            "+" | "-" => prefix_power!(17),
             _ => return None,
         })
     }
 
     fn postfix_binding_power(op: &str) -> Option<(u8, ())> {
         Some(match op {
-            "(" => (16, ()),
-            "%" => (5, ()),
+            "(" => postfix_power!(10),
+            "%" => postfix_power!(16),
             _ => return None,
         })
     }
 
     fn infix_binding_power(op: &str) -> Option<(u8, u8)> {
         Some(match op {
-            ":" => left_power!(1),
-            "!" => left_power!(2),
-            "~" => left_power!(3),
-            "^" => left_power!(6),
-            "*" | "/" => left_power!(7),
-            "+" | "-" => left_power!(9),
-            "&" => left_power!(11),
-            "=" | "<" | ">" | "<=" | ">=" | "<>" => left_power!(13),
+            ":" => infix_power!(20),
+            "!" => infix_power!(19),
+            "~" => infix_power!(18),
+            "^" => infix_power!(15),
+            "*" | "/" => infix_power!(14),
+            "+" | "-" => infix_power!(13),
+            "&" => infix_power!(12),
+            "=" | "<" | ">" | "<=" | ">=" | "<>" => infix_power!(11),
             _ => return None,
         })
     }
@@ -267,7 +279,7 @@ mod tests {
     #[test]
     fn parse_explicit_precedence() {
         assert_eq!(
-            test_parse("1 * ((2 + 3) - 4) / 5"),
+            test_parse("(1 * ((2 + 3) - 4)) / 5"),
             Node::infix_fn_call(
                 Node::infix_fn_call(
                     1,
@@ -286,17 +298,13 @@ mod tests {
         assert_eq!(
             test_parse("1 * 2 + 3 - 4 / 5"),
             Node::infix_fn_call(
+                Node::infix_fn_call(Ast::new(1.into()), "*", Ast::new(2.into())),
+                "+",
                 Node::infix_fn_call(
-                    Ast::new(1.into()),
-                    "*",
-                    Node::infix_fn_call(
-                        Node::infix_fn_call(Ast::new(2.into()), "+", Ast::new(3.into())),
-                        "-",
-                        Ast::new(4.into())
-                    ),
-                ),
-                "/",
-                Ast::new(5.into())
+                    Ast::new(3.into()),
+                    "-",
+                    Node::infix_fn_call(Ast::new(4.into()), "/", Ast::new(5.into()))
+                )
             )
             .into()
         );
