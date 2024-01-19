@@ -13,6 +13,7 @@ pub enum Token {
     Integer,
     Newline,
     OpenParen,
+    PostfixOperator,
     Reference,
     UseModule,
     VarAssign,

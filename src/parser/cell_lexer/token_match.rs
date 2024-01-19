@@ -4,7 +4,7 @@ use super::Token;
 use crate::ast::{Ast, Node};
 use crate::error::{BadInput, ParseError, ParseResult};
 use crate::parser::TokenInput;
-use crate::{ArcSourceCode, CharOffset, DateTime, LineNumber};
+use crate::{compiler_error, ArcSourceCode, CharOffset, DateTime, LineNumber};
 use std::fmt;
 
 #[derive(Clone, Debug)]
@@ -57,7 +57,7 @@ impl TokenInput for TokenMatch {
     }
 }
 
-/// A rough conversion from something we saw in a cell definition, to an AST terminal value.  No
+/// A rough conversion from something we saw in a cell definition to an AST terminal value.  No
 /// functions allowed (maybe that will change but we get into variable resolution and complex
 /// parsing)
 impl TryFrom<TokenMatch> for Ast {
@@ -73,13 +73,15 @@ impl TryFrom<TokenMatch> for Ast {
             Token::String => Node::Text(tm.str_match),
             Token::Number | Token::PositiveNumber => {
                 if tm.str_match.contains('.') {
-                    Node::Float(tm.into_float()?)
+                    tm.into_float()?.into()
                 } else {
-                    Node::Integer(tm.into_number()?)
+                    tm.into_number()?.into()
                 }
             }
-            // TODO: make a better "internal error"
-            _ => unimplemented!(),
+            _ => compiler_error(format!(
+                "Unsupported token for converting to an AST: {}",
+                tm.token
+            )),
         }))
     }
 }
@@ -157,7 +159,7 @@ mod tests {
     fn try_from_number() {
         assert_eq!(
             Ast::try_from(build_token_match(Token::Number, "-123")).unwrap(),
-            Ast::new(Node::Integer(-123))
+            Ast::new((-123).into())
         );
     }
 
@@ -165,7 +167,7 @@ mod tests {
     fn try_from_positive_number() {
         assert_eq!(
             Ast::try_from(build_token_match(Token::Number, "123")).unwrap(),
-            Ast::new(Node::Integer(123))
+            Ast::new(123.into())
         );
     }
 }

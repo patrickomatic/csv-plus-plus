@@ -26,6 +26,7 @@ pub(crate) struct TokenLibrary {
     pub(crate) fn_def: Matcher,
     pub(crate) newline: Matcher,
     pub(crate) open_paren: Matcher,
+    pub(crate) postfix_operator: Matcher,
     pub(crate) reference: Matcher,
     pub(crate) use_module: Matcher,
     pub(crate) var_assign: Matcher,
@@ -54,6 +55,7 @@ impl TokenLibrary {
                 r"(\^|\+|-|\*|/|&|<=|>=|<>|<|>|=)",
                 Token::InfixOperator,
             ),
+            postfix_operator: TokenMatcher::new(r"(%)", Token::PostfixOperator),
             integer: TokenMatcher::new(r"-?\d+", Token::Integer),
             float: TokenMatcher::new(r"-?\d+\.\d*", Token::Float),
             fn_def: TokenMatcher::new(r"fn\s+", Token::FunctionDefinition),
@@ -149,6 +151,11 @@ mod tests {
     }
 
     #[test]
+    fn library_postfix_operator() {
+        assert_match!(postfix_operator, "%");
+    }
+
+    #[test]
     fn library_reference() {
         assert_match!(reference, "foo");
         assert_match!(reference, "A1:B2");
@@ -162,7 +169,7 @@ mod tests {
     }
 
     #[test]
-    fn display_tokenmatch() {
+    fn display_token_match() {
         let token_match = TokenMatch {
             token: Token::Comma,
             line_number: 22,

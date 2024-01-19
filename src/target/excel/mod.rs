@@ -120,9 +120,13 @@ impl<'a> Excel<'a> {
             match ast.clone().into_inner() {
                 Node::Boolean(b) => existing_cell.set_value_bool(b),
                 Node::Text(t) => existing_cell.set_value_string(t),
-                Node::Float(f) => existing_cell.set_value_number(f),
+                Node::Float { value, percentage } if !percentage => {
+                    existing_cell.set_value_number(value)
+                }
                 #[allow(clippy::cast_precision_loss)]
-                Node::Integer(i) => existing_cell.set_value_number(i as f64),
+                Node::Integer { value, percentage } if !percentage => {
+                    existing_cell.set_value_number(value as f64)
+                }
                 _ => existing_cell.set_formula(ast.to_string()),
             };
         } else if !cell.value.is_empty() {

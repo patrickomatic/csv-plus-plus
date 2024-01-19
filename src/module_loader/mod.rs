@@ -517,7 +517,7 @@ fn fn_from_a() var_from_b
 
         assert_eq!(
             main_module.scope.functions.get("fn_from_a").unwrap(),
-            &Ast::new(Node::fn_def("fn_from_a", &[], Node::Integer(420)))
+            &Ast::new(Node::fn_def("fn_from_a", &[], 420))
         );
     }
 

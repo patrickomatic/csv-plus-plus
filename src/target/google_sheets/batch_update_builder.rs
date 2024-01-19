@@ -111,6 +111,9 @@ impl<'a> BatchUpdateBuilder<'a> {
         }
     }
 
+    // TODO: make sure `Node::DateTime`s work as expected.  this says we need to convert them to a
+    // double:
+    // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/other#ExtendedValue
     fn user_entered_value(cell: &Cell) -> Option<api::ExtendedValue> {
         if let Some(ast) = &cell.ast {
             Some(match ast.clone().into_inner() {
@@ -122,13 +125,13 @@ impl<'a> BatchUpdateBuilder<'a> {
                     string_value: Some(t),
                     ..Default::default()
                 },
-                Node::Float(f) => api::ExtendedValue {
-                    number_value: Some(f),
+                Node::Float { value, percentage } if !percentage => api::ExtendedValue {
+                    number_value: Some(value),
                     ..Default::default()
                 },
-                Node::Integer(i) => api::ExtendedValue {
+                Node::Integer { value, percentage } if !percentage => api::ExtendedValue {
                     #[allow(clippy::cast_precision_loss)]
-                    number_value: Some(i as f64),
+                    number_value: Some(value as f64),
                     ..Default::default()
                 },
                 _ => api::ExtendedValue {

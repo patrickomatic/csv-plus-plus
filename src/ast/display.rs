@@ -9,7 +9,9 @@ impl fmt::Display for Node {
 
             Self::DateTime(d) => write!(f, "{d}"),
 
-            Self::Float(fl) => write!(f, "{fl}"),
+            Self::Float { percentage, value } => {
+                write!(f, "{value}{}", if *percentage { "%" } else { "" })
+            }
 
             Self::Function { args, body, name } => {
                 let joined_args = args.join(", ");
@@ -31,7 +33,9 @@ impl fmt::Display for Node {
                 right,
             } => write!(f, "({left} {operator} {right})"),
 
-            Self::Integer(i) => write!(f, "{i}"),
+            Self::Integer { percentage, value } => {
+                write!(f, "{value}{}", if *percentage { "%" } else { "" })
+            }
 
             Self::Reference(r) => write!(f, "{r}"),
 
@@ -95,8 +99,13 @@ mod tests {
     #[test]
     fn display_float() {
         let f: Node = 123.45.into();
-
         assert_eq!("123.45", f.to_string());
+
+        let f = Node::Float {
+            percentage: true,
+            value: 123.45,
+        };
+        assert_eq!("123.45%", f.to_string());
     }
 
     #[test]
@@ -124,6 +133,12 @@ mod tests {
     fn display_integer() {
         let i: Node = 123.into();
         assert_eq!("123", i.to_string());
+
+        let i = Node::Integer {
+            percentage: true,
+            value: 123,
+        };
+        assert_eq!("123%", i.to_string());
     }
 
     #[test]

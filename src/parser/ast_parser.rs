@@ -116,10 +116,12 @@ impl<'a> AstParser<'a> {
         };
 
         loop {
+            let op_token = self.lexer.peek();
+
             if self.single_expr {
                 // in the case where we're just looking for a single expr, we can terminate
                 // iteration when we see a reference (beginning of `foo := ...`) or `fn`.
-                match self.lexer.peek().token {
+                match op_token.token {
                     Token::Reference | Token::FunctionDefinition => break,
                     // otherwise do nothing and the next match statement will do it's thing
                     // (regardless of the `single_expr` context)
@@ -127,13 +129,14 @@ impl<'a> AstParser<'a> {
                 }
             }
 
-            let op_token = self.lexer.peek();
             let op = match op_token.token {
                 // end of an expression, stop looping
                 Token::Comma | Token::CloseParen | Token::Eof => break,
 
                 // an infix expression or a function definition
-                Token::InfixOperator | Token::OpenParen => op_token.str_match,
+                Token::InfixOperator | Token::OpenParen | Token::PostfixOperator => {
+                    op_token.str_match
+                }
 
                 // otherwise undefined
                 t => return Err(op_token.into_parse_error(format!("Unexpected token ({t:?})"))),
@@ -170,8 +173,26 @@ impl<'a> AstParser<'a> {
                     }
 
                     Node::FunctionCall { name: id, args }.into()
+                } else if op == "%" {
+                    match *lhs {
+                        Node::Float { value, .. } => Node::Float {
+                            percentage: true,
+                            value,
+                        }
+                        .into(),
+                        Node::Integer { value, .. } => Node::Integer {
+                            percentage: true,
+                            value,
+                        }
+                        .into(),
+                        _ => {
+                            return Err(op_token.into_parse_error(format!(
+                                "Attempted to apply `%` operator to non-number: {lhs}"
+                            )));
+                        }
+                    }
                 } else {
-                    return Err(op_token.into_parse_error("Unexpected infix operator"));
+                    return Err(op_token.into_parse_error("Unexpected postfix operator"));
                 };
 
                 continue;
@@ -248,11 +269,28 @@ mod tests {
     fn parse_float() {
         assert_eq!(test_parse("1.50"), 1.50.into());
         assert_eq!(test_parse("0.65"), 0.65.into());
+
+        assert_eq!(
+            test_parse("1.50%"),
+            Node::Float {
+                percentage: true,
+                value: 1.50
+            }
+            .into()
+        );
     }
 
     #[test]
     fn parse_integer() {
         assert_eq!(test_parse("1"), 1.into());
+        assert_eq!(
+            test_parse("1%"),
+            Node::Integer {
+                percentage: true,
+                value: 1
+            }
+            .into()
+        );
     }
 
     #[test]

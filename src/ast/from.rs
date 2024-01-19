@@ -21,25 +21,41 @@ impl From<DateTime> for Ast {
 
 impl From<f64> for Ast {
     fn from(value: f64) -> Self {
-        Node::Float(value).into()
+        Node::Float {
+            value,
+            percentage: false,
+        }
+        .into()
     }
 }
 
 impl From<isize> for Ast {
     fn from(value: isize) -> Self {
-        Node::Integer(value as i64).into()
+        Node::Integer {
+            value: value as i64,
+            percentage: false,
+        }
+        .into()
     }
 }
 
 impl From<i64> for Ast {
     fn from(value: i64) -> Self {
-        Node::Integer(value).into()
+        Node::Integer {
+            value,
+            percentage: false,
+        }
+        .into()
     }
 }
 
 impl From<i32> for Ast {
     fn from(value: i32) -> Self {
-        Node::Integer(i64::from(value)).into()
+        Node::Integer {
+            value: i64::from(value),
+            percentage: false,
+        }
+        .into()
     }
 }
 
@@ -75,25 +91,37 @@ impl From<DateTime> for Node {
 
 impl From<f64> for Node {
     fn from(value: f64) -> Self {
-        Self::Float(value)
+        Self::Float {
+            value,
+            percentage: false,
+        }
     }
 }
 
 impl From<isize> for Node {
     fn from(value: isize) -> Self {
-        Self::Integer(value as i64)
+        Self::Integer {
+            value: value as i64,
+            percentage: false,
+        }
     }
 }
 
 impl From<i64> for Node {
     fn from(value: i64) -> Self {
-        Self::Integer(value)
+        Self::Integer {
+            value,
+            percentage: false,
+        }
     }
 }
 
 impl From<i32> for Node {
     fn from(value: i32) -> Self {
-        Self::Integer(i64::from(value))
+        Self::Integer {
+            value: i64::from(value),
+            percentage: false,
+        }
     }
 }
 

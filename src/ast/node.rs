@@ -11,7 +11,7 @@ pub enum Node {
     DateTime(crate::DateTime),
 
     /// A float (with a decimal) value
-    Float(f64),
+    Float { percentage: bool, value: f64 },
 
     /// A function definition
     ///
@@ -42,7 +42,7 @@ pub enum Node {
     },
 
     /// An integer
-    Integer(i64),
+    Integer { percentage: bool, value: i64 },
 
     /// Somewhat of a catch-all type - when parsing the source code we come across a string like
     /// "abc" which could either be a valid A1 reference or a reference to a variable.  If it's an
