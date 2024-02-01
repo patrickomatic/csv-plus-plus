@@ -6,6 +6,7 @@
 * Support `%` postfix operator
 * Support `=` comparison operator
 * Support `+` prefix operator
+* Upgrade `env_logger` to v0.11.1
 
 ### Bugfixes
 
