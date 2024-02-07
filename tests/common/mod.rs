@@ -101,6 +101,7 @@ impl Setup {
 #[allow(unused_must_use)]
 impl Drop for Setup {
     fn drop(&mut self) {
+        dbg!("cleanup");
         fs::remove_file(self.object_code_filename());
         if self.cleanup_input {
             fs::remove_file(&self.input_path);

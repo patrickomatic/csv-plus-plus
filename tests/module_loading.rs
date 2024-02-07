@@ -15,9 +15,13 @@ another_defined_in_file1,=555,should be shadowed to be 555
 
 #[test]
 fn module_loading_invalidate_cache() {
+    // we keep around each result so it doesn't get cleaned up and file removed
     let _s1 = compile_str("module_loading_invalidate_cache", "foo := 1\n---\n=foo");
+    dbg!("1");
     let _s2 = compile_str("module_loading_invalidate_cache", "foo := 2\n---\n=foo");
+    dbg!("2");
     let s3 = compile_str("module_loading_invalidate_cache", "foo := 3\n---\n=foo");
+    dbg!("3");
 
     assert_eq!(s3.unwrap().read_output(), "=3\n");
 }
