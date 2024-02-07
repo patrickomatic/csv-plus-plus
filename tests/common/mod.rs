@@ -11,6 +11,20 @@ pub(crate) struct Setup {
     pub(crate) compiler: Compiler,
 }
 
+#[allow(unused_macros)]
+macro_rules! assert_fixture_compiles {
+    ($file:literal, $extension:literal) => {
+        let s = common::Setup::from_fixture($file, $extension);
+        let module = s.compiler.compile().unwrap();
+        let target = s.compiler.target().unwrap();
+
+        assert!(target.write(&module).is_ok());
+    };
+}
+
+#[allow(unused_imports)]
+pub(crate) use assert_fixture_compiles;
+
 impl Setup {
     #[allow(dead_code)]
     pub(crate) fn str_to_csv(test_name: &str, input: &str) -> String {
