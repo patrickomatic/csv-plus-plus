@@ -77,7 +77,7 @@ references cells relative to the place where they are used:
 interest_on_amount := interest_rate * cell_adjacent(A)
 ---
 Interest Rate:,[[var=interest_rate]]0.05
-[[format=bold]Amount,Amount with interest
+[[text=bold]Amount,Amount with interest
 50000,=interest_on_amount
 100000,=interest_on_amount
 500000,=interest_on_amount
