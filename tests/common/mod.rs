@@ -1,42 +1,47 @@
+#![allow(dead_code)]
+
 use csvpp::*;
 use rand::Rng;
 use std::fs;
 use std::path;
 
+#[derive(Debug)]
 pub(crate) struct Setup {
     pub(crate) input_path: path::PathBuf,
     pub(crate) output_path: path::PathBuf,
     cleanup_input: bool,
-    #[allow(dead_code)]
     pub(crate) compiler: Compiler,
 }
 
-#[allow(unused_macros)]
-macro_rules! assert_fixture_compiles {
-    ($file:literal, $extension:literal) => {
-        let s = common::Setup::from_fixture($file, $extension);
-        let module = s.compiler.compile().unwrap();
-        let target = s.compiler.target().unwrap();
-
-        assert!(target.write(&module).is_ok());
-    };
+pub(crate) fn compile_str(test_name: &str, input: &str) -> Result<Setup> {
+    Setup::from_str(test_name, "csv", input).compile()
 }
 
-#[allow(unused_imports)]
-pub(crate) use assert_fixture_compiles;
+pub(crate) fn assert_fixture_compiles_ok(filename: &str, extension: &str) {
+    let setup = Setup::from_fixture(filename, extension).compile();
+    assert!(setup.is_ok());
+}
+
+pub(crate) fn assert_fixture_compiles_eq(filename: &str, expected: &str) {
+    let setup = Setup::from_fixture(filename, "csv").compile().unwrap();
+    assert_eq!(setup.read_output(), expected);
+}
+
+pub(crate) fn assert_str_compiles_eq(test_name: &str, input: &str, expected: &str) {
+    let setup = compile_str(test_name, input).unwrap();
+    assert_eq!(setup.read_output(), expected);
+}
 
 impl Setup {
-    #[allow(dead_code)]
-    pub(crate) fn str_to_csv(test_name: &str, input: &str) -> String {
-        let s = Self::from_str(test_name, "csv", input);
-        let target = s.compiler.target().unwrap();
-        let module = s.compiler.compile().map_err(|e| dbg!(e)).unwrap();
-        target.write(&module).unwrap();
-
-        s.read_output()
+    pub(crate) fn compile(self) -> Result<Self> {
+        {
+            let target = self.compiler.target()?;
+            let module = self.compiler.compile().map_err(|e| dbg!(e))?;
+            target.write(&module).unwrap();
+        }
+        Ok(self)
     }
 
-    #[allow(dead_code)]
     pub(crate) fn from_str(test_name: &str, extension: &str, input: &str) -> Self {
         let input_filename = format!("integration_test_{test_name}.csvpp");
         let input_path = path::Path::new(&input_filename);
@@ -45,7 +50,6 @@ impl Setup {
         Self::from_file(input_path.to_path_buf(), extension, true)
     }
 
-    #[allow(dead_code)]
     pub(crate) fn from_fixture(fixture_name: &str, extension: &str) -> Self {
         let input_path = path::Path::new("playground")
             .join(format!("{fixture_name}.csvpp"))
@@ -87,8 +91,6 @@ impl Setup {
         f
     }
 
-    // this is used by tests but the linter doesn't seem to know that
-    #[allow(dead_code)]
     pub(crate) fn read_output(&self) -> String {
         fs::read_to_string(&self.output_path).unwrap()
     }

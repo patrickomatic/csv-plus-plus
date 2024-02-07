@@ -153,10 +153,15 @@ impl Module {
         if let Some(mut loaded_module) = Self::load_from_object_code_from_filename(filename.clone())
         {
             loaded_module.check_if_is_dirty()?;
-            Ok(loaded_module)
-        } else {
-            Self::load_from_source_from_filename(module_path, filename)
+
+            // if we have a clean cache read we can just return that, otherwise we'll need to
+            // reload below
+            if !loaded_module.is_dirty {
+                return Ok(loaded_module);
+            }
         }
+
+        Self::load_from_source_from_filename(module_path, filename)
     }
 
     pub(crate) fn load_from_cache<P: AsRef<path::Path>>(

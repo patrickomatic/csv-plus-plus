@@ -10,6 +10,7 @@
 
 ### Bugfixes
 
+* Fix a bug where the spreadsheet was not getting re-compiled if a .csvpo file existed
 * Fix `</<=/>/>=` lexing
 * Don't allow (throw an error) if there are multiple infinite fills
 

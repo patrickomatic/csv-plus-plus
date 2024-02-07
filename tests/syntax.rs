@@ -1,8 +1,9 @@
 mod common;
+use common::*;
 
 #[test]
 fn all_operators() {
-    let compiled = common::Setup::str_to_csv(
+    assert_str_compiles_eq(
         "all_operators",
         r#"
 # infix operators
@@ -41,10 +42,6 @@ negative := -1
 =positive,
 =negative,
 "#,
-    );
-
-    assert_eq!(
-        compiled,
         "=(1 + 2),
 =(1 - 2),
 =(1 * 2),
@@ -65,16 +62,12 @@ negative := -1
 
 #[test]
 fn infix_operators_precedence() {
-    let compiled = common::Setup::str_to_csv(
+    assert_str_compiles_eq(
         "infix_operators_precedence",
         r#"
 foo := 1 - 2 + 3 / 4 * 5 ^ 6 & 7 = 8 < 9 <= 10 > 11 >= 12
 ---
 =foo"#,
-    );
-
-    assert_eq!(
-        compiled,
         "=(((1 - (2 + (3 / (4 * (5 ^ 6))))) & 7) = (8 < (9 <= (10 > (11 >= 12)))))\n",
     );
 }
