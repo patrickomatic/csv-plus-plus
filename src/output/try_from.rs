@@ -30,7 +30,7 @@ mod tests {
         };
         let output_target = Output::try_from(&cli_args).unwrap();
 
-        assert_eq!(output_target, Output::Csv(PathBuf::from("foo.csv")))
+        assert_eq!(output_target, Output::Csv(PathBuf::from("foo.csv")));
     }
 
     #[test]
@@ -41,7 +41,7 @@ mod tests {
         };
         let output_target = Output::try_from(&cli_args).unwrap();
 
-        assert_eq!(output_target, Output::Excel(PathBuf::from("foo.xlsx")))
+        assert_eq!(output_target, Output::Excel(PathBuf::from("foo.xlsx")));
     }
 
     #[test]
@@ -66,7 +66,7 @@ mod tests {
         assert_eq!(
             output_target,
             Output::OpenDocument(PathBuf::from("foo.ods"))
-        )
+        );
     }
 
     #[test]

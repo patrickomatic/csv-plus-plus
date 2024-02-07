@@ -167,6 +167,20 @@ mod tests {
     }
 
     #[test]
+    fn parse_variable_assign() {
+        let (scope, _) = test(r"test := 1");
+
+        assert_eq!(scope.variables.len(), 1);
+    }
+
+    #[test]
+    fn parse_variable_assign_function_call() {
+        let (scope, _) = test(r"test := 2 * foo(2)");
+
+        assert_eq!(scope.variables.len(), 1);
+    }
+
+    #[test]
     fn parse_function() {
         let (scope, _) = test("fn foo(a, b) a + b");
         let foo = scope.functions.get("foo").unwrap();
@@ -191,12 +205,12 @@ mod tests {
     #[test]
     fn parse_multiple_functions() {
         let (scope, _) = test(
-            r#"
+            r"
 fn foo()
     1 * 2
 fn bar(a, b)
     a + b
-"#,
+",
         );
 
         assert_eq!(scope.functions.len(), 2);
@@ -232,9 +246,9 @@ bar_var := D1
     #[test]
     fn parse_use_module() {
         let (_, required_modules) = test(
-            r#"
+            r"
 use foo
-"#,
+",
         );
 
         assert_eq!(required_modules.len(), 1);
@@ -244,10 +258,10 @@ use foo
     #[test]
     fn parse_use_module_multiple() {
         let (_, required_modules) = test(
-            r#"
+            r"
 use foo
 use bar
-"#,
+",
         );
 
         assert_eq!(required_modules.len(), 2);

@@ -187,9 +187,11 @@ impl<'a> AstParser<'a> {
                 self.lexer.next();
 
                 lhs = if op == "(" {
+                    let lhs = lhs.into_inner();
                     // function call
-                    let Node::Reference(id) = lhs.into_inner() else {
-                        return Err(op_token.into_parse_error("Unable to get id for fn"));
+                    let Node::Reference(id) = lhs else {
+                        return Err(op_token
+                            .into_parse_error(format!("Unable to get id for fn, saw {:?}", &lhs)));
                     };
 
                     let mut args = vec![];
@@ -270,7 +272,7 @@ impl<'a> AstParser<'a> {
 
     fn postfix_binding_power(op: &str) -> Option<(u8, ())> {
         Some(match op {
-            "(" => postfix_power!(10),
+            "(" => postfix_power!(21),
             "%" => postfix_power!(16),
             _ => return None,
         })
