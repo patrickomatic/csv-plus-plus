@@ -15,6 +15,10 @@ bench:
 	open $(bench_output)/report/index.html
 	open $(bench_output)/eval_fill/profile/flamegraph.svg
 
+.PHONY: install
+install:
+	cargo install --path .
+
 .PHONY: cov
 cov:
 	cargo llvm-cov
