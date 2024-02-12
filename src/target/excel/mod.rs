@@ -169,9 +169,8 @@ impl<'a> Excel<'a> {
 
     fn create_worksheet(&self, spreadsheet: &mut u::Spreadsheet) -> Result<()> {
         let sheet_name = self.compiler.options.sheet_name.clone();
-
         let existing = spreadsheet.get_sheet_by_name(&sheet_name);
-        if existing.is_err() {
+        if existing.is_none() {
             spreadsheet.new_sheet(&sheet_name).map_err(|e| {
                 self.compiler.output_error(format!(
                     "Unable to create new worksheet {sheet_name} in target file: {e}"
@@ -187,11 +186,13 @@ impl<'a> Excel<'a> {
         spreadsheet: &'a mut u::Spreadsheet,
     ) -> Result<&'a mut u::Worksheet> {
         let sheet_name = &self.compiler.options.sheet_name;
-        spreadsheet.get_sheet_by_name_mut(sheet_name).map_err(|e| {
-            self.compiler.output_error(format!(
-                "Unable to open worksheet {sheet_name} in target file: {e}"
-            ))
-        })
+        spreadsheet
+            .get_sheet_by_name_mut(sheet_name)
+            .ok_or_else(|| {
+                self.compiler.output_error(format!(
+                    "Unable to open worksheet {sheet_name} in target file"
+                ))
+            })
     }
 }
 

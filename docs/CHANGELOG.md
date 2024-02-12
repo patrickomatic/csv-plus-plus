@@ -6,7 +6,6 @@
 * Support `%` postfix operator
 * Support `=` comparison operator
 * Support `+` prefix operator
-* Upgrade `env_logger` to v0.11.1
 
 ### Bugfixes
 
@@ -17,6 +16,11 @@
 ### Breaking Changes
 
 * Operator precedence has changed to match the [OpenFormula spec](https://docs.oasis-open.org/office/v1.2/os/OpenDocument-v1.2-os-part2.html#__RefHeading__1017940_715980110)
+
+### Dependency Updates
+
+* `umya-spreadsheet` to v1.2.0
+* `env_logger` to v0.11.1
 
 ## v0.6.0
 

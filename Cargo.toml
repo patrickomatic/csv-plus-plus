@@ -6,7 +6,7 @@ keywords = ["csv++", "csvpp", "csv", "spreadsheet"]
 license = "MIT"
 name = "csvpp"
 repository = "https://github.com/patrickomatic/csv-plus-plus"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 
 [dependencies]
@@ -29,7 +29,7 @@ serde = { version = "1", features = ["derive", "rc"] }
 serde_cbor = "^0.11"
 serde_json = "^1"
 tokio = { version = "^1.35", features = ["rt"] }
-umya-spreadsheet = "^1.1.1"
+umya-spreadsheet = "^1.2.0"
 
 [dev-dependencies]
 criterion = { version = "^0.5", features = ["html_reports"] }
