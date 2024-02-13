@@ -17,9 +17,10 @@ pub(crate) fn compile_str(test_name: &str, input: &str) -> Result<Setup> {
     Setup::from_str(test_name, "csv", input).compile()
 }
 
-pub(crate) fn assert_fixture_compiles_ok(filename: &str, extension: &str) {
+pub(crate) fn assert_fixture_compiles_ok(filename: &str, extension: &str) -> Setup {
     let setup = Setup::from_fixture(filename, extension).compile();
     assert!(setup.is_ok());
+    setup.unwrap()
 }
 
 pub(crate) fn assert_fixture_compiles_eq(filename: &str, expected: &str) {
@@ -101,7 +102,6 @@ impl Setup {
 #[allow(unused_must_use)]
 impl Drop for Setup {
     fn drop(&mut self) {
-        dbg!("cleanup");
         fs::remove_file(self.object_code_filename());
         if self.cleanup_input {
             fs::remove_file(&self.input_path);

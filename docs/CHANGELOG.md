@@ -1,4 +1,4 @@
-## v0.7.0 (upcoming)
+## v0.6.1
 
 ### Features
 
@@ -9,6 +9,7 @@
 
 ### Bugfixes
 
+* Fix bug where styles weren't being applied to Excel files
 * Fix a bug where the spreadsheet was not getting re-compiled if a .csvpo file existed
 * Fix `</<=/>/>=` lexing
 * Don't allow (throw an error) if there are multiple infinite fills

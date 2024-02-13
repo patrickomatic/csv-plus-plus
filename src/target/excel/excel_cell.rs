@@ -85,17 +85,17 @@ impl From<VerticalAlign> for umya_spreadsheet::VerticalAlignmentValues {
 impl<'a> ExcelCell<'a> {
     pub(super) fn has_style(&self) -> bool {
         let cell = self.0;
-        cell.border_color.is_none()
-            && cell.border_style.is_none()
-            && cell.borders.is_empty()
-            && cell.color.is_none()
-            && cell.font_color.is_none()
-            && cell.font_family.is_none()
-            && cell.font_size.is_none()
-            && cell.text_formats.is_empty()
-            && cell.horizontal_align.is_none()
-            && cell.number_format.is_none()
-            && cell.vertical_align.is_none()
+        cell.border_color.is_some()
+            || cell.border_style.is_some()
+            || !cell.borders.is_empty()
+            || cell.color.is_some()
+            || cell.font_color.is_some()
+            || cell.font_family.is_some()
+            || cell.font_size.is_some()
+            || !cell.text_formats.is_empty()
+            || cell.horizontal_align.is_some()
+            || cell.number_format.is_some()
+            || cell.vertical_align.is_some()
     }
 
     fn set_alignment(&self, s: &mut umya_spreadsheet::Style) {
@@ -201,6 +201,19 @@ mod tests {
     use super::*;
 
     #[test]
+    fn has_style() {
+        let cell = Cell::default();
+
+        assert!(!ExcelCell(&cell).has_style());
+
+        let cell = Cell {
+            font_size: Some(50),
+            ..Default::default()
+        };
+        assert!(ExcelCell(&cell).has_style());
+    }
+
+    #[test]
     fn into_border_borderstyle() {
         let dashed: umya_spreadsheet::Border = BorderStyle::Dashed.into();
         assert_eq!(dashed.get_border_style(), "dashed");
@@ -234,7 +247,7 @@ mod tests {
         cell.text_formats.insert(TextFormat::Bold);
 
         let style: umya_spreadsheet::Style = ExcelCell(&cell).into();
-        assert_eq!(style.get_font().clone().unwrap().get_size(), &50.0);
+        assert!((style.get_font().unwrap().get_size() - 50.0).abs() < f64::EPSILON);
     }
 
     #[test]

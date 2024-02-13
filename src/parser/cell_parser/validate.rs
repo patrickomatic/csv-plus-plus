@@ -392,12 +392,12 @@ mod tests {
 
     #[test]
     fn parse_validate_in_list() {
-        let cell = test_parse("[[validate=in_list('foo' bar 123 11/22/2024)]]abc123");
+        let cell = test_parse("[[validate=in_list('foo bar' bar 123 11/22/2024)]]abc123");
 
         assert_eq!(
             cell.data_validation.unwrap(),
             DataValidation::ValueInList(vec![
-                Ast::new(Node::Text("foo".to_string())),
+                Ast::new(Node::Text("foo bar".to_string())),
                 Ast::new(Node::Reference("bar".to_string())),
                 Ast::new(Node::Integer {
                     percentage: false,
