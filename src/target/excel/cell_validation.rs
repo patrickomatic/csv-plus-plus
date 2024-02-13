@@ -200,9 +200,9 @@ impl From<CellValidation> for u::DataValidation {
                     "\"{}\"",
                     &values
                         .into_iter()
-                        .map(|v| v.to_string())
+                        .map(|v| v.to_string().replace('"', ""))
                         .collect::<Vec<String>>()
-                        .join(",")
+                        .join(", ")
                 );
 
                 validation!(
@@ -210,7 +210,7 @@ impl From<CellValidation> for u::DataValidation {
                     List,
                     Equal,
                     list_as_string,
-                    format!("Value in list {list_as_string}")
+                    format!("Value in list: {list_as_string}")
                 )
             }
 
@@ -220,5 +220,42 @@ impl From<CellValidation> for u::DataValidation {
         };
 
         v
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ast::*;
+
+    #[test]
+    fn custom() {
+        let cv: CellValidation = CellValidation(
+            a1_notation::Address::new(0, 0),
+            DataValidation::Custom("foo".to_string()),
+        );
+        let dv: u::DataValidation = cv.into();
+
+        assert!(dv.get_show_input_message());
+        assert_eq!(dv.get_prompt(), "Custom formula: foo");
+        assert_eq!(dv.get_formula1(), "foo");
+    }
+
+    // TODO: cover more scenarios
+
+    #[test]
+    fn value_in_list() {
+        let cv: CellValidation = CellValidation(
+            a1_notation::Address::new(0, 0),
+            DataValidation::ValueInList(vec![
+                Node::reference("foo").into(),
+                Node::reference("foo bar").into(),
+            ]),
+        );
+        let dv: u::DataValidation = cv.into();
+
+        assert!(dv.get_show_input_message());
+        assert_eq!(dv.get_prompt(), "Value in list: \"foo, foo bar\"");
+        assert_eq!(dv.get_formula1(), "\"foo, foo bar\"");
     }
 }

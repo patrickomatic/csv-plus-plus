@@ -11,6 +11,7 @@
 
 * Fix bug where styles weren't being applied to Excel files
 * Fix a bug where the spreadsheet was not getting re-compiled if a .csvpo file existed
+* Fix quoted `in_list` validations like `validate=in_list('foo bar', 'bar foo')`
 * Fix `</<=/>/>=` lexing
 * Don't allow (throw an error) if there are multiple infinite fills
 
