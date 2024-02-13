@@ -20,7 +20,7 @@ impl TryFrom<TokenMatch> for TextFormat {
             "s" | "strikethrough" => Ok(Self::Strikethrough),
             "u" | "underline" => Ok(Self::Underline),
             _ => Err(CellParseError::new(
-                "text_format",
+                "text",
                 input,
                 &[
                     "bold (b)",
