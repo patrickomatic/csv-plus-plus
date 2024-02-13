@@ -27,8 +27,7 @@ bump_homebrew_formula_version:
 clean:
 	rm -rf */ *.tar.gz *.asc
 
-$(target_dir)/%/release/csvpp.exe:
-$(target_dir)/%/release/csvpp:
+$(target_dir)/%/release/csvpp $(target_dir)/%/release/csvpp.exe:
 	cross build --release --target $*
 
 csvpp-$(version)-%.tar.gz: prep_dir=$(@:.tar.gz=)
