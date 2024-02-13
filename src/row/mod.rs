@@ -36,7 +36,7 @@ impl Row {
         scope: &Scope,
         row_a1: a1_notation::Row,
     ) -> Result<Self> {
-        let mut cells = vec![];
+        let mut cells = Vec::with_capacity(self.cells.len());
         for (cell_index, cell) in self.cells.into_iter().enumerate() {
             let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
             let ast = if let Some(a) = cell.ast {

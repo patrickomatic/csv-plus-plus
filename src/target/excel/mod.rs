@@ -43,7 +43,7 @@ impl<'a> Excel<'a> {
     /// to be as light-touch as possible and just loop through our values and set them (or not
     /// depending on the merge strategy).
     fn build_worksheet(&self, module: &Module, worksheet: &mut u::Worksheet) {
-        let mut cell_validations = vec![];
+        let mut cell_validations = Vec::with_capacity(module.spreadsheet.rows.len());
 
         for (row_index, row) in module.spreadsheet.rows.iter().enumerate() {
             for (cell_index, cell) in row.cells.iter().enumerate() {

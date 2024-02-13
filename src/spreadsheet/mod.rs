@@ -33,7 +33,7 @@ impl Spreadsheet {
             ));
         }
 
-        let mut rows = vec![];
+        let mut rows = Vec::with_capacity(self.rows.len());
         let mut row_num = 0;
         let rows_left_over = self.rows_left_over();
 

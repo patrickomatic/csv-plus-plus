@@ -143,7 +143,7 @@ impl Ast {
             // it's a function call but not the one we're looking for - recurse through the
             // arguments
             Node::FunctionCall { args, name } => {
-                let mut called_args = vec![];
+                let mut called_args = Vec::with_capacity(args.len());
                 for arg in args {
                     called_args.push(arg.call_function(fn_id, fn_ast)?);
                 }
