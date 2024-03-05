@@ -64,13 +64,10 @@ impl TryFrom<TokenMatch> for Ast {
     type Error = ParseError;
 
     fn try_from(tm: TokenMatch) -> ParseResult<Self> {
-        // TODO: ideally we could use the AST parser here to take the value and produce an Ast
-        // but it would take some additional work and we already know (based on the `Token`)
-        // exactly what we're trying to convert into
         Ok(Ast::new(match tm.token {
             Token::Date => Node::DateTime(DateTime::try_from(tm)?),
             Token::A1 | Token::Identifier => Node::Reference(tm.str_match),
-            Token::String => Node::Text(tm.str_match),
+            Token::String => Node::parse_text(tm)?,
             Token::Number | Token::PositiveNumber => {
                 if tm.str_match.contains('.') {
                     tm.into_float()?.into()
@@ -103,11 +100,13 @@ mod tests {
 
     #[test]
     fn into_float() {
-        assert_eq!(
-            build_token_match(Token::Number, "1.23")
+        assert!(
+            (build_token_match(Token::Number, "1.23")
                 .into_float()
-                .unwrap(),
-            1.23
+                .unwrap()
+                - 1.23)
+                .abs()
+                < f64::EPSILON
         );
     }
 

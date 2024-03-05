@@ -1,4 +1,6 @@
 use super::{Ast, FunctionArgs, FunctionName, VariableName, VariableValue};
+use crate::error::{BadInput, ParseResult};
+use crate::parser::TokenInput;
 
 #[derive(Clone, Copy, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
 pub enum NumberSign {
@@ -73,6 +75,42 @@ pub enum Node {
     },
 }
 
+fn text_unquote(tm: impl BadInput + TokenInput) -> ParseResult<String> {
+    let t = tm.input();
+    Ok(if t.starts_with('"') {
+        let mut unquoted = String::new();
+        let mut saw_start_quote = false;
+        let mut last_was_quote = false;
+
+        for c in t.chars() {
+            if c == '"' {
+                // two quotes in a row means it's quoted
+                if last_was_quote {
+                    unquoted.push(c);
+                    last_was_quote = false;
+                } else if !saw_start_quote {
+                    saw_start_quote = true;
+                } else {
+                    last_was_quote = true;
+                }
+            } else {
+                if last_was_quote {
+                    return Err(tm.into_parse_error("Malformed double-quoted string"));
+                }
+                unquoted.push(c);
+            }
+        }
+
+        if !last_was_quote {
+            return Err(tm.into_parse_error("Unterminated double-quoted string"));
+        }
+
+        unquoted
+    } else {
+        t.to_string()
+    })
+}
+
 /// Most of these just make testing easier to not have to call `.to_string()` constantly, but they're
 /// also nice for some of the code that needs to build ASTs.
 impl Node {
@@ -119,6 +157,11 @@ impl Node {
         Self::Reference(r.into())
     }
 
+    pub(crate) fn parse_text(t: impl BadInput + TokenInput) -> ParseResult<Self> {
+        Ok(Self::Text(text_unquote(t)?))
+    }
+
+    #[cfg(test)]
     pub(crate) fn text<S: Into<String>>(t: S) -> Self {
         Self::Text(t.into())
     }
@@ -128,5 +171,43 @@ impl Node {
             name: name.into(),
             value,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_utils::*;
+
+    #[test]
+    fn parse_text_unquoted() {
+        assert_eq!(
+            Node::parse_text(build_ast_token_match("foo", build_source_code())).unwrap(),
+            Node::Text("foo".to_string())
+        );
+    }
+
+    #[test]
+    fn parse_text_quoted() {
+        let source_code = build_source_code();
+
+        assert_eq!(
+            Node::parse_text(build_ast_token_match("\"foo\"", source_code.clone())).unwrap(),
+            Node::Text("foo".to_string())
+        );
+        assert_eq!(
+            Node::parse_text(build_ast_token_match(
+                "\"foo \"\"bar\"\"\"",
+                source_code.clone()
+            ))
+            .unwrap(),
+            Node::Text("foo \"bar\"".to_string())
+        );
+    }
+
+    #[test]
+    fn parse_text_error() {
+        let source_code = build_source_code();
+        assert!(Node::parse_text(build_ast_token_match("\"foo", source_code.clone())).is_err());
     }
 }

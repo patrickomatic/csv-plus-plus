@@ -296,8 +296,8 @@ impl<'a> AstParser<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ast::*;
     use crate::test_utils::*;
-    use crate::*;
 
     fn test_parse(input: &str) -> Ast {
         let source_code: SourceCode = (&TestSourceCode::new("xlsx", input)).into();
@@ -332,6 +332,11 @@ mod tests {
             }
             .into()
         );
+    }
+
+    #[test]
+    fn parse_text() {
+        assert_eq!(test_parse("\"foo\""), Node::text("foo").into());
     }
 
     #[test]

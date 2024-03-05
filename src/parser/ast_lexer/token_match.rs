@@ -101,7 +101,7 @@ impl TryFrom<TokenMatch<'_>> for Ast {
 
             Token::Reference => Ok(Node::reference(tm.str_match).into()),
 
-            Token::DoubleQuotedString => Ok(Node::text(tm.str_match).into()),
+            Token::DoubleQuotedString => Ok(Node::parse_text(tm)?.into()),
 
             // TODO: create a new error type for these kinds of things... Error::InternalError
             _ => Err(tm
