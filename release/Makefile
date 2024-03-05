@@ -4,6 +4,8 @@ target_dir := $(root_dir)/target
 
 version := $(shell git describe --tags --candidates 1)
 
+tar := $(shell command -v gtar || echo "tar")
+
 windows_target := x86_64-pc-windows-gnu
 targets := x86_64-unknown-linux-gnu \
 					 x86_64-unknown-linux-musl \
@@ -42,7 +44,7 @@ csvpp-$(version)-%.tar.gz: $(target_dir)/%/release/csvpp
 	cp -R $(doc_files) $(prep_dir)
 	cp $< $(prep_dir)/csv++
 	cp $< $(prep_dir)/csvpp
-	tar -czf $@ $(prep_dir)
+	$(tar) -czf $@ $(prep_dir)
 
 # we need special handling for windows because we're producing something with an .exe extension. we
 # also don't package csv++.exe (maybe we should? just seems kinda odd)
@@ -50,7 +52,7 @@ csvpp-$(version)-$(windows_target).tar.gz: $(target_dir)/$(windows_target)/relea
 	mkdir -p $(prep_dir)
 	cp -R $(doc_files) $(prep_dir)
 	cp $< $(prep_dir)
-	tar -czf $@ $(prep_dir)
+	$(tar) -czf $@ $(prep_dir)
 
 %.tar.gz.asc: %.tar.gz
 	gpg --detach-sign --armor $<
