@@ -5,8 +5,12 @@ target_dir := $(root_dir)/target
 version := $(shell git describe --tags --candidates 1)
 
 windows_target := x86_64-pc-windows-gnu
-targets := x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu \
-					 x86_64-apple-darwin aarch64-apple-darwin \
+targets := x86_64-unknown-linux-gnu \
+					 x86_64-unknown-linux-musl \
+					 aarch64-unknown-linux-gnu \
+					 aarch64-unknown-linux-musl \
+					 x86_64-apple-darwin \
+					 aarch64-apple-darwin \
 					 $(windows_target)
 
 release_dirs := $(addprefix csvpp-$(version)-, $(targets))
@@ -16,16 +20,16 @@ release_file_sigs := $(release_files:=.asc)
 doc_files := $(wildcard $(docs_dir)/*.md) ../LICENSE.txt ../README.md
 doc_files := $(filter-out $(docs_dir)/RELEASE_CHECKLIST.md, $(doc_files))
 
-.PHONY: all
-all: $(release_files) $(release_file_sigs) # bump_homebrew_formula_version
+all: add_targets $(release_files) $(release_file_sigs) # bump_homebrew_formula_version
 
-.PHONY: bump_homebrew_formula_version
 bump_homebrew_formula_version:
 	brew bump-formula-pr csv++
 
-.PHONY: clean
 clean:
 	rm -rf */ *.tar.gz *.asc
+
+add_targets:
+	rustup target add $(targets)
 
 $(target_dir)/%/release/csvpp $(target_dir)/%/release/csvpp.exe:
 	cross build --release --target $*
@@ -50,3 +54,5 @@ csvpp-$(version)-$(windows_target).tar.gz: $(target_dir)/$(windows_target)/relea
 
 %.tar.gz.asc: %.tar.gz
 	gpg --detach-sign --armor $<
+
+.PHONY: all bump_homebrew_formula_version clean
