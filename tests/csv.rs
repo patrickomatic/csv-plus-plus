@@ -30,14 +30,15 @@ fn write_string() {
             "csv",
             r#"
 foo := "1"
+bar := "quoted ""string"""
 ---
-foo,bar,baz,=foo
+foo,bar,baz,=foo,=bar
 "#,
         )
         .compile()
         .unwrap()
         .read_output(),
-        r#"foo,bar,baz,"=""1"""
+        r#"foo,bar,baz,"=""1""","=""quoted ""string"""""
 "#
     );
 }

@@ -46,7 +46,7 @@ impl TokenLibrary {
             code_section_eof: TokenMatcher::new(r"---", Token::CodeSectionEof),
             close_paren: TokenMatcher::new(r"\)", Token::CloseParen),
             double_quoted_string: TokenMatcher::new(
-                r#""(?:[^"\\]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*""#,
+                "\"(?:\"\"|[^\"])*\"",
                 Token::DoubleQuotedString,
             ),
             operator: TokenMatcher::new(r"(\^|\+|-|\*|/|&|%|<=|>=|<>|<|>|=)", Token::Operator),
@@ -106,7 +106,7 @@ mod tests {
     #[test]
     fn library_double_quoted_string() {
         assert_match!(double_quoted_string, "\"this is a string\"");
-        assert_match!(double_quoted_string, "\"with an \\\" escaped quote\"");
+        assert_match!(double_quoted_string, "\"with an \"\" escaped quote\"");
 
         assert_not_match!(double_quoted_string, "\"missing end quote");
         assert_not_match!(double_quoted_string, "foo");
