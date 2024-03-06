@@ -9,9 +9,11 @@ tar := $(shell command -v gtar || echo "tar")
 windows_target := x86_64-pc-windows-gnu
 targets := x86_64-unknown-linux-gnu \
 					 x86_64-unknown-linux-musl \
+					 x86_64-apple-darwin \
+					 i686-unknown-linux-gnu \
+					 i686-unknown-linux-musl \
 					 aarch64-unknown-linux-gnu \
 					 aarch64-unknown-linux-musl \
-					 x86_64-apple-darwin \
 					 aarch64-apple-darwin \
 					 $(windows_target)
 
