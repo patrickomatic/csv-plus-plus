@@ -32,10 +32,7 @@ impl TokenLibrary {
             ),
             identifier: TokenMatcher::new(r"\w+", Token::Identifier),
             number: TokenMatcher::new(r"-?\d+(\.\d+)?", Token::Number),
-            single_quoted_string: TokenMatcher::new(
-                r"'(?:[^'\\]|\\(?:['\\/bfnrt]|u[0-9a-fA-F]{4}))*'",
-                Token::String,
-            ),
+            single_quoted_string: TokenMatcher::new(r"'(?:''|[^'])*'", Token::String),
         })
     }
 }
@@ -79,6 +76,10 @@ mod tests {
     #[test]
     fn build_single_quoted_string() {
         assert!(token_library().single_quoted_string.1.is_match("'foo'"));
+        assert!(token_library()
+            .single_quoted_string
+            .1
+            .is_match("'foo ''bar'''"));
 
         assert!(!token_library().single_quoted_string.1.is_match("foo"));
     }
