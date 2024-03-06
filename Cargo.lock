@@ -4,9 +4,9 @@ version = 3
 
 [[package]]
 name = "a1_notation"
-version = "0.4.2"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f71b5d98e23acab4a99fa207959b3014c0005efbdbc8c9343125abddc226a292"
+checksum = "85e017bc02de5fb7a91dee1dadb124c72680c4d53a4d5c4082e21d70c86be772"
 dependencies = [
  "serde",
 ]

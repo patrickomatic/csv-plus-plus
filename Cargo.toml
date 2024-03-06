@@ -10,7 +10,7 @@ version = "0.7.0"
 edition = "2021"
 
 [dependencies]
-a1_notation = "0.4.2"
+a1_notation = "0.5.0"
 chrono = { version = "^0.4.31", features = ["serde"] }
 clap = { version = "^4", features = ["derive"] }
 colored = "^2.0"
