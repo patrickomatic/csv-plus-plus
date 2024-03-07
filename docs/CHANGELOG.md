@@ -7,6 +7,12 @@
 * Quoting rules for single and double quoted strings have changed to align with OpenFormula and how
   popular spreadsheet programs do it.  Rather than using a backslash like `"a \"quote\""` or 
   `'a \'quote\''` you just double the character.  So `"a ""quote"""` and `'a ''quote'''`.
+* Builds for more platforms:
+  - aarch64-unknown-linux-musl
+  - i686-unknown-linux-gnu
+  - i686-unknown-linux-musl
+  - i686-pc-windows-gnu
+  - x86\_64-unknown-linux-musl
 
 ### Bugfixes
 

@@ -4,6 +4,7 @@ target_dir := $(root_dir)/target
 
 version := $(shell git describe --tags --candidates 1)
 
+# prefer GNU tar otherwise you potentially get weird errors when unpacking it
 tar := $(shell command -v gtar || echo "tar")
 
 targets := aarch64-apple-darwin \
