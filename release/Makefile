@@ -6,16 +6,16 @@ version := $(shell git describe --tags --candidates 1)
 
 tar := $(shell command -v gtar || echo "tar")
 
-windows_target := x86_64-pc-windows-gnu
-targets := x86_64-unknown-linux-gnu \
-					 x86_64-unknown-linux-musl \
-					 x86_64-apple-darwin \
-					 i686-unknown-linux-gnu \
-					 i686-unknown-linux-musl \
+targets := aarch64-apple-darwin \
 					 aarch64-unknown-linux-gnu \
 					 aarch64-unknown-linux-musl \
-					 aarch64-apple-darwin \
-					 $(windows_target)
+					 i686-unknown-linux-gnu \
+					 i686-unknown-linux-musl \
+					 i686-pc-windows-gnu \
+					 x86_64-apple-darwin \
+					 x86_64-pc-windows-gnu \
+					 x86_64-unknown-linux-musl \
+					 x86_64-unknown-linux-gnu
 
 release_dirs := $(addprefix csvpp-$(version)-, $(targets))
 release_files := $(release_dirs:=.tar.gz)
@@ -48,9 +48,12 @@ csvpp-$(version)-%.tar.gz: $(target_dir)/%/release/csvpp
 	cp $< $(prep_dir)/csvpp
 	$(tar) -czf $@ $(prep_dir)
 
+csvpp-$(version)-x86_64-pc-windows-gnu.tar.gz: $(target_dir)/x86_64-pc-windows-gnu/release/csvpp.exe
+csvpp-$(version)-i686-pc-windows-gnu.tar.gz: $(target_dir)/i686-pc-windows-gnu/release/csvpp.exe
+
 # we need special handling for windows because we're producing something with an .exe extension. we
 # also don't package csv++.exe (maybe we should? just seems kinda odd)
-csvpp-$(version)-$(windows_target).tar.gz: $(target_dir)/$(windows_target)/release/csvpp.exe
+csvpp-$(version)-x86_64-pc-windows-gnu.tar.gz csvpp-$(version)-i686-pc-windows-gnu.tar.gz: csvpp-$(version)-%.tar.gz: $(target_dir)/%/release/csvpp.exe
 	mkdir -p $(prep_dir)
 	cp -R $(doc_files) $(prep_dir)
 	cp $< $(prep_dir)
