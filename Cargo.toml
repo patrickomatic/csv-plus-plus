@@ -1,3 +1,4 @@
+workspace = { members = ["csvp"] }
 [package]
 authors = ["Patrick Carroll <patrick@patrickomatic.com>"]
 description = "Compile csv++ source code to a target spreadsheet format"
