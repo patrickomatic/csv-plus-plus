@@ -1,16 +1,19 @@
 #![warn(clippy::pedantic)]
 #![deny(warnings)]
 
-mod cell;
+mod config;
 mod error;
+mod field;
 mod parser;
 mod source_position;
 
-pub use cell::Cell;
+pub use config::Config;
 pub use error::Error;
-pub use parser::{parse, Config};
+pub use field::Field;
+pub use parser::parse;
 pub use source_position::SourcePosition;
 
-pub type ParsedCells = Vec<Vec<Cell>>;
+pub type Record = Vec<Field>;
+pub type Records = Vec<Record>;
 pub type Offset = usize;
 pub type Result<T> = std::result::Result<T, Error>;
