@@ -43,11 +43,16 @@ impl From<PartialField> for Field {
     }
 }
 
-// XXX better name... position is already kinda used
-enum FieldPosition {
+enum FieldResult {
     Some(Field),
     Last(Field),
-    None,
+    Eof,
+}
+
+enum RecordResult {
+    Comment,
+    Eof,
+    Some(Record),
 }
 
 impl From<&mut Parser<'_>> for SourcePosition {
@@ -79,8 +84,12 @@ impl<'a> Parser<'a> {
 
     pub(super) fn parse(&mut self) -> Result<Records> {
         let mut records = vec![];
-        while let Some(record) = self.parse_record()? {
-            records.push(record);
+        loop {
+            match self.parse_record()? {
+                RecordResult::Comment => continue,
+                RecordResult::Some(r) => records.push(r),
+                RecordResult::Eof => break,
+            }
         }
 
         Ok(records)
@@ -90,49 +99,59 @@ impl<'a> Parser<'a> {
         c == self.config.separator
     }
 
-    fn parse_record(&mut self) -> Result<Option<Record>> {
+    fn consume_and_ignore_line(&mut self) {
+        loop {
+            match self.consume_char() {
+                Some('\n') | None => break,
+                Some(_) => continue,
+            }
+        }
+    }
+
+    fn parse_record(&mut self) -> Result<RecordResult> {
+        if let Some('#') = self.chars.peek() {
+            self.consume_and_ignore_line();
+            return Ok(RecordResult::Comment);
+        }
+
         let mut fields = vec![];
         loop {
             match self.parse_field(PartialField::default())? {
-                FieldPosition::Some(f) => fields.push(f),
-                FieldPosition::Last(f) => {
+                FieldResult::Some(f) => fields.push(f),
+                FieldResult::Last(f) => {
                     fields.push(f);
                     break;
                 }
-                FieldPosition::None => break,
+                FieldResult::Eof => return Ok(RecordResult::Eof),
             }
         }
 
-        if fields.is_empty() {
-            return Ok(None);
-        }
-
-        Ok(Some(fields))
+        Ok(RecordResult::Some(fields))
     }
 
-    fn parse_field(&mut self, mut pf: PartialField) -> Result<FieldPosition> {
+    fn parse_field(&mut self, mut pf: PartialField) -> Result<FieldResult> {
         match self.consume_char() {
-            Some(c) if self.is_field_separator(c) => Ok(FieldPosition::Some(pf.into())),
-            Some(c) if is_record_terminator(c) => Ok(FieldPosition::None),
+            Some(c) if self.is_field_separator(c) => Ok(FieldResult::Some(pf.into())),
+            Some(c) if is_record_terminator(c) => Ok(FieldResult::Eof),
             Some(c) if c.is_whitespace() => self.parse_field(pf),
             Some('"') => Ok(self.parse_quoted_field(pf, false)?),
             Some(c) => {
                 pf.push(c, self.into());
                 Ok(self.parse_unquoted_field(pf)?)
             }
-            None => Ok(FieldPosition::None),
+            None => Ok(FieldResult::Eof),
         }
     }
 
-    fn parse_unquoted_field(&mut self, mut pf: PartialField) -> Result<FieldPosition> {
+    fn parse_unquoted_field(&mut self, mut pf: PartialField) -> Result<FieldResult> {
         match self.consume_char() {
-            Some(c) if self.is_field_separator(c) => Ok(FieldPosition::Some(pf.into())),
-            Some(c) if is_record_terminator(c) => Ok(FieldPosition::Last(pf.into())),
+            Some(c) if self.is_field_separator(c) => Ok(FieldResult::Some(pf.into())),
+            Some(c) if is_record_terminator(c) => Ok(FieldResult::Last(pf.into())),
             Some(c) => {
                 pf.push(c, self.into());
                 self.parse_unquoted_field(pf)
             }
-            None => Ok(FieldPosition::Last(pf.into())),
+            None => Ok(FieldResult::Last(pf.into())),
         }
     }
 
@@ -140,7 +159,7 @@ impl<'a> Parser<'a> {
         &mut self,
         mut pf: PartialField,
         escape_mode: bool,
-    ) -> Result<FieldPosition> {
+    ) -> Result<FieldResult> {
         let c = self.consume_char();
         if escape_mode {
             if let Some(c) = c {
@@ -164,14 +183,14 @@ impl<'a> Parser<'a> {
                     // we consume any trailing spaces and make sure there is a ','
                     self.parse_rest_of_quoted_field()?;
 
-                    Ok(FieldPosition::Some(pf.into()))
+                    Ok(FieldResult::Some(pf.into()))
                 }
             }
             Some(c) => {
                 pf.push(c, self.into());
                 self.parse_quoted_field(pf, false)
             }
-            None => Ok(FieldPosition::Some(pf.into())),
+            None => Ok(FieldResult::Some(pf.into())),
         }
     }
 
@@ -228,10 +247,13 @@ pub fn parse<'a>(input: &'a str, config: &'a Config) -> Result<Records> {
 mod tests {
     use super::*;
 
+    fn test_parse(s: &str) -> Records {
+        parse(s, &Config::default()).unwrap()
+    }
+
     #[test]
     fn parse_simple() {
-        let cells = parse("foo,bar,baz", &Config::default()).unwrap();
-
+        let cells = test_parse("foo,bar,baz");
         assert_eq!(cells.len(), 1);
         assert_eq!(cells[0].len(), 3);
         assert_eq!(cells[0][0].value, "foo");
@@ -241,8 +263,7 @@ mod tests {
 
     #[test]
     fn parse_empty_cell() {
-        let cells = parse("foo,,baz", &Config::default()).unwrap();
-
+        let cells = test_parse("foo,,baz");
         assert_eq!(cells.len(), 1);
         assert_eq!(cells[0].len(), 3);
         assert_eq!(cells[0][0].value, "foo");
@@ -252,8 +273,7 @@ mod tests {
 
     #[test]
     fn parse_multiple_lines() {
-        let cells = parse("foo,bar,baz\nfoos,bars,bazs", &Config::default()).unwrap();
-
+        let cells = test_parse("foo,bar,baz\nfoos,bars,bazs");
         assert_eq!(cells.len(), 2);
         assert_eq!(cells[0].len(), 3);
         assert_eq!(cells[0][0].value, "foo");
@@ -266,8 +286,7 @@ mod tests {
 
     #[test]
     fn parse_spaces() {
-        let cells = parse("   foo ,    bar   ,baz", &Config::default()).unwrap();
-
+        let cells = test_parse("   foo ,    bar   ,baz");
         assert_eq!(cells.len(), 1);
         assert_eq!(cells[0].len(), 3);
         assert_eq!(cells[0][0].value, "foo");
@@ -277,25 +296,47 @@ mod tests {
 
     #[test]
     fn parse_trailing_newline() {
-        let cells = parse("foo\nbar\n", &Config::default()).unwrap();
-
+        let cells = test_parse("foo\nbar\n");
         assert_eq!(cells.len(), 2);
     }
 
     #[test]
     fn parse_windows_newline() {
-        let cells = parse("foo\r\nbar\r\nbaz\r\n", &Config::default()).unwrap();
-
+        let cells = test_parse("foo\r\nbar\r\nbaz\r\n");
         assert_eq!(cells.len(), 3);
     }
 
     #[test]
     fn parse_quoted() {
-        let cells = parse(r#""this, is, a, quoted, sentence",bar"#, &Config::default()).unwrap();
-
+        let cells = test_parse(r#""this, is, a, quoted, sentence",bar"#);
         assert_eq!(cells.len(), 1);
         assert_eq!(cells[0].len(), 2);
         assert_eq!(cells[0][0].value, "this, is, a, quoted, sentence");
+        assert_eq!(cells[0][1].value, "bar");
+    }
+
+    #[test]
+    fn parse_quoted_newline() {
+        let cells = test_parse("\"this field \n has a newline\",bar");
+        assert_eq!(cells.len(), 1);
+        assert_eq!(cells[0].len(), 2);
+        assert_eq!(cells[0][0].value, "this field \n has a newline");
+    }
+
+    #[test]
+    fn parse_quoted_quote() {
+        let cells = test_parse("\"this field has a quote \"\"\",bar");
+        assert_eq!(cells.len(), 1);
+        assert_eq!(cells[0].len(), 2);
+        assert_eq!(cells[0][0].value, "this field has a quote \"");
+    }
+
+    #[test]
+    fn parse_comment() {
+        let cells = test_parse("# this is a comment\nfoo,bar\n# another comment");
+        assert_eq!(cells.len(), 1);
+        assert_eq!(cells[0].len(), 2);
+        assert_eq!(cells[0][0].value, "foo");
         assert_eq!(cells[0][1].value, "bar");
     }
 }
