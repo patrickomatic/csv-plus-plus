@@ -108,6 +108,10 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn next_is_newline(&mut self) -> bool {
+        self.chars.peek() == Some(&'\n')
+    }
+
     fn parse_record(&mut self) -> Result<RecordResult> {
         if let Some('#') = self.chars.peek() {
             self.consume_and_ignore_line();
@@ -133,6 +137,11 @@ impl<'a> Parser<'a> {
         match self.consume_char() {
             Some(c) if self.is_field_separator(c) => Ok(FieldResult::Some(pf.into())),
             Some(c) if is_record_terminator(c) => Ok(FieldResult::Eof),
+            Some('\\') if self.next_is_newline() => {
+                // consume the newline then continue parsing this field
+                self.consume_char();
+                self.parse_field(pf)
+            }
             Some(c) if c.is_whitespace() => self.parse_field(pf),
             Some('"') => Ok(self.parse_quoted_field(pf, false)?),
             Some(c) => {
@@ -145,6 +154,11 @@ impl<'a> Parser<'a> {
 
     fn parse_unquoted_field(&mut self, mut pf: PartialField) -> Result<FieldResult> {
         match self.consume_char() {
+            Some('\\') if self.next_is_newline() => {
+                // consume the newline then continue parsing this field
+                self.consume_char();
+                self.parse_unquoted_field(pf)
+            }
             Some(c) if self.is_field_separator(c) => Ok(FieldResult::Some(pf.into())),
             Some(c) if is_record_terminator(c) => Ok(FieldResult::Last(pf.into())),
             Some(c) => {
@@ -338,5 +352,13 @@ mod tests {
         assert_eq!(cells[0].len(), 2);
         assert_eq!(cells[0][0].value, "foo");
         assert_eq!(cells[0][1].value, "bar");
+    }
+
+    #[test]
+    fn parse_multiline_field() {
+        let cells = test_parse("this \\\nspans \\\nmultiple lines");
+        assert_eq!(cells.len(), 1);
+        assert_eq!(cells[0].len(), 1);
+        assert_eq!(cells[0][0].value, "this spans multiple lines");
     }
 }
