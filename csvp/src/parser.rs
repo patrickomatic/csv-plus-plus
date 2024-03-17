@@ -16,7 +16,7 @@
 //!
 //! * [RFC 4180: Common Format and MIME Type for Comma-Separated Values (CSV) Files](https://www.ietf.org/rfc/rfc4180.txt)
 //!
-use super::{Config, Error, Field, Record, Records, Result, SourcePosition};
+use super::{Config, Error, Field, PartialField, Record, Records, Result, SourcePosition};
 use std::iter;
 use std::str;
 
@@ -26,21 +26,6 @@ struct Parser<'a> {
     chars: iter::Peekable<str::Chars<'a>>,
     source_line: usize,
     source_offset: usize,
-}
-
-#[derive(Debug, Default)]
-struct PartialField {
-    field: String,
-    positions: Vec<SourcePosition>,
-}
-
-impl From<PartialField> for Field {
-    fn from(pf: PartialField) -> Self {
-        Field {
-            value: pf.field.trim().to_string(),
-            positions: pf.positions,
-        }
-    }
 }
 
 enum FieldResult {
@@ -58,13 +43,6 @@ enum RecordResult {
 impl From<&mut Parser<'_>> for SourcePosition {
     fn from(p: &mut Parser) -> Self {
         SourcePosition::new(p.source_offset, p.source_line)
-    }
-}
-
-impl PartialField {
-    fn push(&mut self, c: char, position: SourcePosition) {
-        self.field.push(c);
-        self.positions.push(position);
     }
 }
 
