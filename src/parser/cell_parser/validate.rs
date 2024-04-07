@@ -13,12 +13,12 @@ macro_rules! take_parens {
 }
 
 macro_rules! validate {
-    ($self:ident, $variant:ident, $tt:tt) => {
+    ($self:ident, $variant:ident, $value:expr) => {
         fn $variant(&mut $self) -> ParseResult<()> {
             if $self.is_row_options {
-                $self.row.data_validation = Some($tt);
+                $self.row.data_validation = Some($value);
             } else {
-                $self.cell.data_validation = Some($tt);
+                $self.cell.data_validation = Some($value);
             }
 
             Ok(())
@@ -93,99 +93,131 @@ impl CellParser<'_, '_> {
         }
     }
 
-    validate! {self, validate_custom, {
+    validate!(
+        self,
+        validate_custom,
         DataValidation::Custom(self.one_string_in_parens()?)
-    }}
+    );
 
-    validate! {self, validate_date_after, {
+    validate!(
+        self,
+        validate_date_after,
         DataValidation::DateAfter(self.one_date_in_parens()?)
-    }}
+    );
 
-    validate! {self, validate_date_before, {
+    validate!(
+        self,
+        validate_date_before,
         DataValidation::DateBefore(self.one_date_in_parens()?)
-    }}
+    );
 
-    validate! {self, validate_date_between, {
+    validate!(self, validate_date_between, {
         let (a, b) = self.two_dates_in_parens()?;
         DataValidation::DateBetween(a, b)
-    }}
+    });
 
-    validate! {self, validate_date_equal_to, {
+    validate!(
+        self,
+        validate_date_equal_to,
         DataValidation::DateEqualTo(self.one_date_in_parens()?)
-    }}
+    );
 
-    validate! {self, validate_date_is_valid, {
-        DataValidation::DateIsValid
-    }}
+    validate!(self, validate_date_is_valid, DataValidation::DateIsValid);
 
-    validate! {self, validate_date_not_between, {
+    validate!(self, validate_date_not_between, {
         let (a, b) = self.two_dates_in_parens()?;
         DataValidation::DateNotBetween(a, b)
-    }}
+    });
 
-    validate! {self, validate_date_on_or_after, {
+    validate!(
+        self,
+        validate_date_on_or_after,
         DataValidation::DateOnOrAfter(self.one_date_in_parens()?)
-    }}
+    );
 
-    validate! {self, validate_date_on_or_before, {
+    validate!(
+        self,
+        validate_date_on_or_before,
         DataValidation::DateOnOrBefore(self.one_date_in_parens()?)
-    }}
+    );
 
-    validate! {self, validate_number_between, {
+    validate!(self, validate_number_between, {
         let (a, b) = self.two_numbers_in_parens()?;
         DataValidation::NumberBetween(a, b)
-    }}
+    });
 
-    validate! {self, validate_number_equal_to, {
+    validate!(
+        self,
+        validate_number_equal_to,
         DataValidation::NumberEqualTo(self.one_number_in_parens()?)
-    }}
+    );
 
-    validate! {self, validate_number_greater_than, {
+    validate!(
+        self,
+        validate_number_greater_than,
         DataValidation::NumberGreaterThan(self.one_number_in_parens()?)
-    }}
+    );
 
-    validate! {self, validate_number_greater_than_or_equal_to, {
+    validate!(
+        self,
+        validate_number_greater_than_or_equal_to,
         DataValidation::NumberGreaterThanOrEqualTo(self.one_number_in_parens()?)
-    }}
+    );
 
-    validate! {self, validate_number_not_between, {
+    validate!(self, validate_number_not_between, {
         let (a, b) = self.two_numbers_in_parens()?;
         DataValidation::NumberNotBetween(a, b)
-    }}
+    });
 
-    validate! {self, validate_number_not_equal_to, {
+    validate!(
+        self,
+        validate_number_not_equal_to,
         DataValidation::NumberNotEqualTo(self.one_number_in_parens()?)
-    }}
+    );
 
-    validate! {self, validate_number_less_than, {
+    validate!(
+        self,
+        validate_number_less_than,
         DataValidation::NumberLessThan(self.one_number_in_parens()?)
-    }}
+    );
 
-    validate! {self, validate_number_less_than_or_equal_to, {
+    validate!(
+        self,
+        validate_number_less_than_or_equal_to,
         DataValidation::NumberLessThanOrEqualTo(self.one_number_in_parens()?)
-    }}
+    );
 
-    validate! {self, validate_text_contains, {
+    validate!(
+        self,
+        validate_text_contains,
         DataValidation::TextContains(self.one_string_in_parens()?)
-    }}
+    );
 
-    validate! {self, validate_text_does_not_contain, {
+    validate!(
+        self,
+        validate_text_does_not_contain,
         DataValidation::TextDoesNotContain(self.one_string_in_parens()?)
-    }}
+    );
 
-    validate! {self, validate_text_equal_to, {
+    validate!(
+        self,
+        validate_text_equal_to,
         DataValidation::TextEqualTo(self.one_string_in_parens()?)
-    }}
+    );
 
-    validate! {self, validate_text_is_valid_email, {
+    validate!(
+        self,
+        validate_text_is_valid_email,
         DataValidation::TextIsValidEmail
-    }}
+    );
 
-    validate! {self, validate_text_is_valid_url, {
+    validate!(
+        self,
+        validate_text_is_valid_url,
         DataValidation::TextIsValidUrl
-    }}
+    );
 
-    validate! {self, validate_value_in_list, {
+    validate!(self, validate_value_in_list, {
         take_parens!(self, {
             let mut values: Vec<Ast> = vec![];
             loop {
@@ -198,7 +230,9 @@ impl CellParser<'_, '_> {
                 //
                 // If none of these are seen but it's not a closing-paren either then it's a syntax error
                 //
-                let m = self.lexer.maybe_take_date()
+                let m = self
+                    .lexer
+                    .maybe_take_date()
                     .or_else(|| self.lexer.maybe_take_number())
                     .or_else(|| self.lexer.maybe_take_single_quoted_string().unwrap_or(None))
                     .or_else(|| self.lexer.maybe_take_identifier());
@@ -206,17 +240,19 @@ impl CellParser<'_, '_> {
                 if let Some(tm) = m {
                     values.push(Ast::try_from(tm)?);
                 } else {
-                    return Err(self.lexer.unknown_string("Expected a date, number or string"));
+                    return Err(self
+                        .lexer
+                        .unknown_string("Expected a date, number or string"));
                 }
 
                 if self.lexer.peek_close_parenthesis() {
-                    break
+                    break;
                 }
             }
 
             DataValidation::ValueInList(values)
         })
-    }}
+    });
 
     validate!(self, validate_value_in_range, {
         take_parens!(self, {

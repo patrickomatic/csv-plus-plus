@@ -20,7 +20,7 @@ pub(crate) struct CellParser<'a, 'b: 'a> {
 }
 
 macro_rules! assign_option {
-    ($self:ident, $attr:ident, $value:tt) => {{
+    ($self:ident, $attr:ident, $value:expr) => {{
         if $self.is_row_options {
             $self.row.$attr = Some($value);
         } else {
@@ -31,7 +31,7 @@ macro_rules! assign_option {
 }
 
 macro_rules! insert_option {
-    ($self:ident, $attr:ident, $value:tt) => {{
+    ($self:ident, $attr:ident, $value:expr) => {{
         if $self.is_row_options {
             $self.row.$attr.insert($value);
         } else {
