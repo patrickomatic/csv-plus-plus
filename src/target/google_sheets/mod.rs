@@ -39,6 +39,7 @@ fn hyper_client() -> hyper::Client<HyperConnector> {
     hyper::Client::builder().build(
         hyper_rustls::HttpsConnectorBuilder::new()
             .with_native_roots()
+            .unwrap() // TODO get rid of unwrap
             .https_or_http()
             .enable_http1()
             .enable_http2()
