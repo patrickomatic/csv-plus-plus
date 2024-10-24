@@ -1,9 +1,7 @@
 //! # `DataValidation`
 //!
-//! * [Google
-//! Sheets](https://developers.google.com/apps-script/reference/spreadsheet/data-validation-criteria)
-//! * [Umya
-//! Spreadsheet](https://docs.rs/umya-spreadsheet/latest/umya_spreadsheet/structs/enum.DataValidationValues.html)
+//! * [Google Sheets](https://developers.google.com/apps-script/reference/spreadsheet/data-validation-criteria)
+//! * [Umya Spreadsheet](https://docs.rs/umya-spreadsheet/latest/umya_spreadsheet/structs/enum.DataValidationValues.html)
 //!
 use crate::ast::Ast;
 use crate::DateTime;

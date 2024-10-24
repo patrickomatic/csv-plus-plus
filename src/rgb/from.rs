@@ -2,7 +2,7 @@ use super::Rgb;
 
 fn safe_scale_to_1(value: u8) -> f32 {
     let val = f32::from(value) / 255.0;
-    if val == std::f32::INFINITY {
+    if val == f32::INFINITY {
         0.0
     } else {
         val
@@ -32,8 +32,8 @@ mod tests {
         };
         let tuple: (f32, f32, f32) = rgb.into();
 
-        assert_eq!(tuple.0, 0.0);
-        assert_eq!(tuple.1, 1.0);
-        assert_eq!(tuple.2, 0.666_666_7);
+        assert_eq!(tuple.0, 0.0_f32);
+        assert_eq!(tuple.1, 1.0_f32);
+        assert_eq!(tuple.2, 0.666_666_7_f32);
     }
 }

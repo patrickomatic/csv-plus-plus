@@ -24,7 +24,7 @@ impl Compiler {
     /// # Errors
     ///
     /// * `Error` for anything that can go wrong during compilation.  This can be a huge range,
-    /// anything is really game at this point.
+    ///     anything is really game at this point.
     pub fn compile(&self) -> Result<Module> {
         debug!("Loading module from file {}", self.input_filename.display());
 

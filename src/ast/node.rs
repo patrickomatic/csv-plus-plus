@@ -28,13 +28,13 @@ pub enum Node {
     /// A function definition
     ///
     /// * `args` - The arguments that the function can take.  When called, each of the args will be
-    /// expanded in the `body`
+    ///     expanded in the `body`
     ///
     /// * `body` - An AST of any kind which can contain references to it's various `args`.  They'll
-    /// be resolved each time it's called (just as you'd expect for a function call)
+    ///     be resolved each time it's called (just as you'd expect for a function call)
     ///
     /// * `name` - The name you can call the function by.  Letters, numbers and underscore are
-    /// allowed.
+    ///     allowed.
     Function {
         args: FunctionArgs,
         body: Ast,

@@ -1,4 +1,3 @@
-//!
 use super::super::{file_backer_upper, CompilationTarget};
 use super::Excel;
 use crate::{Module, Result};
