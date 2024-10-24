@@ -25,7 +25,11 @@ release_file_sigs := $(release_files:=.asc)
 doc_files := $(wildcard $(docs_dir)/*.md) ../LICENSE.txt ../README.md
 doc_files := $(filter-out $(docs_dir)/RELEASE_CHECKLIST.md, $(doc_files))
 
-all: add_targets $(release_files) $(release_file_sigs) # bump_homebrew_formula_version
+all: add_targets \
+	install_deps \
+	$(release_files) \
+	$(release_file_sigs) \
+	# bump_homebrew_formula_version
 
 bump_homebrew_formula_version:
 	brew bump-formula-pr csv++
@@ -35,6 +39,9 @@ clean:
 
 add_targets:
 	rustup target add $(targets)
+
+install_deps:
+	cargo install cross
 
 $(target_dir)/%/release/csvpp $(target_dir)/%/release/csvpp.exe:
 	cross build --release --target $*
