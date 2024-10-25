@@ -7,7 +7,7 @@ all:
 	cargo clippy -- -D warnings
 	cargo fmt --all -- --check
 	cargo test
-	make -C release/
+	make -j 5 -C release/
 
 .PHONY: bench
 bench:
