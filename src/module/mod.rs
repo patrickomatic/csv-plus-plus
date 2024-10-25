@@ -13,7 +13,7 @@ use crate::parser::code_section_parser::CodeSectionParser;
 use crate::{
     compiler_error, ArcSourceCode, Error, ModulePath, Result, Scope, SourceCode, Spreadsheet,
 };
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use rayon::prelude::*;
 use std::{cmp, fs, path};
 
@@ -89,9 +89,7 @@ impl Module {
             Err(e) => compiler_error(format!("Error opening object code: {e}")),
         };
 
-        let Ok(loaded_module): std::result::Result<Self, serde_cbor::Error> =
-            serde_cbor::from_reader(obj_file_reader)
-        else {
+        let Ok(loaded_module) = bincode::deserialize_from(obj_file_reader) else {
             // if we fail to load the old object file just warn about it and move on.  for whatever
             // reason (written by an old version) it's not compatible with our current version
             warn!(
@@ -183,12 +181,18 @@ impl Module {
         }
     }
 
-    pub(crate) fn write_object_file(&self) -> Result<()> {
+    pub(crate) fn write_object_file(&mut self) -> Result<()> {
         let object_code_filename = self.source_code.object_code_filename();
+
+        debug!("Serializing {}", self.module_path);
+        let encoded = bincode::serialize(&self).map_err(|e| Error::SourceCodeError {
+            filename: object_code_filename.clone(),
+            message: format!("Error serializing object code: {e}"),
+        })?;
 
         info!("Writing object file to {}", object_code_filename.display());
 
-        let object_file = fs::File::create(&object_code_filename).map_err(|e| {
+        fs::write(&object_code_filename, encoded).map_err(|e| {
             error!("IO error: {e:?}");
             Error::SourceCodeError {
                 filename: object_code_filename,
@@ -196,13 +200,7 @@ impl Module {
             }
         })?;
 
-        match serde_cbor::to_writer(object_file, self) {
-            Err(e) => {
-                error!("CBOR write error: {e:?}");
-                compiler_error(format!("Error serializing object code for writing: {e}"));
-            }
-            _ => Ok(()),
-        }
+        Ok(())
     }
 
     /// In the case that `self` was deserialized from an object file (`.csvpo`), we need to see if

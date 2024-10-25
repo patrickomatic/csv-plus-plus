@@ -2,6 +2,8 @@
 
 ### Features
 
+* Switch from CBOR to bincode for object file serialization
+
 ### Dependency Updates
 
 
