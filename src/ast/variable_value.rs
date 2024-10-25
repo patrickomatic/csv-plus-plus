@@ -10,7 +10,7 @@ pub enum VariableValue {
     /// ---
     /// foo,[[var=bar]],baz
     /// ```
-    Absolute(a1_notation::Address),
+    Absolute(a1::Address),
 
     /// If a variable is defined in the code section it will have an AST as a value.
     ///
@@ -27,10 +27,7 @@ pub enum VariableValue {
     /// ---
     /// ![[fill]]foo,[[var=foo]],baz
     /// ```
-    ColumnRelative {
-        column: a1_notation::Column,
-        fill: Fill,
-    },
+    ColumnRelative { column: a1::Column, fill: Fill },
 
     /// References a row (outside of a fill)
     ///
@@ -38,7 +35,7 @@ pub enum VariableValue {
     /// ---
     /// ![[var=foo]]foo,bar,baz
     /// ```
-    Row(a1_notation::Row),
+    Row(a1::Row),
 
     /// A row within a fill.
     ///
@@ -46,11 +43,11 @@ pub enum VariableValue {
     /// ---
     /// ![[var=foo / fill=20]]foo,bar,baz
     /// ```
-    RowRelative { row: a1_notation::Row, fill: Fill },
+    RowRelative { row: a1::Row, fill: Fill },
 }
 
 impl VariableValue {
-    pub(crate) fn into_ast(self, position: Option<a1_notation::Address>) -> Ast {
+    pub(crate) fn into_ast(self, position: Option<a1::Address>) -> Ast {
         if let Some(position) = position {
             match self {
                 // absolute value, just turn it into a Ast
@@ -63,32 +60,32 @@ impl VariableValue {
                 // fill, it's the value at that location.  If it's outside the fill
                 // it's the range that it represents
                 VariableValue::ColumnRelative { fill, column } => {
-                    let fill_a1: a1_notation::A1 = fill.into();
+                    let fill_a1: a1::A1 = fill.into();
 
                     Ast::new(if fill_a1.contains(&position.into()) {
                         position.with_x(column.x).into()
                     } else {
-                        let row_range: a1_notation::A1 = fill.into();
+                        let row_range: a1::A1 = fill.into();
                         row_range.with_x(column.x).into()
                     })
                 }
 
                 VariableValue::Row(row) => {
-                    let a1: a1_notation::A1 = row.into();
+                    let a1: a1::A1 = row.into();
                     Ast::new(a1.into())
                 }
 
                 VariableValue::RowRelative { fill, .. } => {
-                    let fill_a1: a1_notation::A1 = fill.into();
+                    let fill_a1: a1::A1 = fill.into();
 
                     Ast::new(if fill_a1.contains(&position.into()) {
                         // we're within the scope (fill) so it's the row we're on
-                        let row_a1: a1_notation::A1 = position.row.into();
+                        let row_a1: a1::A1 = position.row.into();
                         row_a1.into()
                     } else {
                         // we're outside the scope (fill), so it represents the entire
                         // range contained by it (the scope)
-                        let row_range: a1_notation::A1 = fill.into();
+                        let row_range: a1::A1 = fill.into();
                         row_range.into()
                     })
                 }
@@ -98,7 +95,7 @@ impl VariableValue {
                 VariableValue::Absolute(address) => Ast::new(address.into()),
                 VariableValue::Ast(ast) => ast,
                 VariableValue::Row(row) => {
-                    let a1: a1_notation::A1 = row.into();
+                    let a1: a1::A1 = row.into();
                     Ast::new(a1.into())
                 }
                 _ => compiler_error(
@@ -116,23 +113,23 @@ mod tests {
     use crate::*;
     use std::panic;
 
-    fn build_position() -> a1_notation::Address {
-        a1_notation::Address::new(0, 0)
+    fn build_position() -> a1::Address {
+        a1::Address::new(0, 0)
     }
 
     #[test]
     fn into_ast_absolute_some_position() {
         assert_eq!(
             VariableValue::Absolute(build_position()).into_ast(Some(build_position())),
-            a1_notation::cell(0, 0).into()
+            a1::cell(0, 0).into()
         );
     }
 
     #[test]
     fn into_ast_absolute_none_position() {
         assert_eq!(
-            VariableValue::Absolute(a1_notation::Address::new(0, 0)).into_ast(None),
-            a1_notation::cell(0, 0).into()
+            VariableValue::Absolute(a1::Address::new(0, 0)).into_ast(None),
+            a1::cell(0, 0).into()
         );
     }
 

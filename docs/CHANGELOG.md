@@ -13,6 +13,7 @@
   - i686-unknown-linux-musl
   - i686-pc-windows-gnu
   - x86\_64-unknown-linux-musl
+* Switch from `a1_notation` crate to `a1`
 
 ### Bugfixes
 

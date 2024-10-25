@@ -21,7 +21,7 @@ pub(crate) struct AstLexer<'a> {
     lines: LineNumber,
     eof_position: CharOffset,
     source_code: ArcSourceCode,
-    position: Option<a1_notation::Address>,
+    position: Option<a1::Address>,
 }
 
 /// For better or worse the tokens are not mutually exclusive - some of them are subsets of another
@@ -54,7 +54,7 @@ fn matchers_ordered(tl: &TokenLibrary) -> [&TokenMatcher<Token>; 16] {
 impl<'a> AstLexer<'a> {
     pub(crate) fn new(
         input: &'a str,
-        position: Option<a1_notation::Address>,
+        position: Option<a1::Address>,
         source_code: ArcSourceCode,
     ) -> ParseResult<AstLexer<'a>> {
         let token_library = TokenLibrary::library();

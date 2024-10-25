@@ -7,7 +7,7 @@ use std::fmt;
 #[derive(Debug)]
 pub(crate) struct UnknownToken {
     pub(crate) bad_input: String,
-    pub(crate) position: a1_notation::Address,
+    pub(crate) position: a1::Address,
     pub(crate) cell_offset: CharOffset,
     pub(crate) source_code: ArcSourceCode,
 }

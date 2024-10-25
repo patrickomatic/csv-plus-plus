@@ -1,10 +1,10 @@
 use super::Fill;
-use a1_notation::A1;
+use a1::A1;
 
 #[allow(clippy::from_over_into)]
 impl Into<A1> for Fill {
     fn into(self) -> A1 {
-        a1_notation::row_range(self.start_row, self.end_row().shift_up(1))
+        a1::row_range(self.start_row, self.end_row().shift_up(1))
     }
 }
 

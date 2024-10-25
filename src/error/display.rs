@@ -112,7 +112,7 @@ mod tests {
     fn display_cell_syntax_error() {
         let message = Error::CellSyntaxError {
             filename: path::PathBuf::from("a_file.csvpp"),
-            position: a1_notation::Address::new(1, 5),
+            position: a1::Address::new(1, 5),
             parse_error: Box::new(build_parse_error()),
         };
 
@@ -157,7 +157,7 @@ baz
                 message: "Error".to_string(),
                 bad_input: "foo".to_string(),
             }),
-            position: Some(a1_notation::Address::new(2, 2)),
+            position: Some(a1::Address::new(2, 2)),
         };
 
         assert_eq!(

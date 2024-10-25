@@ -258,7 +258,7 @@ impl CellParser<'_, '_> {
         take_parens!(self, {
             let a1_match = self.lexer.take_token(Token::A1)?;
             DataValidation::ValueInRange(
-                a1_notation::new(&a1_match.str_match).map_err(|e| {
+                a1::new(&a1_match.str_match).map_err(|e| {
                     a1_match.into_parse_error(format!("Expected an A1 reference: {e}"))
                 })?,
             )
@@ -312,13 +312,7 @@ mod tests {
 
     fn test_parse(input: &str) -> Cell {
         let mut row = Row::default();
-        CellParser::parse(
-            input,
-            a1_notation::Address::new(0, 0),
-            &mut row,
-            build_source_code(),
-        )
-        .unwrap()
+        CellParser::parse(input, a1::Address::new(0, 0), &mut row, build_source_code()).unwrap()
     }
 
     #[test]
@@ -409,7 +403,7 @@ mod tests {
     fn parse_validate_invalid() {
         let res = CellParser::parse(
             "[[validate=foo_bar(12/1/23)]]abc123",
-            a1_notation::Address::new(0, 0),
+            a1::Address::new(0, 0),
             &mut Row::default(),
             build_source_code(),
         );
@@ -422,7 +416,7 @@ mod tests {
 
         assert_eq!(
             cell.data_validation.unwrap(),
-            DataValidation::ValueInRange(a1_notation::column(0))
+            DataValidation::ValueInRange(a1::column(0))
         );
     }
 

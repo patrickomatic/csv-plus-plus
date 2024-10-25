@@ -1,5 +1,4 @@
 use super::{Ast, Node, NumberSign, VariableValue};
-use a1_notation::A1;
 use std::fmt;
 
 impl fmt::Display for NumberSign {
@@ -93,14 +92,14 @@ impl fmt::Display for VariableValue {
             Self::Ast(ast) => write!(f, "{ast}"),
 
             Self::ColumnRelative { fill, column } => {
-                let row_range: A1 = (*fill).into();
+                let row_range: a1::A1 = (*fill).into();
                 write!(f, "{}", row_range.with_x(column.x))
             }
 
             Self::Row(row) => write!(f, "{row}"),
 
             Self::RowRelative { fill, .. } => {
-                let row_range: A1 = (*fill).into();
+                let row_range: a1::A1 = (*fill).into();
                 write!(f, "{row_range}")
             }
         }

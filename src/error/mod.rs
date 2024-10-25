@@ -33,7 +33,7 @@ pub enum Error {
     /// A syntax error in a formula in a cell.
     CellSyntaxError {
         filename: path::PathBuf,
-        position: a1_notation::Address,
+        position: a1::Address,
         parse_error: Box<ParseError>,
     },
 
@@ -47,7 +47,7 @@ pub enum Error {
     EvalError {
         eval_error: Box<EvalError>,
         filename: path::PathBuf,
-        position: Option<a1_notation::Address>,
+        position: Option<a1::Address>,
     },
 
     /// Google Sheets requires that the `gcloud` CLI tools are installed and configured.  If we

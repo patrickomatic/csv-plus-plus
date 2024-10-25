@@ -63,20 +63,20 @@ impl From<i32> for Ast {
     }
 }
 
-impl From<a1_notation::A1> for Ast {
-    fn from(value: a1_notation::A1) -> Self {
+impl From<a1::A1> for Ast {
+    fn from(value: a1::A1) -> Self {
         Node::Reference(value.to_string()).into()
     }
 }
 
-impl From<a1_notation::Address> for Ast {
-    fn from(value: a1_notation::Address) -> Self {
+impl From<a1::Address> for Ast {
+    fn from(value: a1::Address) -> Self {
         Node::Reference(value.to_string()).into()
     }
 }
 
-impl From<a1_notation::RangeOrCell> for Ast {
-    fn from(value: a1_notation::RangeOrCell) -> Self {
+impl From<a1::RangeOrCell> for Ast {
+    fn from(value: a1::RangeOrCell) -> Self {
         Node::Reference(value.to_string()).into()
     }
 }
@@ -133,20 +133,20 @@ impl From<i32> for Node {
     }
 }
 
-impl From<a1_notation::A1> for Node {
-    fn from(value: a1_notation::A1) -> Self {
+impl From<a1::A1> for Node {
+    fn from(value: a1::A1) -> Self {
         Self::Reference(value.to_string())
     }
 }
 
-impl From<a1_notation::Address> for Node {
-    fn from(value: a1_notation::Address) -> Self {
+impl From<a1::Address> for Node {
+    fn from(value: a1::Address) -> Self {
         Self::Reference(value.to_string())
     }
 }
 
-impl From<a1_notation::RangeOrCell> for Node {
-    fn from(value: a1_notation::RangeOrCell) -> Self {
+impl From<a1::RangeOrCell> for Node {
+    fn from(value: a1::RangeOrCell) -> Self {
         Self::Reference(value.to_string())
     }
 }
@@ -156,8 +156,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn node_from_a1_notation() {
-        let a1 = a1_notation::new("A1").unwrap();
+    fn node_from_a1() {
+        let a1 = a1::new("A1").unwrap();
         assert_eq!(Node::reference("A1"), a1.into());
     }
 }

@@ -21,17 +21,13 @@ pub(crate) use unknown_token::UnknownToken;
 pub(crate) struct CellLexer<'a> {
     cell_offset: CharOffset,
     pub(crate) input: &'a str,
-    position: a1_notation::Address,
+    position: a1::Address,
     source_code: ArcSourceCode,
     token_library: &'static TokenLibrary,
 }
 
 impl<'a> CellLexer<'a> {
-    pub(super) fn new(
-        input: &'a str,
-        position: a1_notation::Address,
-        source_code: ArcSourceCode,
-    ) -> Self {
+    pub(super) fn new(input: &'a str, position: a1::Address, source_code: ArcSourceCode) -> Self {
         Self {
             cell_offset: 0,
             input,
@@ -357,7 +353,7 @@ mod tests {
     fn test_lexer(lexer_input: &str) -> CellLexer {
         CellLexer::new(
             lexer_input,
-            a1_notation::Address::new(0, 0),
+            a1::Address::new(0, 0),
             build_source_code_from_input(lexer_input),
         )
     }

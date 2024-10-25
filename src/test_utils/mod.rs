@@ -29,7 +29,7 @@ pub(crate) fn build_cell_token_match(str_match: &str) -> cell_lexer::TokenMatch 
     cell_lexer::TokenMatch {
         token: cell_lexer::Token::Identifier,
         str_match: str_match.to_string(),
-        position: a1_notation::Address::new(0, 0),
+        position: a1::Address::new(0, 0),
         cell_offset: 0,
         source_code: build_source_code(),
     }

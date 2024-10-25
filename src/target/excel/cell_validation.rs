@@ -2,7 +2,7 @@ use crate::DataValidation;
 use umya_spreadsheet as u;
 
 #[derive(Debug)]
-pub(super) struct CellValidation(pub(super) a1_notation::Address, pub(super) DataValidation);
+pub(super) struct CellValidation(pub(super) a1::Address, pub(super) DataValidation);
 
 macro_rules! custom_validation {
     ($v:ident, $type:ident, $formula1:expr, $prompt:expr) => {
@@ -231,7 +231,7 @@ mod tests {
     #[test]
     fn custom() {
         let cv: CellValidation = CellValidation(
-            a1_notation::Address::new(0, 0),
+            a1::Address::new(0, 0),
             DataValidation::Custom("foo".to_string()),
         );
         let dv: u::DataValidation = cv.into();
@@ -246,7 +246,7 @@ mod tests {
     #[test]
     fn value_in_list() {
         let cv: CellValidation = CellValidation(
-            a1_notation::Address::new(0, 0),
+            a1::Address::new(0, 0),
             DataValidation::ValueInList(vec![
                 Node::reference("foo").into(),
                 Node::reference("foo bar").into(),

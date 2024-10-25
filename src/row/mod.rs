@@ -34,11 +34,11 @@ impl Row {
         self,
         source_code: &ArcSourceCode,
         scope: &Scope,
-        row_a1: a1_notation::Row,
+        row_a1: a1::Row,
     ) -> Result<Self> {
         let mut cells = Vec::with_capacity(self.cells.len());
         for (cell_index, cell) in self.cells.into_iter().enumerate() {
-            let cell_a1 = a1_notation::Address::new(cell_index, row_a1.y);
+            let cell_a1 = a1::Address::new(cell_index, row_a1.y);
             let ast = if let Some(a) = cell.ast {
                 Some(
                     a.eval(scope, Some(cell_a1))
@@ -55,7 +55,7 @@ impl Row {
 
     pub(crate) fn parse(
         record_result: CsvRowResult,
-        row_a1: a1_notation::Row,
+        row_a1: a1::Row,
         source_code: &ArcSourceCode,
     ) -> Result<Self> {
         // handle if the row is blank or an error or something. (maybe we should warn here if it's
@@ -70,7 +70,7 @@ impl Row {
                 .map(|(cell_index, unparsed_value)| {
                     Cell::parse(
                         unparsed_value,
-                        a1_notation::Address::new(cell_index, row_a1.y),
+                        a1::Address::new(cell_index, row_a1.y),
                         &mut row,
                         source_code,
                     )

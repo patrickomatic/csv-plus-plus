@@ -20,7 +20,7 @@ impl SourceCode {
     pub(crate) fn cell_syntax_error(
         &self,
         parse_error: ParseError,
-        position: a1_notation::Address,
+        position: a1::Address,
     ) -> Error {
         Error::CellSyntaxError {
             filename: self.filename.clone(),
@@ -29,11 +29,7 @@ impl SourceCode {
         }
     }
 
-    pub(crate) fn eval_error(
-        &self,
-        eval_error: EvalError,
-        position: Option<a1_notation::Address>,
-    ) -> Error {
+    pub(crate) fn eval_error(&self, eval_error: EvalError, position: Option<a1::Address>) -> Error {
         Error::EvalError {
             filename: self.filename.clone(),
             eval_error: Box::new(eval_error),

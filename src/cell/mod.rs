@@ -34,7 +34,7 @@ pub struct Cell {
 
 fn parse_ast(
     input: &str,
-    position: a1_notation::Address,
+    position: a1::Address,
     source_code: &ArcSourceCode,
 ) -> Result<Option<Ast>> {
     Ok(if let Some(without_equals) = input.strip_prefix('=') {
@@ -50,7 +50,7 @@ fn parse_ast(
 impl Cell {
     pub(crate) fn parse(
         input: &str,
-        position: a1_notation::Address,
+        position: a1::Address,
         row: &mut Row,
         source_code: &ArcSourceCode,
     ) -> Result<Self> {

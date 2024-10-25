@@ -3,10 +3,10 @@
 version = 3
 
 [[package]]
-name = "a1_notation"
-version = "0.6.2"
+name = "a1"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ecce2b89801da84dcdd4100b8d900dfb47fe8837098ecd459aeeff0c0adfbf6a"
+checksum = "b8470e27ace1e4691e30b3c05a719397c10e799d3ed1814dad8d6797580d9ddd"
 dependencies = [
  "serde",
 ]
@@ -658,7 +658,7 @@ dependencies = [
 name = "csvpp"
 version = "0.7.0"
 dependencies = [
- "a1_notation",
+ "a1",
  "chrono",
  "clap",
  "colored",

@@ -13,7 +13,7 @@ pub(crate) struct TokenMatch<'a> {
     pub(crate) line_number: LineNumber,
     pub(crate) line_offset: CharOffset,
     pub(crate) source_code: ArcSourceCode,
-    pub(crate) position: Option<a1_notation::Address>,
+    pub(crate) position: Option<a1::Address>,
 }
 
 impl TokenMatch<'_> {

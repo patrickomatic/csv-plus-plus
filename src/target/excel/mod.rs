@@ -5,7 +5,6 @@
 use super::{merge_cell, ExistingCell, MergeResult};
 use crate::ast::Node;
 use crate::{Cell, Compiler, Module, Result};
-use a1_notation::Address;
 use std::ffi;
 use std::path;
 use umya_spreadsheet as u;
@@ -47,7 +46,7 @@ impl<'a> Excel<'a> {
 
         for (row_index, row) in module.spreadsheet.rows.iter().enumerate() {
             for (cell_index, cell) in row.cells.iter().enumerate() {
-                let position = a1_notation::Address::new(cell_index, row_index);
+                let position = a1::Address::new(cell_index, row_index);
 
                 let merged_cell = merge_cell(
                     &Self::get_existing_cell(position, worksheet),
@@ -100,7 +99,7 @@ impl<'a> Excel<'a> {
         worksheet.set_data_validations(validations);
     }
 
-    fn set_comment(worksheet: &mut u::Worksheet, position: a1_notation::Address, note: &str) {
+    fn set_comment(worksheet: &mut u::Worksheet, position: a1::Address, note: &str) {
         let mut comment = u::Comment::default();
         comment.set_author("csvpp");
 
@@ -147,7 +146,10 @@ impl<'a> Excel<'a> {
         Some(excel_cell.into())
     }
 
-    fn get_existing_cell(position: Address, worksheet: &u::Worksheet) -> ExistingCell<ExcelValue> {
+    fn get_existing_cell(
+        position: a1::Address,
+        worksheet: &u::Worksheet,
+    ) -> ExistingCell<ExcelValue> {
         let cell_value = worksheet.get_cell(position.to_string());
         if let Some(cell) = cell_value {
             ExistingCell::Value(cell.clone())

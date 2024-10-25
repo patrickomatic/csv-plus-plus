@@ -16,7 +16,7 @@ pub(crate) struct CellParser<'a, 'b: 'a> {
     /// lifetime)
     lexer: &'a mut CellLexer<'b>,
     row: &'a mut Row,
-    row_a1: a1_notation::Address,
+    row_a1: a1::Address,
 }
 
 macro_rules! assign_option {
@@ -49,7 +49,7 @@ where
 {
     pub(crate) fn parse(
         input: &'b str,
-        position: a1_notation::Address,
+        position: a1::Address,
         row: &'b mut Row,
         source_code: ArcSourceCode,
     ) -> Result<Cell> {
@@ -59,7 +59,7 @@ where
 
     fn parse_cell(
         input: &'b str,
-        position: a1_notation::Address,
+        position: a1::Address,
         row: &'b mut Row,
         source_code: ArcSourceCode,
     ) -> ParseResult<Cell> {
@@ -260,13 +260,7 @@ mod tests {
     use crate::test_utils::*;
 
     fn test_parse(input: &str, row: &mut Row) -> Cell {
-        CellParser::parse(
-            input,
-            a1_notation::Address::new(0, 0),
-            row,
-            build_source_code(),
-        )
-        .unwrap()
+        CellParser::parse(input, a1::Address::new(0, 0), row, build_source_code()).unwrap()
     }
 
     #[test]

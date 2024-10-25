@@ -85,14 +85,14 @@ impl SourceCode {
         f
     }
 
-    pub(crate) fn csv_line_number(&self, position: a1_notation::Address) -> LineNumber {
+    pub(crate) fn csv_line_number(&self, position: a1::Address) -> LineNumber {
         let row = position.row.y;
         self.length_of_code_section + row
     }
 
     pub(crate) fn line_offset_for_cell(
         &self,
-        position: a1_notation::Address,
+        position: a1::Address,
         add_leading_whitespace: bool,
     ) -> CharOffset {
         let line_number = self.csv_line_number(position);
@@ -163,10 +163,7 @@ foo1,bar1,baz1
             "test.csvpp",
         );
 
-        assert_eq!(
-            7,
-            source_code.csv_line_number(a1_notation::Address::new(1, 1))
-        );
+        assert_eq!(7, source_code.csv_line_number(a1::Address::new(1, 1)));
     }
 
     #[test]

@@ -50,7 +50,7 @@ impl<'a> AstParser<'a> {
     pub(crate) fn parse(
         input: &'a str,
         single_expr: bool,
-        position: Option<a1_notation::Address>,
+        position: Option<a1::Address>,
         source_code: ArcSourceCode,
     ) -> ParseResult<Ast> {
         AstParser::new(&AstLexer::new(input, position, source_code)?, single_expr).expr_bp(0)

@@ -11,7 +11,7 @@ use std::fmt;
 pub(crate) struct TokenMatch {
     pub(crate) token: Token,
     pub(crate) str_match: String,
-    pub(crate) position: a1_notation::Address,
+    pub(crate) position: a1::Address,
     pub(crate) cell_offset: CharOffset,
     pub(crate) source_code: ArcSourceCode,
 }
@@ -92,7 +92,7 @@ mod tests {
         TokenMatch {
             token,
             str_match: str_match.to_string(),
-            position: a1_notation::Address::new(0, 0),
+            position: a1::Address::new(0, 0),
             cell_offset: 0,
             source_code: build_source_code(),
         }

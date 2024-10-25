@@ -87,7 +87,7 @@ impl Spreadsheet {
         let mut vars = collections::HashMap::new();
 
         for (row_index, row) in self.rows.iter().enumerate() {
-            let row_a1: a1_notation::Row = row_index.into();
+            let row_a1: a1::Row = row_index.into();
 
             // does the row itself have a var?
             if let Some(var_id) = &row.var {
@@ -109,7 +109,7 @@ impl Spreadsheet {
             };
 
             for (cell_index, cell) in row.cells.iter().enumerate() {
-                let cell_a1 = a1_notation::Address::new(cell_index, row_index);
+                let cell_a1 = a1::Address::new(cell_index, row_index);
 
                 if let Some(var_id) = &cell.var {
                     let reference = if let Some(fill) = row.fill {
@@ -173,7 +173,7 @@ mod tests {
     use super::*;
     use crate::test_utils::*;
     use crate::*;
-    use a1_notation::Address;
+    use a1::Address;
 
     fn build_source_code(input: &str) -> ArcSourceCode {
         ArcSourceCode::new((&TestSourceCode::new("csv", input)).into())
