@@ -9,11 +9,11 @@ use super::{ExistingCell, ExistingValues};
 use crate::{Compiler, Error, Module, Result};
 use batch_update_builder::BatchUpdateBuilder;
 use credentials::Credentials;
-use google_sheets4::hyper;
-use google_sheets4::hyper_rustls;
+use google_sheets4::{hyper_rustls, hyper_util};
 use log::{error, warn};
 
-type HyperConnector = hyper_rustls::HttpsConnector<hyper::client::HttpConnector>;
+type HyperConnector =
+    hyper_rustls::HttpsConnector<hyper_util::client::legacy::connect::HttpConnector>;
 type SheetsHub = google_sheets4::Sheets<HyperConnector>;
 type DriveHub = google_drive3::DriveHub<HyperConnector>;
 
@@ -33,18 +33,6 @@ macro_rules! unwrap_or_empty {
             None => return Ok(ExistingValues::default()),
         }
     }};
-}
-
-fn hyper_client() -> hyper::Client<HyperConnector> {
-    hyper::Client::builder().build(
-        hyper_rustls::HttpsConnectorBuilder::new()
-            .with_native_roots()
-            .unwrap() // TODO get rid of unwrap
-            .https_or_http()
-            .enable_http1()
-            .enable_http2()
-            .build(),
-    )
 }
 
 impl<'a> GoogleSheets<'a> {
@@ -133,15 +121,36 @@ impl<'a> GoogleSheets<'a> {
     }
 
     async fn drive_hub(&self) -> Result<DriveHub> {
+        // TODO remove duplication
+        let client =
+            hyper_util::client::legacy::Client::builder(hyper_util::rt::TokioExecutor::new())
+                .build(
+                    hyper_rustls::HttpsConnectorBuilder::new()
+                        .with_native_roots()
+                        .unwrap() // TODO get rid of unwrap
+                        .https_or_http()
+                        .enable_http1()
+                        .build(),
+                );
         Ok(google_drive3::DriveHub::new(
-            hyper_client(),
+            client,
             self.credentials.auth().await?,
         ))
     }
 
     async fn sheets_hub(&self) -> Result<SheetsHub> {
+        let client =
+            hyper_util::client::legacy::Client::builder(hyper_util::rt::TokioExecutor::new())
+                .build(
+                    hyper_rustls::HttpsConnectorBuilder::new()
+                        .with_native_roots()
+                        .unwrap() // TODO get rid of unwrap
+                        .https_or_http()
+                        .enable_http1()
+                        .build(),
+                );
         Ok(google_sheets4::Sheets::new(
-            hyper_client(),
+            client,
             self.credentials.auth().await?,
         ))
     }

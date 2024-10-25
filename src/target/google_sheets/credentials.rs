@@ -1,6 +1,6 @@
 use super::HyperConnector;
 use crate::{Compiler, Error, Result};
-use google_sheets4::oauth2;
+use google_sheets4::yup_oauth2;
 use log::info;
 use std::{env, fs, path};
 
@@ -79,12 +79,12 @@ impl Credentials {
 
     pub(super) async fn auth(
         &self,
-    ) -> Result<oauth2::authenticator::Authenticator<HyperConnector>> {
+    ) -> Result<yup_oauth2::authenticator::Authenticator<HyperConnector>> {
         let json = self.read_json()?;
 
         if json["type"] == "authorized_user" {
-            Ok(oauth2::AuthorizedUserAuthenticator::builder(
-                oauth2::read_authorized_user_secret(&self.file)
+            Ok(yup_oauth2::AuthorizedUserAuthenticator::builder(
+                yup_oauth2::read_authorized_user_secret(&self.file)
                     .await
                     .map_err(|e| {
                         Error::GoogleSetupError(format!("Error reading application secret: {e}"))
@@ -96,8 +96,8 @@ impl Credentials {
                 Error::GoogleSetupError(format!("Error requesting access to the spreadsheet: {e}"))
             })?)
         } else if json["type"] == "service_account" {
-            Ok(oauth2::ServiceAccountAuthenticator::builder(
-                oauth2::read_service_account_key(&self.file)
+            Ok(yup_oauth2::ServiceAccountAuthenticator::builder(
+                yup_oauth2::read_service_account_key(&self.file)
                     .await
                     .map_err(|e| {
                         Error::GoogleSetupError(format!(
