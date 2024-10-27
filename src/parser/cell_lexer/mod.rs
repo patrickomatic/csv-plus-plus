@@ -100,6 +100,10 @@ impl<'a> CellLexer<'a> {
         self.maybe_take(Token::Slash, "/")
     }
 
+    pub(super) fn maybe_take_end_options(&mut self) -> Option<TokenMatch> {
+        self.maybe_take(Token::EndOptions, "]]")
+    }
+
     // is the next token to be consumed a `)`? (this will not consume it)
     pub(super) fn peek_close_parenthesis(&mut self) -> bool {
         self.token_library
@@ -441,6 +445,13 @@ mod tests {
         let mut lexer = test_lexer("=");
 
         assert!(lexer.maybe_take_equals().is_some());
+    }
+
+    #[test]
+    fn maybe_take_end_options() {
+        let mut lexer = test_lexer("]]");
+
+        assert!(lexer.maybe_take_end_options().is_some());
     }
 
     #[test]

@@ -5,8 +5,8 @@ mod validate;
 use super::cell_lexer::{CellLexer, Token, TokenMatch};
 use crate::error::{BadInput, ParseResult, Result};
 use crate::{
-    ArcSourceCode, BorderSide, BorderStyle, Cell, Fill, HorizontalAlign, NumberFormat, Rgb, Row,
-    TextFormat, VerticalAlign,
+    deprecated_feature, ArcSourceCode, BorderSide, BorderStyle, Cell, Fill, HorizontalAlign,
+    NumberFormat, Rgb, Row, TextFormat, VerticalAlign,
 };
 
 pub(crate) struct CellParser<'a, 'b: 'a> {
@@ -244,12 +244,17 @@ where
     fn parse_cell_options(&mut self) -> ParseResult<()> {
         loop {
             self.option()?;
-            if self.lexer.maybe_take_slash().is_none() {
+            if self.lexer.maybe_take_slash().is_some() {
+                deprecated_feature(
+                    "You no longer need to use `/` between cell options",
+                    "Remove the `/` and use whitespace between options.",
+                );
+            } else if self.lexer.maybe_take_end_options().is_some() {
                 break;
             }
         }
 
-        self.lexer.take_token(Token::EndOptions)?;
+        // self.lexer.take_token(Token::EndOptions)?;
         Ok(())
     }
 }
@@ -295,6 +300,24 @@ mod tests {
     }
 
     #[test]
+    fn parse_multiple_options_with_spaces() {
+        let mut row = Row::default();
+        let cell = test_parse("![[text=italic valign=top fill]]abc123", &mut row);
+
+        assert_eq!(cell.value, "abc123");
+
+        assert!(row.text_formats.contains(&TextFormat::Italic));
+        assert_eq!(row.vertical_align, Some(VerticalAlign::Top));
+        assert_eq!(
+            row.fill,
+            Some(Fill {
+                amount: None,
+                start_row: 0.into()
+            })
+        );
+    }
+
+    #[test]
     fn parse_cell_options_inherit_from_row() {
         let mut row = Row::default();
         let cell = test_parse("![[t=u]]abc123", &mut row);
@@ -305,7 +328,7 @@ mod tests {
 
     #[test]
     fn parse_multiple_options_shorthand() {
-        let cell = test_parse("[[ha=l/va=c/t=u/fs=12]]abc123", &mut Row::default());
+        let cell = test_parse("[[ha=l va=c t=u fs=12]]abc123", &mut Row::default());
 
         assert_eq!(cell.value, "abc123");
         assert_eq!(cell.font_size, Some(12));
@@ -330,7 +353,7 @@ mod tests {
 
     #[test]
     fn parse_borderstyle() {
-        let cell = test_parse("[[b=t/bs=dotted]]abc123", &mut Row::default());
+        let cell = test_parse("[[b=t bs=dotted]]abc123", &mut Row::default());
         assert_eq!(cell.border_style, Some(BorderStyle::Dotted));
     }
 

@@ -242,18 +242,18 @@ Bind a variable (specified by `VARIABLE_ID`) to reference this cell. TODO
 * Align the second cell left, align the last cell to the center and make it bold and italicized:
 
 ```csvpp
-Date,[[ha=l]]Amount,Quantity,[[ha=c/t=b/t=i]]Price
+Date,[[ha=l]]Amount,Quantity,[[ha=c t=b t=i]]Price
 ```
 
 * Underline and center-align an entire row:
 
 ```csvpp
-![[ha=c/t=u]]Date,Amount,Quantity,Price
+![[ha=c t=u]]Date,Amount,Quantity,Price
 ```
 
 * A header for the first row, then some formulas that repeat for each row for the rest of the spreadsheet:
 
 ```csvpp
-![[ha=c/t=b]]Date,Price,Quantity,Profit
+![[ha=c t=b]]Date,Price,Quantity,Profit
 ![[e]],,,"=MULTIPLY(cellref(B), cellref(C))"
 ```

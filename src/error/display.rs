@@ -45,6 +45,7 @@ impl fmt::Display for Error {
             }
 
             Self::GoogleSetupError(message) => {
+                // TODO: move this message into a template and use `include!`
                 // TODO: make this a little smarter, if gcloud isn't in path complain about that?
                 // TODO: can we run gcloud auth login automatically?
                 // TODO: gcloud ... --update-adc is deprecated.  this gets us close:
@@ -99,12 +100,12 @@ mod tests {
 
     fn build_parse_error() -> ParseError {
         ParseError {
-            bad_input: "bar".to_string(),
-            message: "it should be foo".to_string(),
+            bad_input: "bar".into(),
+            message: "it should be foo".into(),
             line_number: 3,
             line_offset: 5,
             possible_values: None,
-            highlighted_lines: vec!["foo".to_string(), "bar".to_string(), "baz".to_string()],
+            highlighted_lines: vec!["foo".into(), "bar".into(), "baz".into()],
         }
     }
 

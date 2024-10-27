@@ -76,7 +76,7 @@ fees := commission_charge * D
 profit := (B * C) - fees
 
 ---
-![[text=bold/halign=center]]Date   ,[[t=b]] Purchase ,Price  ,Quantity ,Profit     ,Fees
+![[text=bold halign=center]]Date   ,[[t=b]] Purchase ,Price  ,Quantity ,Profit     ,Fees
 ![[fill=2]]                        ,[[text=bold]]    ,       ,         ,"=profit"  ,"=fees"
 "#,
         )

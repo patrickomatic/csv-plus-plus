@@ -2,7 +2,13 @@
 
 ### Features
 
+* Slashes are no longer needed to separate cell options
+    - `[[text=bold halign=left]]` is now equivalent to `[[text=bold/halign=left]]`.
 * Switch from CBOR to bincode for object file serialization
+
+### Deprecated Features
+
+* You should no longer use `/` to separate cell options
 
 ### Dependency Updates
 

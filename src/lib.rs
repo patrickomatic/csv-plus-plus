@@ -40,7 +40,6 @@ pub(crate) use error::EvalResult;
 pub use error::{Error, EvalError, ParseError, Result};
 pub use fill::Fill;
 pub use horizontal_align::HorizontalAlign;
-use log::error;
 pub use module::Module;
 pub(crate) use module_loader::ModuleLoader;
 pub use module_path::ModulePath;
@@ -56,6 +55,8 @@ pub use spreadsheet::Spreadsheet;
 pub use target::CompilationTarget;
 pub use text_format::TextFormat;
 pub use vertical_align::VerticalAlign;
+
+use log::{error, info, warn};
 
 // test_utils should only be included in tests, never referenced by release code (or built into the
 // release)
@@ -75,4 +76,9 @@ Please run with `-vvvv` as a CLI flag and share a copy of the output and your so
 https://github.com/patrickomatic/csv-plus-plus/issues"
     );
     panic!("{message}")
+}
+
+pub(crate) fn deprecated_feature<S: std::fmt::Display>(message: S, to_fix: S) {
+    warn!("Deprecation warning: {message}");
+    info!("To fix: {to_fix}");
 }

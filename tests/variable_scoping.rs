@@ -26,7 +26,7 @@ fn row_variable_in_fill() {
         r#"
 ---
 ,=SUM(cell),=SUM(row)
-![[f=3 / var=row]][[var=cell]],=cell,=row,
+![[f=3 var=row]][[var=cell]],=cell,=row,
 "#,
         ",=SUM(A2:A4),=SUM(2:4),
 ,=A2,=2:2,

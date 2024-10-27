@@ -12,4 +12,4 @@ fn d(x)
   c(x) + b
 
 ---
-![[f / var=row_var]][[var=first_cell]] ,      ,[[t=bold / t=underline / halign=right / valign=center]] =d(first_cell) , =d(row_var),
+![[f var=row_var]][[var=first_cell]] ,      ,[[t=bold t=underline halign=right valign=center]] =d(first_cell) , =d(row_var),

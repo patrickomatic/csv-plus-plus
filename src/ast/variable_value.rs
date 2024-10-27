@@ -41,7 +41,7 @@ pub enum VariableValue {
     ///
     /// ```csvpp
     /// ---
-    /// ![[var=foo / fill=20]]foo,bar,baz
+    /// ![[var=foo fill=20]]foo,bar,baz
     /// ```
     RowRelative { row: a1::Row, fill: Fill },
 }

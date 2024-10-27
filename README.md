@@ -127,19 +127,19 @@ You can apply basic cell formatting which will either apply for the entire row o
 individual cells.  To apply formatting to individual cells use the `[[`/`]]` syntax:
 
 ```csvpp
-[[text=bold/text=underline]]foo,[[fontsize=20]]bar,baz,
+[[text=bold text=underline]]foo,[[fontsize=20]]bar,baz,
 ```
 
 and here is the same thing using short-hand:
 
 ```csvpp
-[[t=b/t=u]]foo,[[fs=20]]bar,baz,
+[[t=b t=u]]foo,[[fs=20]]bar,baz,
 ```
 
 To format the entire row you can use `![[`/`]]` at the beginning of the line
 
 ```csvpp
-![[t=b/t=u]]foo,bar,baz,
+![[t=b t=u]]foo,bar,baz,
 ```
 
 For a full list of formatting features, take a look at the [language reference](docs/LANGUAGE_REFERENCE.md)
