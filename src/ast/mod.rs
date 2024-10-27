@@ -31,8 +31,8 @@ pub(crate) type Variables = collections::HashMap<VariableName, Ast>;
 pub struct Ast(Box<Node>);
 
 impl Ast {
-    pub fn new(inner: Node) -> Self {
-        Self(Box::new(inner))
+    pub fn new<N: Into<Node>>(inner: N) -> Self {
+        Self(Box::new(inner.into()))
     }
 
     pub fn into_inner(self) -> Node {

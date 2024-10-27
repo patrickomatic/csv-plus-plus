@@ -1,9 +1,9 @@
 //! Some shared test utility functions.  These are only be used within tests and not in the in
 //! final release executable.
 //!
-use crate::parser::ast_lexer;
-use crate::parser::cell_lexer;
-use crate::{ArcSourceCode, Compiler, DateTime, Module, ModulePath};
+use crate::parser::{ast_lexer, cell_lexer};
+use crate::{ArcSourceCode, Compiler, DateTime, Module, ModulePath, Scope, Spreadsheet};
+use csvp::{Field, SourcePosition};
 
 mod test_file;
 mod test_source_code;
@@ -17,9 +17,8 @@ pub(crate) fn build_ast_token_match(
 ) -> ast_lexer::TokenMatch {
     ast_lexer::TokenMatch {
         token: ast_lexer::Token::Reference,
-        line_number: 0,
-        line_offset: 0,
-        position: None,
+        position: (0, 0).into(),
+        field: None,
         source_code,
         str_match,
     }
@@ -29,7 +28,7 @@ pub(crate) fn build_cell_token_match(str_match: &str) -> cell_lexer::TokenMatch 
     cell_lexer::TokenMatch {
         token: cell_lexer::Token::Identifier,
         str_match: str_match.to_string(),
-        position: a1::Address::new(0, 0),
+        field: build_field(str_match, (0, 0)),
         cell_offset: 0,
         source_code: build_source_code(),
     }
@@ -49,9 +48,9 @@ pub(crate) fn build_module() -> Module {
         compiler_version: "v0.0.1".to_string(),
         source_code: build_source_code(),
         module_path: ModulePath::new("foo"),
-        scope: Default::default(),
-        spreadsheet: Default::default(),
-        required_modules: Default::default(),
+        scope: Scope::default(),
+        spreadsheet: Spreadsheet::default(),
+        required_modules: Vec::default(),
         is_dirty: false,
         needs_eval: true,
     }
@@ -60,6 +59,21 @@ pub(crate) fn build_module() -> Module {
 /// If the test just needs a source code but doesn't care about it at all
 pub(crate) fn build_source_code() -> ArcSourceCode {
     ArcSourceCode::new((&TestSourceCode::new("bar.xlsx", "foo,bar,baz")).into())
+}
+
+pub(crate) fn build_field<S: Into<String>, A: Into<a1::Address>>(value: S, address: A) -> Field {
+    let value: String = value.into();
+    let positions = value
+        .chars()
+        .enumerate()
+        .map(|(i, _)| SourcePosition::from((i, 0)))
+        .collect();
+
+    Field {
+        value,
+        address: address.into(),
+        positions,
+    }
 }
 
 pub(crate) fn build_source_code_from_input(input: &str) -> ArcSourceCode {

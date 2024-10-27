@@ -5,6 +5,7 @@ use std::fmt;
 #[derive(Debug)]
 pub enum Error {
     ParseError {
+        bad_input: String,
         message: String,
         position: SourcePosition,
     },
@@ -13,8 +14,12 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Error::ParseError { message, position } => {
-                writeln!(f, "Error parsing at {position}: {message}")
+            Error::ParseError {
+                bad_input,
+                message,
+                position,
+            } => {
+                writeln!(f, "Error parsing {bad_input} at {position}: {message}")
             }
         }
     }

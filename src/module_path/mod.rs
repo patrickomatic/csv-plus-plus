@@ -1,5 +1,4 @@
-use std::ffi;
-use std::path;
+use std::{ffi, path};
 
 mod display;
 mod try_from;
@@ -24,11 +23,12 @@ impl ModulePath {
     }
 
     #[cfg(test)]
-    pub(crate) fn new(name: &str) -> Self {
+    pub(crate) fn new<S: Into<String>>(name: S) -> Self {
         // NOTE: only to make tests easy, actual code should use the TryFrom impls
         Self(
-            name.split('/')
-                .map(|s| s.to_string())
+            name.into()
+                .split('/')
+                .map(std::string::ToString::to_string)
                 .collect::<Vec<String>>(),
         )
     }

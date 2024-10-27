@@ -26,7 +26,7 @@ impl Compiler {
     /// * `Error` for anything that can go wrong during compilation.  This can be a huge range,
     ///     anything is really game at this point.
     pub fn compile(&self) -> Result<Module> {
-        debug!("Loading module from file {}", self.input_filename.display());
+        debug!("Loading module from file {:?}", self.input_filename);
 
         let loader_root = self
             .input_filename
@@ -36,8 +36,8 @@ impl Compiler {
 
         let Some(main_filename) = self.input_filename.file_name() else {
             return Err(Error::InitError(format!(
-                "Unable to extract filename for: {}",
-                self.input_filename.display()
+                "Unable to extract filename for: {:?}",
+                self.input_filename
             )));
         };
 
@@ -58,8 +58,8 @@ impl Compiler {
 
             if self.options.use_cache {
                 debug!(
-                    "Writing object file {}",
-                    main_module.source_code.object_code_filename().display()
+                    "Writing object file {:?}",
+                    main_module.source_code.object_code_filename()
                 );
                 main_module.write_object_file()?;
             }

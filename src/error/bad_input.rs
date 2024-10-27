@@ -9,16 +9,13 @@
 //! * A relevant error message (via `fmt::Display`)
 //!
 use crate::error::ParseError;
-use crate::{CharOffset, LineNumber};
+use csvp::SourcePosition;
 use std::fmt;
 
 pub(crate) trait BadInput: fmt::Debug + fmt::Display {
     /// Given a `message`, turn this input into an error
     fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError;
 
-    /// The line number where the bad input occurred.
-    fn line_number(&self) -> LineNumber;
-
-    /// The character-offset within the line where the bad input occurred.
-    fn line_offset(&self) -> CharOffset;
+    /// The position (line number & offset) where the bad input occurred.
+    fn position(&self) -> SourcePosition;
 }

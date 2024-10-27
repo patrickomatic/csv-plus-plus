@@ -71,3 +71,15 @@ foo := 1 - 2 + 3 / 4 * 5 ^ 6 & 7 = 8 < 9 <= 10 > 11 >= 12
         "=(((1 - (2 + (3 / (4 * (5 ^ 6))))) & 7) = (8 < (9 <= (10 > (11 >= 12)))))\n",
     );
 }
+
+#[test]
+fn escape_newlines() {
+    assert_str_compiles_eq(
+        "escape_newlines",
+        r#"---
+[[t=b/ \
+    t=u/ \
+    halign=left]]foo, bar, baz"#,
+        "foo,bar,baz\n",
+    );
+}

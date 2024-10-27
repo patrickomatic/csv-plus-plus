@@ -4,16 +4,15 @@ use crate::{
     ArcSourceCode, BorderSide, BorderStyle, Cell, DataValidation, Fill, HorizontalAlign,
     NumberFormat, Result, Rgb, Scope, TextFormat, VerticalAlign,
 };
-use std::collections::HashSet;
-
-type CsvRowResult = std::result::Result<csv::StringRecord, csv::Error>;
+use csvp::Field;
+use std::collections;
 
 #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct Row {
     pub cells: Vec<Cell>,
     pub border_color: Option<Rgb>,
     pub border_style: Option<BorderStyle>,
-    pub borders: HashSet<BorderSide>,
+    pub borders: collections::HashSet<BorderSide>,
     pub color: Option<Rgb>,
     pub data_validation: Option<DataValidation>,
     pub fill: Option<Fill>,
@@ -24,7 +23,7 @@ pub struct Row {
     pub lock: bool,
     pub note: Option<String>,
     pub number_format: Option<NumberFormat>,
-    pub text_formats: HashSet<TextFormat>,
+    pub text_formats: collections::HashSet<TextFormat>,
     pub var: Option<String>,
     pub vertical_align: Option<VerticalAlign>,
 }
@@ -53,28 +52,12 @@ impl Row {
         Ok(Self { cells, ..self })
     }
 
-    pub(crate) fn parse(
-        record_result: CsvRowResult,
-        row_a1: a1::Row,
-        source_code: &ArcSourceCode,
-    ) -> Result<Self> {
-        // handle if the row is blank or an error or something. (maybe we should warn here if it's
-        // an error?)
-        let csv_parsed_row = &record_result.unwrap_or_default();
-
+    pub(crate) fn parse(record_result: &[Field], source_code: &ArcSourceCode) -> Result<Self> {
         let mut row = Self::default();
         Ok(Self {
-            cells: csv_parsed_row
-                .into_iter()
-                .enumerate()
-                .map(|(cell_index, unparsed_value)| {
-                    Cell::parse(
-                        unparsed_value,
-                        a1::Address::new(cell_index, row_a1.y),
-                        &mut row,
-                        source_code,
-                    )
-                })
+            cells: record_result
+                .iter()
+                .map(|field| Cell::parse(field, &mut row, source_code))
                 .collect::<Result<Vec<_>>>()?,
             ..row
         })
@@ -89,11 +72,10 @@ mod tests {
 
     #[test]
     fn eval_simple_ast() {
+        let mut cell = Cell::new(build_field("", (0, 0)));
+        cell.ast = Some(1.into());
         assert!(Row {
-            cells: vec![Cell {
-                ast: Some(1.into()),
-                ..Default::default()
-            }],
+            cells: vec![cell],
             ..Default::default()
         }
         .eval(&build_source_code(), &Scope::default(), 0.into())
@@ -103,8 +85,11 @@ mod tests {
     #[test]
     fn parse() {
         let row = Row::parse(
-            Ok(csv::StringRecord::from(vec!["a", "b", "c"])),
-            0.into(),
+            &vec![
+                build_field("a", (0, 0)),
+                build_field("b", (1, 0)),
+                build_field("c", (2, 0)),
+            ],
             &build_source_code(),
         )
         .unwrap();

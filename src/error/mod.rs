@@ -2,9 +2,7 @@
 //!
 //! Error handling structs.
 use crate::{ModulePath, Output};
-use std::collections;
-use std::error;
-use std::path;
+use std::{collections, error, path};
 
 mod bad_input;
 mod cell_parse_error;
@@ -33,7 +31,7 @@ pub enum Error {
     /// A syntax error in a formula in a cell.
     CellSyntaxError {
         filename: path::PathBuf,
-        position: a1::Address,
+        address: a1::Address,
         parse_error: Box<ParseError>,
     },
 
@@ -43,11 +41,17 @@ pub enum Error {
         parse_error: Box<ParseError>,
     },
 
+    /// There was an error parsing the raw CSV
+    CsvParseError {
+        filename: path::PathBuf,
+        parse_error: Box<ParseError>,
+    },
+
     /// An error encountered when evaluating the formulas in a cell.
     EvalError {
         eval_error: Box<EvalError>,
         filename: path::PathBuf,
-        position: Option<a1::Address>,
+        address: Option<a1::Address>,
     },
 
     /// Google Sheets requires that the `gcloud` CLI tools are installed and configured.  If we

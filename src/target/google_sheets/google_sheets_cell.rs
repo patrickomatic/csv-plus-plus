@@ -295,10 +295,11 @@ impl<'a> GoogleSheetsCell<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::*;
 
     #[test]
     fn cell_format_none() {
-        let cell = Cell::default();
+        let cell = Cell::new(build_field("", (0, 0)));
         let gs_cell = GoogleSheetsCell(&cell);
 
         assert!(gs_cell.cell_format().is_none());
@@ -306,7 +307,7 @@ mod tests {
 
     #[test]
     fn cell_format_some() {
-        let mut cell = Cell::default();
+        let mut cell = Cell::new(build_field("", (0, 0)));
         cell.text_formats.insert(TextFormat::Bold);
         cell.vertical_align = Some(VerticalAlign::Top);
         cell.horizontal_align = Some(HorizontalAlign::Right);
@@ -327,7 +328,7 @@ mod tests {
 
     #[test]
     fn data_validation_rule_none() {
-        let cell = Cell::default();
+        let cell = Cell::new(build_field("", (0, 0)));
         let gs_cell = GoogleSheetsCell(&cell);
 
         assert!(gs_cell.data_validation_rule().is_none());
@@ -335,10 +336,8 @@ mod tests {
 
     #[test]
     fn data_validation_rule_some() {
-        let cell = Cell {
-            data_validation: Some(DataValidation::DateIsValid),
-            ..Default::default()
-        };
+        let mut cell = Cell::new(build_field("", (0, 0)));
+        cell.data_validation = Some(DataValidation::DateIsValid);
         let gs_cell = GoogleSheetsCell(&cell);
 
         assert!(gs_cell.data_validation_rule().is_some());

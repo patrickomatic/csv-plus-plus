@@ -8,6 +8,7 @@ use crate::{
     deprecated_feature, ArcSourceCode, BorderSide, BorderStyle, Cell, Fill, HorizontalAlign,
     NumberFormat, Rgb, Row, TextFormat, VerticalAlign,
 };
+use csvp::Field;
 
 pub(crate) struct CellParser<'a, 'b: 'a> {
     cell: Cell,
@@ -16,6 +17,7 @@ pub(crate) struct CellParser<'a, 'b: 'a> {
     /// lifetime)
     lexer: &'a mut CellLexer<'b>,
     row: &'a mut Row,
+    // TODO: get rid of this and use cell.field.position.y
     row_a1: a1::Address,
 }
 
@@ -48,28 +50,27 @@ where
     'b: 'a,
 {
     pub(crate) fn parse(
-        input: &'b str,
-        position: a1::Address,
+        field: &Field,
         row: &'b mut Row,
         source_code: ArcSourceCode,
     ) -> Result<Cell> {
-        Self::parse_cell(input, position, row, source_code.clone())
-            .map_err(move |e| source_code.cell_syntax_error(e, position))
+        let address = field.address;
+        Self::parse_cell(field, row, source_code.clone())
+            .map_err(move |e| source_code.cell_syntax_error(e, address))
     }
 
     fn parse_cell(
-        input: &'b str,
-        position: a1::Address,
+        field: &Field,
         row: &'b mut Row,
         source_code: ArcSourceCode,
     ) -> ParseResult<Cell> {
-        let mut lexer = CellLexer::new(input, position, source_code);
+        let mut lexer = CellLexer::new(field, source_code);
         let mut parsed_cell = None;
 
         while let Some(start_token) = lexer.maybe_take_start_options() {
             let is_row_options = start_token.token == Token::StartRowOptions;
             // they can only specify a `![[` on the first cell
-            if is_row_options && position.column.x != 0 {
+            if is_row_options && field.address.column.x != 0 {
                 return Err(start_token
                     .into_parse_error("You can only define a row options on the first cell"));
             }
@@ -82,11 +83,11 @@ where
             };
 
             let mut parser = CellParser {
-                cell: Cell::default_from(row.clone()),
+                cell: Cell::default_from(row.clone(), field.clone()),
                 is_row_options,
                 lexer: &mut lexer,
                 row,
-                row_a1: position,
+                row_a1: field.address,
             };
             parser.parse_cell_options()?;
 
@@ -95,8 +96,9 @@ where
             }
         }
 
-        let mut cell = parsed_cell.unwrap_or_else(|| Cell::default_from(row.clone()));
-        cell.value = lexer.rest().to_string();
+        let mut cell =
+            parsed_cell.unwrap_or_else(|| Cell::default_from(row.clone(), field.clone()));
+        cell.parsed_value = lexer.rest().to_string();
 
         Ok(cell)
     }
@@ -254,7 +256,6 @@ where
             }
         }
 
-        // self.lexer.take_token(Token::EndOptions)?;
         Ok(())
     }
 }
@@ -265,19 +266,21 @@ mod tests {
     use crate::test_utils::*;
 
     fn test_parse(input: &str, row: &mut Row) -> Cell {
-        CellParser::parse(input, a1::Address::new(0, 0), row, build_source_code()).unwrap()
+        CellParser::parse(&build_field(input, (0, 0)), row, build_source_code()).unwrap()
     }
 
     #[test]
     fn parse_no_option() {
         let cell = test_parse("abc123", &mut Row::default());
-        assert_eq!(cell.value, "abc123");
+
+        assert_eq!(cell.parsed_value, "abc123");
     }
 
     #[test]
     fn parse_option() {
         let cell = test_parse("[[text=bold]]abc123", &mut Row::default());
-        assert_eq!(cell.value, "abc123");
+
+        assert_eq!(cell.parsed_value, "abc123");
         assert!(cell.text_formats.contains(&TextFormat::Bold));
     }
 
@@ -286,8 +289,7 @@ mod tests {
         let mut row = Row::default();
         let cell = test_parse("![[text=italic/valign=top/fill]]abc123", &mut row);
 
-        assert_eq!(cell.value, "abc123");
-
+        assert_eq!(cell.parsed_value, "abc123");
         assert!(row.text_formats.contains(&TextFormat::Italic));
         assert_eq!(row.vertical_align, Some(VerticalAlign::Top));
         assert_eq!(
@@ -304,8 +306,7 @@ mod tests {
         let mut row = Row::default();
         let cell = test_parse("![[text=italic valign=top fill]]abc123", &mut row);
 
-        assert_eq!(cell.value, "abc123");
-
+        assert_eq!(cell.parsed_value, "abc123");
         assert!(row.text_formats.contains(&TextFormat::Italic));
         assert_eq!(row.vertical_align, Some(VerticalAlign::Top));
         assert_eq!(
@@ -330,7 +331,7 @@ mod tests {
     fn parse_multiple_options_shorthand() {
         let cell = test_parse("[[ha=l va=c t=u fs=12]]abc123", &mut Row::default());
 
-        assert_eq!(cell.value, "abc123");
+        assert_eq!(cell.parsed_value, "abc123");
         assert_eq!(cell.font_size, Some(12));
         assert_eq!(cell.horizontal_align, Some(HorizontalAlign::Left));
         assert_eq!(cell.vertical_align, Some(VerticalAlign::Center));

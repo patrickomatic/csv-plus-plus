@@ -28,10 +28,10 @@ fn row_variable_in_fill() {
 ,=SUM(cell),=SUM(row)
 ![[f=3 var=row]][[var=cell]],=cell,=row,
 "#,
-        ",=SUM(A2:A4),=SUM(2:4),
-,=A2,=2:2,
-,=A3,=3:3,
-,=A4,=4:4,
+        ",=SUM(A2:A4),=SUM(2:4)
+,=A2,=2:2
+,=A3,=3:3
+,=A4,=4:4
 ",
     );
 }

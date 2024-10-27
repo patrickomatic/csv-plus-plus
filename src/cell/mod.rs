@@ -7,17 +7,19 @@ use crate::{
     ArcSourceCode, BorderSide, BorderStyle, DataValidation, HorizontalAlign, NumberFormat, Result,
     Rgb, Row, TextFormat, VerticalAlign,
 };
-use std::collections::HashSet;
+use csvp::Field;
+use std::collections;
 
 mod display;
 
-#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct Cell {
     pub ast: Option<Ast>,
-    pub value: String,
+    pub field: Field,
+    pub parsed_value: String,
     pub border_color: Option<Rgb>,
     pub border_style: Option<BorderStyle>,
-    pub borders: HashSet<BorderSide>,
+    pub borders: collections::HashSet<BorderSide>,
     pub color: Option<Rgb>,
     pub data_validation: Option<DataValidation>,
     pub font_color: Option<Rgb>,
@@ -27,20 +29,16 @@ pub struct Cell {
     pub lock: bool,
     pub note: Option<String>,
     pub number_format: Option<NumberFormat>,
-    pub text_formats: HashSet<TextFormat>,
+    pub text_formats: collections::HashSet<TextFormat>,
     pub var: Option<String>,
     pub vertical_align: Option<VerticalAlign>,
 }
 
-fn parse_ast(
-    input: &str,
-    position: a1::Address,
-    source_code: &ArcSourceCode,
-) -> Result<Option<Ast>> {
-    Ok(if let Some(without_equals) = input.strip_prefix('=') {
+fn parse_ast(input: &str, field: &Field, source_code: &ArcSourceCode) -> Result<Option<Ast>> {
+    Ok(if input.starts_with('=') {
         Some(
-            AstParser::parse(without_equals, false, Some(position), source_code.clone())
-                .map_err(|e| source_code.cell_syntax_error(e, position))?,
+            AstParser::parse(input, false, Some(field.clone()), source_code.clone())
+                .map_err(|e| source_code.cell_syntax_error(e, field.address))?,
         )
     } else {
         None
@@ -48,26 +46,47 @@ fn parse_ast(
 }
 
 impl Cell {
-    pub(crate) fn parse(
-        input: &str,
-        position: a1::Address,
-        row: &mut Row,
-        source_code: &ArcSourceCode,
-    ) -> Result<Self> {
-        let mut cell = CellParser::parse(input, position, row, source_code.clone())?;
-        cell.ast = parse_ast(&cell.value, position, source_code)?;
+    #[cfg(test)]
+    pub(crate) fn new(field: Field) -> Self {
+        Self {
+            field,
+            ast: Option::default(),
+            border_color: Option::default(),
+            border_style: Option::default(),
+            borders: collections::HashSet::default(),
+            color: Option::default(),
+            data_validation: Option::default(),
+            font_color: Option::default(),
+            font_family: Option::default(),
+            font_size: Option::default(),
+            horizontal_align: Option::default(),
+            lock: Default::default(),
+            note: Option::default(),
+            number_format: Option::default(),
+            parsed_value: String::default(),
+            text_formats: collections::HashSet::default(),
+            var: Option::default(),
+            vertical_align: Option::default(),
+        }
+    }
+
+    pub(crate) fn parse(field: &Field, row: &mut Row, source_code: &ArcSourceCode) -> Result<Self> {
+        let mut cell = CellParser::parse(field, row, source_code.clone())?;
+        cell.ast = parse_ast(&cell.parsed_value, &cell.field.clone(), source_code)?;
 
         Ok(cell)
     }
 
     /// Copy all of the values from `row` which are relevant for a `Cell` to inherit
-    pub(crate) fn default_from(row: Row) -> Self {
+    pub(crate) fn default_from(row: Row, field: Field) -> Self {
         Self {
+            ast: None,
             border_color: row.border_color,
             border_style: row.border_style,
             borders: row.borders,
             color: row.color,
             data_validation: row.data_validation,
+            field,
             font_color: row.font_color,
             font_family: row.font_family,
             font_size: row.font_size,
@@ -75,9 +94,10 @@ impl Cell {
             lock: row.lock,
             note: row.note,
             number_format: row.number_format,
+            parsed_value: String::default(),
             text_formats: row.text_formats,
+            var: None,
             vertical_align: row.vertical_align,
-            ..Default::default()
         }
     }
 }
@@ -93,14 +113,13 @@ mod tests {
         let test_file = &TestSourceCode::new("csv", "foo,bar,baz\n1,2,3\n");
         let source_code = test_file.into();
         let cell = Cell::parse(
-            "foo",
-            (0, 4).into(),
+            &build_field("foo", (0, 4)),
             &mut Row::default(),
             &ArcSourceCode::new(source_code),
         )
         .unwrap();
 
-        assert_eq!(cell.value, "foo");
+        assert_eq!(cell.field.value, "foo");
         assert_eq!(cell.ast, None);
     }
 
@@ -109,8 +128,7 @@ mod tests {
         let test_file = &TestSourceCode::new("csv", "foo,bar,baz\n1,2,3\n");
         let source_code = test_file.into();
         let cell = Cell::parse(
-            "=1 + foo",
-            (0, 4).into(),
+            &build_field("=1 + foo", (0, 4)),
             &mut Row::default(),
             &ArcSourceCode::new(source_code),
         )

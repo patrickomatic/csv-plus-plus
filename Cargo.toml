@@ -1,4 +1,10 @@
-workspace = { members = ["csvp"] }
+[workspace]
+members = ["csvp"]
+
+[workspace.dependencies]
+a1 = { version = "1.0.1", features = ["serde"] }
+serde = { version = "1", features = ["derive", "rc"] }
+
 [package]
 authors = ["Patrick Carroll <patrick@patrickomatic.com>"]
 description = "Compile csv++ source code to a target spreadsheet format"
@@ -7,16 +13,17 @@ keywords = ["csv++", "csvpp", "csv", "spreadsheet"]
 license = "MIT"
 name = "csvpp"
 repository = "https://github.com/patrickomatic/csv-plus-plus"
-version = "0.7.1"
+version = "0.8.0"
 edition = "2021"
 
 [dependencies]
-a1 = { version = "1.0.1", features = ["serde"] }
+a1 = { workspace = true }
 bincode = "1.3.3"
 chrono = { version = "^0.4.31", features = ["serde"] }
 clap = { version = "^4", features = ["derive"] }
 colored = "^2.0"
 csv = "1"
+csvp = { path = "./csvp" }
 env_logger = "^0.11"
 google-drive3 = "^6.0"
 google-sheets4 = "^6.0"
@@ -26,7 +33,7 @@ petgraph = "^0.6"
 rayon = "^1.8"
 regex = "^1.10"
 semver = "^1"
-serde = { version = "1", features = ["derive", "rc"] }
+serde = { workspace = true }
 serde_json = "^1"
 tokio = { version = "^1.35", features = ["rt"] }
 umya-spreadsheet = "^2.1"

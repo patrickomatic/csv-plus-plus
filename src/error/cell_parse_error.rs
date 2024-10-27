@@ -3,9 +3,8 @@
 //! An error that can be thrown when parsing a cell.
 use super::BadInput;
 use crate::parser::cell_lexer::TokenMatch;
-use crate::{CharOffset, LineNumber, ParseError};
-use std::error;
-use std::fmt;
+use crate::ParseError;
+use std::{error, fmt};
 
 #[derive(Debug)]
 pub(crate) struct CellParseError {
@@ -47,12 +46,8 @@ impl fmt::Display for CellParseError {
 }
 
 impl BadInput for CellParseError {
-    fn line_number(&self) -> LineNumber {
-        self.bad_input.line_number()
-    }
-
-    fn line_offset(&self) -> CharOffset {
-        self.bad_input.line_offset()
+    fn position(&self) -> csvp::SourcePosition {
+        self.bad_input.position()
     }
 
     fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError {

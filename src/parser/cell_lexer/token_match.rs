@@ -4,14 +4,15 @@ use super::Token;
 use crate::ast::{Ast, Node};
 use crate::error::{BadInput, ParseError, ParseResult};
 use crate::parser::TokenInput;
-use crate::{compiler_error, ArcSourceCode, CharOffset, DateTime, LineNumber};
+use crate::{compiler_error, ArcSourceCode, CharOffset, DateTime};
+use csvp::Field;
 use std::fmt;
 
 #[derive(Clone, Debug)]
 pub(crate) struct TokenMatch {
     pub(crate) token: Token,
     pub(crate) str_match: String,
-    pub(crate) position: a1::Address,
+    pub(crate) field: Field,
     pub(crate) cell_offset: CharOffset,
     pub(crate) source_code: ArcSourceCode,
 }
@@ -42,12 +43,15 @@ impl BadInput for TokenMatch {
         self.source_code.parse_error(&self, message)
     }
 
-    fn line_number(&self) -> LineNumber {
-        self.source_code.csv_line_number(self.position)
-    }
-
-    fn line_offset(&self) -> CharOffset {
-        self.source_code.line_offset_for_cell(self.position, false) + self.cell_offset
+    fn position(&self) -> csvp::SourcePosition {
+        self.field
+            .position_for_offset(self.cell_offset)
+            .unwrap_or_else(|| {
+                compiler_error(format!(
+                    "Error getting position of {} from {:?}.",
+                    self.cell_offset, self.field,
+                ))
+            })
     }
 }
 
@@ -92,7 +96,7 @@ mod tests {
         TokenMatch {
             token,
             str_match: str_match.to_string(),
-            position: a1::Address::new(0, 0),
+            field: build_field(str_match, (0, 0)),
             cell_offset: 0,
             source_code: build_source_code(),
         }
@@ -158,7 +162,7 @@ mod tests {
     fn try_from_number() {
         assert_eq!(
             Ast::try_from(build_token_match(Token::Number, "-123")).unwrap(),
-            Ast::new((-123).into())
+            Ast::new(-123)
         );
     }
 
@@ -166,7 +170,7 @@ mod tests {
     fn try_from_positive_number() {
         assert_eq!(
             Ast::try_from(build_token_match(Token::Number, "123")).unwrap(),
-            Ast::new(123.into())
+            Ast::new(123)
         );
     }
 }

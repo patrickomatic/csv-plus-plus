@@ -6,6 +6,7 @@
 use super::TokenMatcher;
 use crate::error::{BadInput, ParseError, ParseResult};
 use crate::{ArcSourceCode, CharOffset};
+use csvp::Field;
 
 mod token;
 mod token_library;
@@ -20,18 +21,18 @@ pub(crate) use unknown_token::UnknownToken;
 #[derive(Debug)]
 pub(crate) struct CellLexer<'a> {
     cell_offset: CharOffset,
+    pub(crate) field: &'a Field,
     pub(crate) input: &'a str,
-    position: a1::Address,
     source_code: ArcSourceCode,
     token_library: &'static TokenLibrary,
 }
 
 impl<'a> CellLexer<'a> {
-    pub(super) fn new(input: &'a str, position: a1::Address, source_code: ArcSourceCode) -> Self {
+    pub(super) fn new(field: &'a Field, source_code: ArcSourceCode) -> Self {
         Self {
             cell_offset: 0,
-            input,
-            position,
+            field,
+            input: &field.value,
             source_code,
             token_library: TokenLibrary::library(),
         }
@@ -166,8 +167,8 @@ impl<'a> CellLexer<'a> {
         TokenMatch {
             token,
             str_match: str_match.to_string(),
-            position: self.position,
-            cell_offset: self.last_cell_offset(),
+            field: self.field.clone(),
+            cell_offset: self.current_cell_offset(),
             source_code: self.source_code.clone(),
         }
     }
@@ -175,8 +176,8 @@ impl<'a> CellLexer<'a> {
     pub(super) fn unknown_string<S: Into<String>>(&self, message: S) -> ParseError {
         UnknownToken {
             bad_input: self.input.to_string(),
-            position: self.position,
-            cell_offset: self.last_cell_offset(),
+            field: self.field.clone(),
+            cell_offset: self.current_cell_offset(),
             source_code: self.source_code.clone(),
         }
         .into_parse_error(message)
@@ -334,7 +335,7 @@ impl<'a> CellLexer<'a> {
     }
 
     // our parser has the `cell_offset` set to one position ahead of where we last read
-    fn last_cell_offset(&self) -> CharOffset {
+    fn current_cell_offset(&self) -> CharOffset {
         self.cell_offset.saturating_sub(1)
     }
 
@@ -354,17 +355,14 @@ mod tests {
     use super::*;
     use crate::test_utils::*;
 
-    fn test_lexer(lexer_input: &str) -> CellLexer {
-        CellLexer::new(
-            lexer_input,
-            a1::Address::new(0, 0),
-            build_source_code_from_input(lexer_input),
-        )
+    fn test_lexer(field: &Field) -> CellLexer {
+        CellLexer::new(field, build_source_code_from_input(&field.value))
     }
 
     #[test]
     fn maybe_take_date() {
-        let mut lexer = test_lexer("  11/2/2024, 1, 2");
+        let field = build_field("  11/2/2024, 1, 2", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!(lexer.maybe_take_date().unwrap().token, Token::Date);
         assert_eq!(lexer.input, ", 1, 2");
@@ -373,7 +371,8 @@ mod tests {
 
     #[test]
     fn maybe_take_identifier() {
-        let mut lexer = test_lexer("     foo bar baz");
+        let field = build_field("     foo bar baz", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!(
             lexer.maybe_take_identifier().unwrap().token,
@@ -385,7 +384,8 @@ mod tests {
 
     #[test]
     fn maybe_take_single_quoted_string() {
-        let mut lexer = test_lexer("     'foo bar' baz");
+        let field = build_field("     'foo bar' baz", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!(
             lexer
@@ -401,7 +401,8 @@ mod tests {
 
     #[test]
     fn maybe_take_start_cell_options() {
-        let mut lexer = test_lexer("[[");
+        let field = build_field("[[", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!(
             Token::StartCellOptions,
@@ -411,7 +412,8 @@ mod tests {
 
     #[test]
     fn maybe_take_start_row_options() {
-        let mut lexer = test_lexer("![[");
+        let field = build_field("![[", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!(
             Token::StartRowOptions,
@@ -421,70 +423,80 @@ mod tests {
 
     #[test]
     fn maybe_take_start_options_none() {
-        let mut lexer = test_lexer("foo");
+        let field = build_field("foo", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert!(lexer.maybe_take_start_options().is_none());
     }
 
     #[test]
     fn take_option_right_side() {
-        let mut lexer = test_lexer("=foo_bar");
+        let field = build_field("=foo_bar", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!("foo_bar", lexer.take_option_right_side().unwrap().str_match);
     }
 
     #[test]
     fn take_option_right_side_invalid() {
-        let mut lexer = test_lexer("foo");
+        let field = build_field("foo", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert!(lexer.take_option_right_side().is_err());
     }
 
     #[test]
     fn maybe_take_equals() {
-        let mut lexer = test_lexer("=");
+        let field = build_field("=", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert!(lexer.maybe_take_equals().is_some());
     }
 
     #[test]
     fn maybe_take_end_options() {
-        let mut lexer = test_lexer("]]");
+        let field = build_field("]]", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert!(lexer.maybe_take_end_options().is_some());
     }
 
     #[test]
     fn maybe_take_slash() {
-        let mut lexer = test_lexer("/");
+        let field = build_field("/", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert!(lexer.maybe_take_slash().is_some());
     }
 
     #[test]
     fn take_token_color() {
-        let mut lexer = test_lexer("#ABC123");
+        let field = build_field("#ABC123", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!("#ABC123", lexer.take_token(Token::Color).unwrap().str_match);
     }
 
     #[test]
     fn take_token_color_shorthand() {
-        let mut lexer = test_lexer("#ABC");
+        let field = build_field("#ABC", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!("#ABC", lexer.take_token(Token::Color).unwrap().str_match);
     }
 
     #[test]
     fn take_token_color_no_hash() {
-        let mut lexer = test_lexer("ABC123");
+        let field = build_field("ABC123", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!("ABC123", lexer.take_token(Token::Color).unwrap().str_match);
     }
 
     #[test]
     fn take_token_date() {
-        let mut lexer = test_lexer(" 2022-01-02, foo");
+        let field = build_field(" 2022-01-02, foo", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!(
             "2022-01-02",
@@ -496,21 +508,24 @@ mod tests {
 
     #[test]
     fn take_token_end_options() {
-        let mut lexer = test_lexer("]]");
+        let field = build_field("]]", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!("]]", lexer.take_token(Token::EndOptions).unwrap().str_match);
     }
 
     #[test]
     fn take_token_equals() {
-        let mut lexer = test_lexer(" = ");
+        let field = build_field(" = ", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!("=", lexer.take_token(Token::Equals).unwrap().str_match);
     }
 
     #[test]
     fn take_token_option_name() {
-        let mut lexer = test_lexer("foo");
+        let field = build_field("foo", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!(
             "foo",
@@ -520,7 +535,8 @@ mod tests {
 
     #[test]
     fn take_token_positive_number() {
-        let mut lexer = test_lexer("15");
+        let field = build_field("15", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!(
             "15",
@@ -530,14 +546,16 @@ mod tests {
 
     #[test]
     fn take_token_string() {
-        let mut lexer = test_lexer("string");
+        let field = build_field("string", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!("string", lexer.take_token(Token::String).unwrap().str_match);
     }
 
     #[test]
     fn take_token_string_double_quoted() {
-        let mut lexer = test_lexer("'this is \\' a quoted string\\''");
+        let field = build_field("'this is \\' a quoted string\\''", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!(
             "this is ' a quoted string'",
@@ -549,21 +567,24 @@ mod tests {
 
     #[test]
     fn take_token_slash() {
-        let mut lexer = test_lexer(" / ");
+        let field = build_field(" / ", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert_eq!("/", lexer.take_token(Token::Slash).unwrap().str_match);
     }
 
     #[test]
     fn take_token_invalid() {
-        let mut lexer = test_lexer("foo");
+        let field = build_field("foo", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         assert!(lexer.take_token(Token::PositiveNumber).is_err());
     }
 
     #[test]
     fn rest() {
-        let mut lexer = test_lexer(" / = rest");
+        let field = build_field(" / = rest", (0, 0));
+        let mut lexer = test_lexer(&field);
 
         lexer.take_token(Token::Slash).unwrap();
         lexer.take_token(Token::Equals).unwrap();

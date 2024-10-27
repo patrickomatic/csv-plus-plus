@@ -63,12 +63,6 @@ use log::{error, info, warn};
 #[cfg(test)]
 mod test_utils;
 
-pub(crate) fn csv_reader() -> csv::ReaderBuilder {
-    let mut csv_reader = csv::ReaderBuilder::new();
-    csv_reader.flexible(true).has_headers(false);
-    csv_reader
-}
-
 pub(crate) fn compiler_error<S: std::fmt::Display>(message: S) -> ! {
     error!(
         "csv++ ran into an unexpected error while compiling.

@@ -7,13 +7,9 @@ impl fmt::Display for Error {
             Self::CellSyntaxError {
                 filename,
                 parse_error,
-                position,
+                address,
             } => {
-                writeln!(
-                    f,
-                    "Syntax error in cell {position} of {}",
-                    filename.display()
-                )?;
+                writeln!(f, "Syntax error in cell {address} of {filename:?}",)?;
                 writeln!(f, "{parse_error}")
             }
 
@@ -21,25 +17,31 @@ impl fmt::Display for Error {
                 parse_error,
                 filename,
             } => {
-                writeln!(f, "Syntax error in code section of {}", filename.display())?;
+                writeln!(f, "Syntax error in code section of {filename:?}")?;
+                writeln!(f, "{parse_error}")
+            }
+
+            Self::CsvParseError {
+                parse_error,
+                filename,
+            } => {
+                writeln!(f, "Syntax error in CSV section of {filename:?}")?;
                 writeln!(f, "{parse_error}")
             }
 
             Self::EvalError {
                 eval_error,
-                position,
+                address,
                 filename,
             } => {
-                if let Some(position) = position {
+                if let Some(address) = address {
                     writeln!(
                         f,
-                        "Error evaluating formula in cell {position} ({}, {}) of {}",
-                        position.column.x,
-                        position.row.y,
-                        filename.display()
+                        "Error evaluating formula in cell {address} ({}, {}) of {filename:?}",
+                        address.column.x, address.row.y,
                     )?;
                 } else {
-                    writeln!(f, "Error evaluating formula in {}", filename.display())?;
+                    writeln!(f, "Error evaluating formula in {filename:?}")?;
                 }
                 writeln!(f, "{eval_error}")
             }
@@ -80,12 +82,12 @@ csv++ with `GOOGLE_APPLICATION_CREDENTIALS` or the `--google-account-credentials
             }
 
             Self::SourceCodeError { filename, message } => {
-                writeln!(f, "Error reading source {}", filename.display())?;
+                writeln!(f, "Error reading source {filename:?}")?;
                 writeln!(f, "{message}")
             }
 
             Self::TargetWriteError { output, message } => {
-                writeln!(f, "Error writing to {output}")?;
+                writeln!(f, "Error writing to \"{output}\"")?;
                 writeln!(f, "{message}")
             }
         }
@@ -102,8 +104,7 @@ mod tests {
         ParseError {
             bad_input: "bar".into(),
             message: "it should be foo".into(),
-            line_number: 3,
-            line_offset: 5,
+            position: (5, 3).into(),
             possible_values: None,
             highlighted_lines: vec!["foo".into(), "bar".into(), "baz".into()],
         }
@@ -113,13 +114,13 @@ mod tests {
     fn display_cell_syntax_error() {
         let message = Error::CellSyntaxError {
             filename: path::PathBuf::from("a_file.csvpp"),
-            position: a1::Address::new(1, 5),
+            address: (1, 5).into(),
             parse_error: Box::new(build_parse_error()),
         };
 
         assert_eq!(
             message.to_string(),
-            "Syntax error in cell B6 of a_file.csvpp
+            "Syntax error in cell B6 of \"a_file.csvpp\"
 On line 4 it should be foo but saw bar
 
 foo
@@ -139,7 +140,7 @@ baz
 
         assert_eq!(
             message.to_string(),
-            "Syntax error in code section of a_file.csvpp
+            "Syntax error in code section of \"a_file.csvpp\"
 On line 4 it should be foo but saw bar
 
 foo
@@ -158,12 +159,12 @@ baz
                 message: "Error".to_string(),
                 bad_input: "foo".to_string(),
             }),
-            position: Some(a1::Address::new(2, 2)),
+            address: Some((2, 2).into()),
         };
 
         assert_eq!(
             message.to_string(),
-            "Error evaluating formula in cell C3 (2, 2) of a_file.csvpp
+            "Error evaluating formula in cell C3 (2, 2) of \"a_file.csvpp\"
 Error: foo
 "
         );
@@ -185,7 +186,7 @@ Error: foo
 
         assert_eq!(
             message.to_string(),
-            "Error reading source a_file.csvpp\nfoo\n",
+            "Error reading source \"a_file.csvpp\"\nfoo\n",
         );
     }
 
@@ -196,6 +197,6 @@ Error: foo
             message: "foo".to_string(),
         };
 
-        assert_eq!(message.to_string(), "Error writing to foo.xlsx\nfoo\n",);
+        assert_eq!(message.to_string(), "Error writing to \"foo.xlsx\"\nfoo\n",);
     }
 }

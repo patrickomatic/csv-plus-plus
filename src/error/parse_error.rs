@@ -1,9 +1,8 @@
 //! # `ParseError`
 //! `ParseError`s are errors that lack an outer context such as `line_number` or `index: A1`.
 //! They should be caught and wrapped into an `Error`.
-use crate::{CharOffset, LineNumber};
-use std::error;
-use std::fmt;
+use csvp::SourcePosition;
+use std::{error, fmt};
 
 #[derive(Debug, PartialEq)]
 pub struct ParseError {
@@ -25,9 +24,7 @@ pub struct ParseError {
     /// place.
     pub message: String,
 
-    pub line_number: LineNumber,
-
-    pub line_offset: CharOffset,
+    pub position: SourcePosition,
 
     pub possible_values: Option<Vec<String>>,
 }
@@ -37,7 +34,7 @@ impl fmt::Display for ParseError {
         let ParseError {
             bad_input,
             highlighted_lines,
-            line_number,
+            position,
             message,
             possible_values,
             ..
@@ -46,7 +43,7 @@ impl fmt::Display for ParseError {
         writeln!(
             f,
             "On line {} {message} but saw {bad_input}",
-            line_number + 1
+            position.line_number + 1
         )?;
 
         if let Some(pv) = possible_values {
@@ -77,8 +74,7 @@ mod tests {
         let message = ParseError {
             bad_input: "bar".to_string(),
             message: "it should be foo".to_string(),
-            line_number: 3,
-            line_offset: 5,
+            position: (5, 3).into(),
             possible_values: None,
             highlighted_lines: vec!["foo".to_string(), "bar".to_string(), "baz".to_string()],
         };
@@ -99,8 +95,7 @@ baz
         let message = ParseError {
             bad_input: "bar".to_string(),
             message: "it should be foo".to_string(),
-            line_number: 3,
-            line_offset: 5,
+            position: (5, 3).into(),
             possible_values: Some(vec![
                 "one".to_string(),
                 "two".to_string(),

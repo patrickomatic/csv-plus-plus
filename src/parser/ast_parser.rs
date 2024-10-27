@@ -15,8 +15,8 @@ use super::ast_lexer::{AstLexer, Token};
 use crate::ast::{Ast, Node, NumberSign, Variables};
 use crate::error::{BadInput, Error, ParseResult, Result};
 use crate::{ArcSourceCode, SourceCode};
-use std::collections;
-use std::path;
+use csvp::Field;
+use std::{collections, path};
 
 macro_rules! infix_power {
     ($p:expr) => {
@@ -50,10 +50,10 @@ impl<'a> AstParser<'a> {
     pub(crate) fn parse(
         input: &'a str,
         single_expr: bool,
-        position: Option<a1::Address>,
+        field: Option<Field>,
         source_code: ArcSourceCode,
     ) -> ParseResult<Ast> {
-        AstParser::new(&AstLexer::new(input, position, source_code)?, single_expr).expr_bp(0)
+        AstParser::new(&AstLexer::new(input, field, source_code)?, single_expr).expr_bp(0)
     }
 
     /// Parse `input` from the command line, specified as a simple key/value string like
@@ -136,6 +136,7 @@ impl<'a> AstParser<'a> {
                         value,
                     }
                     .into(),
+
                     Node::Float {
                         percentage, value, ..
                     } => Node::Float {
@@ -144,6 +145,7 @@ impl<'a> AstParser<'a> {
                         value,
                     }
                     .into(),
+
                     _ => {
                         return Err(lhs_token
                             .into_parse_error("Expected a number or float after prefix operator"))
@@ -219,12 +221,14 @@ impl<'a> AstParser<'a> {
                             value,
                         }
                         .into(),
+
                         Node::Integer { sign, value, .. } => Node::Integer {
                             percentage: true,
                             sign,
                             value,
                         }
                         .into(),
+
                         _ => {
                             return Err(op_token.into_parse_error(format!(
                                 "Attempted to apply `%` operator to non-number: {lhs}"
@@ -395,12 +399,12 @@ mod tests {
         assert_eq!(
             test_parse("1 * 2 + 3 - 4 / 5"),
             Node::infix_fn_call(
-                Node::infix_fn_call(Ast::new(1.into()), "*", Ast::new(2.into())),
+                Node::infix_fn_call(Ast::new(1), "*", Ast::new(2)),
                 "+",
                 Node::infix_fn_call(
-                    Ast::new(3.into()),
+                    Ast::new(3),
                     "-",
-                    Node::infix_fn_call(Ast::new(4.into()), "/", Ast::new(5.into()))
+                    Node::infix_fn_call(Ast::new(4), "/", Ast::new(5))
                 )
             )
             .into()

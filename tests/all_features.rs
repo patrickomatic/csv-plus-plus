@@ -28,22 +28,16 @@ fn all_features_excel() {
 
     let s = umya_spreadsheet::reader::xlsx::read(&setup.output_path).unwrap();
     // borders
-    /* TODO: for some reason umya can't write then read borders
     dbg!(get_cell(&s, "B2").get_style());
     assert_eq!(
-        spreadsheet
-            .get_sheet_by_name("all_features")
-            .unwrap()
-            .get_cell("B2")
-            .unwrap()
+        get_cell(&s, "B2")
             .get_style()
             .get_borders()
             .unwrap()
             .get_top()
             .get_border_style(),
-        umya_spreadsheet::structs::Border::BORDER_MEDIUM
+        umya_spreadsheet::structs::Border::BORDER_THIN
     );
-        */
 
     // color
     assert_eq!(

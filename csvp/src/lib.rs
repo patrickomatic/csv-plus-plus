@@ -4,15 +4,15 @@
 mod config;
 mod error;
 mod field;
-mod parser;
-mod partial_field;
+mod field_builder;
+pub mod parser;
 mod source_position;
 
 pub use config::Config;
 pub use error::Error;
 pub use field::Field;
+pub(crate) use field_builder::FieldBuilder;
 pub use parser::parse;
-pub(crate) use partial_field::PartialField;
 pub use source_position::SourcePosition;
 
 pub type Record = Vec<Field>;

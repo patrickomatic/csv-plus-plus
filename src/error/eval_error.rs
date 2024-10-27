@@ -1,6 +1,5 @@
 //! # `EvalError`
-use std::error;
-use std::fmt;
+use std::{error, fmt};
 
 #[derive(Debug)]
 pub struct EvalError {

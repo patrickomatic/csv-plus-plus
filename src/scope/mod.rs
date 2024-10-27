@@ -76,7 +76,7 @@ mod tests {
             variables: HashMap::from([("foobs".to_string(), 1.into())]),
             functions: HashMap::from([(
                 "func".to_string(),
-                Node::fn_def("func", &["A", "B"], Ast::new(1.into())).into(),
+                Node::fn_def("func", &["A", "B"], Ast::new(1)).into(),
             )]),
             ..Default::default()
         };

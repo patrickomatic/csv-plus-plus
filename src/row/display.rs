@@ -22,6 +22,7 @@ impl fmt::Display for Row {
 
 #[cfg(test)]
 mod tests {
+    use crate::test_utils::*;
     use crate::*;
 
     #[test]
@@ -29,16 +30,16 @@ mod tests {
         let row = Row {
             cells: vec![
                 Cell {
-                    value: "foo".to_string(),
-                    ..Default::default()
+                    parsed_value: "foo".into(),
+                    ..Cell::new(build_field("foo", (0, 0)))
                 },
                 Cell {
-                    value: "bar".to_string(),
-                    ..Default::default()
+                    parsed_value: "bar".into(),
+                    ..Cell::new(build_field("bar", (1, 0)))
                 },
                 Cell {
-                    value: "baz".to_string(),
-                    ..Default::default()
+                    parsed_value: "baz".into(),
+                    ..Cell::new(build_field("baz", (2, 0)))
                 },
             ],
             ..Default::default()

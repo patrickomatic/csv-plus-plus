@@ -312,7 +312,7 @@ mod tests {
 
     fn test_parse(input: &str) -> Cell {
         let mut row = Row::default();
-        CellParser::parse(input, a1::Address::new(0, 0), &mut row, build_source_code()).unwrap()
+        CellParser::parse(&build_field(input, (0, 0)), &mut row, build_source_code()).unwrap()
     }
 
     #[test]
@@ -402,8 +402,7 @@ mod tests {
     #[test]
     fn parse_validate_invalid() {
         let res = CellParser::parse(
-            "[[validate=foo_bar(12/1/23)]]abc123",
-            a1::Address::new(0, 0),
+            &build_field("[[validate=foo_bar(12/1/23)]]abc123", (0, 0)),
             &mut Row::default(),
             build_source_code(),
         );

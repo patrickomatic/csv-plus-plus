@@ -1,14 +1,14 @@
 use crate::error::{BadInput, ParseError};
-use crate::{ArcSourceCode, CharOffset, LineNumber};
+use crate::ArcSourceCode;
+use csvp::{Field, SourcePosition};
 use std::fmt;
 
 #[derive(Debug)]
 pub(crate) struct UnknownToken {
     pub(crate) bad_input: String,
-    pub(crate) line_number: LineNumber,
-    pub(crate) line_offset: CharOffset,
+    pub(crate) position: SourcePosition,
     pub(crate) source_code: ArcSourceCode,
-    pub(crate) position: Option<a1::Address>,
+    pub(crate) field: Option<Field>,
 }
 
 impl fmt::Display for UnknownToken {
@@ -20,20 +20,15 @@ impl fmt::Display for UnknownToken {
 }
 
 impl BadInput for UnknownToken {
-    fn line_number(&self) -> LineNumber {
-        if let Some(position) = self.position {
-            self.line_number + self.source_code.csv_line_number(position)
-        } else {
-            self.line_number
+    // TODO: this is duplicated in TokenMatch
+    fn position(&self) -> SourcePosition {
+        if let Some(field) = self.field.clone() {
+            if let Some(position) = field.position_for_offset(self.position.line_offset) {
+                return position;
+            }
         }
-    }
 
-    fn line_offset(&self) -> CharOffset {
-        if let Some(position) = self.position {
-            self.line_offset + self.source_code.line_offset_for_cell(position, true)
-        } else {
-            self.line_offset
-        }
+        self.position
     }
 
     fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError {
@@ -50,15 +45,14 @@ impl From<UnknownToken> for ParseError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::build_source_code;
+    use crate::test_utils::*;
 
     #[test]
     fn display() {
         let ut = UnknownToken {
             bad_input: "foo".to_string(),
-            line_number: 10,
-            line_offset: 1,
-            position: None,
+            position: (1, 10).into(),
+            field: None,
             source_code: build_source_code(),
         };
 
@@ -69,9 +63,8 @@ mod tests {
     fn display_long() {
         let ut = UnknownToken {
             bad_input: "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890".to_string(),
-            line_number: 10,
-            line_offset: 1,
-            position: None,
+            position: (1, 10).into(),
+            field: None,
             source_code: build_source_code(),
         };
 

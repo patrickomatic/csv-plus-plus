@@ -93,6 +93,7 @@ fn merge_cell<V: Clone>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::*;
 
     fn build_options(overwrite_values: bool) -> Options {
         Options {
@@ -109,10 +110,7 @@ mod tests {
             ExistingCell::Value(2),
             ExistingCell::Value(3),
         ];
-        let new = vec![Cell {
-            value: "new value".to_string(),
-            ..Default::default()
-        }];
+        let new = vec![Cell::new(build_field("new value", (0, 0)))];
         let merged_row = merge_rows(existing.as_slice(), &new, &options);
 
         assert_eq!(3, merged_row.len());
@@ -132,10 +130,7 @@ mod tests {
             merge_cell(&ExistingCell::Value(1), None, &options)
         );
 
-        let cell = Cell {
-            value: "new value".to_string(),
-            ..Default::default()
-        };
+        let cell = Cell::new(build_field("new value", (0, 0)));
         assert_eq!(
             MergeResult::Existing(1),
             merge_cell(&ExistingCell::Value(1), Some(&cell), &options)
@@ -156,10 +151,7 @@ mod tests {
             merge_cell(&ExistingCell::Value(1), None, &options)
         );
 
-        let cell = Cell {
-            value: "new value".to_string(),
-            ..Default::default()
-        };
+        let cell = Cell::new(build_field("new value", (0, 0)));
         assert_eq!(
             MergeResult::New(cell.clone()),
             merge_cell(&ExistingCell::Value(1), Some(&cell), &options)

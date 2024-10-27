@@ -132,8 +132,8 @@ impl<'a> Excel<'a> {
                 } if !percentage => existing_cell.set_value_number(value as f64),
                 _ => existing_cell.set_formula(ast.to_string()),
             };
-        } else if !cell.value.is_empty() {
-            existing_cell.set_value_string(cell.value.clone());
+        } else if !cell.parsed_value.is_empty() {
+            existing_cell.set_value_string(cell.parsed_value.clone());
         }
     }
 

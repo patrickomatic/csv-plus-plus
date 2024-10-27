@@ -74,7 +74,7 @@ mod tests {
     #[test]
     fn extract_references_empty() {
         let module = build_module();
-        let references = Node::extract_references(&Ast::new(5.into()), &module.scope);
+        let references = Node::extract_references(&Ast::new(5), &module.scope);
 
         assert!(references.is_empty());
     }

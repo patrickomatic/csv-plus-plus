@@ -2,7 +2,7 @@
 //!
 use crate::ast::{Ast, Node, VariableValue, Variables};
 use crate::fill::ROW_MAX;
-use crate::{csv_reader, ArcSourceCode, EvalError, EvalResult, Result, Row};
+use crate::{ArcSourceCode, Error, EvalError, EvalResult, Result, Row};
 use log::trace;
 use serde::{Deserialize, Serialize};
 use std::collections;
@@ -63,14 +63,22 @@ impl Spreadsheet {
 
     /// Parse the spreadsheet section of a csv++ source file.
     pub(crate) fn parse(source_code: &ArcSourceCode) -> Result<Spreadsheet> {
-        let mut csv_reader = csv_reader()
-            .trim(csv::Trim::None)
-            .from_reader(source_code.csv_section.as_bytes());
+        let csvp_config = csvp::Config {
+            lines_above: source_code.length_of_code_section,
+            ..csvp::Config::default()
+        };
+
+        let records = csvp::parser::parse(&source_code.csv_section, &csvp_config).map_err(|e| {
+            Error::CsvParseError {
+                filename: source_code.filename.clone(),
+                parse_error: Box::new(source_code.csv_error_to_parse_error(e)),
+            }
+        })?;
 
         let mut rows: Vec<Row> = vec![];
-        for (row_index, result) in csv_reader.records().enumerate() {
+        for (row_index, row) in records.into_iter().enumerate() {
             trace!("Parsing row {row_index}");
-            rows.push(Row::parse(result, row_index.into(), source_code)?);
+            rows.push(Row::parse(&row, source_code)?);
         }
 
         Ok(Spreadsheet {
@@ -173,10 +181,15 @@ mod tests {
     use super::*;
     use crate::test_utils::*;
     use crate::*;
-    use a1::Address;
 
     fn build_source_code(input: &str) -> ArcSourceCode {
         ArcSourceCode::new((&TestSourceCode::new("csv", input)).into())
+    }
+
+    fn build_cell_with_var<S: Into<String>>(var_name: S) -> Cell {
+        let mut cell = Cell::new(build_field("", (0, 0)));
+        cell.var = Some(var_name.into());
+        cell
     }
 
     #[test]
@@ -311,12 +324,12 @@ mod tests {
         assert_eq!(spreadsheet.rows[1].cells.len(), 3);
 
         // each row has a parsed value
-        assert_eq!(spreadsheet.rows[0].cells[0].value, "foo");
-        assert_eq!(spreadsheet.rows[0].cells[1].value, "bar");
-        assert_eq!(spreadsheet.rows[0].cells[2].value, "baz");
-        assert_eq!(spreadsheet.rows[1].cells[0].value, "1");
-        assert_eq!(spreadsheet.rows[1].cells[1].value, "2");
-        assert_eq!(spreadsheet.rows[1].cells[2].value, "3");
+        assert_eq!(spreadsheet.rows[0].cells[0].field.value, "foo");
+        assert_eq!(spreadsheet.rows[0].cells[1].field.value, "bar");
+        assert_eq!(spreadsheet.rows[0].cells[2].field.value, "baz");
+        assert_eq!(spreadsheet.rows[1].cells[0].field.value, "1");
+        assert_eq!(spreadsheet.rows[1].cells[1].field.value, "2");
+        assert_eq!(spreadsheet.rows[1].cells[2].field.value, "3");
 
         // none have ASTs (didn't start with `=`)
         assert!(spreadsheet.rows[0].cells[0].ast.is_none());
@@ -342,8 +355,8 @@ mod tests {
         let source_code = build_source_code("   foo   , bar\n");
         let spreadsheet = Spreadsheet::parse(&source_code).unwrap();
 
-        assert_eq!(spreadsheet.rows[0].cells[0].value, "foo");
-        assert_eq!(spreadsheet.rows[0].cells[1].value, "bar");
+        assert_eq!(spreadsheet.rows[0].cells[0].field.value, "foo");
+        assert_eq!(spreadsheet.rows[0].cells[1].field.value, "bar");
     }
 
     #[test]
@@ -377,16 +390,7 @@ mod tests {
     fn variables_unscoped() {
         let spreadsheet = Spreadsheet {
             rows: vec![Row {
-                cells: vec![
-                    Cell {
-                        var: Some("foo".to_string()),
-                        ..Default::default()
-                    },
-                    Cell {
-                        var: Some("bar".to_string()),
-                        ..Default::default()
-                    },
-                ],
+                cells: vec![build_cell_with_var("foo"), build_cell_with_var("bar")],
                 ..Default::default()
             }],
             ..Default::default()
@@ -395,11 +399,11 @@ mod tests {
         let variables = spreadsheet.variables();
         assert_eq!(
             **variables.get("foo").unwrap(),
-            Node::var("foo", VariableValue::Absolute(Address::new(0, 0)))
+            Node::var("foo", VariableValue::Absolute((0, 0).into()))
         );
         assert_eq!(
             **variables.get("bar").unwrap(),
-            Node::var("bar", VariableValue::Absolute(Address::new(1, 0)))
+            Node::var("bar", VariableValue::Absolute((1, 0).into()))
         );
     }
 
@@ -409,10 +413,7 @@ mod tests {
             rows: vec![
                 Row {
                     fill: Some(Fill::new(0, Some(10))),
-                    cells: vec![Cell {
-                        var: Some("foo".to_string()),
-                        ..Default::default()
-                    }],
+                    cells: vec![build_cell_with_var("foo")],
                     ..Default::default()
                 },
                 Row {
@@ -455,10 +456,7 @@ mod tests {
 
     #[test]
     fn widest_row() {
-        let cell = Cell {
-            value: "foo".to_string(),
-            ..Default::default()
-        };
+        let cell = Cell::new(build_field("foo", (0, 0)));
         let spreadsheet = Spreadsheet {
             rows: vec![
                 Row {

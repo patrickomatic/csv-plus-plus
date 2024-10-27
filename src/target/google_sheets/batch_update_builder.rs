@@ -147,11 +147,11 @@ impl<'a> BatchUpdateBuilder<'a> {
                     ..Default::default()
                 },
             })
-        } else if cell.value.is_empty() {
+        } else if cell.parsed_value.is_empty() {
             None
         } else {
             Some(api::ExtendedValue {
-                string_value: Some(cell.value.clone()),
+                string_value: Some(cell.parsed_value.clone()),
                 ..Default::default()
             })
         }
@@ -170,10 +170,7 @@ mod tests {
 
         let mut spreadsheet = Spreadsheet::default();
         spreadsheet.rows.push(Row {
-            cells: vec![Cell {
-                value: "Test".to_string(),
-                ..Default::default()
-            }],
+            cells: vec![Cell::new(build_field("Test", (0, 0)))],
             ..Default::default()
         });
 

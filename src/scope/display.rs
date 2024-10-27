@@ -27,7 +27,7 @@ mod tests {
         scope.variables.insert("foo".to_string(), 420.into());
         scope.functions.insert(
             "bar".to_string(),
-            Node::fn_def("foo", &["a", "b"], Ast::new(1.into())).into(),
+            Node::fn_def("foo", &["a", "b"], Ast::new(1)).into(),
         );
 
         assert_eq!(

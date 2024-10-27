@@ -114,20 +114,20 @@ foo
         .compile()
         .unwrap()
         .read_output(),
-        "A1,foo,bar,
-,bar,=(42 + 5),
-,bar,=(42 + 5),
-,bar,=(42 + 5),
-,bar,=(42 + 5),
-,bar,=(42 + 5),
-,bar,=(42 + 5),
-,bar,=(42 + 5),
-,bar,=(42 + 5),
-,bar,=(42 + 5),
-,bar,=(42 + 5),
-foo,,,
-test,,,
-test1,test2,test3,
+        "A1,foo,bar
+,bar,=(42 + 5)
+,bar,=(42 + 5)
+,bar,=(42 + 5)
+,bar,=(42 + 5)
+,bar,=(42 + 5)
+,bar,=(42 + 5)
+,bar,=(42 + 5)
+,bar,=(42 + 5)
+,bar,=(42 + 5)
+,bar,=(42 + 5)
+foo,,
+test,,
+test1,test2,test3
 "
     );
 }

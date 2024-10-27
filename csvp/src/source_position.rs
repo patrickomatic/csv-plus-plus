@@ -1,7 +1,7 @@
 use super::Offset;
 use std::fmt;
 
-#[derive(Copy, Clone, Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Copy, Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct SourcePosition {
     pub line_number: Offset,
     pub line_offset: Offset,
@@ -13,6 +13,12 @@ impl SourcePosition {
             line_number,
             line_offset,
         }
+    }
+}
+
+impl From<(usize, usize)> for SourcePosition {
+    fn from((line_offset, line_number): (usize, usize)) -> Self {
+        Self::new(line_offset, line_number)
     }
 }
 

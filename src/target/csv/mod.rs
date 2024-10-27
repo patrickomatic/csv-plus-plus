@@ -3,17 +3,20 @@
 //! Functions for writing to CSV files
 //!
 use super::{ExistingCell, ExistingValues};
-use crate::{csv_reader, Compiler, Output, Result};
-use std::ffi;
-use std::fs;
-use std::io;
-use std::path;
+use crate::{Compiler, Output, Result};
+use std::{ffi, fs, io, path};
 
 mod compilation_target;
 
 pub(crate) struct Csv<'a> {
     path: path::PathBuf,
     compiler: &'a Compiler,
+}
+
+fn csv_reader() -> csv::ReaderBuilder {
+    let mut csv_reader = csv::ReaderBuilder::new();
+    csv_reader.flexible(true).has_headers(false);
+    csv_reader
 }
 
 impl<'a> Csv<'a> {
@@ -33,7 +36,7 @@ impl<'a> Csv<'a> {
             Ok(f) => f,
             Err(e) => {
                 return match e.kind() {
-                    io::ErrorKind::NotFound => Ok(ExistingValues { cells: vec![] }),
+                    io::ErrorKind::NotFound => Ok(ExistingValues::default()),
                     error => Err(output
                         .clone()
                         .into_error(format!("Error reading output: {error}"))),
@@ -45,20 +48,21 @@ impl<'a> Csv<'a> {
 
         let mut cells = vec![];
         for result in reader.records() {
-            let row = result.or(Err(output.clone().into_error("Error reading CSV row")))?;
-            let existing_row = row
-                .iter()
-                .map(|cell| {
-                    if cell.is_empty() {
-                        ExistingCell::Empty
-                    } else {
-                        ExistingCell::Value(cell.to_string())
-                    }
-                })
-                .collect();
-
-            cells.push(existing_row);
+            cells.push(
+                result
+                    .or(Err(output.clone().into_error("Error reading CSV row")))?
+                    .iter()
+                    .map(|cell| {
+                        if cell.is_empty() {
+                            ExistingCell::Empty
+                        } else {
+                            ExistingCell::Value(cell.to_string())
+                        }
+                    })
+                    .collect(),
+            );
         }
+
         Ok(ExistingValues { cells })
     }
 }

@@ -1,12 +1,17 @@
 //! # Config
+use super::Offset;
 
 #[derive(Debug)]
 pub struct Config {
-    pub(super) separator: char,
+    pub separator: char,
+    pub lines_above: Offset,
 }
 
 impl Default for Config {
     fn default() -> Self {
-        Self { separator: ',' }
+        Self {
+            separator: ',',
+            lines_above: 0,
+        }
     }
 }

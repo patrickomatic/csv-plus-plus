@@ -3,8 +3,8 @@
 use super::TokenMatcher;
 use crate::error::ParseResult;
 use crate::{ArcSourceCode, CharOffset, LineNumber};
-use std::cell::RefCell;
-use std::rc::Rc;
+use csvp::Field;
+use std::{cell, rc};
 
 mod token;
 mod token_library;
@@ -12,16 +12,17 @@ mod token_match;
 mod unknown_token;
 
 pub(crate) use token::Token;
-pub(crate) use token_library::{TokenLibrary, CODE_SECTION_SEPARATOR};
+pub(crate) use token_library::TokenLibrary;
 pub(crate) use token_match::TokenMatch;
 pub(crate) use unknown_token::UnknownToken;
 
 pub(crate) struct AstLexer<'a> {
-    tokens: Rc<RefCell<Vec<TokenMatch<'a>>>>,
+    tokens: rc::Rc<cell::RefCell<Vec<TokenMatch<'a>>>>,
     lines: LineNumber,
     eof_position: CharOffset,
     source_code: ArcSourceCode,
-    position: Option<a1::Address>,
+    // TODO: maybe it should be `Option<&'a Field>`
+    field: Option<Field>,
 }
 
 /// For better or worse the tokens are not mutually exclusive - some of them are subsets of another
@@ -54,7 +55,7 @@ fn matchers_ordered(tl: &TokenLibrary) -> [&TokenMatcher<Token>; 16] {
 impl<'a> AstLexer<'a> {
     pub(crate) fn new(
         input: &'a str,
-        position: Option<a1::Address>,
+        field: Option<Field>,
         source_code: ArcSourceCode,
     ) -> ParseResult<AstLexer<'a>> {
         let token_library = TokenLibrary::library();
@@ -62,7 +63,12 @@ impl<'a> AstLexer<'a> {
         let mut line_offset = 0;
 
         let mut tokens: Vec<TokenMatch> = vec![];
-        let mut p = input;
+        let mut p = if let Some(input) = input.strip_prefix('=') {
+            line_offset += 1;
+            input
+        } else {
+            input
+        };
 
         loop {
             let mut matched = false;
@@ -80,9 +86,8 @@ impl<'a> AstLexer<'a> {
                         tokens.push(TokenMatch {
                             token,
                             str_match: m.str_match,
-                            line_number,
-                            line_offset: line_offset + m.len_leading_whitespace,
-                            position,
+                            position: (line_offset + m.len_leading_whitespace, line_number).into(),
+                            field: field.clone(),
                             source_code: source_code.clone(),
                         });
                     }
@@ -110,9 +115,8 @@ impl<'a> AstLexer<'a> {
                 // we did a round of all the tokens and didn't match any of them - invalid syntax
                 return Err(UnknownToken {
                     bad_input: p.to_string(),
-                    line_number,
-                    line_offset,
-                    position,
+                    position: (line_offset, line_number).into(),
+                    field,
                     source_code,
                 }
                 .into());
@@ -122,10 +126,10 @@ impl<'a> AstLexer<'a> {
         tokens.reverse();
 
         Ok(AstLexer {
-            tokens: Rc::new(RefCell::new(tokens)),
+            tokens: rc::Rc::new(cell::RefCell::new(tokens)),
             eof_position: line_offset,
             lines: line_number,
-            position,
+            field,
             source_code,
         })
     }
@@ -147,9 +151,8 @@ impl<'a> AstLexer<'a> {
         TokenMatch {
             token: Token::Eof,
             str_match: "",
-            line_number: self.lines,
-            line_offset: self.eof_position,
-            position: self.position,
+            position: (self.eof_position, self.lines).into(),
+            field: self.field.clone(),
             source_code: self.source_code.clone(),
         }
     }
@@ -166,8 +169,8 @@ mod tests {
                 let _tok = $lexer.next();
                 assert_eq!(_tok.token, $token);
                 assert_eq!(_tok.str_match, $str_match);
-                assert_eq!(_tok.line_number, $line_number);
-                assert_eq!(_tok.line_offset, $line_offset);
+                assert_eq!(_tok.position.line_number, $line_number);
+                assert_eq!(_tok.position.line_offset, $line_offset);
             }
         }};
     }
@@ -226,5 +229,11 @@ mod tests {
         assert_eq!(lexer.peek().str_match, "foo");
         assert_eq!(lexer.peek().token, Token::Reference);
         assert_eq!(lexer.peek().str_match, "foo");
+    }
+
+    #[test]
+    fn lexer_starts_with_equals() {
+        let lexer = AstLexer::new("=foo (bar) + baz", None, build_source_code()).unwrap();
+        assert_token_match_eq!(lexer, Token::Reference, "foo", 0, 1);
     }
 }

@@ -7,8 +7,6 @@
 use super::{Token, TokenMatcher};
 use std::sync;
 
-pub(crate) const CODE_SECTION_SEPARATOR: &str = "---";
-
 type Matcher = TokenMatcher<Token>;
 
 #[derive(Debug)]
@@ -160,9 +158,8 @@ mod tests {
     fn display_token_match() {
         let token_match = TokenMatch {
             token: Token::Comma,
-            line_number: 22,
-            line_offset: 3,
-            position: None,
+            position: (3, 22).into(),
+            field: None,
             source_code: build_source_code(),
             str_match: ",",
         };

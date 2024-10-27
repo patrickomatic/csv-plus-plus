@@ -51,7 +51,7 @@ impl VariableValue {
         if let Some(position) = position {
             match self {
                 // absolute value, just turn it into a Ast
-                VariableValue::Absolute(address) => Ast::new(address.into()),
+                VariableValue::Absolute(address) => Ast::new(address),
 
                 // already an AST, just return it
                 VariableValue::Ast(ast) => ast,
@@ -62,41 +62,41 @@ impl VariableValue {
                 VariableValue::ColumnRelative { fill, column } => {
                     let fill_a1: a1::A1 = fill.into();
 
-                    Ast::new(if fill_a1.contains(&position.into()) {
-                        position.with_x(column.x).into()
+                    if fill_a1.contains(&position.into()) {
+                        Ast::new(position.with_x(column.x))
                     } else {
                         let row_range: a1::A1 = fill.into();
-                        row_range.with_x(column.x).into()
-                    })
+                        Ast::new(row_range.with_x(column.x))
+                    }
                 }
 
                 VariableValue::Row(row) => {
                     let a1: a1::A1 = row.into();
-                    Ast::new(a1.into())
+                    Ast::new(a1)
                 }
 
                 VariableValue::RowRelative { fill, .. } => {
                     let fill_a1: a1::A1 = fill.into();
 
-                    Ast::new(if fill_a1.contains(&position.into()) {
+                    if fill_a1.contains(&position.into()) {
                         // we're within the scope (fill) so it's the row we're on
                         let row_a1: a1::A1 = position.row.into();
-                        row_a1.into()
+                        Ast::new(row_a1)
                     } else {
                         // we're outside the scope (fill), so it represents the entire
                         // range contained by it (the scope)
                         let row_range: a1::A1 = fill.into();
-                        row_range.into()
-                    })
+                        Ast::new(row_range)
+                    }
                 }
             }
         } else {
             match self {
-                VariableValue::Absolute(address) => Ast::new(address.into()),
+                VariableValue::Absolute(address) => Ast::new(address),
                 VariableValue::Ast(ast) => ast,
                 VariableValue::Row(row) => {
                     let a1: a1::A1 = row.into();
-                    Ast::new(a1.into())
+                    Ast::new(a1)
                 }
                 _ => compiler_error(
                     "Attempted to load a spreadsheet-relative value in a non-spreadsheet context",

@@ -199,17 +199,15 @@ impl<'a> ExcelCell<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::*;
 
     #[test]
     fn has_style() {
-        let cell = Cell::default();
+        let mut cell = Cell::new(build_field("", (0, 0)));
 
         assert!(!ExcelCell(&cell).has_style());
 
-        let cell = Cell {
-            font_size: Some(50),
-            ..Default::default()
-        };
+        cell.font_size = Some(50);
         assert!(ExcelCell(&cell).has_style());
     }
 
@@ -236,13 +234,10 @@ mod tests {
 
     #[test]
     fn into_excel_cell_style() {
-        let mut cell = Cell {
-            font_size: Some(50),
-            border_style: Some(BorderStyle::Dashed),
-            note: Some("a note".to_string()),
-
-            ..Default::default()
-        };
+        let mut cell = Cell::new(build_field("", (0, 0)));
+        cell.font_size = Some(50);
+        cell.border_style = Some(BorderStyle::Dashed);
+        cell.note = Some("a note".to_string());
         cell.borders.insert(BorderSide::Top);
         cell.text_formats.insert(TextFormat::Bold);
 

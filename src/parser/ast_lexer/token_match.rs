@@ -2,18 +2,18 @@ use super::Token;
 use crate::ast::{Ast, Node};
 use crate::error::{BadInput, Error, ParseError, ParseResult};
 use crate::parser::TokenInput;
-use crate::{ArcSourceCode, CharOffset, LineNumber};
+use crate::ArcSourceCode;
 use colored::Colorize;
+use csvp::{Field, SourcePosition};
 use std::fmt;
 
 #[derive(Clone, Debug)]
 pub(crate) struct TokenMatch<'a> {
-    pub(crate) token: Token,
-    pub(crate) str_match: &'a str,
-    pub(crate) line_number: LineNumber,
-    pub(crate) line_offset: CharOffset,
+    pub(crate) field: Option<Field>,
+    pub(crate) position: SourcePosition,
     pub(crate) source_code: ArcSourceCode,
-    pub(crate) position: Option<a1::Address>,
+    pub(crate) str_match: &'a str,
+    pub(crate) token: Token,
 }
 
 impl TokenMatch<'_> {
@@ -25,20 +25,20 @@ impl TokenMatch<'_> {
 }
 
 impl BadInput for TokenMatch<'_> {
-    fn line_number(&self) -> LineNumber {
-        if let Some(position) = self.position {
-            self.line_number + self.source_code.csv_line_number(position)
-        } else {
-            self.line_number
+    fn position(&self) -> SourcePosition {
+        // TODO: anything that returns None here should be a compiler_error
+        if let Some(field) = self.field.clone() {
+            // we have to handle Eofs specially because they fall outside of our array of `positions`
+            if let Token::Eof = self.token {
+                if let Some(position) = field.eof_position() {
+                    return position;
+                }
+            } else if let Some(position) = field.position_for_offset(self.position.line_offset) {
+                return position;
+            }
         }
-    }
 
-    fn line_offset(&self) -> CharOffset {
-        if let Some(position) = self.position {
-            self.line_offset + self.source_code.line_offset_for_cell(position, true)
-        } else {
-            self.line_offset
-        }
+        self.position
     }
 
     fn into_parse_error<S: Into<String>>(self, message: S) -> ParseError {
@@ -56,7 +56,7 @@ impl fmt::Display for TokenMatch<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.token == Token::Eof {
             write!(f, "EOF")?;
-            if self.position.is_some() {
+            if self.field.is_some() {
                 write!(
                     f,
                     "{}",
@@ -65,6 +65,7 @@ impl fmt::Display for TokenMatch<'_> {
         } else {
             write!(f, "`{}`", self.str_match)?;
         }
+
         Ok(())
     }
 }

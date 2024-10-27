@@ -1,13 +1,14 @@
 //! # `UnknownToken`
 //!
 use crate::error::{BadInput, ParseError};
-use crate::{ArcSourceCode, CharOffset, LineNumber};
+use crate::{compiler_error, ArcSourceCode, CharOffset};
+use csvp::Field;
 use std::fmt;
 
 #[derive(Debug)]
 pub(crate) struct UnknownToken {
     pub(crate) bad_input: String,
-    pub(crate) position: a1::Address,
+    pub(crate) field: Field,
     pub(crate) cell_offset: CharOffset,
     pub(crate) source_code: ArcSourceCode,
 }
@@ -23,12 +24,15 @@ impl BadInput for UnknownToken {
         self.source_code.parse_error(&self, message)
     }
 
-    fn line_number(&self) -> LineNumber {
-        self.source_code.csv_line_number(self.position)
-    }
-
-    fn line_offset(&self) -> CharOffset {
-        self.source_code.line_offset_for_cell(self.position, false) + self.cell_offset
+    fn position(&self) -> csvp::SourcePosition {
+        self.field
+            .position_for_offset(self.cell_offset)
+            .unwrap_or_else(|| {
+                compiler_error(format!(
+                    "Error getting position of {} from {:?}.",
+                    self.cell_offset, self.field,
+                ))
+            })
     }
 }
 

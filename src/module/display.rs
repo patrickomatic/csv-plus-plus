@@ -30,8 +30,8 @@ mod tests {
     #[test]
     fn display() {
         let mut module = build_module();
-        module.scope.define_variable("foo", Ast::new(1.into()));
-        module.scope.define_function("bar", Ast::new(1.into()));
+        module.scope.define_variable("foo", Ast::new(1));
+        module.scope.define_function("bar", Ast::new(1));
         let module_str = module.to_string();
 
         assert!(module_str.contains("# Variables"));
