@@ -13,11 +13,11 @@ mod tests {
 
     #[test]
     fn display_one() {
-        assert_eq!(ModulePath::new("foo").to_string(), "foo")
+        assert_eq!(ModulePath::new("foo").to_string(), "foo");
     }
 
     #[test]
     fn display_multiple() {
-        assert_eq!(ModulePath::new("foo/bar/baz").to_string(), "foo/bar/baz")
+        assert_eq!(ModulePath::new("foo/bar/baz").to_string(), "foo/bar/baz");
     }
 }

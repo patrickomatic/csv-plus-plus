@@ -254,6 +254,6 @@ Date,[[ha=l]]Amount,Quantity,[[ha=c t=b t=i]]Price
 * A header for the first row, then some formulas that repeat for each row for the rest of the spreadsheet:
 
 ```csvpp
-![[ha=c t=b]]Date,Price,Quantity,Profit
-![[e]],,,"=MULTIPLY(cellref(B), cellref(C))"
+![[ha=c t=b]]Date   ,Price          ,Quantity           ,Profit
+![[fill]]           ,[[var=price]]  ,[[var=quantity]]   ,"=MULTIPLY(price, quantity)"
 ```

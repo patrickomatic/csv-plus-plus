@@ -45,7 +45,7 @@ pub struct CliArgs {
         group = "output",
         short,
         long,
-        help = "The file to write to (must be .csv, .ods, .xls)"
+        help = "The file to write to (must be .csv, .ods, .xlsx)"
     )]
     pub output_filename: Option<path::PathBuf>,
 
