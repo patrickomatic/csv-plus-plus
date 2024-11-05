@@ -1,13 +1,13 @@
 bench_output := target/criterion
 
-# TODO: why does this build each one individually?
 .PHONY: all
 all:
 	cargo doc --lib
 	cargo clippy -- -D warnings
 	cargo fmt --all -- --check
 	cargo test
-	make -j 5 -C release/
+	make -C release/
+	# make -j 5 -C release/
 
 .PHONY: bench
 bench:

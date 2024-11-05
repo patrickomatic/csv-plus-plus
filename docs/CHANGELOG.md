@@ -9,6 +9,7 @@
 * Slashes are no longer needed to separate cell options
     - `[[text=bold halign=left]]` is now equivalent to `[[text=bold/halign=left]]`.
 * Support for multi-line cells
+* [csv++ User Guide](https://patrickomatic.github.io/csv-plus-plus/)
 * Switch to custom CSV parser (`csvp`)
 * Switch from CBOR to bincode for object file serialization
 

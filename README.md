@@ -45,6 +45,9 @@ Complex function      , Column 1  , Column 2 ,
 "=my_complex_fn(a, b)", [[var=a]] , [[var=b]],
 ```
 
+> **_NOTE:_** The following is just a brief walkthrough, for the full documentation please refer to
+the [user 
+guide](https://patrickomatic.github.io/csv-plus-plus/language_reference/index.html).
 
 ## Fills
 
@@ -142,12 +145,12 @@ To format the entire row you can use `![[`/`]]` at the beginning of the line
 ![[t=b t=u]]foo,bar,baz,
 ```
 
-For a full list of formatting features, take a look at the [language reference](docs/LANGUAGE_REFERENCE.md)
+For a full list of formatting features, take a look at the [user guide](https://patrickomatic.github.io/csv-plus-plus/language_reference/index.html)
 
 ### Additional Reading
 
-* [Installation](docs/INSTALL.md)
-* [Language Reference](docs/LANGUAGE_REFERENCE.md)
+* [User Guide](https://patrickomatic.github.io/csv-plus-plus/)
+* [Installation](https://patrickomatic.github.io/csv-plus-plus/installation.html)
 * [Examples](https://github.com/patrickomatic/csvpp-examples)
 * [Changelog](docs/CHANGELOG.md)
 * [Want to Contribute?](docs/CONTRIBUTING.md)

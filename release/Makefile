@@ -1,5 +1,8 @@
+CARGO_FLAGS := -q
+
 root_dir := ..
 docs_dir := $(root_dir)/docs
+book_dir := $(root_dir)/book/book
 target_dir := $(root_dir)/target
 
 version := $(shell git describe --tags --candidates 1)
@@ -27,9 +30,13 @@ doc_files := $(filter-out $(docs_dir)/RELEASE_CHECKLIST.md, $(doc_files))
 
 all: add_targets \
 	install_deps \
+	build_book \
 	$(release_files) \
 	$(release_file_sigs) \
 	# bump_homebrew_formula_version
+
+build_book:
+	cd ../book && make
 
 bump_homebrew_formula_version:
 	brew bump-formula-pr csv++
@@ -44,7 +51,7 @@ install_deps:
 	cargo install cross
 
 $(target_dir)/%/release/csvpp $(target_dir)/%/release/csvpp.exe:
-	cross build --release --target $*
+	cross build $(CARGO_FLAGS) --release --target $*
 
 csvpp-$(version)-%.tar.gz: prep_dir=$(@:.tar.gz=)
 
@@ -52,6 +59,7 @@ csvpp-$(version)-%.tar.gz: prep_dir=$(@:.tar.gz=)
 csvpp-$(version)-%.tar.gz: $(target_dir)/%/release/csvpp
 	mkdir -p $(prep_dir)
 	cp -R $(doc_files) $(prep_dir)
+	cp -R $(book_dir) $(prep_dir)
 	cp $< $(prep_dir)/csv++
 	cp $< $(prep_dir)/csvpp
 	$(tar) -czf $@ $(prep_dir)
@@ -64,10 +72,11 @@ csvpp-$(version)-i686-pc-windows-gnu.tar.gz: $(target_dir)/i686-pc-windows-gnu/r
 csvpp-$(version)-x86_64-pc-windows-gnu.tar.gz csvpp-$(version)-i686-pc-windows-gnu.tar.gz: csvpp-$(version)-%.tar.gz: $(target_dir)/%/release/csvpp.exe
 	mkdir -p $(prep_dir)
 	cp -R $(doc_files) $(prep_dir)
+	cp -R $(book_dir) $(prep_dir)
 	cp $< $(prep_dir)
 	$(tar) -czf $@ $(prep_dir)
 
 %.tar.gz.asc: %.tar.gz
 	gpg --detach-sign --armor $<
 
-.PHONY: all bump_homebrew_formula_version clean
+.PHONY: all add_targets build_book bump_homebrew_formula_version clean install_deps
