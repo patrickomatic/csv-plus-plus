@@ -6,6 +6,7 @@ all:
 	cargo clippy -- -D warnings
 	cargo fmt --all -- --check
 	cargo test
+	make -C book/
 	make -C release/
 	# make -j 5 -C release/
 

@@ -1,6 +1,8 @@
 build_dir := book
 
-all: $(build_dir)/index.html $(wildcard $(build_dir)/chapter_*.html)
+.PHONY: all clean deps open watch
+
+all: deps $(build_dir)/index.html $(wildcard $(build_dir)/chapter_*.html)
 
 $(build_dir)/index.html: src/README.md src/SUMMARY.md
 	mdbook build
@@ -19,5 +21,3 @@ clean:
 
 deps:
 	mdbook -V 2>/dev/null || cargo install mdbook
-
-.PHONY: all clean deps open watch

@@ -30,13 +30,9 @@ doc_files := $(filter-out $(docs_dir)/RELEASE_CHECKLIST.md, $(doc_files))
 
 all: add_targets \
 	install_deps \
-	build_book \
 	$(release_files) \
 	$(release_file_sigs) \
 	# bump_homebrew_formula_version
-
-build_book:
-	cd ../book && make
 
 bump_homebrew_formula_version:
 	brew bump-formula-pr csv++
