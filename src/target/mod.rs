@@ -1,4 +1,4 @@
-use crate::{Cell, Module, Options, Result};
+use crate::{Cell, Config, Module, Result};
 use std::cmp;
 
 mod csv;
@@ -51,14 +51,14 @@ pub(crate) enum MergeResult<V: Clone> {
 fn merge_rows<V: Clone>(
     existing_row: &[ExistingCell<V>],
     module_row: &[Cell],
-    options: &Options,
+    config: &Config,
 ) -> Vec<MergeResult<V>> {
     (0..cmp::max(existing_row.len(), module_row.len()))
         .map(|i| {
             merge_cell(
                 existing_row.get(i).unwrap_or(&ExistingCell::Empty),
                 module_row.get(i),
-                options,
+                config,
             )
         })
         .collect()
@@ -67,13 +67,13 @@ fn merge_rows<V: Clone>(
 fn merge_cell<V: Clone>(
     existing: &ExistingCell<V>,
     new: Option<&Cell>,
-    options: &Options,
+    config: &Config,
 ) -> MergeResult<V> {
     if let Some(new_val) = new {
         match existing {
             ExistingCell::Value(v) => {
                 // both new and existing values
-                if options.overwrite_values {
+                if config.overwrite_values {
                     MergeResult::New(new_val.clone())
                 } else {
                     MergeResult::Existing(v.clone())
@@ -95,8 +95,8 @@ mod tests {
     use super::*;
     use crate::test_utils::*;
 
-    fn build_options(overwrite_values: bool) -> Options {
-        Options {
+    fn build_config(overwrite_values: bool) -> Config {
+        Config {
             overwrite_values,
             ..Default::default()
         }
@@ -104,57 +104,57 @@ mod tests {
 
     #[test]
     fn merge_rows_different_lengths() {
-        let options = build_options(false);
+        let config = build_config(false);
         let existing = vec![
             ExistingCell::Value(1),
             ExistingCell::Value(2),
             ExistingCell::Value(3),
         ];
         let new = vec![Cell::new(build_field("new value", (0, 0)))];
-        let merged_row = merge_rows(existing.as_slice(), &new, &options);
+        let merged_row = merge_rows(existing.as_slice(), &new, &config);
 
         assert_eq!(3, merged_row.len());
     }
 
     #[test]
     fn merge_rows_overwrite_false() {
-        let options = build_options(false);
+        let config = build_config(false);
 
         assert_eq!(
             MergeResult::Empty,
-            merge_cell(&ExistingCell::<usize>::Empty, None, &options)
+            merge_cell(&ExistingCell::<usize>::Empty, None, &config)
         );
 
         assert_eq!(
             MergeResult::Existing(1),
-            merge_cell(&ExistingCell::Value(1), None, &options)
+            merge_cell(&ExistingCell::Value(1), None, &config)
         );
 
         let cell = Cell::new(build_field("new value", (0, 0)));
         assert_eq!(
             MergeResult::Existing(1),
-            merge_cell(&ExistingCell::Value(1), Some(&cell), &options)
+            merge_cell(&ExistingCell::Value(1), Some(&cell), &config)
         );
     }
 
     #[test]
     fn merge_cell_overwrite_true() {
-        let options = build_options(true);
+        let config = build_config(true);
 
         assert_eq!(
             MergeResult::Empty,
-            merge_cell(&ExistingCell::<usize>::Empty, None, &options)
+            merge_cell(&ExistingCell::<usize>::Empty, None, &config)
         );
 
         assert_eq!(
             MergeResult::Existing(1),
-            merge_cell(&ExistingCell::Value(1), None, &options)
+            merge_cell(&ExistingCell::Value(1), None, &config)
         );
 
         let cell = Cell::new(build_field("new value", (0, 0)));
         assert_eq!(
             MergeResult::New(cell.clone()),
-            merge_cell(&ExistingCell::Value(1), Some(&cell), &options)
+            merge_cell(&ExistingCell::Value(1), Some(&cell), &config)
         );
     }
 }

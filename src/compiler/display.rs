@@ -4,7 +4,7 @@ use std::fmt;
 impl fmt::Display for Compiler {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "# CLI Options")?;
-        writeln!(f, "{}", self.options)?;
+        writeln!(f, "{}", self.config)?;
         writeln!(f, "\n# Output Target")?;
         writeln!(f, "{}", self.output)
     }

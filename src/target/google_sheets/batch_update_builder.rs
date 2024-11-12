@@ -82,7 +82,7 @@ impl<'a> BatchUpdateBuilder<'a> {
             .map(|(i, row)| {
                 let empty_row = vec![];
                 let existing_row = self.existing_values.cells.get(i).unwrap_or(&empty_row);
-                let merged_row = merge_rows(existing_row, &row.cells, &self.compiler.options);
+                let merged_row = merge_rows(existing_row, &row.cells, &self.compiler.config);
 
                 api::RowData {
                     values: Some(Self::cell_data(&merged_row)),
@@ -97,11 +97,11 @@ impl<'a> BatchUpdateBuilder<'a> {
             start: Some(api::GridCoordinate {
                 // TODO: get rid of the unwraps
                 column_index: Some(
-                    i32::try_from(self.compiler.options.offset.1)
+                    i32::try_from(self.compiler.config.offset.1)
                         .expect("a 32-bit value for column offset"),
                 ),
                 row_index: Some(
-                    i32::try_from(self.compiler.options.offset.0)
+                    i32::try_from(self.compiler.config.offset.0)
                         .expect("a 32-bit value for row offset"),
                 ),
                 sheet_id: None,

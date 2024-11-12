@@ -1,7 +1,7 @@
-use super::Options;
+use super::Config;
 use std::fmt;
 
-impl fmt::Display for Options {
+impl fmt::Display for Config {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "backup: {}", self.backup)?;
         writeln!(
@@ -23,7 +23,7 @@ mod tests {
 
     #[test]
     fn display() {
-        let options = Options::default();
+        let config = Config::default();
 
         assert_eq!(
             r#"backup: false
@@ -33,7 +33,7 @@ offset: (0, 0)
 overwrite_values: true
 sheet_name: empty
 verbosity: INFO"#,
-            options.to_string()
+            config.to_string()
         );
     }
 }

@@ -1,24 +1,24 @@
 use crate::logger;
 use crate::parser::ast_parser::AstParser;
-use crate::{CliArgs, Compiler, Options, Output};
+use crate::{CliArgs, Compiler, Config, Output};
 use log::debug;
 
 impl TryFrom<&CliArgs> for Compiler {
     type Error = crate::Error;
 
     fn try_from(cli_args: &CliArgs) -> std::result::Result<Self, Self::Error> {
-        let options = Options {
+        let config = Config {
             key_values: AstParser::parse_key_value_str(
                 &cli_args.key_values,
                 &cli_args.input_filename,
             )?,
-            ..Options::try_from(cli_args)?
+            ..Config::try_from(cli_args)?
         };
 
-        logger::init(options.verbosity);
+        logger::init(config.verbosity);
 
         let compiler = Self {
-            options,
+            config,
             output: Output::try_from(cli_args)?,
             input_filename: cli_args.input_filename.clone(),
         };

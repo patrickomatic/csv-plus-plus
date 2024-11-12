@@ -3,6 +3,7 @@
 ### **Breaking Changes**
 
 * Added enum variant `Error::CsvParseError`
+* Renamed `Options` to `Config`
 
 ### Features
 

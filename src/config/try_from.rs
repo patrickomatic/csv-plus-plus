@@ -1,13 +1,13 @@
-use super::Options;
+use super::Config;
 use crate::logger::u8_into_level_filter;
 use crate::{CliArgs, Result};
 use std::collections;
 
-impl TryFrom<&CliArgs> for Options {
+impl TryFrom<&CliArgs> for Config {
     type Error = crate::Error;
 
     fn try_from(cli_args: &CliArgs) -> Result<Self> {
-        Ok(Options {
+        Ok(Config {
             backup: cli_args.backup,
             google_account_credentials: cli_args.google_account_credentials.clone(),
             key_values: collections::HashMap::new(),
@@ -32,9 +32,9 @@ mod tests {
             input_filename: path::PathBuf::from("foo.csvpp"),
             ..Default::default()
         };
-        let options = Options::try_from(&cli_args).unwrap();
+        let config = Config::try_from(&cli_args).unwrap();
 
-        assert_eq!(options.sheet_name, "foo");
+        assert_eq!(config.sheet_name, "foo");
     }
 
     #[test]
@@ -44,8 +44,8 @@ mod tests {
             sheet_name: Some("bar".to_string()),
             ..Default::default()
         };
-        let options = Options::try_from(&cli_args).unwrap();
+        let config = Config::try_from(&cli_args).unwrap();
 
-        assert_eq!(options.sheet_name, "bar");
+        assert_eq!(config.sheet_name, "bar");
     }
 }

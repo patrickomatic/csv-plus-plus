@@ -5,8 +5,7 @@
 use super::{merge_cell, ExistingCell, MergeResult};
 use crate::ast::Node;
 use crate::{Cell, Compiler, Module, Result};
-use std::ffi;
-use std::path;
+use std::{ffi, path};
 use umya_spreadsheet as u;
 
 mod cell_validation;
@@ -51,7 +50,7 @@ impl<'a> Excel<'a> {
                 let merged_cell = merge_cell(
                     &Self::get_existing_cell(position, worksheet),
                     Some(cell),
-                    &self.compiler.options,
+                    &self.compiler.config,
                 );
 
                 match merged_cell {
@@ -170,7 +169,7 @@ impl<'a> Excel<'a> {
     }
 
     fn create_worksheet(&self, spreadsheet: &mut u::Spreadsheet) -> Result<()> {
-        let sheet_name = self.compiler.options.sheet_name.clone();
+        let sheet_name = self.compiler.config.sheet_name.clone();
         let existing = spreadsheet.get_sheet_by_name(&sheet_name);
         if existing.is_none() {
             spreadsheet.new_sheet(&sheet_name).map_err(|e| {
@@ -187,7 +186,7 @@ impl<'a> Excel<'a> {
         &'a self,
         spreadsheet: &'a mut u::Spreadsheet,
     ) -> Result<&'a mut u::Worksheet> {
-        let sheet_name = &self.compiler.options.sheet_name;
+        let sheet_name = &self.compiler.config.sheet_name;
         spreadsheet
             .get_sheet_by_name_mut(sheet_name)
             .ok_or_else(|| {

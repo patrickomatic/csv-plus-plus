@@ -1,4 +1,4 @@
-//! # Options
+//! # Config
 //!
 //! The options that a user can supply to the compiler.
 //!
@@ -11,7 +11,7 @@ mod display;
 mod try_from;
 
 #[derive(Debug)]
-pub struct Options {
+pub struct Config {
     pub backup: bool,
     pub google_account_credentials: Option<String>,
     pub key_values: collections::HashMap<String, Ast>,
@@ -22,7 +22,7 @@ pub struct Options {
     pub verbosity: log::LevelFilter,
 }
 
-impl Options {
+impl Config {
     #[must_use]
     pub fn redacted_google_account_credentials(&self) -> String {
         if self.google_account_credentials.is_some() {
@@ -59,9 +59,9 @@ mod tests {
             input_filename: path::PathBuf::from("foo.csvpp"),
             ..Default::default()
         };
-        let options = Options::try_from(&cli_args).unwrap();
+        let config = Config::try_from(&cli_args).unwrap();
 
-        assert_eq!(options.sheet_name, "foo");
+        assert_eq!(config.sheet_name, "foo");
     }
 
     #[test]
@@ -71,8 +71,8 @@ mod tests {
             sheet_name: Some("bar".to_string()),
             ..Default::default()
         };
-        let options = Options::try_from(&cli_args).unwrap();
+        let config = Config::try_from(&cli_args).unwrap();
 
-        assert_eq!(options.sheet_name, "bar");
+        assert_eq!(config.sheet_name, "bar");
     }
 }

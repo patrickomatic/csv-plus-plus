@@ -1,7 +1,7 @@
-use super::Options;
+use super::Config;
 use std::collections;
 
-impl Default for Options {
+impl Default for Config {
     fn default() -> Self {
         Self {
             backup: false,
@@ -22,7 +22,7 @@ mod tests {
 
     #[test]
     fn default() {
-        let options = Options::default();
+        let options = Config::default();
 
         assert!(!options.backup);
         assert!(options.overwrite_values);

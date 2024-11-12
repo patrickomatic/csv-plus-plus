@@ -39,7 +39,7 @@ impl TryFrom<&Compiler> for Credentials {
     fn try_from(compiler: &Compiler) -> Result<Self> {
         let adc_path = adc_path()?;
 
-        let creds_file = if let Some(creds) = &compiler.options.google_account_credentials {
+        let creds_file = if let Some(creds) = &compiler.config.google_account_credentials {
             info!("Using credentials from --google-account-credentials flag");
             path::PathBuf::from(creds)
         } else if let Some(env_var) = env::var_os("GOOGLE_APPLICATION_CREDENTIALS") {
@@ -146,10 +146,10 @@ mod tests {
     }
 
     #[test]
-    fn try_from_options() {
+    fn try_from_config() {
         let test_file = TestFile::new("json", "{\"type\": \"service_account\"}");
         let mut compiler = build_compiler();
-        compiler.options.google_account_credentials = Some(
+        compiler.config.google_account_credentials = Some(
             test_file
                 .path
                 .clone()

@@ -27,7 +27,7 @@ impl CompilationTarget for Csv<'_> {
                     .get(index)
                     .unwrap_or(&vec![].to_owned()),
                 &row.cells,
-                &self.compiler.options,
+                &self.compiler.config,
             )
             .iter()
             .map(|cell| match cell {

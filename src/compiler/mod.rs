@@ -1,7 +1,7 @@
 //! # Compiter
 //!
 use crate::{
-    CliArgs, CompilationTarget, Error, Module, ModuleLoader, ModulePath, Options, Output, Result,
+    CliArgs, CompilationTarget, Config, Error, Module, ModuleLoader, ModulePath, Output, Result,
 };
 use clap::Parser;
 use log::{debug, info};
@@ -12,13 +12,13 @@ mod try_from;
 
 #[derive(Debug)]
 pub struct Compiler {
-    pub options: Options,
+    pub config: Config,
     pub output: Output,
     pub(crate) input_filename: path::PathBuf,
 }
 
 impl Compiler {
-    /// Given the current `self.options` load the main module, all of it's dependencies and
+    /// Given the current `self.config` load the main module, all of it's dependencies and
     /// evaluate it and get ready for output.  This function just compiles but does not output.
     ///
     /// # Errors
@@ -49,14 +49,14 @@ impl Compiler {
 
         debug!("Loading dependencies for {}", &main_module.module_path);
         let mut main_module =
-            ModuleLoader::load_main(main_module, loader_root, self.options.use_cache)?;
+            ModuleLoader::load_main(main_module, loader_root, self.config.use_cache)?;
 
         if main_module.needs_eval {
             info!("Compiling main module");
             main_module = self.eval(main_module)?;
             main_module.needs_eval = false;
 
-            if self.options.use_cache {
+            if self.config.use_cache {
                 debug!(
                     "Writing object file {:?}",
                     main_module.source_code.object_code_filename()
@@ -94,7 +94,7 @@ impl Compiler {
         debug!("Evaluating main module");
 
         main.eval_fills()?
-            .eval_spreadsheet(self.options.key_values.clone())
+            .eval_spreadsheet(self.config.key_values.clone())
     }
 }
 
