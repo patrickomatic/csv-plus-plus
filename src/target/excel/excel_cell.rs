@@ -2,9 +2,10 @@
 //!
 //! Converts between a Cell and an `umya_spreadsheet::Style` (which feature-wise actually happen
 //! to map pretty nicely)
-use crate::{
-    BorderSide, BorderStyle, Cell, HorizontalAlign, NumberFormat, Rgb, TextFormat, VerticalAlign,
+use crate::cell_options::{
+    BorderSide, BorderStyle, HorizontalAlign, NumberFormat, TextFormat, VerticalAlign,
 };
+use crate::{Cell, Rgb};
 
 pub(super) struct ExcelCell<'a>(pub(super) &'a Cell);
 

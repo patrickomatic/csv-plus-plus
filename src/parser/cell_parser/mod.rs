@@ -3,11 +3,11 @@
 mod validate;
 
 use super::cell_lexer::{CellLexer, Token, TokenMatch};
-use crate::error::{BadInput, ParseResult, Result};
-use crate::{
-    deprecated_feature, ArcSourceCode, BorderSide, BorderStyle, Cell, Fill, HorizontalAlign,
-    NumberFormat, Rgb, Row, TextFormat, VerticalAlign,
+use crate::cell_options::{
+    BorderSide, BorderStyle, Fill, HorizontalAlign, NumberFormat, TextFormat, VerticalAlign,
 };
+use crate::error::{BadInput, ParseResult, Result};
+use crate::{deprecated_feature, ArcSourceCode, Cell, Rgb, Row};
 use csvp::Field;
 
 pub(crate) struct CellParser<'a, 'b: 'a> {

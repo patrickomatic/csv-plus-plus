@@ -26,13 +26,13 @@ mod tests {
         let config = Config::default();
 
         assert_eq!(
-            r#"backup: false
+            r"backup: false
 google_account_credentials: none
 key_values: {}
 offset: (0, 0)
 overwrite_values: true
 sheet_name: empty
-verbosity: INFO"#,
+verbosity: INFO",
             config.to_string()
         );
     }

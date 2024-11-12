@@ -1,9 +1,10 @@
 mod display;
 
-use crate::{
-    ArcSourceCode, BorderSide, BorderStyle, Cell, DataValidation, Fill, HorizontalAlign,
-    NumberFormat, Result, Rgb, Scope, TextFormat, VerticalAlign,
+use crate::cell_options::{
+    BorderSide, BorderStyle, DataValidation, Fill, HorizontalAlign, NumberFormat, TextFormat,
+    VerticalAlign,
 };
+use crate::{ArcSourceCode, Cell, Result, Rgb, Scope};
 use csvp::Field;
 use std::collections;
 

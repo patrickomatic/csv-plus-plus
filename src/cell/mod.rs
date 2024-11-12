@@ -1,12 +1,13 @@
 //! # Cell
 //!
 use crate::ast::Ast;
+use crate::cell_options::{
+    BorderSide, BorderStyle, DataValidation, HorizontalAlign, NumberFormat, TextFormat,
+    VerticalAlign,
+};
 use crate::parser::ast_parser::AstParser;
 use crate::parser::cell_parser::CellParser;
-use crate::{
-    ArcSourceCode, BorderSide, BorderStyle, DataValidation, HorizontalAlign, NumberFormat, Result,
-    Rgb, Row, TextFormat, VerticalAlign,
-};
+use crate::{ArcSourceCode, Result, Rgb, Row};
 use csvp::Field;
 use std::collections;
 

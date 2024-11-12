@@ -1,7 +1,7 @@
 //! # Spreadsheet
 //!
 use crate::ast::{Ast, Node, VariableValue, Variables};
-use crate::fill::ROW_MAX;
+use crate::cell_options::ROW_MAX;
 use crate::{ArcSourceCode, Error, EvalError, EvalResult, Result, Row};
 use log::trace;
 use serde::{Deserialize, Serialize};
@@ -179,6 +179,7 @@ impl Spreadsheet {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cell_options::*;
     use crate::test_utils::*;
     use crate::*;
 

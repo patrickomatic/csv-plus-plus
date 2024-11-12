@@ -19,7 +19,7 @@ mod tests {
             start_row: 0.into(),
         }
         .into();
-        assert_eq!("1:3", a1.to_string())
+        assert_eq!("1:3", a1.to_string());
     }
 
     #[test]
@@ -29,6 +29,6 @@ mod tests {
             start_row: 0.into(),
         }
         .into();
-        assert_eq!("1:1000", a1.to_string())
+        assert_eq!("1:1000", a1.to_string());
     }
 }

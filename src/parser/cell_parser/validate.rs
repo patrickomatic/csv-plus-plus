@@ -1,7 +1,8 @@
 use super::{CellParser, Token};
 use crate::ast::Ast;
+use crate::cell_options::DataValidation;
 use crate::error::{BadInput, CellParseError, ParseResult};
-use crate::{DataValidation, DateTime};
+use crate::DateTime;
 
 macro_rules! take_parens {
     ($self:ident, $tt:tt) => {{

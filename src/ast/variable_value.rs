@@ -1,5 +1,6 @@
 use super::Ast;
-use crate::{compiler_error, Fill};
+use crate::cell_options::Fill;
+use crate::compiler_error;
 
 /// The variable a value can have will depend on a variety of contexts
 #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
@@ -110,7 +111,7 @@ impl VariableValue {
 mod tests {
     use super::*;
     use crate::ast::*;
-    use crate::*;
+    use crate::cell_options::Fill;
     use std::panic;
 
     fn build_position() -> a1::Address {

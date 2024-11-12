@@ -5,10 +5,11 @@
 //! sending a bunch of default values and prefer to return None instead.  In other words the API
 //! payloads should reflect only the things the user specified on the cell.
 //!
-use crate::{
-    BorderSide, BorderStyle, Cell, DataValidation, HorizontalAlign, NumberFormat, Rgb, TextFormat,
+use crate::cell_options::{
+    BorderSide, BorderStyle, DataValidation, HorizontalAlign, NumberFormat, TextFormat,
     VerticalAlign,
 };
+use crate::{Cell, Rgb};
 use google_sheets4::api;
 
 pub(super) struct GoogleSheetsCell<'a>(pub(super) &'a Cell);
