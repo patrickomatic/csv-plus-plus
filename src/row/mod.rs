@@ -2,7 +2,7 @@ mod display;
 
 use crate::cell_options::{
     BorderSide, BorderStyle, DataValidation, Fill, HorizontalAlign, NumberFormat, TextFormat,
-    VerticalAlign,
+    TextWrap, VerticalAlign,
 };
 use crate::{ArcSourceCode, Cell, Result, Rgb, Scope};
 use csvp::Field;
@@ -25,6 +25,7 @@ pub struct Row {
     pub note: Option<String>,
     pub number_format: Option<NumberFormat>,
     pub text_formats: collections::HashSet<TextFormat>,
+    pub text_wrap: TextWrap,
     pub var: Option<String>,
     pub vertical_align: Option<VerticalAlign>,
 }

@@ -6,7 +6,7 @@
 //! payloads should reflect only the things the user specified on the cell.
 //!
 use crate::cell_options::{
-    BorderSide, BorderStyle, DataValidation, HorizontalAlign, NumberFormat, TextFormat,
+    BorderSide, BorderStyle, DataValidation, HorizontalAlign, NumberFormat, TextFormat, TextWrap,
     VerticalAlign,
 };
 use crate::{Cell, Rgb};
@@ -68,6 +68,7 @@ impl<'a> GoogleSheetsCell<'a> {
         let number_format = self.number_format();
         let text_format = self.text_format();
         let vertical_alignment = self.vertical_alignment();
+        let wrap_strategy = self.wrap_strategy();
 
         if borders.is_none()
             && background_color_style.is_none()
@@ -87,6 +88,9 @@ impl<'a> GoogleSheetsCell<'a> {
             number_format,
             text_format,
             vertical_alignment,
+            // TODO: this doesn't jive with the caching strategy above, maybe it's time to give up
+            // on that
+            wrap_strategy: Some(wrap_strategy),
             ..Default::default()
         })
     }
@@ -290,6 +294,15 @@ impl<'a> GoogleSheetsCell<'a> {
             }
             .to_string()
         })
+    }
+
+    fn wrap_strategy(&self) -> String {
+        match self.0.text_wrap {
+            TextWrap::Wrap => "WRAP",
+            TextWrap::Overflow => "OVERFLOW",
+            TextWrap::Clip => "CLIP",
+        }
+        .to_string()
     }
 }
 

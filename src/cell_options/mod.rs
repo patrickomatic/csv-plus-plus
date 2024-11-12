@@ -5,6 +5,7 @@ mod fill;
 mod horizontal_align;
 mod number_format;
 mod text_format;
+mod text_wrap;
 mod vertical_align;
 
 pub(crate) use border_side::BorderSide;
@@ -14,4 +15,5 @@ pub(crate) use fill::{Fill, ROW_MAX};
 pub(crate) use horizontal_align::HorizontalAlign;
 pub(crate) use number_format::NumberFormat;
 pub(crate) use text_format::TextFormat;
+pub(crate) use text_wrap::TextWrap;
 pub(crate) use vertical_align::VerticalAlign;

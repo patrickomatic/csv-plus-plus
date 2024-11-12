@@ -3,7 +3,7 @@
 //! Converts between a Cell and an `umya_spreadsheet::Style` (which feature-wise actually happen
 //! to map pretty nicely)
 use crate::cell_options::{
-    BorderSide, BorderStyle, HorizontalAlign, NumberFormat, TextFormat, VerticalAlign,
+    BorderSide, BorderStyle, HorizontalAlign, NumberFormat, TextFormat, TextWrap, VerticalAlign,
 };
 use crate::{Cell, Rgb};
 
@@ -83,6 +83,12 @@ impl From<VerticalAlign> for umya_spreadsheet::VerticalAlignmentValues {
     }
 }
 
+impl From<TextWrap> for bool {
+    fn from(value: TextWrap) -> Self {
+        matches!(value, TextWrap::Wrap)
+    }
+}
+
 impl<'a> ExcelCell<'a> {
     pub(super) fn has_style(&self) -> bool {
         let cell = self.0;
@@ -112,6 +118,8 @@ impl<'a> ExcelCell<'a> {
         if let Some(v) = self.0.vertical_align {
             alignment.set_vertical(v.into());
         }
+
+        alignment.set_wrap_text(self.0.text_wrap.into());
 
         s.set_alignment(alignment);
     }

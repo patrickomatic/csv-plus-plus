@@ -4,7 +4,8 @@ mod validate;
 
 use super::cell_lexer::{CellLexer, Token, TokenMatch};
 use crate::cell_options::{
-    BorderSide, BorderStyle, Fill, HorizontalAlign, NumberFormat, TextFormat, VerticalAlign,
+    BorderSide, BorderStyle, Fill, HorizontalAlign, NumberFormat, TextFormat, TextWrap,
+    VerticalAlign,
 };
 use crate::error::{BadInput, ParseResult, Result};
 use crate::{deprecated_feature, ArcSourceCode, Cell, Rgb, Row};
@@ -220,6 +221,16 @@ where
         })
     }
 
+    fn wrap_option(&mut self) -> ParseResult<()> {
+        let value = TextWrap::try_from(self.lexer.take_option_right_side()?)?;
+        if self.is_row_options {
+            self.row.text_wrap = value;
+        } else {
+            self.cell.text_wrap = value;
+        }
+        Ok(())
+    }
+
     fn option(&mut self) -> ParseResult<()> {
         let option_name = self.lexer.take_token(Token::OptionName)?;
         match option_name.str_match.as_str() {
@@ -239,6 +250,7 @@ where
             "t" | "text" => self.text_option(),
             "v" | "var" => self.var_option(),
             "va" | "valign" => self.valign_option(),
+            "w" | "wrap" => self.wrap_option(),
             _ => Err(option_name.into_parse_error("Expected a valid cell option")),
         }
     }

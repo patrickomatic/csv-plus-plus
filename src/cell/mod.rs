@@ -2,7 +2,7 @@
 //!
 use crate::ast::Ast;
 use crate::cell_options::{
-    BorderSide, BorderStyle, DataValidation, HorizontalAlign, NumberFormat, TextFormat,
+    BorderSide, BorderStyle, DataValidation, HorizontalAlign, NumberFormat, TextFormat, TextWrap,
     VerticalAlign,
 };
 use crate::parser::ast_parser::AstParser;
@@ -31,6 +31,7 @@ pub struct Cell {
     pub note: Option<String>,
     pub number_format: Option<NumberFormat>,
     pub text_formats: collections::HashSet<TextFormat>,
+    pub text_wrap: TextWrap,
     pub var: Option<String>,
     pub vertical_align: Option<VerticalAlign>,
 }
@@ -66,6 +67,7 @@ impl Cell {
             number_format: Option::default(),
             parsed_value: String::default(),
             text_formats: collections::HashSet::default(),
+            text_wrap: TextWrap::default(),
             var: Option::default(),
             vertical_align: Option::default(),
         }
@@ -97,6 +99,7 @@ impl Cell {
             number_format: row.number_format,
             parsed_value: String::default(),
             text_formats: row.text_formats,
+            text_wrap: row.text_wrap,
             var: None,
             vertical_align: row.vertical_align,
         }

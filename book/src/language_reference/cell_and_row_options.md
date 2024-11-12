@@ -157,6 +157,13 @@ Bind a variable (specified by `VARIABLE_ID`) to reference this cell.
 `v = VARIABLE_ID`
 
 
+#### wrap = wrap | overflow | clip
+Whether to wrap the text in the cell.  By default it is `wrap`
+
+##### Alias
+`w = w | o | c`
+
+
 ### Examples
 
 * Align the second cell left, align the last cell to the center and make it bold and italicized:

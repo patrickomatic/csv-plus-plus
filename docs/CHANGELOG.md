@@ -1,5 +1,15 @@
 ## v0.8.0
 
+### Features
+
+* Slashes are no longer needed to separate cell options
+    - `[[text=bold halign=left]]` is now equivalent to `[[text=bold/halign=left]]`.
+* Support for multi-line cells
+* Support for text wrapping cell option
+* [csv++ User Guide](https://patrickomatic.github.io/csv-plus-plus/)
+* Switch to custom CSV parser (`csvp`)
+* Switch from CBOR to bincode for object file serialization
+
 ### **Breaking Changes**
 
 * Added enum variant `Error::CsvParseError`
@@ -16,15 +26,6 @@
     - `CompilationTarget`
     - `TextFormat`
     - `VerticalAlign`
-
-### Features
-
-* Slashes are no longer needed to separate cell options
-    - `[[text=bold halign=left]]` is now equivalent to `[[text=bold/halign=left]]`.
-* Support for multi-line cells
-* [csv++ User Guide](https://patrickomatic.github.io/csv-plus-plus/)
-* Switch to custom CSV parser (`csvp`)
-* Switch from CBOR to bincode for object file serialization
 
 ### Deprecated Features
 
