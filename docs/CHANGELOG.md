@@ -4,6 +4,18 @@
 
 * Added enum variant `Error::CsvParseError`
 * Renamed `Options` to `Config`
+* Modules made crate-private:
+    - `BorderSide`
+    - `BorderStyle`
+    - `Cell`
+    - `Config`
+    - `Fill`
+    - `HorizontalAlign`
+    - `NumberFormat`
+    - `Output`
+    - `CompilationTarget`
+    - `TextFormat`
+    - `VerticalAlign`
 
 ### Features
 
