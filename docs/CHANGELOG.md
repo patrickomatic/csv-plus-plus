@@ -5,7 +5,7 @@
 * Slashes are no longer needed to separate cell options
     - `[[text=bold halign=left]]` is now equivalent to `[[text=bold/halign=left]]`.
 * Support for multi-line cells
-* Support for text wrapping cell option
+* Support for text wrapping cell option (i.e. `[[wrap=clip]]` to clip the text in a cell)
 * [csv++ User Guide](https://patrickomatic.github.io/csv-plus-plus/)
 * Switch to custom CSV parser (`csvp`)
 * Switch from CBOR to bincode for object file serialization
