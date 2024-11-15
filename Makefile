@@ -1,7 +1,7 @@
 bench_output := target/criterion
 version := $(egrep '^version.*=.*' Cargo.toml | egrep -o "\d+\.\d+\.\d+")
 
-.PHONY: all bench buildci buildrelease install cov publish
+.PHONY: all bench buildci buildrelease clean install cov publish
 
 all: buildrelease
 
@@ -18,8 +18,7 @@ buildci:
 
 buildrelease: builddev
 	make -C book/
-	make -C release/
-	# make -j 5 -C release/
+	make -j 5 -C release/
 
 bench:
 	RUST_BACKTRACE=1 cargo bench --bench eval_fill -- --profile-time=5
@@ -28,6 +27,9 @@ bench:
 
 install:
 	cargo install --path .
+
+clean:
+	cargo clean
 
 cov:
 	cargo llvm-cov
