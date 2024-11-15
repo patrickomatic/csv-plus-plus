@@ -62,7 +62,7 @@ impl<'a> BatchUpdateBuilder<'a> {
                         let gs_cell = google_sheets_cell::GoogleSheetsCell(cell);
                         api::CellData {
                             data_validation: gs_cell.data_validation_rule(),
-                            user_entered_format: gs_cell.cell_format(),
+                            user_entered_format: Some(gs_cell.cell_format()),
                             user_entered_value: Self::user_entered_value(cell),
                             note: cell.note.clone(),
                             ..Default::default()

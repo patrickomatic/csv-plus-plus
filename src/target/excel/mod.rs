@@ -64,9 +64,7 @@ impl<'a> Excel<'a> {
 
                         Self::set_value(e, &cell);
 
-                        if let Some(style) = Self::build_style(&cell) {
-                            e.set_style(style);
-                        }
+                        e.set_style(Self::build_style(&cell));
 
                         if let Some(n) = &cell.note {
                             Self::set_comment(worksheet, position, n);
@@ -136,13 +134,8 @@ impl<'a> Excel<'a> {
         }
     }
 
-    fn build_style(cell: &Cell) -> Option<u::Style> {
-        let excel_cell = excel_cell::ExcelCell(cell);
-        if !excel_cell.has_style() {
-            return None;
-        }
-
-        Some(excel_cell.into())
+    fn build_style(cell: &Cell) -> u::Style {
+        excel_cell::ExcelCell(cell).into()
     }
 
     fn get_existing_cell(

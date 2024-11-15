@@ -61,7 +61,7 @@ fn color_style(rgb: &Option<Rgb>) -> Option<api::ColorStyle> {
 }
 
 impl<'a> GoogleSheetsCell<'a> {
-    pub(super) fn cell_format(&self) -> Option<api::CellFormat> {
+    pub(super) fn cell_format(&self) -> api::CellFormat {
         let borders = self.borders();
         let background_color_style = color_style(&self.0.color);
         let horizontal_alignment = self.horizontal_alignment();
@@ -70,29 +70,16 @@ impl<'a> GoogleSheetsCell<'a> {
         let vertical_alignment = self.vertical_alignment();
         let wrap_strategy = self.wrap_strategy();
 
-        if borders.is_none()
-            && background_color_style.is_none()
-            && horizontal_alignment.is_none()
-            && number_format.is_none()
-            && text_format.is_none()
-            && vertical_alignment.is_none()
-        {
-            // don't waste API calls and spreadsheet mutations if everything is blank
-            return None;
-        }
-
-        Some(api::CellFormat {
+        api::CellFormat {
             background_color_style,
             borders,
-            horizontal_alignment,
+            horizontal_alignment: Some(horizontal_alignment),
             number_format,
             text_format,
-            vertical_alignment,
-            // TODO: this doesn't jive with the caching strategy above, maybe it's time to give up
-            // on that
+            vertical_alignment: Some(vertical_alignment),
             wrap_strategy: Some(wrap_strategy),
             ..Default::default()
-        })
+        }
     }
 
     pub(super) fn data_validation_rule(&self) -> Option<api::DataValidationRule> {
@@ -174,18 +161,16 @@ impl<'a> GoogleSheetsCell<'a> {
     }
 
     /// <https://developers.google.com/apps-script/reference/spreadsheet/border-style>
-    fn border_style(&self) -> Option<String> {
-        self.0.border_style.map(|bs| {
-            match bs {
-                BorderStyle::Dashed => "DASHED",
-                BorderStyle::Dotted => "DOTTED",
-                BorderStyle::Double => "DOUBLE",
-                BorderStyle::Solid => "SOLID",
-                BorderStyle::SolidMedium => "SOLID_MEDIUM",
-                BorderStyle::SolidThick => "SOLID_THICK",
-            }
-            .to_string()
-        })
+    fn border_style(&self) -> String {
+        match self.0.border_style {
+            BorderStyle::Dashed => "DASHED",
+            BorderStyle::Dotted => "DOTTED",
+            BorderStyle::Double => "DOUBLE",
+            BorderStyle::Solid => "SOLID",
+            BorderStyle::SolidMedium => "SOLID_MEDIUM",
+            BorderStyle::SolidThick => "SOLID_THICK",
+        }
+        .to_string()
     }
 
     fn borders(&self) -> Option<api::Borders> {
@@ -204,8 +189,7 @@ impl<'a> GoogleSheetsCell<'a> {
     fn border(&self) -> api::Border {
         api::Border {
             color_style: color_style(&self.0.border_color),
-            // TODO: I might need to do a mapping to the google style formats here
-            style: self.border_style(),
+            style: Some(self.border_style()),
             ..Default::default()
         }
     }
@@ -218,15 +202,13 @@ impl<'a> GoogleSheetsCell<'a> {
         }
     }
 
-    fn horizontal_alignment(&self) -> Option<String> {
-        self.0.horizontal_align.map(|ha| {
-            match ha {
-                HorizontalAlign::Left => "LEFT",
-                HorizontalAlign::Center => "MIDDLE",
-                HorizontalAlign::Right => "RIGHT",
-            }
-            .to_string()
-        })
+    fn horizontal_alignment(&self) -> String {
+        match self.0.horizontal_align {
+            HorizontalAlign::Left => "LEFT",
+            HorizontalAlign::Center => "MIDDLE",
+            HorizontalAlign::Right => "RIGHT",
+        }
+        .to_string()
     }
 
     /// <https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/cells#numberformat>
@@ -285,15 +267,13 @@ impl<'a> GoogleSheetsCell<'a> {
         })
     }
 
-    fn vertical_alignment(&self) -> Option<String> {
-        self.0.vertical_align.map(|va| {
-            match va {
-                VerticalAlign::Top => "TOP",
-                VerticalAlign::Center => "MIDDLE",
-                VerticalAlign::Bottom => "BOTTOM",
-            }
-            .to_string()
-        })
+    fn vertical_alignment(&self) -> String {
+        match self.0.vertical_align {
+            VerticalAlign::Top => "TOP",
+            VerticalAlign::Center => "MIDDLE",
+            VerticalAlign::Bottom => "BOTTOM",
+        }
+        .to_string()
     }
 
     fn wrap_strategy(&self) -> String {
@@ -312,25 +292,17 @@ mod tests {
     use crate::test_utils::*;
 
     #[test]
-    fn cell_format_none() {
-        let cell = Cell::new(build_field("", (0, 0)));
-        let gs_cell = GoogleSheetsCell(&cell);
-
-        assert!(gs_cell.cell_format().is_none());
-    }
-
-    #[test]
-    fn cell_format_some() {
+    fn cell_format() {
         let mut cell = Cell::new(build_field("", (0, 0)));
         cell.text_formats.insert(TextFormat::Bold);
-        cell.vertical_align = Some(VerticalAlign::Top);
-        cell.horizontal_align = Some(HorizontalAlign::Right);
+        cell.vertical_align = VerticalAlign::Top;
+        cell.horizontal_align = HorizontalAlign::Right;
         cell.number_format = Some(NumberFormat::Date);
         cell.color = Some(Rgb::new(255, 0, 0));
         cell.borders.insert(BorderSide::All);
 
         let gs_cell = GoogleSheetsCell(&cell);
-        let cell_format = gs_cell.cell_format().unwrap();
+        let cell_format = gs_cell.cell_format();
 
         assert!(cell_format.borders.is_some());
         assert!(cell_format.background_color_style.is_some());

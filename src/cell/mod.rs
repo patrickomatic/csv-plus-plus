@@ -19,21 +19,21 @@ pub struct Cell {
     pub field: Field,
     pub parsed_value: String,
     pub border_color: Option<Rgb>,
-    pub border_style: Option<BorderStyle>,
+    pub border_style: BorderStyle,
     pub borders: collections::HashSet<BorderSide>,
     pub color: Option<Rgb>,
     pub data_validation: Option<DataValidation>,
     pub font_color: Option<Rgb>,
     pub font_family: Option<String>,
     pub font_size: Option<u8>,
-    pub horizontal_align: Option<HorizontalAlign>,
+    pub horizontal_align: HorizontalAlign,
     pub lock: bool,
     pub note: Option<String>,
     pub number_format: Option<NumberFormat>,
     pub text_formats: collections::HashSet<TextFormat>,
     pub text_wrap: TextWrap,
     pub var: Option<String>,
-    pub vertical_align: Option<VerticalAlign>,
+    pub vertical_align: VerticalAlign,
 }
 
 fn parse_ast(input: &str, field: &Field, source_code: &ArcSourceCode) -> Result<Option<Ast>> {
@@ -54,14 +54,14 @@ impl Cell {
             field,
             ast: Option::default(),
             border_color: Option::default(),
-            border_style: Option::default(),
+            border_style: BorderStyle::default(),
             borders: collections::HashSet::default(),
             color: Option::default(),
             data_validation: Option::default(),
             font_color: Option::default(),
             font_family: Option::default(),
             font_size: Option::default(),
-            horizontal_align: Option::default(),
+            horizontal_align: HorizontalAlign::default(),
             lock: Default::default(),
             note: Option::default(),
             number_format: Option::default(),
@@ -69,7 +69,7 @@ impl Cell {
             text_formats: collections::HashSet::default(),
             text_wrap: TextWrap::default(),
             var: Option::default(),
-            vertical_align: Option::default(),
+            vertical_align: VerticalAlign::default(),
         }
     }
 
@@ -103,6 +103,10 @@ impl Cell {
             var: None,
             vertical_align: row.vertical_align,
         }
+    }
+
+    pub(crate) fn side_has_border(&self, border_side: BorderSide) -> bool {
+        self.borders.contains(&BorderSide::All) || self.borders.contains(&border_side)
     }
 }
 

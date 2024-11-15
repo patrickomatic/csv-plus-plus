@@ -90,34 +90,10 @@ impl From<TextWrap> for bool {
 }
 
 impl<'a> ExcelCell<'a> {
-    pub(super) fn has_style(&self) -> bool {
-        let cell = self.0;
-        cell.border_color.is_some()
-            || cell.border_style.is_some()
-            || !cell.borders.is_empty()
-            || cell.color.is_some()
-            || cell.font_color.is_some()
-            || cell.font_family.is_some()
-            || cell.font_size.is_some()
-            || !cell.text_formats.is_empty()
-            || cell.horizontal_align.is_some()
-            || cell.number_format.is_some()
-            || cell.vertical_align.is_some()
-    }
-
     fn set_alignment(&self, s: &mut umya_spreadsheet::Style) {
-        if self.0.horizontal_align.is_none() && self.0.vertical_align.is_none() {
-            return;
-        }
-
         let mut alignment = umya_spreadsheet::Alignment::default();
-        if let Some(h) = self.0.horizontal_align {
-            alignment.set_horizontal(h.into());
-        }
-
-        if let Some(v) = self.0.vertical_align {
-            alignment.set_vertical(v.into());
-        }
+        alignment.set_horizontal(self.0.horizontal_align.into());
+        alignment.set_vertical(self.0.vertical_align.into());
 
         alignment.set_wrap_text(self.0.text_wrap.into());
 
@@ -135,24 +111,23 @@ impl<'a> ExcelCell<'a> {
             return;
         }
 
-        let border: umya_spreadsheet::Border = self.0.border_style.unwrap_or_default().into();
+        let border_style: umya_spreadsheet::Border = self.0.border_style.into();
 
-        let all_borders = self.0.borders.contains(&BorderSide::All);
         let b = s.get_borders_mut();
-        if all_borders || self.0.borders.contains(&BorderSide::Left) {
-            b.set_left_border(border.clone());
+        if self.0.side_has_border(BorderSide::Left) {
+            b.set_left_border(border_style.clone());
         }
 
-        if all_borders || self.0.borders.contains(&BorderSide::Right) {
-            b.set_right_border(border.clone());
+        if self.0.side_has_border(BorderSide::Right) {
+            b.set_right_border(border_style.clone());
         }
 
-        if all_borders || self.0.borders.contains(&BorderSide::Top) {
-            b.set_top_border(border.clone());
+        if self.0.side_has_border(BorderSide::Top) {
+            b.set_top_border(border_style.clone());
         }
 
-        if all_borders || self.0.borders.contains(&BorderSide::Bottom) {
-            b.set_bottom_border(border);
+        if self.0.side_has_border(BorderSide::Bottom) {
+            b.set_bottom_border(border_style);
         }
     }
 
@@ -211,16 +186,6 @@ mod tests {
     use crate::test_utils::*;
 
     #[test]
-    fn has_style() {
-        let mut cell = Cell::new(build_field("", (0, 0)));
-
-        assert!(!ExcelCell(&cell).has_style());
-
-        cell.font_size = Some(50);
-        assert!(ExcelCell(&cell).has_style());
-    }
-
-    #[test]
     fn into_border_borderstyle() {
         let dashed: umya_spreadsheet::Border = BorderStyle::Dashed.into();
         assert_eq!(dashed.get_border_style(), "dashed");
@@ -245,7 +210,7 @@ mod tests {
     fn into_excel_cell_style() {
         let mut cell = Cell::new(build_field("", (0, 0)));
         cell.font_size = Some(50);
-        cell.border_style = Some(BorderStyle::Dashed);
+        cell.border_style = BorderStyle::Dashed;
         cell.note = Some("a note".to_string());
         cell.borders.insert(BorderSide::Top);
         cell.text_formats.insert(TextFormat::Bold);

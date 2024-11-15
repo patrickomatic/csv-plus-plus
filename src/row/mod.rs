@@ -12,7 +12,7 @@ use std::collections;
 pub struct Row {
     pub cells: Vec<Cell>,
     pub border_color: Option<Rgb>,
-    pub border_style: Option<BorderStyle>,
+    pub border_style: BorderStyle,
     pub borders: collections::HashSet<BorderSide>,
     pub color: Option<Rgb>,
     pub data_validation: Option<DataValidation>,
@@ -20,14 +20,14 @@ pub struct Row {
     pub font_color: Option<Rgb>,
     pub font_family: Option<String>,
     pub font_size: Option<u8>,
-    pub horizontal_align: Option<HorizontalAlign>,
+    pub horizontal_align: HorizontalAlign,
     pub lock: bool,
     pub note: Option<String>,
     pub number_format: Option<NumberFormat>,
     pub text_formats: collections::HashSet<TextFormat>,
     pub text_wrap: TextWrap,
     pub var: Option<String>,
-    pub vertical_align: Option<VerticalAlign>,
+    pub vertical_align: VerticalAlign,
 }
 
 impl Row {

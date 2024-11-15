@@ -3,9 +3,10 @@
 use crate::error::CellParseError;
 use crate::parser::cell_lexer::TokenMatch;
 
-#[derive(Copy, Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
 pub enum VerticalAlign {
     Bottom,
+    #[default]
     Center,
     Top,
 }

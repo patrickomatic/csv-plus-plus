@@ -105,3 +105,9 @@ variables     ,                                                                 
               ,depends_on_another                                               ,=depends_on_another
               ,my_function()                                                    ,=my_function()
               ,bar                                                              ,=bar
+              ,                                                                 ,
+wrap          ,                                                                 ,
+              ,[[wrap=wrap]]                      wrap=wrap                     ,
+              ,[[wrap=overflow]]                  wrap=overflow                 ,
+              ,[[wrap=clip]]                      wrap=clip                     ,
+              ,                                                                 ,

@@ -25,6 +25,17 @@ pub(crate) struct CellParser<'a, 'b: 'a> {
 macro_rules! assign_option {
     ($self:ident, $attr:ident, $value:expr) => {{
         if $self.is_row_options {
+            $self.row.$attr = $value;
+        } else {
+            $self.cell.$attr = $value;
+        }
+        Ok(())
+    }};
+}
+
+macro_rules! assign_some_option {
+    ($self:ident, $attr:ident, $value:expr) => {{
+        if $self.is_row_options {
             $self.row.$attr = Some($value);
         } else {
             $self.cell.$attr = Some($value);
@@ -112,7 +123,7 @@ where
 
     fn border_color_option(&mut self) -> ParseResult<()> {
         self.lexer.take_token(Token::Equals)?;
-        assign_option!(self, border_color, {
+        assign_some_option!(self, border_color, {
             Rgb::try_from(self.lexer.take_token(Token::Color)?)?
         })
     }
@@ -125,7 +136,7 @@ where
 
     fn color_option(&mut self) -> ParseResult<()> {
         self.lexer.take_token(Token::Equals)?;
-        assign_option!(self, color, {
+        assign_some_option!(self, color, {
             Rgb::try_from(self.lexer.take_token(Token::Color)?)?
         })
     }
@@ -151,21 +162,21 @@ where
 
     fn font_color_option(&mut self) -> ParseResult<()> {
         self.lexer.take_token(Token::Equals)?;
-        assign_option!(self, font_color, {
+        assign_some_option!(self, font_color, {
             Rgb::try_from(self.lexer.take_token(Token::Color)?)?
         })
     }
 
     fn font_family_option(&mut self) -> ParseResult<()> {
         self.lexer.take_token(Token::Equals)?;
-        assign_option!(self, font_family, {
+        assign_some_option!(self, font_family, {
             self.lexer.take_token(Token::String)?.str_match
         })
     }
 
     fn font_size_option(&mut self) -> ParseResult<()> {
         self.lexer.take_token(Token::Equals)?;
-        assign_option!(self, font_size, {
+        assign_some_option!(self, font_size, {
             let font_size_match = self.lexer.take_token(Token::PositiveNumber)?;
             font_size_match.str_match.parse::<u8>().map_err(|e| {
                 font_size_match.into_parse_error(format!("Error parsing fontsize: {e}"))
@@ -192,13 +203,13 @@ where
 
     fn note(&mut self) -> ParseResult<()> {
         self.lexer.take_token(Token::Equals)?;
-        assign_option!(self, note, {
+        assign_some_option!(self, note, {
             self.lexer.take_token(Token::String)?.str_match
         })
     }
 
     fn number_format(&mut self) -> ParseResult<()> {
-        assign_option!(self, number_format, {
+        assign_some_option!(self, number_format, {
             NumberFormat::try_from(self.lexer.take_option_right_side()?)?
         })
     }
@@ -216,7 +227,7 @@ where
     }
 
     fn var_option(&mut self) -> ParseResult<()> {
-        assign_option!(self, var, {
+        assign_some_option!(self, var, {
             self.lexer.take_option_right_side()?.str_match
         })
     }
@@ -303,7 +314,7 @@ mod tests {
 
         assert_eq!(cell.parsed_value, "abc123");
         assert!(row.text_formats.contains(&TextFormat::Italic));
-        assert_eq!(row.vertical_align, Some(VerticalAlign::Top));
+        assert_eq!(row.vertical_align, VerticalAlign::Top);
         assert_eq!(
             row.fill,
             Some(Fill {
@@ -320,7 +331,7 @@ mod tests {
 
         assert_eq!(cell.parsed_value, "abc123");
         assert!(row.text_formats.contains(&TextFormat::Italic));
-        assert_eq!(row.vertical_align, Some(VerticalAlign::Top));
+        assert_eq!(row.vertical_align, VerticalAlign::Top);
         assert_eq!(
             row.fill,
             Some(Fill {
@@ -345,8 +356,8 @@ mod tests {
 
         assert_eq!(cell.parsed_value, "abc123");
         assert_eq!(cell.font_size, Some(12));
-        assert_eq!(cell.horizontal_align, Some(HorizontalAlign::Left));
-        assert_eq!(cell.vertical_align, Some(VerticalAlign::Center));
+        assert_eq!(cell.horizontal_align, HorizontalAlign::Left);
+        assert_eq!(cell.vertical_align, VerticalAlign::Center);
         assert!(cell.text_formats.contains(&TextFormat::Underline));
     }
 
@@ -367,7 +378,7 @@ mod tests {
     #[test]
     fn parse_borderstyle() {
         let cell = test_parse("[[b=t bs=dotted]]abc123", &mut Row::default());
-        assert_eq!(cell.border_style, Some(BorderStyle::Dotted));
+        assert_eq!(cell.border_style, BorderStyle::Dotted);
     }
 
     #[test]
@@ -405,7 +416,7 @@ mod tests {
     #[test]
     fn parse_halign() {
         let cell = test_parse("[[halign=left]]abc123", &mut Row::default());
-        assert_eq!(cell.horizontal_align, Some(HorizontalAlign::Left));
+        assert_eq!(cell.horizontal_align, HorizontalAlign::Left);
     }
 
     #[test]
@@ -435,7 +446,7 @@ mod tests {
     #[test]
     fn parse_valign() {
         let cell = test_parse("[[valign=top]]abc123", &mut Row::default());
-        assert_eq!(cell.vertical_align, Some(VerticalAlign::Top));
+        assert_eq!(cell.vertical_align, VerticalAlign::Top);
     }
 
     #[test]
