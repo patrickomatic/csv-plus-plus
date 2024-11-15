@@ -23,7 +23,7 @@ chrono = { version = "^0.4.31", features = ["serde"] }
 clap = { version = "^4", features = ["derive"] }
 colored = "^2.0"
 csv = "1"
-csvp = { path = "./csvp" }
+csvp = { version = "^0.2", path = "./csvp" }
 env_logger = "^0.11"
 google-drive3 = "^6.0"
 google-sheets4 = "^6.0"
