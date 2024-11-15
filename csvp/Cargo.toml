@@ -1,7 +1,12 @@
 [package]
+authors = ["Patrick Carroll <patrick@patrickomatic.com>"]
+description = "A CSV parser with a couple additional features"
+edition = "2021"
+homepage = "https://github.com/patrickomatic/csv-plus-plus"
+keywords = ["csvp", "csv", "parser"]
+license = "MIT"
 name = "csvp"
 version = "0.2.0"
-edition = "2021"
 
 [dependencies]
 a1 = { workspace = true }
