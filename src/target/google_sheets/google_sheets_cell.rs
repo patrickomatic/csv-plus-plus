@@ -74,7 +74,7 @@ impl<'a> GoogleSheetsCell<'a> {
             background_color_style,
             borders,
             horizontal_alignment: Some(horizontal_alignment),
-            number_format,
+            number_format: Some(number_format),
             text_format,
             vertical_alignment: Some(vertical_alignment),
             wrap_strategy: Some(wrap_strategy),
@@ -213,25 +213,23 @@ impl<'a> GoogleSheetsCell<'a> {
 
     /// <https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/cells#numberformat>
     /// <https://docs.rs/google-sheets4/latest/google_sheets4/api/struct.NumberFormat.html>
-    fn number_format(&self) -> Option<api::NumberFormat> {
-        self.0.number_format.map(|nf| {
-            let nf_type = match nf {
-                NumberFormat::Currency => "CURRENCY",
-                NumberFormat::Date => "DATE",
-                NumberFormat::DateTime => "DATE_TIME",
-                NumberFormat::Number => "NUMBER",
-                NumberFormat::Percent => "PERCENT",
-                NumberFormat::Text => "TEXT",
-                NumberFormat::Time => "TIME",
-                NumberFormat::Scientific => "SCIENTIFIC",
-            }
-            .to_string();
+    fn number_format(&self) -> api::NumberFormat {
+        let nf_type = match self.0.number_format {
+            NumberFormat::Currency => "CURRENCY",
+            NumberFormat::Date => "DATE",
+            NumberFormat::DateTime => "DATE_TIME",
+            NumberFormat::Number => "NUMBER",
+            NumberFormat::Percent => "PERCENT",
+            NumberFormat::Text => "TEXT",
+            NumberFormat::Time => "TIME",
+            NumberFormat::Scientific => "SCIENTIFIC",
+        }
+        .to_string();
 
-            api::NumberFormat {
-                type_: Some(nf_type),
-                pattern: None,
-            }
-        })
+        api::NumberFormat {
+            type_: Some(nf_type),
+            pattern: None,
+        }
     }
 
     fn text_format(&self) -> Option<api::TextFormat> {
@@ -297,7 +295,7 @@ mod tests {
         cell.text_formats.insert(TextFormat::Bold);
         cell.vertical_align = VerticalAlign::Top;
         cell.horizontal_align = HorizontalAlign::Right;
-        cell.number_format = Some(NumberFormat::Date);
+        cell.number_format = NumberFormat::Date;
         cell.color = Some(Rgb::new(255, 0, 0));
         cell.borders.insert(BorderSide::All);
 

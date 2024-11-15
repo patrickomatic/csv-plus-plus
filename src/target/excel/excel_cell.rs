@@ -174,9 +174,7 @@ impl<'a> ExcelCell<'a> {
     }
 
     fn set_number_format(&self, s: &mut umya_spreadsheet::Style) {
-        if let Some(nf) = self.0.number_format {
-            s.set_numbering_format(nf.into());
-        }
+        s.set_numbering_format(self.0.number_format.into());
     }
 }
 

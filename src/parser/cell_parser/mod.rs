@@ -209,7 +209,7 @@ where
     }
 
     fn number_format(&mut self) -> ParseResult<()> {
-        assign_some_option!(self, number_format, {
+        assign_option!(self, number_format, {
             NumberFormat::try_from(self.lexer.take_option_right_side()?)?
         })
     }
@@ -434,7 +434,7 @@ mod tests {
     #[test]
     fn parse_numberformat() {
         let cell = test_parse("[[numberformat=datetime]]abc123", &mut Row::default());
-        assert_eq!(cell.number_format, Some(NumberFormat::DateTime));
+        assert_eq!(cell.number_format, NumberFormat::DateTime);
     }
 
     #[test]

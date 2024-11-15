@@ -23,7 +23,7 @@ pub struct Row {
     pub horizontal_align: HorizontalAlign,
     pub lock: bool,
     pub note: Option<String>,
-    pub number_format: Option<NumberFormat>,
+    pub number_format: NumberFormat,
     pub text_formats: collections::HashSet<TextFormat>,
     pub text_wrap: TextWrap,
     pub var: Option<String>,
