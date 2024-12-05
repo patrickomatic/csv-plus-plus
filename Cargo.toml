@@ -40,7 +40,7 @@ umya-spreadsheet = "^2.1"
 
 [dev-dependencies]
 criterion = { version = "^0.5", features = ["html_reports"] }
-pprof = { version = "0.13", features = ["criterion", "flamegraph"] }
+pprof = { version = "0.14", features = ["criterion", "flamegraph"] }
 rand = "^0.8"
 
 [[bench]]
