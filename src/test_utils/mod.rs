@@ -14,7 +14,7 @@ pub(crate) use test_source_code::TestSourceCode;
 pub(crate) fn build_ast_token_match(
     str_match: &str,
     source_code: ArcSourceCode,
-) -> ast_lexer::TokenMatch {
+) -> ast_lexer::TokenMatch<'_> {
     ast_lexer::TokenMatch {
         token: ast_lexer::Token::Reference,
         position: (0, 0).into(),

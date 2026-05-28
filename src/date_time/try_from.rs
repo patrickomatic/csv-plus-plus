@@ -73,7 +73,7 @@ mod tests {
     use crate::test_utils::*;
     use crate::*;
 
-    fn build_input(s: &str, source_code: ArcSourceCode) -> ast_lexer::TokenMatch {
+    fn build_input(s: &str, source_code: ArcSourceCode) -> ast_lexer::TokenMatch<'_> {
         build_ast_token_match(s, source_code)
     }
 

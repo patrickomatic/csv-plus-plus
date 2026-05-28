@@ -355,7 +355,7 @@ mod tests {
     use super::*;
     use crate::test_utils::*;
 
-    fn test_lexer(field: &Field) -> CellLexer {
+    fn test_lexer(field: &Field) -> CellLexer<'_> {
         CellLexer::new(field, build_source_code_from_input(&field.value))
     }
 

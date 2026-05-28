@@ -91,7 +91,7 @@ impl<'a> Excel<'a> {
             cell_validations
                 .into_iter()
                 .map(std::convert::Into::into)
-                .collect(),
+                .collect::<Vec<_>>(),
         );
         worksheet.set_data_validations(validations);
     }
@@ -100,8 +100,10 @@ impl<'a> Excel<'a> {
         let mut comment = u::Comment::default();
         comment.set_author("csvpp");
 
-        let rt = comment.get_text_mut();
+        let ct = comment.get_text_mut();
+        let mut rt = u::RichText::default();
         rt.set_text(note);
+        ct.set_rich_text(rt);
 
         let coord = comment.get_coordinate_mut();
         coord.set_col_num(u32::try_from(position.column.x).expect("32 bit coordinate for comment"));
