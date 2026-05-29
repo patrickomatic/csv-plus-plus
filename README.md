@@ -6,8 +6,8 @@
 # csv++
 
 csv++ is a superset of [CSV](https://en.wikipedia.org/wiki/Comma-separated_values) which allows
-you to author spreadsheets in a text file then compile that to your target spreadsheet (Excel, 
-Google Sheets or even back to CSV).
+you to author spreadsheets in a text file then compile that to your target spreadsheet format
+(Excel, OpenDocument, Google Sheets or even back to CSV).
 
 Since csv++ is a superset of CSV any CSV document is valid:
 
@@ -46,8 +46,7 @@ Complex function      , Column 1  , Column 2 ,
 ```
 
 > **_NOTE:_** The following is just a brief walkthrough, for the full documentation please refer to
-the [user 
-guide](https://patrickomatic.github.io/csv-plus-plus/language_reference/index.html).
+the [user guide](https://patrickomatic.github.io/csv-plus-plus/language_reference/index.html).
 
 ## Fills
 
@@ -89,10 +88,10 @@ bar  ,     , =B3 , =A1 , =42
 Breaking this down:
 
 * `foo_from_code_section` - Is always `42` no matter where it is used.
-* `bar_in_fill` - Since it is defined within an `![[fill]]`, it's value depends on the final
+* `bar_in_fill` - Since it is defined within an `![[fill]]`, its value depends on the final
   row, which will be `B2` or `B3`
 * `bar_outside_fill` - Will always be `A1`, pointing to the cell where it was defined.  There
-  is no relative aspect to it since it's not defined in an `fill`.
+  is no relative aspect to it since it's not defined in a `fill`.
 
 
 ## Importing Code
@@ -110,14 +109,14 @@ e := 2.7182818284
 ```csvpp
 use my_math_constants
 
-fn circumference_from_diameter(r)
-    r * 2 * pi
+fn circumference_from_diameter(d)
+    d * pi
 
 fn radius_to_diameter(r)
     2 * r
 
 fn circumference_from_radius(r)
-    radius_from_diameter(radius_to_diameter(r))
+    circumference_from_diameter(radius_to_diameter(r))
 
 ---
 Radius          ,Circumference                           ,
