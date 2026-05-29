@@ -58,7 +58,7 @@ pub(crate) fn backup_file<P: AsRef<path::Path>>(
 
         if let Err(e) = fs::copy(filename, &new_file) {
             return Err(
-                compiler.output_error(format!("Error making backup of {filename_str}: {e}",))
+                compiler.output_error(format!("Error making backup of {filename_str}: {e}"))
             );
         }
 

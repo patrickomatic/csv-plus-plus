@@ -92,7 +92,7 @@ where
                 return Err(
                     start_token.into_parse_error("You can only define options once per cell")
                 );
-            };
+            }
 
             let mut parser = CellParser {
                 cell: Cell::default_from(row.clone(), field.clone()),
@@ -110,7 +110,7 @@ where
 
         let mut cell =
             parsed_cell.unwrap_or_else(|| Cell::default_from(row.clone(), field.clone()));
-        cell.parsed_value = lexer.rest().to_string();
+        cell.parsed_value = lexer.rest();
 
         Ok(cell)
     }

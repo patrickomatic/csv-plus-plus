@@ -44,7 +44,7 @@ pub trait CompilationTarget {
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum MergeResult<V: Clone> {
     Existing(V),
-    New(Cell),
+    New(Box<Cell>),
     Empty,
 }
 
@@ -74,12 +74,12 @@ fn merge_cell<V: Clone>(
             ExistingCell::Value(v) => {
                 // both new and existing values
                 if config.overwrite_values {
-                    MergeResult::New(new_val.clone())
+                    MergeResult::New(Box::new(new_val.clone()))
                 } else {
                     MergeResult::Existing(v.clone())
                 }
             }
-            ExistingCell::Empty => MergeResult::New(new_val.clone()),
+            ExistingCell::Empty => MergeResult::New(Box::new(new_val.clone())),
         }
     } else {
         // no new value - return existing or empty
@@ -153,7 +153,7 @@ mod tests {
 
         let cell = Cell::new(build_field("new value", (0, 0)));
         assert_eq!(
-            MergeResult::New(cell.clone()),
+            MergeResult::New(Box::new(cell.clone())),
             merge_cell(&ExistingCell::Value(1), Some(&cell), &config)
         );
     }

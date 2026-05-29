@@ -27,7 +27,7 @@ foo,bar
 
     assert_err_eq!(
         s,
-        "Syntax error in code section of \"integration_test_syntax_error_in_code_section.csvpp\"
+        "Syntax error in code section of integration_test_syntax_error_in_code_section.csvpp
 On line 4 Expected `(` for a function definition but saw `<`
 
  1: 
@@ -55,7 +55,7 @@ foo,bar,[[text=bold ,foo
 
     assert_err_eq!(
         s,
-        "Syntax error in cell C1 of \"integration_test_syntax_error_in_option_definition.csvpp\"
+        "Syntax error in cell C1 of integration_test_syntax_error_in_option_definition.csvpp
 On line 3 Expected a OptionName but saw unrecognized token ``
 
  1: 
@@ -80,7 +80,7 @@ foo,bar,[[b=foo]],foo
 
     assert_err_eq!(
         s,
-        "Syntax error in cell C1 of \"integration_test_bad_choice_in_option_with_possibilities.csvpp\"
+        "Syntax error in cell C1 of integration_test_bad_choice_in_option_with_possibilities.csvpp
 On line 3 received invalid value when parsing `border` option but saw `foo`
 Possible values: all (a) | top (t) | bottom (b) | left (l) | right (r)
 
@@ -108,7 +108,7 @@ function_in_file1(1 * 2)  ,   =function_in_file1(1, 2)    , should be 1 * 44
 
     assert_err_eq!(
         s,
-        "Syntax error in cell B1 of \"integration_test_syntax_error_in_csv_section.csvpp\"
+        "Syntax error in cell B1 of integration_test_syntax_error_in_csv_section.csvpp
 On line 5 Expected an expression but saw EOF
 If your formula has a comma in it, you might need to escape it with quotes (i.e. `foo,\"=my_function(1, 2)\",bar`)
 
@@ -137,7 +137,7 @@ a := 1 * 2
     assert_err_eq!(
         s,
         "Error loading module foobar
-Error reading source \"foobar.csvpp\"
+Error reading source foobar.csvpp
 Error reading source code foobar.csvpp: No such file or directory (os error 2)
 
 "

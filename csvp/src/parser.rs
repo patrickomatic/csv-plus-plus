@@ -104,7 +104,7 @@ impl<'a> Parser<'a> {
         loop {
             match self.consume_char() {
                 Some('\n') | None => break,
-                Some(_) => continue,
+                Some(_) => {}
             }
         }
     }
@@ -135,7 +135,7 @@ impl<'a> Parser<'a> {
                         RecordResult::Some(fields)
                     })
                 }
-            };
+            }
             col += 1;
         }
 
@@ -231,7 +231,7 @@ impl<'a> Parser<'a> {
     fn parse_rest_of_quoted_field(&mut self, fb: FieldBuilder) -> Result<FieldResult> {
         loop {
             match self.consume_char() {
-                Some(c) if c.is_whitespace() => continue,
+                Some(c) if c.is_whitespace() => {}
                 Some(c) if self.is_field_separator(c) => return Ok(FieldResult::some(fb)),
                 Some(c) => {
                     // it's not whitespace or a comma

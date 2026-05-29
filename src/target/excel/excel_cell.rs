@@ -89,7 +89,7 @@ impl From<TextWrap> for bool {
     }
 }
 
-impl<'a> ExcelCell<'a> {
+impl ExcelCell<'_> {
     fn set_alignment(&self, s: &mut umya_spreadsheet::Style) {
         let mut alignment = umya_spreadsheet::Alignment::default();
         alignment.set_horizontal(self.0.horizontal_align.into());

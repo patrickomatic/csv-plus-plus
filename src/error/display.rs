@@ -9,7 +9,11 @@ impl fmt::Display for Error {
                 parse_error,
                 address,
             } => {
-                writeln!(f, "Syntax error in cell {address} of {filename:?}",)?;
+                writeln!(
+                    f,
+                    "Syntax error in cell {address} of {}",
+                    filename.display()
+                )?;
                 writeln!(f, "{parse_error}")
             }
 
@@ -17,7 +21,7 @@ impl fmt::Display for Error {
                 parse_error,
                 filename,
             } => {
-                writeln!(f, "Syntax error in code section of {filename:?}")?;
+                writeln!(f, "Syntax error in code section of {}", filename.display())?;
                 writeln!(f, "{parse_error}")
             }
 
@@ -25,7 +29,7 @@ impl fmt::Display for Error {
                 parse_error,
                 filename,
             } => {
-                writeln!(f, "Syntax error in CSV section of {filename:?}")?;
+                writeln!(f, "Syntax error in CSV section of {}", filename.display())?;
                 writeln!(f, "{parse_error}")
             }
 
@@ -37,11 +41,13 @@ impl fmt::Display for Error {
                 if let Some(address) = address {
                     writeln!(
                         f,
-                        "Error evaluating formula in cell {address} ({}, {}) of {filename:?}",
-                        address.column.x, address.row.y,
+                        "Error evaluating formula in cell {address} ({}, {}) of {}",
+                        address.column.x,
+                        address.row.y,
+                        filename.display(),
                     )?;
                 } else {
-                    writeln!(f, "Error evaluating formula in {filename:?}")?;
+                    writeln!(f, "Error evaluating formula in {}", filename.display())?;
                 }
                 writeln!(f, "{eval_error}")
             }
@@ -82,7 +88,7 @@ csv++ with `GOOGLE_APPLICATION_CREDENTIALS` or the `--google-account-credentials
             }
 
             Self::SourceCodeError { filename, message } => {
-                writeln!(f, "Error reading source {filename:?}")?;
+                writeln!(f, "Error reading source {}", filename.display())?;
                 writeln!(f, "{message}")
             }
 
@@ -120,7 +126,7 @@ mod tests {
 
         assert_eq!(
             message.to_string(),
-            "Syntax error in cell B6 of \"a_file.csvpp\"
+            "Syntax error in cell B6 of a_file.csvpp
 On line 4 it should be foo but saw bar
 
 foo
@@ -140,7 +146,7 @@ baz
 
         assert_eq!(
             message.to_string(),
-            "Syntax error in code section of \"a_file.csvpp\"
+            "Syntax error in code section of a_file.csvpp
 On line 4 it should be foo but saw bar
 
 foo
@@ -164,7 +170,7 @@ baz
 
         assert_eq!(
             message.to_string(),
-            "Error evaluating formula in cell C3 (2, 2) of \"a_file.csvpp\"
+            "Error evaluating formula in cell C3 (2, 2) of a_file.csvpp
 Error: foo
 "
         );
@@ -186,7 +192,7 @@ Error: foo
 
         assert_eq!(
             message.to_string(),
-            "Error reading source \"a_file.csvpp\"\nfoo\n",
+            "Error reading source a_file.csvpp\nfoo\n",
         );
     }
 

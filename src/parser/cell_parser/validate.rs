@@ -298,7 +298,7 @@ impl CellParser<'_, '_> {
 
     fn one_string_in_parens(&mut self) -> ParseResult<String> {
         take_parens!(self, {
-            Ok(self.lexer.take_token(Token::String)?.str_match.to_string())
+            Ok(self.lexer.take_token(Token::String)?.str_match.clone())
         })
     }
 }

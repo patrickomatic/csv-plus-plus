@@ -5,7 +5,7 @@ impl TryFrom<&CliArgs> for Output {
 
     fn try_from(cli_args: &CliArgs) -> std::result::Result<Self, Self::Error> {
         if let Some(sheet_id) = &cli_args.google_sheet_id {
-            Ok(Self::from_google_sheet_id(sheet_id.to_string())?)
+            Ok(Self::from_google_sheet_id(sheet_id.clone())?)
         } else if let Some(filename) = &cli_args.output_filename {
             Ok(Self::from_filename(filename)?)
         } else {

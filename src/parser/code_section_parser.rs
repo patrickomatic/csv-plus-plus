@@ -114,7 +114,7 @@ impl<'a> CodeSectionParser<'a> {
                 ..
             } => (),
             token => return Err(token.into_error("Expected `(` for a function definition")),
-        };
+        }
 
         // here we're looking for zero or more References representing the function arguments.
         // this is different than a `FunctionCall` where the arguments to the function can be

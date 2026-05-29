@@ -114,7 +114,7 @@ impl Spreadsheet {
                 };
 
                 vars.insert(var_id.to_owned(), Ast::new(reference));
-            };
+            }
 
             for (cell_index, cell) in row.cells.iter().enumerate() {
                 let cell_a1 = a1::Address::new(cell_index, row_index);

@@ -32,7 +32,7 @@ impl CompilationTarget for Csv<'_> {
             .iter()
             .map(|cell| match cell {
                 MergeResult::New(v) => v.to_string(),
-                MergeResult::Existing(v) => v.to_string(),
+                MergeResult::Existing(v) => v.clone(),
                 MergeResult::Empty => String::new(),
             })
             .collect();

@@ -20,7 +20,7 @@ impl AstReferences {
         match &**ast {
             Node::FunctionCall { name, args } => {
                 if scope.functions.contains_key(name) {
-                    self.functions.insert(name.to_string());
+                    self.functions.insert(name.clone());
                 }
 
                 // each arg can be an AST so we recurse on it
@@ -42,7 +42,7 @@ impl AstReferences {
 
             // references can be variables (if they match one in scope)
             Node::Reference(r) if scope.variables.contains_key(r) => {
-                self.variables.insert(r.to_string());
+                self.variables.insert(r.clone());
             }
 
             Node::Variable {

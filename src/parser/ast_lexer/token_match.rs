@@ -117,7 +117,11 @@ mod tests {
     use super::*;
     use crate::test_utils::*;
 
-    fn build_token_match(token: Token, str_match: &str, source_code: ArcSourceCode) -> TokenMatch<'_> {
+    fn build_token_match(
+        token: Token,
+        str_match: &str,
+        source_code: ArcSourceCode,
+    ) -> TokenMatch<'_> {
         let mut tm = build_ast_token_match(str_match, source_code);
         tm.token = token;
         tm

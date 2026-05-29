@@ -1,6 +1,5 @@
 [book]
 authors = ["Patrick"]
 language = "en"
-multilingual = false
 src = "src"
 title = "csv++ User Guide"

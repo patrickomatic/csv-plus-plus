@@ -42,7 +42,7 @@ macro_rules! validate_str {
     };
 }
 
-fn color_style(rgb: &Option<Rgb>) -> Option<api::ColorStyle> {
+fn color_style(rgb: Option<&Rgb>) -> Option<api::ColorStyle> {
     if let Some(rgb) = rgb {
         let (r, g, b): (f32, f32, f32) = rgb.into();
 
@@ -60,10 +60,10 @@ fn color_style(rgb: &Option<Rgb>) -> Option<api::ColorStyle> {
     }
 }
 
-impl<'a> GoogleSheetsCell<'a> {
+impl GoogleSheetsCell<'_> {
     pub(super) fn cell_format(&self) -> api::CellFormat {
         let borders = self.borders();
-        let background_color_style = color_style(&self.0.color);
+        let background_color_style = color_style(self.0.color.as_ref());
         let horizontal_alignment = self.horizontal_alignment();
         let number_format = self.number_format();
         let text_format = self.text_format();
@@ -188,7 +188,7 @@ impl<'a> GoogleSheetsCell<'a> {
 
     fn border(&self) -> api::Border {
         api::Border {
-            color_style: color_style(&self.0.border_color),
+            color_style: color_style(self.0.border_color.as_ref()),
             style: Some(self.border_style()),
             ..Default::default()
         }
@@ -236,7 +236,7 @@ impl<'a> GoogleSheetsCell<'a> {
         let bold = self.format_as_option(TextFormat::Bold);
         let font_family = self.0.font_family.clone();
         let font_size = self.0.font_size.map(i32::from);
-        let foreground_color_style = color_style(&self.0.font_color);
+        let foreground_color_style = color_style(self.0.font_color.as_ref());
         let italic = self.format_as_option(TextFormat::Italic);
         let strikethrough = self.format_as_option(TextFormat::Strikethrough);
         let underline = self.format_as_option(TextFormat::Underline);

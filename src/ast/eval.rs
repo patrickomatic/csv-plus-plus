@@ -49,7 +49,7 @@ impl Ast {
                     n => n.clone().into(),
                 };
 
-                resolved_vars.insert(var_name.to_string(), value_from_var);
+                resolved_vars.insert(var_name.clone(), value_from_var);
             }
         }
 
