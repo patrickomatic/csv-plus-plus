@@ -18,7 +18,6 @@ edition = "2021"
 
 [dependencies]
 a1 = { workspace = true }
-bincode = { version = "^2", features = ["serde"] }
 chrono = { version = "^0.4.31", features = ["serde"] }
 clap = { version = "^4", features = ["derive"] }
 colored = "^3.1"
@@ -31,6 +30,7 @@ home = "^0.5"
 hyper-rustls = { version = "^0.27", default-features = false, features = ["http1"] }
 log = "^0.4"
 petgraph = "^0.8"
+postcard = { version = "^1.1", features = ["use-std"] }
 rayon = "^1.8"
 regex = "^1.10"
 semver = "^1"

@@ -19,6 +19,8 @@ use std::{cmp, fs, path};
 
 mod display;
 
+const OBJECT_CODE_HEADER: &[u8] = b"csvpo-postcard-v1\0";
+
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct Module {
     pub compiler_version: String,
@@ -84,14 +86,20 @@ impl Module {
             return None;
         }
 
-        let mut obj_file_reader = match fs::File::open(&filename) {
-            Ok(r) => r,
+        let obj_file = match fs::read(&filename) {
+            Ok(bytes) => bytes,
             Err(e) => compiler_error(format!("Error opening object code: {e}")),
         };
 
-        let Ok(loaded_module) =
-            bincode::serde::decode_from_std_read(&mut obj_file_reader, bincode::config::standard())
-        else {
+        let Some(encoded) = obj_file.strip_prefix(OBJECT_CODE_HEADER) else {
+            warn!(
+                "Object code from {} was written with an old format.",
+                filename.display()
+            );
+            return None;
+        };
+
+        let Ok(loaded_module) = postcard::from_bytes(encoded) else {
             // if we fail to load the old object file just warn about it and move on.  for whatever
             // reason (written by an old version) it's not compatible with our current version
             warn!(
@@ -187,13 +195,13 @@ impl Module {
         let object_code_filename = self.source_code.object_code_filename();
 
         debug!("Serializing {}", self.module_path);
-        let encoded =
-            bincode::serde::encode_to_vec(&self, bincode::config::standard()).map_err(|e| {
-                Error::SourceCodeError {
-                    filename: object_code_filename.clone(),
-                    message: format!("Error serializing object code: {e}"),
-                }
-            })?;
+        let mut encoded = OBJECT_CODE_HEADER.to_vec();
+        encoded.extend(
+            postcard::to_allocvec(&self).map_err(|e| Error::SourceCodeError {
+                filename: object_code_filename.clone(),
+                message: format!("Error serializing object code: {e}"),
+            })?,
+        );
 
         info!("Writing object file to {}", object_code_filename.display());
 
