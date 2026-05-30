@@ -1,5 +1,4 @@
 use crate::{CliArgs, Compiler, ModulePath, SourceCode};
-use rand::Rng;
 use std::fs;
 use std::path;
 
@@ -51,13 +50,14 @@ impl From<&TestSourceCode> for SourceCode {
 
 impl TestSourceCode {
     pub(crate) fn new(output_extension: &str, input: &str) -> Self {
-        let mut rng = rand::thread_rng();
-
-        let input_filename = format!("unit_test_input_{}.csvpp", rng.gen::<u64>());
+        let input_filename = format!("unit_test_input_{}.csvpp", rand::random::<u64>());
         let source_path = path::Path::new(&input_filename);
         fs::write(source_path, input).unwrap();
 
-        let output_filename = format!("unit_test_output_{}.{output_extension}", rng.gen::<u64>());
+        let output_filename = format!(
+            "unit_test_output_{}.{output_extension}",
+            rand::random::<u64>()
+        );
         let output_path = path::Path::new(&output_filename);
 
         Self {
@@ -68,16 +68,15 @@ impl TestSourceCode {
     }
 
     pub(crate) fn new_in_dir(output_extension: &str, input: &str) -> Self {
-        let mut rng = rand::thread_rng();
-        let dir = rng.gen::<u64>().to_string();
+        let dir = rand::random::<u64>().to_string();
         fs::create_dir(&dir).unwrap();
-        let input_filename = format!("{dir}/unit_test_input_{}.csvpp", rng.gen::<u64>());
+        let input_filename = format!("{dir}/unit_test_input_{}.csvpp", rand::random::<u64>());
         let source_path = path::Path::new(&input_filename);
         fs::write(source_path, input).unwrap();
 
         let output_filename = format!(
             "{dir}/unit_test_output_{}.{output_extension}",
-            rng.gen::<u64>()
+            rand::random::<u64>()
         );
         let output_path = path::Path::new(&output_filename);
 

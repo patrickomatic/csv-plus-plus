@@ -1,4 +1,3 @@
-use rand::Rng;
 use std::fs;
 use std::path;
 
@@ -18,8 +17,7 @@ pub(crate) struct TestFile {
 
 impl TestFile {
     pub(crate) fn new(ext: &str, input: &str) -> Self {
-        let mut rng = rand::thread_rng();
-        let filename = format!("unit_test_file_{}.{ext}", rng.gen::<u64>());
+        let filename = format!("unit_test_file_{}.{ext}", rand::random::<u64>());
         let path = path::Path::new(&filename);
         fs::write(path, input).unwrap();
 

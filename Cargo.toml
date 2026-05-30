@@ -18,18 +18,19 @@ edition = "2021"
 
 [dependencies]
 a1 = { workspace = true }
-bincode = "^1"
+bincode = { version = "^2", features = ["serde"] }
 chrono = { version = "^0.4.31", features = ["serde"] }
 clap = { version = "^4", features = ["derive"] }
-colored = "^2.0"
+colored = "^3.1"
 csv = "1"
 csvp = { version = "^0.2", path = "./csvp" }
 env_logger = "^0.11"
-google-drive3 = "^6.0"
-google-sheets4 = "^6.0"
+google-drive3 = "^7.0"
+google-sheets4 = "^7.0"
 home = "^0.5"
+hyper-rustls = { version = "^0.27", default-features = false, features = ["http1"] }
 log = "^0.4"
-petgraph = "^0.6"
+petgraph = "^0.8"
 rayon = "^1.8"
 regex = "^1.10"
 semver = "^1"
@@ -37,11 +38,12 @@ serde = { workspace = true }
 serde_json = "^1"
 tokio = { version = "^1.35", features = ["rt"] }
 umya-spreadsheet = "^2.1"
+yup-oauth2 = { version = "^12", default-features = false, features = ["hyper-rustls", "ring", "service-account"] }
 
 [dev-dependencies]
-criterion = { version = "^0.5", features = ["html_reports"] }
-pprof = { version = "0.13", features = ["criterion", "flamegraph"] }
-rand = "^0.8"
+criterion = { version = "^0.8", features = ["html_reports"] }
+pprof = { version = "^0.15", features = ["criterion", "flamegraph"] }
+rand = "^0.10"
 
 [[bench]]
 name = "eval_fill"

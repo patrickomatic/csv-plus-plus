@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 use csvpp::*;
-use rand::Rng;
 use std::fs;
 use std::path;
 
@@ -63,9 +62,10 @@ impl Setup {
         extension: &str,
         cleanup_input: bool,
     ) -> Self {
-        let mut rng = rand::thread_rng();
-
-        let output_filename = format!("integration_test_output_{}.{extension}", rng.gen::<u64>());
+        let output_filename = format!(
+            "integration_test_output_{}.{extension}",
+            rand::random::<u64>()
+        );
         let output_path = path::Path::new(&output_filename);
 
         let compiler = Compiler::try_from(&CliArgs {

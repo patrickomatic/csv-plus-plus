@@ -168,7 +168,11 @@ impl ModuleLoader {
             };
 
             if module.is_dirty {
-                for graph_path in algo::simple_paths::all_simple_paths::<Vec<_>, _>(
+                for graph_path in algo::simple_paths::all_simple_paths::<
+                    Vec<_>,
+                    _,
+                    collections::hash_map::RandomState,
+                >(
                     &dep_graph,
                     // just assume that the main module is at index 0
                     graph::NodeIndex::new(0),

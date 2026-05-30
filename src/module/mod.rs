@@ -84,12 +84,14 @@ impl Module {
             return None;
         }
 
-        let obj_file_reader = match fs::File::open(&filename) {
+        let mut obj_file_reader = match fs::File::open(&filename) {
             Ok(r) => r,
             Err(e) => compiler_error(format!("Error opening object code: {e}")),
         };
 
-        let Ok(loaded_module) = bincode::deserialize_from(obj_file_reader) else {
+        let Ok(loaded_module) =
+            bincode::serde::decode_from_std_read(&mut obj_file_reader, bincode::config::standard())
+        else {
             // if we fail to load the old object file just warn about it and move on.  for whatever
             // reason (written by an old version) it's not compatible with our current version
             warn!(
@@ -185,10 +187,13 @@ impl Module {
         let object_code_filename = self.source_code.object_code_filename();
 
         debug!("Serializing {}", self.module_path);
-        let encoded = bincode::serialize(&self).map_err(|e| Error::SourceCodeError {
-            filename: object_code_filename.clone(),
-            message: format!("Error serializing object code: {e}"),
-        })?;
+        let encoded =
+            bincode::serde::encode_to_vec(&self, bincode::config::standard()).map_err(|e| {
+                Error::SourceCodeError {
+                    filename: object_code_filename.clone(),
+                    message: format!("Error serializing object code: {e}"),
+                }
+            })?;
 
         info!("Writing object file to {}", object_code_filename.display());
 
