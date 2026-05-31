@@ -157,4 +157,18 @@ mod tests {
 
         assert_eq!(module.spreadsheet.rows.len(), 4);
     }
+
+    #[test]
+    fn compile_invalid_cell_option() {
+        let test_file = &TestSourceCode::new("csv", "[[validate=foo_bar(12/1/23)]]abc");
+        let compiler: Compiler = test_file.into();
+        assert!(compiler.compile().is_err());
+    }
+
+    #[test]
+    fn compile_incomplete_code_section_expression() {
+        let test_file = &TestSourceCode::new("csv", "x :=\n---\nfoo");
+        let compiler: Compiler = test_file.into();
+        assert!(compiler.compile().is_err());
+    }
 }

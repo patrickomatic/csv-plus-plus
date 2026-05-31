@@ -74,6 +74,23 @@ impl Output {
 
 #[cfg(test)]
 mod tests {
-    // use super::*;
-    // TODO
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn from_filename_no_extension() {
+        assert!(Output::from_filename(&PathBuf::from("foo")).is_err());
+    }
+
+    #[test]
+    fn from_filename_unsupported_extension() {
+        assert!(Output::from_filename(&PathBuf::from("foo.txt")).is_err());
+    }
+
+    #[test]
+    fn from_google_sheet_id_invalid_chars() {
+        assert!(Output::from_google_sheet_id("abc-123".to_string()).is_err());
+        assert!(Output::from_google_sheet_id("abc 123".to_string()).is_err());
+        assert!(Output::from_google_sheet_id("abc_123".to_string()).is_err());
+    }
 }

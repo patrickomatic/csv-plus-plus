@@ -663,7 +663,7 @@ dependencies = [
 
 [[package]]
 name = "csvpp"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "a1",
  "chrono",

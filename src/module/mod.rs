@@ -278,5 +278,89 @@ impl Module {
 
 #[cfg(test)]
 mod tests {
-    // TODO
+    use super::*;
+    use crate::test_utils::*;
+    use crate::{ArcSourceCode, SourceCode};
+    use std::fs::{self, File, FileTimes};
+    use std::time::{Duration, SystemTime};
+
+    fn set_mtime(p: &path::Path, t: SystemTime) {
+        File::options()
+            .write(true)
+            .open(p)
+            .unwrap()
+            .set_times(FileTimes::new().set_modified(t))
+            .unwrap();
+    }
+
+    fn module_for_tsc(tsc: &TestSourceCode) -> Module {
+        Module {
+            compiler_version: env!("CARGO_PKG_VERSION").to_string(),
+            source_code: ArcSourceCode::new(SourceCode::from(tsc)),
+            ..build_module()
+        }
+    }
+
+    #[test]
+    fn check_if_is_dirty_missing_object_code() {
+        let tsc = TestSourceCode::new("csv", "");
+        let mut m = module_for_tsc(&tsc);
+        assert!(m.check_if_is_dirty().is_err());
+    }
+
+    #[test]
+    fn check_if_is_dirty_source_newer_than_object_code() {
+        let tsc = TestSourceCode::new("csv", "");
+        let obj = tsc.input_file.with_extension("csvpo");
+        fs::write(&obj, b"").unwrap();
+
+        let old = SystemTime::UNIX_EPOCH + Duration::from_secs(1_000_000);
+        let new = SystemTime::UNIX_EPOCH + Duration::from_secs(2_000_000);
+        set_mtime(&obj, old);
+        set_mtime(&tsc.input_file, new);
+
+        let mut m = module_for_tsc(&tsc);
+        m.check_if_is_dirty().unwrap();
+
+        assert!(m.is_dirty);
+        assert!(m.needs_eval);
+    }
+
+    #[test]
+    fn check_if_is_dirty_object_newer_same_compiler_version() {
+        let tsc = TestSourceCode::new("csv", "");
+        let obj = tsc.input_file.with_extension("csvpo");
+        fs::write(&obj, b"").unwrap();
+
+        let old = SystemTime::UNIX_EPOCH + Duration::from_secs(1_000_000);
+        let new = SystemTime::UNIX_EPOCH + Duration::from_secs(2_000_000);
+        set_mtime(&tsc.input_file, old);
+        set_mtime(&obj, new);
+
+        let mut m = module_for_tsc(&tsc);
+        m.check_if_is_dirty().unwrap();
+
+        assert!(!m.is_dirty);
+    }
+
+    #[test]
+    fn check_if_is_dirty_object_newer_future_compiler_version() {
+        let tsc = TestSourceCode::new("csv", "");
+        let obj = tsc.input_file.with_extension("csvpo");
+        fs::write(&obj, b"").unwrap();
+
+        let old = SystemTime::UNIX_EPOCH + Duration::from_secs(1_000_000);
+        let new = SystemTime::UNIX_EPOCH + Duration::from_secs(2_000_000);
+        set_mtime(&tsc.input_file, old);
+        set_mtime(&obj, new);
+
+        let mut m = Module {
+            compiler_version: "999.0.0".to_string(),
+            source_code: ArcSourceCode::new(SourceCode::from(&tsc)),
+            ..build_module()
+        };
+        m.check_if_is_dirty().unwrap();
+
+        assert!(m.is_dirty);
+    }
 }

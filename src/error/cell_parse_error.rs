@@ -63,6 +63,31 @@ impl error::Error for CellParseError {}
 
 #[cfg(test)]
 mod tests {
-    // use super::*;
-    // TODO
+    use super::*;
+    use crate::test_utils::*;
+
+    #[test]
+    fn new_stores_fields() {
+        let err = CellParseError::new("my_option", build_cell_token_match("bad_val"), &["a", "b"]);
+        assert_eq!(err.option_name, "my_option");
+        assert_eq!(err.bad_input.str_match, "bad_val");
+        assert_eq!(err.possible_values, vec!["a", "b"]);
+    }
+
+    #[test]
+    fn display() {
+        let err = CellParseError::new("align", build_cell_token_match("bad"), &[]);
+        assert_eq!(format!("{err}"), "`bad`");
+    }
+
+    #[test]
+    fn from_cell_parse_error_to_parse_error() {
+        let err = CellParseError::new("align", build_cell_token_match("bad"), &["left", "right"]);
+        let parse_error = ParseError::from(err);
+        assert!(parse_error.message.contains("align"));
+        assert_eq!(
+            parse_error.possible_values.unwrap(),
+            vec!["left".to_string(), "right".to_string()]
+        );
+    }
 }
