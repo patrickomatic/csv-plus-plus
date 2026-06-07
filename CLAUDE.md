@@ -8,8 +8,7 @@
   - The tag name comes from the root `Cargo.toml` version, e.g. `v0.9.0`.
   - The target runs `cargo publish`, `git tag -as v${version} -m "${version}"`, then `make -C csvp/ publish`.
 - Push the release tag with `git push origin --tags`.
-- Build cross-compiled release archives after the tag exists with `make` from the repository root, or `make -C release/`.
-  - `release/Makefile` derives archive names from `git describe --tags --candidates 1`.
+- Pushing the tag triggers the GitHub Actions `Release` workflow, which builds installers and release archives with `cargo-dist`.
 - The root `make publish` target does not bump versions automatically.
 
 ## No Panics Policy

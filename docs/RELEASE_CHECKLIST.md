@@ -2,5 +2,5 @@
 - [ ] `cargo publish`
 - [ ] `git tag -as vXXX`
 - [ ] `git push origin --tags`
-- [ ] `make` (to build release binaries
-- [ ] Upload the binaries to github and create a release
+- [ ] Wait for the GitHub Actions `Release` workflow to publish release assets
+- [ ] Verify the GitHub release includes installers and platform archives
