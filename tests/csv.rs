@@ -1,6 +1,8 @@
 //! CSV is nice for testing certain language features because we can compare the output easily and
 //! don't have to deal with things like APIs or binary formats.
 //!
+#![allow(clippy::unwrap_used)]
+
 mod common;
 use common::*;
 

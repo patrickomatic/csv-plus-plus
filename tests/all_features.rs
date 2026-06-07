@@ -1,3 +1,5 @@
+#![allow(clippy::indexing_slicing, clippy::unwrap_used)]
+
 mod common;
 use common::assert_fixture_compiles_ok;
 

@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 mod common;
 use common::*;
 use std::process::Command;
@@ -16,7 +18,7 @@ another_defined_in_file1,=555,should be shadowed to be 555
 }
 
 #[test]
-#[ignore]
+#[ignore = "requires cache timing and filesystem state that are not stable in normal test runs"]
 fn module_loading_invalidate_cache() {
     let ten_millis = time::Duration::from_millis(10);
 

@@ -1,6 +1,16 @@
 [workspace]
 members = ["csvp"]
 
+[workspace.lints.clippy]
+pedantic = "deny"
+expect_used = "deny"
+indexing_slicing = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+unwrap_used = "deny"
+
 [workspace.dependencies]
 a1 = { version = "1.0.1", features = ["serde"] }
 serde = { version = "1", features = ["derive", "rc"] }
@@ -15,6 +25,9 @@ name = "csvpp"
 repository = "https://github.com/patrickomatic/csv-plus-plus"
 version = "0.9.0"
 edition = "2021"
+
+[lints]
+workspace = true
 
 [dependencies]
 a1 = { workspace = true }

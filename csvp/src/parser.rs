@@ -276,6 +276,7 @@ pub fn parse<'a>(input: &'a str, config: &'a Config) -> Result<Records> {
 }
 
 #[cfg(test)]
+#[allow(clippy::indexing_slicing, clippy::unwrap_used)]
 mod tests {
     use super::*;
     use crate::*;

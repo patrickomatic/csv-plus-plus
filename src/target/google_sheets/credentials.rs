@@ -129,7 +129,7 @@ mod tests {
     use std::env;
 
     #[test]
-    #[ignore]
+    #[ignore = "depends on a real user gcloud ADC setup under the home directory"]
     fn try_from_default_location() {
         // hard to do this one because it checks ~/.config/gcloud/...
         todo!()
@@ -164,7 +164,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
+    #[ignore = "depends on the host having no fallback ADC credentials available"]
     fn try_from_does_not_exist() {
         // hard to test this because it will always catch the default application creds locally
         todo!()

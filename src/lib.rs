@@ -1,4 +1,12 @@
 #![warn(clippy::pedantic)]
+#![cfg_attr(
+    test,
+    allow(
+        clippy::expect_used,
+        clippy::indexing_slicing,
+        clippy::unwrap_used
+    )
+)]
 #![warn(
     clippy::expect_used,
     clippy::indexing_slicing,

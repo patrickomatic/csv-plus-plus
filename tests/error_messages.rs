@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 mod common;
 
 macro_rules! assert_err_eq {

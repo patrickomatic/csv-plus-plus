@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use csvpp::{CliArgs, Compiler};
 use std::path;
 
