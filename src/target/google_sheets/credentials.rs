@@ -28,8 +28,9 @@ fn adc_path() -> Result<path::PathBuf> {
             .join("gcloud")
             .join("application_default_credentials.json"))
     } else {
-        // we don't support this target_family - just windows and unix
-        unimplemented!("Unsupported target: unknown application_default_credentials.json location")
+        Err(Error::InitError(
+            "Unsupported platform: cannot determine application_default_credentials.json location".to_string(),
+        ))
     }
 }
 
@@ -81,8 +82,9 @@ impl Credentials {
         &self,
     ) -> Result<yup_oauth2::authenticator::Authenticator<HyperConnector>> {
         let json = self.read_json()?;
+        let cred_type = json.get("type").and_then(|v| v.as_str()).unwrap_or("");
 
-        if json["type"] == "authorized_user" {
+        if cred_type == "authorized_user" {
             Ok(yup_oauth2::AuthorizedUserAuthenticator::builder(
                 yup_oauth2::read_authorized_user_secret(&self.file)
                     .await
@@ -95,7 +97,7 @@ impl Credentials {
             .map_err(|e| {
                 Error::GoogleSetupError(format!("Error requesting access to the spreadsheet: {e}"))
             })?)
-        } else if json["type"] == "service_account" {
+        } else if cred_type == "service_account" {
             Ok(yup_oauth2::ServiceAccountAuthenticator::builder(
                 yup_oauth2::read_service_account_key(&self.file)
                     .await

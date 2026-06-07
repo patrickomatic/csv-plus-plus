@@ -13,7 +13,8 @@ pub enum DateTime {
 }
 
 fn date_epoch() -> chrono::NaiveDate {
-    chrono::NaiveDate::from_ymd_opt(1900, 1, 1).unwrap()
+    chrono::NaiveDate::from_ymd_opt(1900, 1, 1)
+        .unwrap_or_else(|| crate::compiler_error("Invalid epoch date 1900-01-01"))
 }
 
 impl DateTime {
@@ -23,7 +24,7 @@ impl DateTime {
         match self {
             Self::Date(d) => d.signed_duration_since(date_epoch()).num_days(),
             // TODO: nothing uses these... but this is kinda a footgun, we should implement it
-            _ => unimplemented!(),
+            _ => crate::compiler_error("distance_from_epoch is only implemented for DateTime::Date"),
         }
     }
 }

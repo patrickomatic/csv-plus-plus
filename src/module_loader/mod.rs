@@ -97,7 +97,7 @@ impl ModuleLoader {
         if self.has_failures() {
             Err(Error::ModuleLoadErrors(
                 sync::Arc::try_unwrap(self.failed)
-                    .expect("Unable to access failed")
+                    .map_err(|_| Error::ModuleLoadError("Unable to unwrap failed modules Arc".to_string()))?
                     .into_inner()?,
             ))
         } else {
@@ -107,7 +107,7 @@ impl ModuleLoader {
             for req_path in &main_module.required_modules {
                 main_module
                     .scope
-                    .merge(&loaded.remove(req_path).unwrap().scope);
+                    .merge(&loaded.remove(req_path).ok_or_else(|| Error::ModuleLoadError(format!("Module not found: {req_path}")))?.scope);
             }
 
             Ok(main_module)
@@ -115,7 +115,7 @@ impl ModuleLoader {
     }
 
     fn load_dependency_graph(&self) -> graph::Graph<ModulePath, ()> {
-        let loaded = self.loaded.read().unwrap();
+        let loaded = self.loaded.read().unwrap_or_else(std::sync::PoisonError::into_inner);
         debug!("Loaded dependency graph with {} dependencies", loaded.len());
 
         let mut dep_graph = graph::Graph::new();
@@ -158,7 +158,7 @@ impl ModuleLoader {
     }
 
     fn dirty_nodes(&self) -> collections::HashSet<ModulePath> {
-        let loaded = self.loaded.read().unwrap();
+        let loaded = self.loaded.read().unwrap_or_else(std::sync::PoisonError::into_inner);
         let dep_graph = self.load_dependency_graph();
 
         let mut dirty_nodes: collections::HashSet<ModulePath> = collections::HashSet::default();
@@ -193,7 +193,7 @@ impl ModuleLoader {
     fn propagate_dirty_flag(self) -> Result<Self> {
         let dirty_nodes = self.dirty_nodes();
         let mut loaded = sync::Arc::try_unwrap(self.loaded)
-            .expect("Unable to access loaded")
+            .map_err(|_| Error::ModuleLoadError("Unable to unwrap loaded modules Arc".to_string()))?
             .into_inner()?;
 
         let is_dirty = !dirty_nodes.is_empty();
@@ -212,7 +212,7 @@ impl ModuleLoader {
     }
 
     fn reload_dirty_modules(&mut self) -> Result<()> {
-        let loaded = self.loaded.read().unwrap();
+        let loaded = self.loaded.read().unwrap_or_else(std::sync::PoisonError::into_inner);
         for (mp, module) in loaded.iter() {
             if module.is_dirty {
                 self.loaded.write()?.insert(
@@ -282,7 +282,7 @@ impl ModuleLoader {
     }
 
     fn has_failures(&self) -> bool {
-        !self.failed.try_read().unwrap().is_empty()
+        !self.failed.read().unwrap_or_else(std::sync::PoisonError::into_inner).is_empty()
     }
 
     fn load(&self, module: &Module) -> Result<()> {

@@ -38,13 +38,10 @@ impl SourceCode {
     {
         let str_input: String = input.into();
 
-        if let Some(p) = str_input
-            .lines()
-            .position(|l| regex::Regex::new(r"^\s*---\s*$").unwrap().is_match(l))
-        {
+        if let Some(p) = str_input.lines().position(|l| l.trim() == "---") {
             let lines: Vec<_> = str_input.lines().collect();
-            let csv_lines = &lines[(p + 1)..];
-            let code_lines = &lines[..p];
+            let csv_lines = lines.get((p + 1)..).unwrap_or_default();
+            let code_lines = lines.get(..p).unwrap_or_default();
 
             SourceCode {
                 filename: filename.into(),

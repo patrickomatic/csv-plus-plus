@@ -93,16 +93,18 @@ impl<'a> BatchUpdateBuilder<'a> {
 
     fn update_cells_request(&self, rows: &[api::RowData]) -> api::UpdateCellsRequest {
         api::UpdateCellsRequest {
-            fields: Some(google_sheets4::FieldMask::from_str("*").unwrap()),
+            fields: Some(
+                google_sheets4::FieldMask::from_str("*")
+                    .unwrap_or_else(|e| crate::compiler_error(format!("Invalid field mask: {e}"))),
+            ),
             start: Some(api::GridCoordinate {
-                // TODO: get rid of the unwraps
                 column_index: Some(
                     i32::try_from(self.compiler.config.offset.1)
-                        .expect("a 32-bit value for column offset"),
+                        .unwrap_or_else(|_| crate::compiler_error("Column offset overflows i32")),
                 ),
                 row_index: Some(
                     i32::try_from(self.compiler.config.offset.0)
-                        .expect("a 32-bit value for row offset"),
+                        .unwrap_or_else(|_| crate::compiler_error("Row offset overflows i32")),
                 ),
                 sheet_id: None,
             }),

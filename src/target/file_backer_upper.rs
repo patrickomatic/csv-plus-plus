@@ -49,7 +49,7 @@ pub(crate) fn backup_file<P: AsRef<path::Path>>(
         let timestamp = now.format(time_format);
 
         let mut new_file = file_parent.to_path_buf();
-        new_file.push(format!("{}-{timestamp}", file_stem.to_str().unwrap()));
+        new_file.push(format!("{}-{timestamp}", file_stem.to_str().unwrap_or_default()));
         new_file.set_extension(file_extension);
 
         if new_file.exists() {

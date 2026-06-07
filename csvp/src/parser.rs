@@ -54,11 +54,10 @@ enum RecordResult {
 
 impl From<&mut Parser<'_>> for SourcePosition {
     fn from(p: &mut Parser) -> Self {
-        if let Ok(o) = usize::try_from(p.source_offset) {
-            Self::new(o, p.source_line + p.config.lines_above)
-        } else {
-            panic!("Attempted to create a SourcePosition before the parser has consumed any characters.")
-        }
+        // source_offset starts at -1 and only goes negative before any chars are consumed;
+        // all call sites occur after at least one char has been read, so saturate to 0 defensively.
+        let offset = usize::try_from(p.source_offset).unwrap_or(0);
+        Self::new(offset, p.source_line + p.config.lines_above)
     }
 }
 

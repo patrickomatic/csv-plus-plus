@@ -20,11 +20,7 @@ impl Field {
     /// position of the original location in source.
     #[must_use]
     pub fn position_for_offset(&self, offset: Offset) -> Option<SourcePosition> {
-        if offset >= self.positions.len() {
-            None
-        } else {
-            Some(self.positions[offset])
-        }
+        self.positions.get(offset).copied()
     }
 
     #[must_use]

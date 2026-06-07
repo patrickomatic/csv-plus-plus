@@ -9,3 +9,9 @@ playground/**/*.csvpo
 # .env can potentially contain sensitive info. we only want to check in .env.example and 
 # people can copy that to .env
 playground/.env
+
+# test scratch files
+unit_test_input_*.csvpp
+unit_test_output_*
+integration_test_*.csvpp
+integration_test_output_*

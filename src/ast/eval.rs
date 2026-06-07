@@ -122,9 +122,9 @@ impl Ast {
                         }
 
                         let mut evaled_body = body;
-                        for (i, resolved_arg) in resolved_args.iter().enumerate() {
+                        for (resolved_arg, arg) in resolved_args.iter().zip(args.iter()) {
                             evaled_body =
-                                evaled_body.replace_variable(resolved_arg, args[i].clone());
+                                evaled_body.replace_variable(resolved_arg, arg.clone());
                         }
 
                         evaled_body

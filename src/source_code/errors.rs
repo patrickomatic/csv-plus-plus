@@ -99,13 +99,20 @@ impl SourceCode {
         let end_index = cmp::min(lines.len(), line_number + LINES_IN_ERROR_CONTEXT + 1);
 
         // start with 3 lines before the highlighted line
-        let mut lines_out: Vec<colored::ColoredString> = lines[start_index..line_number]
+        let mut lines_out: Vec<colored::ColoredString> = lines
+            .get(start_index..line_number)
+            .unwrap_or_default()
             .iter()
             .map(|l| l.dimmed())
             .collect();
 
         // and the highlighted line in bright red
-        lines_out.push(lines[line_number].bright_red());
+        lines_out.push(
+            lines
+                .get(line_number)
+                .unwrap_or_else(|| crate::compiler_error("Line out of bounds in error context"))
+                .bright_red(),
+        );
 
         // save the number of this line because we want to skip line-numbering it below
         let skip_numbering_on = lines_out.len();
@@ -119,7 +126,9 @@ impl SourceCode {
 
         // and 3 lines after
         lines_out.append(
-            &mut lines[(line_number + 1)..end_index]
+            &mut lines
+                .get((line_number + 1)..end_index)
+                .unwrap_or_default()
                 .iter()
                 .map(|l| l.dimmed())
                 .collect(),

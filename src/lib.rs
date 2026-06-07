@@ -1,4 +1,13 @@
 #![warn(clippy::pedantic)]
+#![warn(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic,
+    clippy::todo,
+    clippy::unimplemented,
+    clippy::unreachable,
+    clippy::unwrap_used,
+)]
 #![deny(warnings)]
 
 mod ast;
@@ -48,6 +57,7 @@ use log::{error, info, warn};
 #[cfg(test)]
 mod test_utils;
 
+#[allow(clippy::panic)]
 pub(crate) fn compiler_error<S: std::fmt::Display>(message: S) -> ! {
     error!(
         "csv++ ran into an unexpected error while compiling.

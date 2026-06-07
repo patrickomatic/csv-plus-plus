@@ -68,7 +68,7 @@ impl<'a> GoogleSheets<'a> {
             Err(e) => {
                 match e {
                     google_sheets4::Error::BadRequest(obj)
-                        if obj["error"]["code"].as_u64().is_some_and(|c| c == 404) =>
+                        if obj.get("error").and_then(|e| e.get("code")).and_then(serde_json::Value::as_u64).is_some_and(|c| c == 404) =>
                     {
                         // 404 is fine, it just means it doesn't exist yet
                         return Ok(ExistingValues::default());
@@ -127,7 +127,7 @@ impl<'a> GoogleSheets<'a> {
                 .build(
                     hyper_rustls::HttpsConnectorBuilder::new()
                         .with_native_roots()
-                        .unwrap() // TODO get rid of unwrap
+                        .map_err(|e| Error::GoogleSetupError(format!("Failed to load TLS roots: {e}")))?
                         .https_or_http()
                         .enable_http1()
                         .build(),
@@ -144,7 +144,7 @@ impl<'a> GoogleSheets<'a> {
                 .build(
                     hyper_rustls::HttpsConnectorBuilder::new()
                         .with_native_roots()
-                        .unwrap() // TODO get rid of unwrap
+                        .map_err(|e| Error::GoogleSetupError(format!("Failed to load TLS roots: {e}")))?
                         .https_or_http()
                         .enable_http1()
                         .build(),

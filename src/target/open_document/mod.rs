@@ -19,7 +19,9 @@ impl CompilationTarget for OpenDocument<'_> {
     }
 
     fn write(&self, _module: &Module) -> Result<()> {
-        todo!()
+        Err(crate::Error::InitError(
+            "OpenDocument (.ods) output is not yet implemented".to_string(),
+        ))
     }
 }
 

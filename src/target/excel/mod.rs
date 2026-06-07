@@ -106,8 +106,14 @@ impl<'a> Excel<'a> {
         ct.set_rich_text(rt);
 
         let coord = comment.get_coordinate_mut();
-        coord.set_col_num(u32::try_from(position.column.x).expect("32 bit coordinate for comment"));
-        coord.set_row_num(u32::try_from(position.row.y).expect("32 bit coordinate for comment"));
+        coord.set_col_num(
+            u32::try_from(position.column.x)
+                .unwrap_or_else(|_| crate::compiler_error("Column coordinate overflows u32")),
+        );
+        coord.set_row_num(
+            u32::try_from(position.row.y)
+                .unwrap_or_else(|_| crate::compiler_error("Row coordinate overflows u32")),
+        );
 
         worksheet.add_comments(comment);
     }

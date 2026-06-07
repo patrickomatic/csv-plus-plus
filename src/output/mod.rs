@@ -56,7 +56,7 @@ impl Output {
         } else {
             Err(Error::InitError(format!(
                 "{} is an unsupported extension: only .csv, .xlsx or .ods are supported.",
-                ext.to_str().unwrap()
+                ext.to_str().unwrap_or("<non-UTF8 extension>")
             )))
         }
     }
