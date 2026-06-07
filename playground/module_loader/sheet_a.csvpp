@@ -1,0 +1,4 @@
+## The variable in this spreadsheet is used by `sheet_b.csvpp`
+---
+Date          , Amount        ,
+![[fill=10]]  , [[v=amount]]  ,

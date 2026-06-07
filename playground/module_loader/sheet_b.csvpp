@@ -1,0 +1,6 @@
+## Depends on sheet_a.csvpp for importing `amount`
+use sheet_a
+
+total_amount := amount 
+---
+Amount  ,=total_amount
